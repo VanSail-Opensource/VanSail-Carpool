@@ -96,3 +96,8 @@ deletions and their audit events together. Generic writes to migrated legacy
 account endpoints and credentials are refused once that provider has profiles.
 `payment_profile_credentials_test.go` covers migration proof, account isolation,
 retarget validation and protection of the retained legacy settings.
+
+Administrator entitlement and restriction workers pass the panel owner to the
+native adapter. They do not skip native-only members or address native state by a
+historical proxy link. Temporary unban completion is bound to its operation ID,
+so an older delivery cannot release a later restriction on the same member.

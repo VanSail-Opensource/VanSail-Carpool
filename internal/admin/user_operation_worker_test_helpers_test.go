@@ -86,13 +86,7 @@ type entitlementRemoteStub struct {
 	failures   map[string]error
 }
 
-func (r *entitlementRemoteStub) ApplyEntitlement(_ context.Context, remoteID string, _ int64, _ string,
-	_ []string, _ time.Time) error {
-	r.applyCalls = append(r.applyCalls, remoteID)
-	return r.failures[remoteID]
-}
-
-func (r *entitlementRemoteStub) RemoveEntitlement(_ context.Context, remoteID string) error {
-	r.applyCalls = append(r.applyCalls, remoteID)
-	return r.failures[remoteID]
+func (r *entitlementRemoteStub) SyncAdminUserEntitlement(_ context.Context, user model.User, _ *model.Purchase) error {
+	r.applyCalls = append(r.applyCalls, user.ID)
+	return r.failures[user.ID]
 }

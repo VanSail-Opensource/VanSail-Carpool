@@ -12,11 +12,11 @@ type adminUserProviderRepository interface {
 	BeginProviderOperationAttempt(context.Context, string, time.Time) (providerops.Operation, error)
 	CompleteProviderOperation(context.Context, string, providerops.Completion, time.Time) (providerops.Operation, error)
 	UserByID(context.Context, string) (model.User, error)
-	CompleteAdminTemporaryUnban(context.Context, string, time.Time) error
+	CompleteAdminTemporaryUnban(context.Context, string, string, time.Time) error
 }
 
 type adminUserProviderRemote interface {
-	SetAdminUserDisabled(context.Context, string, bool) error
+	SetAdminUserDisabled(context.Context, model.User, string, bool) error
 }
 
 // UserProviderWorker executes isolated provider-backed account actions from the durable queue.
@@ -50,19 +50,19 @@ func (w *UserProviderWorker) run(ctx context.Context, operation providerops.Oper
 	var err error
 	switch operation.Receipt.Kind {
 	case providerops.KindAdminTemporaryBan:
-		user, completion := w.userWithRemoteID(ctx, operation.OwnerUserID)
+		user, completion := w.userForAction(ctx, operation.OwnerUserID)
 		if completion != nil {
 			return *completion
 		}
-		err = w.remote.SetAdminUserDisabled(ctx, *user.ProxyUserID, true)
+		err = w.remote.SetAdminUserDisabled(ctx, user, operation.Receipt.ID, true)
 	case providerops.KindAdminTemporaryUnban:
-		user, completion := w.userWithRemoteID(ctx, operation.OwnerUserID)
+		user, completion := w.userForAction(ctx, operation.OwnerUserID)
 		if completion != nil {
 			return *completion
 		}
-		err = w.remote.SetAdminUserDisabled(ctx, *user.ProxyUserID, false)
+		err = w.remote.SetAdminUserDisabled(ctx, user, operation.Receipt.ID, false)
 		if err == nil {
-			err = w.repository.CompleteAdminTemporaryUnban(ctx, user.ID, w.now().UTC())
+			err = w.repository.CompleteAdminTemporaryUnban(ctx, user.ID, operation.Receipt.ID, w.now().UTC())
 		}
 	default:
 		return providerops.Completion{Status: providerops.StatusFailed, ErrorCode: "UNSUPPORTED_ADMIN_OPERATION"}
@@ -73,10 +73,10 @@ func (w *UserProviderWorker) run(ctx context.Context, operation providerops.Oper
 	return providerops.Completion{Status: providerops.StatusSucceeded}
 }
 
-func (w *UserProviderWorker) userWithRemoteID(ctx context.Context, userID string) (model.User, *providerops.Completion) {
+func (w *UserProviderWorker) userForAction(ctx context.Context, userID string) (model.User, *providerops.Completion) {
 	user, err := w.repository.UserByID(ctx, userID)
-	if err != nil || user.ProxyUserID == nil {
-		return model.User{}, &providerops.Completion{Status: providerops.StatusFailed, ErrorCode: "REMOTE_IDENTITY_REQUIRED"}
+	if err != nil || user.ID != userID {
+		return model.User{}, &providerops.Completion{Status: providerops.StatusFailed, ErrorCode: "LOCAL_STATE_UNAVAILABLE"}
 	}
 	return user, nil
 }

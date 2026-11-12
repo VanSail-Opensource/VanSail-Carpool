@@ -24,10 +24,10 @@ type notificationItemCompleter interface {
 	CompleteProviderOperationItemAndReleaseNotifications(context.Context, string, string, providerops.Completion, time.Time) (providerops.Item, error)
 }
 
-// EntitlementRemote replaces the full upstream entitlement through its queue.
+// EntitlementRemote resolves the panel owner before applying the desired state.
+// Historical proxy links are not native account identifiers.
 type EntitlementRemote interface {
-	ApplyEntitlement(context.Context, string, int64, string, []string, time.Time) error
-	RemoveEntitlement(context.Context, string) error
+	SyncAdminUserEntitlement(context.Context, model.User, *model.Purchase) error
 }
 
 // UserOperationWorker reconciles audited administrator commands upstream.
@@ -105,15 +105,7 @@ func (w *UserOperationWorker) applyExactState(ctx context.Context, userID string
 	if err != nil {
 		return providerops.Completion{Status: providerops.StatusFailed, ErrorCode: "LOCAL_STATE_UNAVAILABLE"}
 	}
-	if user.ProxyUserID == nil {
-		return providerops.Completion{Status: providerops.StatusSucceeded, ResultJSON: `{"providerMutation":"not_required"}`}
-	}
-	if desired == nil {
-		err = w.remote.RemoveEntitlement(ctx, *user.ProxyUserID)
-	} else {
-		err = w.remote.ApplyEntitlement(ctx, *user.ProxyUserID, desired.TrafficLimitBytes,
-			desired.ResetStrategy, desired.SquadUUIDs, desired.ValidUntil)
-	}
+	err = w.remote.SyncAdminUserEntitlement(ctx, user, desired)
 	if err != nil {
 		return providerops.Completion{Status: providerops.StatusPendingReview, ErrorCode: "UPSTREAM_OUTCOME_AMBIGUOUS",
 			ResultJSON: `{"reason":"exact provider state must be reconciled before resolution"}`}

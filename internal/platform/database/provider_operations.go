@@ -42,19 +42,8 @@ func createProviderOperationStateTx(ctx context.Context, tx *sql.Tx, input provi
 	if err != nil {
 		return providerops.Operation{}, false, err
 	}
-	existing, loadErr := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+
-		` WHERE actor_user_id=$1 AND kind=$2 AND idempotency_key=$3`, input.ActorUserID, input.Kind, input.IdempotencyKey))
-	if loadErr == nil {
-		if existing.RequestFingerprint != input.RequestFingerprint {
-			return providerops.Operation{}, false, ErrConflict
-		}
-		if err := insertOperationReplayTx(ctx, tx, existing.Receipt.ID, input, now); err != nil {
-			return providerops.Operation{}, false, err
-		}
-		return existing, true, nil
-	}
-	if !errors.Is(loadErr, ErrNotFound) {
-		return providerops.Operation{}, false, loadErr
+	if existing, replayed, err := replayProviderOperationTx(ctx, tx, input, now); err != nil || replayed {
+		return existing, replayed, err
 	}
 	if err := lockProviderOperationAccountsTx(ctx, tx, input.ActorUserID, input.OwnerUserID); err != nil {
 		return providerops.Operation{}, false, err
@@ -104,6 +93,30 @@ func createProviderOperationStateTx(ctx context.Context, tx *sql.Tx, input provi
 		return providerops.Operation{}, false, err
 	}
 	return operation, false, nil
+}
+
+// Recover the immutable command before admission checks against mutable live
+// state. Items may be absent when the original target set is no longer current.
+func replayProviderOperationTx(ctx context.Context, tx *sql.Tx, input providerops.CreateInput, now time.Time) (providerops.Operation, bool, error) {
+	input, err := providerops.NormalizeCreate(input)
+	if err != nil {
+		return providerops.Operation{}, false, err
+	}
+	existing, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+
+		` WHERE actor_user_id=$1 AND kind=$2 AND idempotency_key=$3`, input.ActorUserID, input.Kind, input.IdempotencyKey))
+	if errors.Is(err, ErrNotFound) {
+		return providerops.Operation{}, false, nil
+	}
+	if err != nil {
+		return providerops.Operation{}, false, err
+	}
+	if existing.RequestFingerprint != input.RequestFingerprint {
+		return providerops.Operation{}, false, ErrConflict
+	}
+	if err := insertOperationReplayTx(ctx, tx, existing.Receipt.ID, input, now); err != nil {
+		return providerops.Operation{}, false, err
+	}
+	return existing, true, nil
 }
 
 // CreateOrReplayProviderOperation is an explicit alias for command services.

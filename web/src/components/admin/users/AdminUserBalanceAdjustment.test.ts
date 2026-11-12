@@ -11,11 +11,14 @@ describe('administrator balance adjustment recovery', () => {
     const wrapper = mount(AdminUserBalanceAdjustment, {
       props: { userId: 'member-1' },
       global: { stubs: {
-        USlideover: { template: '<section><slot name="body" /></section>' },
-        UFormField: { template: '<div><slot /></div>' },
+        Slideover: { props: ['open'], template: '<section v-if="open"><slot name="body" /></section>' },
+        FormField: { template: '<div><slot /></div>' },
         InlineNotice: true,
       } },
     })
+    const open = async () => { await wrapper.get('button').trigger('click'); await flushPromises() }
+    expect(wrapper.find('#profile-balance-adjustment').exists()).toBe(false)
+    await open()
     const amountInput = () => wrapper.get('#profile-balance-adjustment')
     const reasonInput = () => wrapper.get('input[maxlength="300"]')
     await amountInput().setValue('12.50')
@@ -37,6 +40,8 @@ describe('administrator balance adjustment recovery', () => {
     adjust.mockResolvedValue({} as Awaited<ReturnType<typeof api.adjustBalance>>)
     await submit(0)
     expect(adjust.mock.calls[4][3]).toBe(adjust.mock.calls[0][3])
+    expect(wrapper.find('#profile-balance-adjustment').exists()).toBe(false)
+    await open()
     await amountInput().setValue('12.50')
     await reasonInput().setValue('Manual correction')
     await submit(0)

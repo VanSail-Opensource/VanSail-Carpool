@@ -29,7 +29,8 @@ func minorPointer(value float64, ceil bool) *string {
 	} else {
 		value = math.Floor(value)
 	}
-	if math.IsNaN(value) || math.IsInf(value, 0) || value > math.MaxInt64 || value < math.MinInt64 {
+	// float64(MaxInt64) rounds up to 2^63, which is already outside int64.
+	if math.IsNaN(value) || math.IsInf(value, 0) || value >= float64(math.MaxInt64) || value < math.MinInt64 {
 		return nil
 	}
 	result := strconv.FormatInt(int64(value), 10)

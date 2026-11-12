@@ -42,7 +42,7 @@ func (s *Store) retryAttempt_PlayLuckyDraw(ctx context.Context, userID, drawID, 
 	if err != nil {
 		return activity.DrawResult{}, err
 	}
-	draw.Prizes, err = luckyPrizes(ctx, tx, drawID, false)
+	draw.Prizes, err = luckyPrizes(ctx, tx, drawID)
 	if err != nil {
 		return activity.DrawResult{}, err
 	}

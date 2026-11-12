@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
+	"math"
 	"math/big"
 	"time"
 )
@@ -89,6 +90,9 @@ func applyPendingExtensionsToActivationTx(ctx context.Context, tx *sql.Tx, purch
 }
 
 func addSubscriptionHours(value time.Time, hours int) (time.Time, error) {
+	if hours <= 0 || int64(hours) > math.MaxInt64/int64(time.Hour) {
+		return time.Time{}, activity.ErrInvalidInput
+	}
 	shifted := value.Add(time.Duration(hours) * time.Hour)
 	if shifted.Year() < 1 || shifted.Year() > 9999 || !shifted.After(value) {
 		return time.Time{}, activity.ErrInvalidInput

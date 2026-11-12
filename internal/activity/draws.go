@@ -12,8 +12,6 @@ type PrizeInput struct {
 	Name           string `json:"name"`
 	ProbabilityBPS int    `json:"probabilityBps,omitempty"`
 	Stock          int64  `json:"stock,omitempty"`
-	Weight         int64  `json:"-"` // retained for historical test fixtures
-	StockRemaining *int64 `json:"-"` // retained for historical test fixtures
 	Reward         Reward `json:"reward"`
 }
 type Prize struct {

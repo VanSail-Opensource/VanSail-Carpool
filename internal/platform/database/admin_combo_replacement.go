@@ -19,16 +19,6 @@ func (s *Store) retryAttempt_ReplaceAdminCombo(ctx context.Context, input AdminC
 		return model.OperationReceipt{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.user_id=$1
-		AND purchases.status IN ('activating','active') AND purchases.valid_from<=$2 AND purchases.valid_until>$3
-		ORDER BY purchases.valid_from DESC LIMIT 1`, input.UserID, stamp(now), stamp(now)))
-	if err != nil {
-		return model.OperationReceipt{}, err
-	}
-	purchase.SquadUUIDs, err = purchaseSquadsFrom(ctx, tx, purchase.ID)
-	if err != nil {
-		return model.OperationReceipt{}, err
-	}
 	operation, replayed, err := createProviderOperationTx(ctx, tx, providerops.CreateInput{
 		ActorUserID: input.ActorUserID, OwnerUserID: input.UserID, Kind: providerops.KindAdminComboReplacement,
 		IdempotencyKey: input.IdempotencyKey, RequestFingerprint: input.RequestFingerprint,
@@ -42,6 +32,16 @@ func (s *Store) retryAttempt_ReplaceAdminCombo(ctx context.Context, input AdminC
 			return model.OperationReceipt{}, err
 		}
 		return operation.Receipt, nil
+	}
+	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.user_id=$1
+		AND purchases.status IN ('activating','active') AND purchases.valid_from<=$2 AND purchases.valid_until>$3
+		ORDER BY purchases.valid_from DESC LIMIT 1`, input.UserID, stamp(now), stamp(now)))
+	if err != nil {
+		return model.OperationReceipt{}, err
+	}
+	purchase.SquadUUIDs, err = purchaseSquadsFrom(ctx, tx, purchase.ID)
+	if err != nil {
+		return model.OperationReceipt{}, err
 	}
 	var comboExists int
 	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM combos WHERE id=$1`, input.ComboID).Scan(&comboExists); err != nil {

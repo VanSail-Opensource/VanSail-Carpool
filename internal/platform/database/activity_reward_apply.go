@@ -125,9 +125,6 @@ func applyDrawEntitlementTx(ctx context.Context, tx *sql.Tx, userID, resultID st
    entitlement_addon_squad_uuids='[]',reward_renewal_price_minor=$4,
    reward_traffic_renewal=1,reward_renewal_traffic_limit_bytes=$5,entitlement_reset_strategy=$6,updated_at=$7 WHERE id=$8`, reward.ComboID, reward.TrafficLimitBytes, string(squads),
 			reward.RenewalPriceMinor, reward.TrafficLimitBytes, combo.ResetStrategy, stamp(now), purchaseID)
-		if err == nil {
-			err = nil
-		}
 	case activity.RewardSquadAccess:
 		for _, squad := range reward.SquadUUIDs {
 			if squad == "" {

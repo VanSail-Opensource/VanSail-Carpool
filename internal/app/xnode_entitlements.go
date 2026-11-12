@@ -41,20 +41,3 @@ func (a proxyProvider) RestoreMemberOperation(ctx context.Context, id string, pu
 func (a proxyProvider) DefinitiveMutationFailure(err error) bool {
 	return errors.Is(err, xnode.ErrInvalid) || errors.Is(err, xnode.ErrConflict)
 }
-func (a proxyProvider) SetAdminUserDisabled(ctx context.Context, id string, disabled bool) error {
-	identity, err := a.native.Identity(ctx, id)
-	if err != nil {
-		return err
-	}
-	if err = a.store.SetXNodeAccessDisabled(ctx, identity.ProxyUserID, disabled); err != nil {
-		return err
-	}
-	if disabled {
-		return a.native.CloseForReplacement(ctx, id)
-	}
-	purchase, err := a.store.DesiredEntitlement(ctx, identity.UserID, time.Now())
-	if err != nil || purchase == nil {
-		return err
-	}
-	return a.native.ResumePurchase(ctx, id, *purchase)
-}

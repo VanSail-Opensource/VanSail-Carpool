@@ -228,3 +228,12 @@ credentials. `payment_callback_profiles_test.go` covers shared-key account
 selection, legacy callbacks, missing-order authentication and failure paths.
 
 `payment_profile_test_helpers_test.go` supplies encrypted multi-account settings and durable-order lookup fixtures for callback account-isolation regressions.
+
+`xnode_admin_entitlements.go` resolves administrator mutations through the panel
+owner's native identity. A required entitlement may provision that identity;
+an empty stale snapshot rechecks effective paid access before exact accounting
+closure. Restriction writes carry the durable ban/unban operation ID and preserve
+the existing paid period on release. `xnode_admin_entitlements_test.go` covers
+native-only owners, incorrect historical links, edits, refunds and stale empty
+snapshots. `xnode_admin_bans_test.go` covers owner isolation, retained usage,
+repeated restrictions and refusal of old restoration commands.

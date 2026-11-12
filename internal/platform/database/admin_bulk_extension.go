@@ -21,6 +21,15 @@ func (s *Store) retryAttempt_CreateAdminBulkExtension(ctx context.Context, input
 		return model.OperationReceipt{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
+	command := providerops.CreateInput{
+		ActorUserID: input.ActorUserID, Kind: providerops.KindAdminBulkExtension,
+		IdempotencyKey: input.IdempotencyKey, RequestFingerprint: input.RequestFingerprint,
+	}
+	if operation, replayed, err := replayProviderOperationTx(ctx, tx, command, now); err != nil {
+		return model.OperationReceipt{}, err
+	} else if replayed {
+		return operation.Receipt, tx.Commit()
+	}
 	targets, preview, err := adminBulkTargets(ctx, tx, input.Filter, now)
 	if err != nil {
 		return model.OperationReceipt{}, err
@@ -32,10 +41,8 @@ func (s *Store) retryAttempt_CreateAdminBulkExtension(ctx context.Context, input
 	for _, target := range targets {
 		items = append(items, providerops.ItemInput{Key: target.UserID, TargetType: "user", TargetID: target.UserID})
 	}
-	operation, replayed, err := createProviderOperationTx(ctx, tx, providerops.CreateInput{
-		ActorUserID: input.ActorUserID, Kind: providerops.KindAdminBulkExtension,
-		IdempotencyKey: input.IdempotencyKey, RequestFingerprint: input.RequestFingerprint, Items: items,
-	}, now)
+	command.Items = items
+	operation, replayed, err := createProviderOperationTx(ctx, tx, command, now)
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}

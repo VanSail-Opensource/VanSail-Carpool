@@ -135,7 +135,7 @@ func scanLuckyDraw(row rowScanner) (activity.LuckyDraw, error) {
 
 func luckyPrizes(ctx context.Context, queryer interface {
 	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
-}, drawID string, availableOnly bool) ([]activity.PrizeInput, error) {
+}, drawID string) ([]activity.PrizeInput, error) {
 	query := `SELECT id,name,probability_bps,stock,reward_payload FROM activity_lucky_prizes WHERE draw_id=$1`
 	query += ` ORDER BY position`
 	rows, err := queryer.QueryContext(ctx, query, drawID)

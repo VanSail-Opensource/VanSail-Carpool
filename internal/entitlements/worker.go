@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	queueoutbox "github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/accounts"
@@ -15,8 +14,6 @@ import (
 
 // Repository is the durable outbox and entitlement query surface.
 type Repository interface {
-	ClaimOutboxJob(context.Context, time.Time) (*model.OutboxJob, error)
-	CompleteOutboxClaim(context.Context, model.OutboxJob, error, time.Time) error
 	PurchaseByID(context.Context, string) (model.Purchase, error)
 	UserForPurchase(context.Context, string) (model.User, error)
 	UserByID(context.Context, string) (model.User, error)
@@ -53,30 +50,6 @@ func NewWorker(repository Repository, provider ProxyClient, identity ...Identity
 		worker.identity = identity[0]
 	}
 	return worker
-}
-
-// Drain processes up to limit ready jobs and returns the first infrastructure error.
-func (w *Worker) Drain(ctx context.Context, limit int) error {
-	if limit <= 0 {
-		limit = 20
-	}
-	for range limit {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		job, err := w.repository.ClaimOutboxJob(ctx, w.now().UTC())
-		if err != nil {
-			return err
-		}
-		if job == nil {
-			return nil
-		}
-		jobErr := w.HandleOutbox(ctx, *job)
-		if err := queueoutbox.CompleteClaim(ctx, w.repository, *job, jobErr, w.now().UTC()); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // HandleOutbox implements the shared kind-specific dispatcher contract.

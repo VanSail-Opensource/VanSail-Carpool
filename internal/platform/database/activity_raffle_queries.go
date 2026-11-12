@@ -40,7 +40,7 @@ func (s *Store) LuckyDrawByID(ctx context.Context, id string) (activity.LuckyDra
 	if err != nil {
 		return draw, err
 	}
-	draw.Prizes, err = luckyPrizes(ctx, s.db, id, false)
+	draw.Prizes, err = luckyPrizes(ctx, s.db, id)
 	return draw, err
 }
 func (s *Store) LuckyDrawResultByID(ctx context.Context, id string) (activity.DrawResult, error) {

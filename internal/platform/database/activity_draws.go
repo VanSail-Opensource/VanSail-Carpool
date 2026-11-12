@@ -172,7 +172,7 @@ func (s *Store) retryAttempt_SaveLuckyDraw(ctx context.Context, input activity.L
 	if err != nil {
 		return activity.LuckyDraw{}, err
 	}
-	draw.Prizes, err = luckyPrizes(ctx, s.db, input.ID, false)
+	draw.Prizes, err = luckyPrizes(ctx, s.db, input.ID)
 	if err == nil && draw.Kind == "raffle" {
 		draw.Seats, err = s.RaffleProgress(ctx, draw.ID)
 	}

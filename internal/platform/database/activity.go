@@ -52,7 +52,7 @@ func (s *Store) retryAttempt_PlaceActivityBet(ctx context.Context, userID, gameI
 	}
 	defer func() { _ = tx.Rollback() }()
 	if existing, loadErr := activityBetByKeyTx(ctx, tx, userID, idempotencyKey); loadErr == nil {
-		if existing.GameID != gameID {
+		if existing.GameID != gameID || existing.StakeMinor != stakeMinor {
 			return activity.BetResult{}, ErrConflict
 		}
 		existing.Replayed = true

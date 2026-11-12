@@ -4,7 +4,7 @@ The durable entitlement worker translates outbox jobs and desired purchase state
 
 ## Files
 
-- `worker.go` defines dependencies and implements job draining, dispatch, retry,
+- `worker.go` defines dependencies and implements shared-outbox dispatch, retry,
   expiration, entitlement synchronization, and post-success notification release.
 - `identity.go` reconciles the reserved username through the X-Node queue when
   paid access exists, creates queued users disabled, and routes confirmed name
@@ -13,7 +13,12 @@ The durable entitlement worker translates outbox jobs and desired purchase state
   and retryable provider outages.
 - `continuity.go` only acknowledges retired preparation jobs without provider calls. Native compilation retains paid-successor access.
 - `continuity_test.go` verifies legacy jobs cannot change provider authorization or accounting.
-- `worker_test.go` covers draining, retry behavior, traffic-reset resumption, and infrastructure errors.
+- `worker_test.go` covers production HandleOutbox results, terminal failures and durable traffic-reset resumption.
 - `worker_process_test.go` covers individual processing branches, expiration, desired-state synchronization, and unknown jobs.
 - `worker_test_helpers_test.go` contains shared repository and X-Node test doubles.
 - `README.md` documents the package layout.
+
+The unused standalone `Worker.Drain` and its generic claim/completion dependency
+were removed. Domain workers run exclusively through the shared outbox executor,
+which owns claiming, fencing, retry scheduling and unrelated job kinds. Retired
+continuity jobs remain bounded upgrade acknowledgements without provider effects.

@@ -24,3 +24,5 @@ read-only historical evidence. The database adapter blocks old definitions from
 new entry, cancels unresolved raffles with exact fee/reservation refunds and
 queues Telegram announcement cleanup. Already committed results and entitlement
 application jobs retain their original financial/accounting evidence.
+
+Prize previews use the current probability/stock model. Unserialized retired `Weight` and `StockRemaining` fields that existed only for old test fixtures are removed; immutable saved draw snapshots and results are unchanged.

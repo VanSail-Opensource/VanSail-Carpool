@@ -24,7 +24,7 @@ func (s *Store) retryAttempt_PublishRaffle(ctx context.Context, id string, group
 	if err != nil {
 		return err
 	}
-	draw.Prizes, err = luckyPrizes(ctx, tx, id, false)
+	draw.Prizes, err = luckyPrizes(ctx, tx, id)
 	if err != nil {
 		return err
 	}

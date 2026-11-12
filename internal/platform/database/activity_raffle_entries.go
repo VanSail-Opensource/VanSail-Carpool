@@ -62,7 +62,7 @@ func (s *Store) retryAttempt_JoinRaffle(ctx context.Context, userID string, chat
 	if onboarding != "complete" {
 		return activity.RaffleEntry{}, true, ErrConflict
 	}
-	draw.Prizes, err = luckyPrizes(ctx, tx, drawID, false)
+	draw.Prizes, err = luckyPrizes(ctx, tx, drawID)
 	if err != nil {
 		return activity.RaffleEntry{}, true, err
 	}

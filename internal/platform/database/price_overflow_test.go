@@ -6,9 +6,11 @@ import (
 	"math"
 	"testing"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/pricing"
 )
 
-func TestPurchaseQuoteRejectsOverflowingAddonBasket(t *testing.T) {
+func TestPurchasePricingRejectsOutOfRangeLegacyBasket(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	store := newTestStore(t)
@@ -19,10 +21,12 @@ func TestPurchaseQuoteRejectsOverflowingAddonBasket(t *testing.T) {
 		addons = append(addons, saveTestSquad(t, store, id, 1<<62, true).ID)
 	}
 	input := PurchaseInput{UserID: user.ID, ComboID: combo.ID, AddonSquadIDs: addons, IdempotencyKey: "overflow-basket"}
-	if _, err := store.QuotePurchase(ctx, input, time.Now()); !errors.Is(err, ErrConflict) {
+	// Checkout's existing versioned pricing admission rejects this invalid
+	// basket before the later sum guard; preserve its public error contract.
+	if _, err := store.QuotePurchase(ctx, input, time.Now()); !errors.Is(err, pricing.VersionConflict) {
 		t.Fatalf("overflowing basket produced a quote: %v", err)
 	}
-	if _, err := store.CreatePurchase(ctx, input, time.Now()); !errors.Is(err, ErrConflict) {
+	if _, err := store.CreatePurchase(ctx, input, time.Now()); !errors.Is(err, pricing.VersionConflict) {
 		t.Fatalf("overflowing basket created an entitlement: %v", err)
 	}
 }

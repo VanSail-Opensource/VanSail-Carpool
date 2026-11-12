@@ -26,7 +26,7 @@ func (s *Store) retryAttempt_SettleRaffle(ctx context.Context, id string, rng ac
 	if draw.Kind == "raffle" && (draw.Status == "completed" || draw.Status == "cancelled") {
 		return activity.RaffleSettlement{Draw: draw}, nil
 	}
-	draw.Prizes, err = luckyPrizes(ctx, tx, id, false)
+	draw.Prizes, err = luckyPrizes(ctx, tx, id)
 	if err != nil {
 		return activity.RaffleSettlement{}, err
 	}

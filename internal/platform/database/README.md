@@ -1526,3 +1526,18 @@ credential-free administrator hourly projection and administrator-only disable.
 `notification_hourly.go` and `notification_hourly_test.go` queue one hourly
 funding warning per enrollment and paid-through boundary for the existing
 notification scan; the definitive suspension notice commits with settlement.
+
+Activity bet replays bind both the game and the original stake before returning
+the persisted outcome; `activity_bet_test.go` checks changed-stake conflicts
+without sampling or charging again. `activity_arithmetic_test.go` covers pending
+extension duration overflow and the exclusive upper bound for forecast integer
+conversion. Prize queries no longer carry an unused availability flag.
+
+`admin_user_ban_replay_test.go` covers repeated temporary bans, operation-bound
+expiry and restoration, preserved audit/receipt history, and rejection of stale
+restoration commands. Native access changes are fenced by the current ban row
+and exact operation identity before updating the owner's identity.
+
+`admin_operation_recovery_test.go` verifies that bulk extensions and combo
+replacements recover their immutable receipts after the original targets expire,
+without reapplying changes or accepting a changed request fingerprint.

@@ -116,7 +116,7 @@ func TestTemporaryBanRestorationWaitsForSuccessfulBanAndPreservesOverlap(t *test
 	if err != nil || active == nil || active.UnbanOperationID == "" {
 		t.Fatalf("scheduled restoration = (%+v, %v)", active, err)
 	}
-	if err = store.CompleteAdminTemporaryUnban(ctx, user.ID, now.Add(3*time.Minute)); err != nil {
+	if err = store.CompleteAdminTemporaryUnban(ctx, user.ID, active.UnbanOperationID, now.Add(3*time.Minute)); err != nil {
 		t.Fatal(err)
 	}
 	if active, err = store.ActiveAdminTemporaryBan(ctx, user.ID); err != nil || active != nil {
