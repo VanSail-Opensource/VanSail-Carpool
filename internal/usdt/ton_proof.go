@@ -74,7 +74,9 @@ func decodeTONTransfer(spec NetworkSpec, item tonTransfer, trace tonTrace, walle
 			return Transfer{}, ErrProof
 		}
 		if !tonSenderMessage(spec, trace, item.TxHash, sourceWallet, tx.In.Hash, wallet) {
-			return Transfer{}, ErrProof
+			// A trace may batch several transfers to this wallet. This receiving
+			// transaction belongs to a different sender message, not this item.
+			continue
 		}
 		if err := verifyTONBody(spec, tx.In.Content.Body, item); err != nil {
 			return Transfer{}, err

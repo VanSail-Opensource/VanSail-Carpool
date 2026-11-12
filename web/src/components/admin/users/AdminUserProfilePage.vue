@@ -77,6 +77,7 @@ async function createEntitlement(body: AdminEntitlementCreateRequest): Promise<v
     'create-entitlement',
     key => adminOperationsApi.createEntitlement(props.userId, body, key),
     {
+      intent: body,
       conflictKey: 'adminUserProfile.manualGrant.overlap',
       conflictCodeKeys: {
         ENTITLEMENT_OVERLAP: 'adminUserProfile.manualGrant.overlap',
@@ -105,7 +106,7 @@ async function saveEntitlement(body: EntitlementEditRequest): Promise<void> {
   const item = editing.value
   if (!item) return
   const ok = await profile.perform(`edit:${item.id}`, (key) =>
-    adminOperationsApi.editEntitlement(props.userId, item.id, body, key))
+    adminOperationsApi.editEntitlement(props.userId, item.id, body, key), { intent: body })
   if (ok) editing.value = null
 }
 
@@ -116,7 +117,7 @@ async function refundEntitlement(body: AdminEntitlementRefundRequest): Promise<v
   const ok = await profile.perform(`refund:${item.id}`, async (key) => {
     receipt = await adminOperationsApi.refundEntitlement(props.userId, item.id, body, key)
     return receipt
-  })
+  }, { intent: body })
   if (ok) queuedOperation.value = receipt
   if (ok) refunding.value = null
 }
@@ -129,7 +130,7 @@ async function refundPayment(): Promise<void> {
   const payment = refundingPayment.value
   if (!payment) return
   const ok = await profile.perform(`refund-payment:${payment.id}`, (key) =>
-    adminOperationsApi.refundPayment(payment.id, paymentReason.value, key))
+    adminOperationsApi.refundPayment(payment.id, paymentReason.value, key), { intent: paymentReason.value })
   if (ok) refundingPayment.value = null
 }
 
@@ -158,7 +159,7 @@ async function resolveOperation(payload: { resolution: OperationResolution; reas
   const operation = resolving.value
   if (!operation) return
   const ok = await profile.perform(`resolve:${operation.id}`, (key) =>
-    adminOperationsApi.resolveOperation(operation.id, payload.resolution, payload.reason, key))
+    adminOperationsApi.resolveOperation(operation.id, payload.resolution, payload.reason, key), { intent: payload })
   if (ok) resolving.value = null
 }
 

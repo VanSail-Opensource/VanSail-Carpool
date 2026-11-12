@@ -65,3 +65,9 @@ distinction from a complete fresh report with no recent activity. The backend
 bounds output across nodes as well as per node.
 
 `AdminIPUnblockDialog.vue` runs administrator unblock with browser controls and durable receipts.
+
+Audit recovery regressions: `AdminBulkExtensionDialog.test.ts` rejects stale filter previews and preserves ambiguous bulk-command keys. `AdminUserCouponActions.test.ts` preserves grant retry identity. `useAdminUserProfile.test.ts` verifies exact-intent keys across HTTP failures and accepted attempts. Profile and hourly actions retain retry identity after ambiguous replies; action payloads and owner transitions fence stale updates.
+
+`useAdminUserHourly.test.ts` verifies uncertain keys remain bound to the member,
+enrollment and policy version, and a previous member's late response cannot
+replace the current receipt or release the current action's pending state.

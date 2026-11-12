@@ -123,7 +123,9 @@ func (s *scanner) scanSolana(ctx context.Context, cursor Cursor, owners []string
 			continue
 		}
 		var tx solTransaction
-		if err := s.client.rpc(ctx, "getTransaction", []any{sig.Signature, map[string]any{"encoding": "jsonParsed", "commitment": "finalized", "maxSupportedTransactionVersion": 0}}, &tx); err != nil {
+		// v1 signatures appear in history even when an older version ceiling
+		// makes getTransaction reject their bodies and stalls the durable cursor.
+		if err := s.client.rpc(ctx, "getTransaction", []any{sig.Signature, map[string]any{"encoding": "jsonParsed", "commitment": "finalized", "maxSupportedTransactionVersion": 1}}, &tx); err != nil {
 			return Batch{}, err
 		}
 		transfers, err := decodeSolanaTransaction(s.client.spec, tx, sig.Signature, sig.Slot, owners)

@@ -52,6 +52,12 @@ func (c *client) connection(ctx context.Context) (*socket, error) {
 		return nil
 	})
 	if err != nil {
+		// The queue may return cancellation while the started dial is finishing.
+		// Executor.do joins it, so any connection allocated by that callback is
+		// ours to close even when its successful result was not delivered.
+		if conn != nil {
+			_ = conn.Close()
+		}
 		return nil, err
 	}
 	s := &socket{conn: conn, pending: map[uint64]chan rpcReply{}, done: make(chan struct{}), readDone: make(chan struct{}), wake: c.wake}

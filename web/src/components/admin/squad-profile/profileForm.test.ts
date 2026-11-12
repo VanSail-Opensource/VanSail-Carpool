@@ -22,6 +22,16 @@ describe('squad profile form mapping', () => {
     expect(profileFromDraft(draft)).toBeNull()
   })
 
+  it('requires an explicit finite port when switching an unlimited profile to broadband', () => {
+    const draft = draftFromProfile(null)
+    Object.assign(draft, { type: 'broadband', isp: 'Example ISP', location: 'Example city' })
+    expect(profileFromDraft(draft)).toBeNull()
+    draft.portMbps = 1000
+    expect(profileFromDraft(draft)).toMatchObject({ type: 'broadband', portMbps: 1000 })
+    draft.portMbps = Number.MAX_SAFE_INTEGER + 1
+    expect(profileFromDraft(draft)).toBeNull()
+  })
+
   it('normalizes ISO alpha-2 country codes and rejects unknown codes', () => {
     const draft = draftFromProfile(null)
     draft.countryCode = 'sg'

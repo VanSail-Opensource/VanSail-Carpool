@@ -25,7 +25,8 @@ watch(() => [draft.scopeType, draft.scopeId], async (_, __, onCleanup) => {
 }, { immediate: true })
 async function submit(): Promise<void> {
   if (version.value === null || busy.value || !draft.reason.trim()) return
-  const price = moneyFromTxbInput(draft.price) ?? '0'
+  const price = draft.command === 'MANUAL_RATE' ? moneyFromTxbInput(draft.price) : '0'
+  if (price === '' || BigInt(price) > 1_000_000_000_000n) { error.value = t('pricing.invalid'); return }
   if (!Number.isInteger(draft.hours) || draft.hours < 1 || draft.hours > 168) { error.value = t('pricing.invalid'); return }
   busy.value = true
   error.value = ''
@@ -42,24 +43,26 @@ async function submit(): Promise<void> {
 <template>
   <section class="pricing-intervention">
     <h3>{{ t('pricing.intervene') }}</h3>
-    <form class="pricing-intervention__form" @submit.prevent="submit">
-      <UFormField :label="t('pricing.command')"><USelect v-model="draft.command" :items="commandItems" class="w-full" /></UFormField>
-      <UFormField :label="t('pricing.scope')"><USelect v-model="draft.scopeType" :items="scopeItems" class="w-full" /></UFormField>
-      <UFormField :label="t('pricing.scopeId')"><UInput v-model="draft.scopeId" :maxlength="256" class="w-full" /></UFormField>
-      <UFormField :label="t('pricing.hours')"><UInput v-model.number="draft.hours" type="number" :min="1" :max="168" class="w-full" /></UFormField>
-      <TxbAmountField v-if="draft.command === 'MANUAL_RATE'" id="manual-pricing-rate" v-model="draft.price" :label="t('pricing.manualRate')" min-minor="0" max-minor="1000000000000" required />
-      <UFormField v-if="draft.command === 'RESTORE_PRICE'" :label="t('pricing.priceVersion')"><UInput v-model="draft.priceVersion" class="w-full" /></UFormField>
-      <UFormField class="pricing-intervention__wide" :label="t('pricing.reason')" required><UTextarea v-model="draft.reason" :maxlength="1000" class="w-full" required /></UFormField>
-      <InlineNotice v-if="error" class="pricing-intervention__wide" tone="warning">{{ error }}</InlineNotice>
-      <InlineNotice v-if="result" class="pricing-intervention__wide">{{ result }}</InlineNotice>
-      <UButton type="submit" :label="t('pricing.apply')" :disabled="busy || version === null || !draft.reason.trim()" :loading="busy" />
+    <form @submit.prevent="submit">
+      <fieldset class="pricing-intervention__form" :disabled="busy">
+        <UFormField :label="t('pricing.command')"><USelect v-model="draft.command" :items="commandItems" class="w-full" /></UFormField>
+        <UFormField :label="t('pricing.scope')"><USelect v-model="draft.scopeType" :items="scopeItems" class="w-full" /></UFormField>
+        <UFormField :label="t('pricing.scopeId')"><UInput v-model="draft.scopeId" :maxlength="256" class="w-full" /></UFormField>
+        <UFormField :label="t('pricing.hours')"><UInput v-model.number="draft.hours" type="number" :min="1" :max="168" class="w-full" /></UFormField>
+        <TxbAmountField v-if="draft.command === 'MANUAL_RATE'" id="manual-pricing-rate" v-model="draft.price" :label="t('pricing.manualRate')" min-minor="0" max-minor="1000000000000" required />
+        <UFormField v-if="draft.command === 'RESTORE_PRICE'" :label="t('pricing.priceVersion')"><UInput v-model="draft.priceVersion" class="w-full" /></UFormField>
+        <UFormField class="pricing-intervention__wide" :label="t('pricing.reason')" required><UTextarea v-model="draft.reason" :maxlength="1000" class="w-full" required /></UFormField>
+        <InlineNotice v-if="error" class="pricing-intervention__wide" tone="warning">{{ error }}</InlineNotice>
+        <InlineNotice v-if="result" class="pricing-intervention__wide">{{ result }}</InlineNotice>
+        <UButton type="submit" :label="t('pricing.apply')" :disabled="busy || version === null || !draft.reason.trim()" :loading="busy" />
+      </fieldset>
     </form>
   </section>
 </template>
 <style scoped>
 .pricing-intervention { padding: 1rem 0; border-top: 1px solid var(--line); }
 .pricing-intervention h3 { cursor: pointer; font-weight: 600; }
-.pricing-intervention__form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
+.pricing-intervention__form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin: 1rem 0 0; padding: 0; border: 0; min-width: 0; }
 .pricing-intervention__wide { grid-column: 1 / -1; }
 @media (max-width: 520px) { .pricing-intervention__form { grid-template-columns: 1fr; } }
 </style>

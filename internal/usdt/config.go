@@ -74,9 +74,12 @@ func ValidateConfig(c *Config) error {
 			n.Endpoints = []Endpoint{}
 		}
 		spec, ok := Network(n.Network)
-		if !ok || seen[n.Network] || len(n.Addresses) > 128 || len(n.Endpoints) > 8 {
+		if !ok || seen[spec.Network] || len(n.Addresses) > 128 || len(n.Endpoints) > 8 {
 			return ErrConfiguration
 		}
+		// Registry rail aliases identify the same network. Downstream currency
+		// switches, watchers and readiness all use its canonical network name.
+		n.Network = spec.Network
 		seen[n.Network] = true
 		if err := normalizeCurrencies(n, c.Mode); err != nil {
 			return err

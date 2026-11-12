@@ -62,5 +62,3 @@ func decodeTronReceipt(spec NetworkSpec, r tronReceipt, hash string, addresses [
 	}
 	return result, nil
 }
-
-func timeNowMinusThirty() int64 { return time.Now().UTC().Add(-30 * time.Second).Unix() }

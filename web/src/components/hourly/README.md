@@ -103,7 +103,10 @@ Pending receipts remain visible and block concurrent mutations. No financial
 state is persisted in browser storage and no client-side estimate authorizes use.
 
 `HourlyPage.test.ts` supplies hosted consent, disable and legacy-admission
-regressions. Copy belongs to `../../../locales/*/hourly.json`; all API methods and
+regressions. Approved extra rates and consent copy retain the exact native TXB
+amount even when the account prefers another display currency. `useHourly.test.ts`
+covers a late activation response after disposal: it must not restart receipt
+tracking or data refresh. Copy belongs to `../../../locales/*/hourly.json`; all API methods and
 decimal-string fields are declared in `../../api/hourly.ts`. The browser-admin
 editor is independent in `../admin/hourly` and uses no Telegram controls.
 

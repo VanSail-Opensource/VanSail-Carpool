@@ -22,3 +22,5 @@
 `DIYView.vue` is the thin authenticated `/settings/diy` member entry point.
 
 - `AdminPricingView.vue`: Thin browser-only route entry composing the modular pricing workspace.
+
+`AdminUserView.test.ts` verifies that changing the member route replaces the profile editor and its dialogs, keeping pending drafts scoped to one owner.

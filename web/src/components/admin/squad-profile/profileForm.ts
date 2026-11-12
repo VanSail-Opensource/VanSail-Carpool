@@ -35,8 +35,8 @@ export function draftFromProfile(profile: SquadProfile | null): ProfileDraft {
 }
 
 function normalizedPort(draft: ProfileDraft): number | null | undefined {
-  if (draft.unlimited) return null
-  if (!Number.isInteger(draft.portMbps) || (draft.portMbps ?? 0) < 1) return undefined
+  if (draft.type !== 'broadband' && draft.unlimited) return null
+  if (!Number.isSafeInteger(draft.portMbps) || (draft.portMbps ?? 0) < 1) return undefined
   return draft.portMbps
 }
 

@@ -29,6 +29,7 @@ func TestAdminOperationReplaySurvivesExpiredTargets(t *testing.T) {
 				return store.ReplaceAdminCombo(ctx, AdminComboReplacementInput{
 					ActorUserID: actor.ID, UserID: user.ID, ComboID: target.ID,
 					IdempotencyKey: "recover", RequestFingerprint: fingerprint, Reason: "service replacement",
+					AddonSquadUUIDs: []string{},
 				}, now)
 			}
 			first, err := command("original-request-fingerprint")

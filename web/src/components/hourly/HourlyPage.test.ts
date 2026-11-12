@@ -1,8 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { h, shallowRef } from 'vue'
 import { hourlyFixture } from '../../../fixtures/hourly-data'
 import { t } from '@/i18n'
+import { resetDisplayCurrency, setDisplayCurrency } from '@/utils/displayCurrency'
 import HourlyPage from './HourlyPage.vue'
 import HourlySummary from './HourlySummary.vue'
 import HourlySquadCard from './HourlySquadCard.vue'
@@ -25,6 +26,7 @@ function setup(query = '') {
   return mount(HourlyPage, { global: { stubs: { UButton: Button, ConfirmDialog: Confirm, SquadActivationDialog: Code, USwitch: true, StatusBadge: true, HourlyAllowanceGraph: { template: '<div />' }, SquadPricingCard: { template: '<article><slot name="status" /><slot name="price" /><slot /></article>' }, SquadProfileSummary: true, InlineNotice: { template: '<div><slot /></div>' }, OperationStatusNotice: { props: ['message'], template: '<p data-operation>{{ message }}</p>' } } } })
 }
 beforeEach(() => vi.clearAllMocks())
+afterEach(() => resetDisplayCurrency())
 
 describe('hourly consent and access controls', () => {
   it('shows a terminal refusal instead of promising an application that cannot complete', () => {
@@ -45,6 +47,17 @@ describe('hourly consent and access controls', () => {
     expect(state.extra).toHaveBeenCalledWith(true)
     wrapper.unmount()
   })
+  it('shows the native approved price even when the member prefers another currency', async () => {
+    setDisplayCurrency({ currency: 'USD', rates: { usdTxbPerUnit: '10', cnyTxbPerUnit: '2' } })
+    const wrapper = setup('active')
+    expect(wrapper.text()).toContain('1.25 TXB / GB')
+    wrapper.findComponent(HourlySummary).vm.$emit('extra', true)
+    await flushPromises()
+    expect(wrapper.get('[data-confirm]').text()).toContain('1.25 TXB')
+    expect(wrapper.get('[data-confirm]').text()).not.toContain('0.12 TXB')
+    wrapper.unmount()
+  })
+
   it('warns about the paid hour and exact cooldown before voluntary disable', async () => {
     const wrapper = setup('active')
     wrapper.findComponent(HourlySquadCard).vm.$emit('disable')
