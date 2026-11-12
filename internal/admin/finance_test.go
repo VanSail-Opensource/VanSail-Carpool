@@ -17,26 +17,26 @@ func TestAdminAdjustBalance(t *testing.T) {
 	}{{name: "zero", reason: "reason"}, {name: "blank reason", delta: 100, reason: " "}} {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			if _, err := newAdminServiceForTest(&adminCatalogRepository{}, nil, &adminSquadImporter{}, &adminBackupRunner{}, &adminRefunder{}).AdjustBalance(context.Background(), "admin", "user", test.delta, test.reason); err == nil {
-				t.Fatal("AdjustBalance() unexpectedly succeeded")
+			if _, err := newAdminServiceForTest(&adminCatalogRepository{}, nil, &adminSquadImporter{}, &adminBackupRunner{}, &adminRefunder{}).AdjustBalanceWithReference(context.Background(), "admin", "user", test.delta, "adjustment-key", test.reason); err == nil {
+				t.Fatal("AdjustBalanceWithReference() unexpectedly succeeded")
 			}
 		})
 	}
 
 	repository := &adminCatalogRepository{adjustedEntry: model.LedgerEntry{ID: "ledger-1"}}
 	service := newAdminServiceForTest(repository, nil, &adminSquadImporter{}, &adminBackupRunner{}, &adminRefunder{})
-	entry, err := service.AdjustBalance(context.Background(), "admin", "user", -250, " correction ")
-	if err != nil || entry.ID != "ledger-1" || repository.adjustReference == "" || repository.adjustDelta != -250 || repository.audits[0].action != "balance.adjust" {
-		t.Fatalf("AdjustBalance() = (%+v, %v), repo %+v", entry, err, repository)
+	entry, err := service.AdjustBalanceWithReference(context.Background(), "admin", "user", -250, "adjustment-key", " correction ")
+	if err != nil || entry.ID != "ledger-1" || repository.adjustReference != "adjustment-key" || repository.adjustDelta != -250 || repository.adjustActor != "admin" || repository.adjustUser != "user" || repository.adjustReason != "correction" {
+		t.Fatalf("AdjustBalanceWithReference() = (%+v, %v), repo %+v", entry, err, repository)
 	}
 	repository.adjustErr = errors.New("adjust failure")
-	if _, err := service.AdjustBalance(context.Background(), "admin", "user", 1, "reason"); err == nil {
-		t.Fatal("AdjustBalance() ignored repository failure")
+	if _, err := service.AdjustBalanceWithReference(context.Background(), "admin", "user", 1, "error-key", "reason"); err == nil {
+		t.Fatal("AdjustBalanceWithReference() ignored repository failure")
 	}
 	repository.adjustErr = nil
 	repository.auditErr = errors.New("audit failure")
-	if _, err := service.AdjustBalance(context.Background(), "admin", "user", 1, "reason"); err == nil {
-		t.Fatal("AdjustBalance() ignored audit failure")
+	if _, err := service.AdjustBalanceWithReference(context.Background(), "admin", "user", 1, "error-key", "reason"); err == nil {
+		t.Fatal("AdjustBalanceWithReference() ignored audit failure")
 	}
 }
 

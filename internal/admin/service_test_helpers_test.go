@@ -30,6 +30,9 @@ type adminCatalogRepository struct {
 	adjustedEntry     model.LedgerEntry
 	adjustDelta       int64
 	adjustReference   string
+	adjustActor       string
+	adjustUser        string
+	adjustReason      string
 	adjustErr         error
 	paymentOrder      model.PaymentOrder
 	paymentOrderErr   error
@@ -96,14 +99,22 @@ func (r *adminCatalogRepository) ListSquadProducts(context.Context, bool) ([]mod
 func (r *adminCatalogRepository) ListUsers(context.Context, int) ([]model.User, error) {
 	return nil, nil
 }
-func (r *adminCatalogRepository) AdjustBalance(_ context.Context, _ string, delta int64, reference, _ string, _ time.Time) (model.LedgerEntry, error) {
+func (r *adminCatalogRepository) AdjustAdminBalance(_ context.Context, actorID, userID string, delta int64, reference, reason string, _ time.Time) (model.LedgerEntry, error) {
+	r.adjustActor, r.adjustUser, r.adjustReason = actorID, userID, reason
 	r.adjustDelta, r.adjustReference = delta, reference
-	return r.adjustedEntry, r.adjustErr
+	if r.adjustErr != nil {
+		return model.LedgerEntry{}, r.adjustErr
+	}
+	return r.adjustedEntry, r.auditErr
 }
 
-func (r *adminCatalogRepository) DeductBalance(_ context.Context, _ string, amount int64, reference, _ string, _ time.Time) (model.LedgerEntry, error) {
+func (r *adminCatalogRepository) DeductAdminBalance(_ context.Context, actorID, userID string, amount int64, reference, reason string, _ time.Time) (model.LedgerEntry, error) {
+	r.adjustActor, r.adjustUser, r.adjustReason = actorID, userID, reason
 	r.adjustDelta, r.adjustReference = -amount, reference
-	return r.adjustedEntry, r.adjustErr
+	if r.adjustErr != nil {
+		return model.LedgerEntry{}, r.adjustErr
+	}
+	return r.adjustedEntry, r.auditErr
 }
 func (r *adminCatalogRepository) ListPaymentOrders(context.Context, string, int) ([]model.PaymentOrder, error) {
 	return nil, nil

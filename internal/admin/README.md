@@ -101,3 +101,9 @@ Administrator entitlement and restriction workers pass the panel owner to the
 native adapter. They do not skip native-only members or address native state by a
 historical proxy link. Temporary unban completion is bound to its operation ID,
 so an older delivery cannot release a later restriction on the same member.
+
+Balance commands require the actor-attributed atomic persistence interface and a
+caller-owned stable reference. Test-only random-reference entry points and the
+legacy non-atomic ledger/audit fallback are removed. `finance_test.go` and
+`zero_coverage_test.go` exercise the same reference-bound interface as HTTP and
+Telegram; database regressions verify immutable replay and atomic audit storage.

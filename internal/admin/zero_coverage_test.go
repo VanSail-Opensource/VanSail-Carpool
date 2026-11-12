@@ -25,30 +25,26 @@ func TestAdminDeductBalance(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			service := newAdminServiceForTest(&adminCatalogRepository{}, nil, &adminSquadImporter{}, &adminBackupRunner{}, &adminRefunder{})
-			if _, err := service.DeductBalance(context.Background(), "admin", "user", test.amount, test.reason); err == nil {
-				t.Fatal("DeductBalance() unexpectedly succeeded")
+			if _, err := service.DeductBalanceWithReference(context.Background(), "admin", "user", test.amount, "deduction-key", test.reason); err == nil {
+				t.Fatal("DeductBalanceWithReference() unexpectedly succeeded")
 			}
 		})
 	}
 
 	repository := &adminCatalogRepository{adjustedEntry: model.LedgerEntry{ID: "ledger-1"}}
 	service := newAdminServiceForTest(repository, nil, &adminSquadImporter{}, &adminBackupRunner{}, &adminRefunder{})
-	entry, err := service.DeductBalance(context.Background(), "admin", "user", 250, "renewal")
-	if err != nil || entry.ID != "ledger-1" || repository.adjustDelta != -250 || repository.adjustReference == "" {
-		t.Fatalf("DeductBalance() = (%+v, %v), repository = %+v", entry, err, repository)
+	entry, err := service.DeductBalanceWithReference(context.Background(), "admin", "user", 250, "deduction-key", " renewal ")
+	if err != nil || entry.ID != "ledger-1" || repository.adjustDelta != -250 || repository.adjustReference != "deduction-key" || repository.adjustActor != "admin" || repository.adjustUser != "user" || repository.adjustReason != "renewal" {
+		t.Fatalf("DeductBalanceWithReference() = (%+v, %v), repository = %+v", entry, err, repository)
 	}
-	if len(repository.audits) != 1 || repository.audits[0].action != "telegram.balance_deduct" {
-		t.Fatalf("DeductBalance() audit = %+v", repository.audits)
-	}
-
 	repository.adjustErr = errors.New("deduct failure")
-	if _, err := service.DeductBalance(context.Background(), "admin", "user", 1, "retry"); err == nil {
-		t.Fatal("DeductBalance() ignored repository failure")
+	if _, err := service.DeductBalanceWithReference(context.Background(), "admin", "user", 1, "error-key", "retry"); err == nil {
+		t.Fatal("DeductBalanceWithReference() ignored repository failure")
 	}
 	repository.adjustErr = nil
 	repository.auditErr = errors.New("audit failure")
-	if _, err := service.DeductBalance(context.Background(), "admin", "user", 1, "retry"); err == nil {
-		t.Fatal("DeductBalance() ignored audit failure")
+	if _, err := service.DeductBalanceWithReference(context.Background(), "admin", "user", 1, "error-key", "retry"); err == nil {
+		t.Fatal("DeductBalanceWithReference() ignored audit failure")
 	}
 }
 
