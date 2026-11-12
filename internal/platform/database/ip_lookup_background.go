@@ -28,9 +28,12 @@ func (s *Store) PendingIPLookupOperations(ctx context.Context) ([]string, error)
 
 // HeartbeatIPLookup preserves a live worker lease without rewriting report data.
 func (s *Store) HeartbeatIPLookup(ctx context.Context, id, owner string, now time.Time) error {
+	if owner == "" {
+		return ErrConflict
+	}
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_reports SET heartbeat_at=$1,lease_expires_at=$2 WHERE status='processing' AND lease_owner=$3 AND id=(SELECT report_id FROM ip_lookup_checks WHERE operation_id=$4)`, stamp(now), stamp(now.Add(time.Minute)), owner, id)
+	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_reports SET heartbeat_at=$1,lease_expires_at=$2 WHERE status='processing' AND lease_owner=$3 AND vansail_timestamp(lease_expires_at)>vansail_timestamp($1) AND id=(SELECT report_id FROM ip_lookup_checks WHERE operation_id=$4)`, stamp(now), stamp(now.Add(time.Minute)), owner, id)
 	if err != nil {
 		return err
 	}
@@ -52,6 +55,9 @@ func (s *Store) HeartbeatIPLookup(ctx context.Context, id, owner string, now tim
 
 // ClaimIPLookupLease admits only the oldest run, after every active run or repair.
 func (s *Store) ClaimIPLookupLease(ctx context.Context, id, owner string, now time.Time) (bool, error) {
+	if owner == "" {
+		return false, ErrConflict
+	}
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
 	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_reports SET lease_owner=$1,lease_expires_at=$2,heartbeat_at=$3

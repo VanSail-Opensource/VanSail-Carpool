@@ -67,7 +67,7 @@
     "remoteUpdatedAt": "X-Node 数据更新时间",
     "databaseUpdatedAt": "数据库数据更新时间",
     "provider": {
-      "builtin_usdt": "USDT ??",
+      "builtin_usdt": "稳定币",
       "ezpay": "EZPay",
       "bepusdt": "BEPusdt"
     },

@@ -25,9 +25,9 @@ func (s *Store) RetryOutboxJob(ctx context.Context, jobID string, now time.Time)
 	}
 }
 
-func (s *Store) DeleteOutboxJob(ctx context.Context, jobID string) error {
+func (s *Store) DeleteOutboxJob(ctx context.Context, jobID, actorID string) error {
 	for retryIndex := 0; ; retryIndex++ {
-		r0 := s.retryAttempt_DeleteOutboxJob(ctx, jobID)
+		r0 := s.retryAttempt_DeleteOutboxJob(ctx, jobID, actorID)
 		if !s.retryTransaction(ctx, r0, retryIndex) {
 			return r0
 		}

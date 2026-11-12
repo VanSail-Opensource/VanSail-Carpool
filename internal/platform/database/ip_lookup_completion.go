@@ -37,7 +37,8 @@ func (s *Store) SaveIPLookupProgress(ctx context.Context, report iplookup.Report
 	if err != nil {
 		return err
 	}
-	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_reports SET report_json=$1 WHERE id=$2 AND status='processing'`, string(raw), report.ID)
+	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_reports SET report_json=$1 WHERE id=$2 AND status='processing'
+		AND ((COALESCE(lease_owner,'')='' AND $3='') OR (lease_owner=$3 AND vansail_timestamp(lease_expires_at)>clock_timestamp()))`, string(raw), report.ID, iplookup.RunLeaseOwner(ctx))
 	if err != nil {
 		return err
 	}
@@ -63,11 +64,22 @@ func (s *Store) retryAttempt_FinishIPLookupRun(ctx context.Context, report iploo
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
+	status, stored, err := lockIPLookupRunTx(ctx, tx, report.ID)
+	if err != nil {
+		return err
+	}
+	if status != "processing" {
+		// A delayed caller may replay settlement, never its stale report contents.
+		report, err = iplookup.DecodeReport([]byte(stored))
+		if err != nil {
+			return err
+		}
+	}
 	liveStage, err := ipLiveStageTx(ctx, tx, report.ID)
 	if err != nil {
 		return err
 	}
-	if report.LiveDetails != nil && liveStage.Status != "succeeded" && liveStage.Status != "partial" {
+	if status == "processing" && report.LiveDetails != nil && liveStage.Status != "succeeded" && liveStage.Status != "partial" {
 		liveStage.Status, liveStage.Attempted = "succeeded", true
 		if iplookup.LivePartial(*report.LiveDetails) {
 			liveStage.Status = "partial"

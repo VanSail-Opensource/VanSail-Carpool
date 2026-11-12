@@ -87,23 +87,32 @@ func (s *Store) retryAttempt_RetryOutboxJob(ctx context.Context, jobID string, n
 	return tx.Commit()
 }
 
-// DeleteOutboxJob removes any job that is not currently leased by a worker.
+// DeleteOutboxJob removes an unleased job only when it is not required for
+// financial settlement, an unfinished command or restriction recovery.
 
-func (s *Store) retryAttempt_DeleteOutboxJob(ctx context.Context, jobID string) error {
-
+func (s *Store) retryAttempt_DeleteOutboxJob(ctx context.Context, jobID, actorID string) error {
+	if actorID == "" {
+		return ErrConflict
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
 	var kind, status string
-	if err := tx.QueryRowContext(ctx, `SELECT kind,status FROM outbox_jobs WHERE id=$1`, jobID).Scan(&kind, &status); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT kind,status FROM outbox_jobs WHERE id=$1 FOR UPDATE`, jobID).Scan(&kind, &status); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrNotFound
 		}
 		return err
 	}
 	if status == "processing" {
+		return ErrConflict
+	}
+	now := time.Now().UTC()
+	if required, err := outboxDeletionRequiresRecoveryTx(ctx, tx, jobID, now); err != nil {
+		return err
+	} else if required {
 		return ErrConflict
 	}
 	result, err := tx.ExecContext(ctx, `DELETE FROM outbox_jobs WHERE id=$1 AND status<>'processing'`, jobID)
@@ -114,6 +123,9 @@ func (s *Store) retryAttempt_DeleteOutboxJob(ctx context.Context, jobID string) 
 		return fmt.Errorf("inspect deleted outbox job: %w", rowsErr)
 	} else if affected == 0 {
 		return ErrConflict
+	}
+	if err := auditOutboxDeletionTx(ctx, tx, actorID, jobID, kind, status, now); err != nil {
+		return err
 	}
 	return tx.Commit()
 }

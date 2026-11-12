@@ -94,7 +94,7 @@
     "discoveryHint": "BEPUSDT channels are discovered automatically. Saving an enabled profile verifies its current currencies and networks.",
     "delete": "Delete payment profile",
     "deleteTitle": "Delete {name}?",
-    "deleteDescription": "This removes the provider account. Profiles with creating or pending payment orders cannot be deleted.",
+    "deleteDescription": "Profiles linked to retained payment orders cannot be deleted. Create a replacement profile and disable the old one instead.",
     "deleteConfirm": "Delete profile",
     "deleted": "Payment profile deleted.",
     "channelNames": {

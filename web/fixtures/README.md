@@ -210,7 +210,8 @@ full-width community layout with `locked`, `joined`, `slow` and `error` states.
 - `interaction-feedback.ts` installs the real delegated click listener against a constructed Telegram SDK, records haptic/closing/swipe calls and disposes the listener on page exit. It stays inactive for browser administration. The lucky fixture exposes `__audit.feedback`; add `bet`, `loss` or `zh` for the actual bet flow and bilingual controls. `slow`, `empty` and `error` cover initial states; set `__audit.loadFailure=false` before retrying a read failure. `__audit.failNext` injects a result failure. One bet tap records `impact:rigid`, then one `notification:success|warning`; it must not record another result-time impact.
 - `LuckyAdminAudit.vue`, `lucky-admin-audit.ts`, and `lucky-admin-audit.html` mount the browser admin activity panel with a constructed game, instant draw, raffle, catalog, and forecast data. Query parameters `slow`, `empty`, `error`, `zh` and `dark` exercise loading, failure, localization and appearance. Game/draw removal is mocked; `delete-error` preserves the target on failure, and setting `window.__audit.recover=true` permits retry. `window.__audit.deletes` records attempts without contacting a backend. The retained-game dialog uses the real shared confirmation component.
 
-These files are for local visual audits. The production Vite build starts from the root `index.html` and does not include this page.
+These files are for local visual audits. The production Vite build starts from
+the root `index.html`, `admin.html` and `subscription.html` and excludes fixtures.
 
 - `activity-boost-audit.ts` mounts the real activity page with controllable constructed boost, loading, error, reward and check-in states for Chrome DevTools MCP validation. Exposes `window.__boostAudit` and a locale switch for manual inspection.
 - `activity-boost-audit.html` opens that fixture directly, including the zero-boost
@@ -277,9 +278,11 @@ routing and browser preset forms with isolated mock APIs. Flags `admin`, `zh`,
 `preview-error`, `stale-preview`, `poll-error` and `disabled` cover UI states.
 `window.__routingAudit` records writes, previews and member operation polling.
 `load-timeout`, `preview-timeout` and `save-timeout` retain the real API deadline
-wrapper for that call; Chrome may construct a stalled fetch to inspect timeout
-errors and retained drafts without a backend. Initial-load timeout retries use
-the normal fixture data.
+wrapper for that call. A local fetch interceptor stalls those routing requests
+until their cancellation signal fires, so even the save case cannot reach a
+configured backend. This exercises timeout errors and retained drafts without
+requiring manual network interception. Initial-load timeout retries use the
+normal fixture data.
 
 `stablecoin-audit.ts` and `stablecoin-audit.html` mount actual token settings, review dismissal and selected-payment credit dialogs with constructed data. Flags `credit`, `zh`, `dark`, `slow`, `empty`, `error`, `save-error` and `action-error` cover both outcomes, failed loads/saves and retry. `window.__stablecoinAudit` records requests; it never contacts a chain.
 

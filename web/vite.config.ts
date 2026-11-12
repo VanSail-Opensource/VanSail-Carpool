@@ -60,7 +60,7 @@ function validateLocaleParity(): void {
       .sort()
       .reduce<Record<string, unknown>>((messages, file) => ({
         ...messages,
-        ...JSON.parse(readFileSync(new URL(file, directory), 'utf8')) as Record<string, unknown>,
+        [file]: JSON.parse(readFileSync(new URL(file, directory), 'utf8')) as Record<string, unknown>,
       }), {})
   }
   const english = new Set(localeLeafKeys(read('en')))

@@ -29,8 +29,17 @@ func (a *Application) Run(ctx context.Context) error {
 			return err
 		}
 	}
+	// Attach the durable lease path before the outbox can dispatch an existing
+	// lookup. The synchronous fallback is only for integrations without runtime
+	// ownership, never an application startup window.
+	if a.ipLookup != nil {
+		a.ipLookup.StartBackground(runCtx, a.upstreams.iplookup["checks"])
+	}
 	if err := a.outbox.Start(runCtx, func(err error) { a.logger.Error("outbox attempt failed", "error", err) }); err != nil {
 		cancelRun()
+		if a.ipLookup != nil {
+			a.ipLookup.WaitBackground()
+		}
 		if a.xnodeMaster != nil {
 			_ = a.xnodeMaster.Shutdown(context.Background())
 		}
@@ -41,9 +50,6 @@ func (a *Application) Run(ctx context.Context) error {
 	profileCtx, cancelProfiles := context.WithTimeout(runCtx, 5*time.Minute)
 	if a.usdt != nil {
 		a.usdt.Start(runCtx)
-	}
-	if a.ipLookup != nil {
-		a.ipLookup.StartBackground(runCtx, a.upstreams.iplookup["checks"])
 	}
 	if err := a.paymentProfiles.RefreshAll(profileCtx); err != nil && !errors.Is(err, context.Canceled) {
 		a.logger.Error("BEPUSDT payment profile refresh was partial", "error", err)

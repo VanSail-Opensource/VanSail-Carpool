@@ -47,6 +47,8 @@ func pruneFailedSynchronizationJobsTx(ctx context.Context, tx *sql.Tx, now time.
 	// existing live-combo recovery can transfer that exact payload to a new job;
 	// otherwise only a settled receipt permits removing its continuation.
 	count, err := deleteCount(ctx, tx, `DELETE FROM outbox_jobs job WHERE id IN (SELECT id FROM maintenance_failed_sync_jobs)
+ AND NOT `+requiredRestrictionExpiryJob+`
+ AND NOT `+requiredLegacyProvisionJob+`
  AND (job.kind<>'provider_operation' OR EXISTS(SELECT 1 FROM provider_operations operation
  WHERE operation.id=job.payload::jsonb->>'operationId' AND (`+settledProviderOperation+`
  OR (`+liveComboControlPredicate(1)+` AND EXISTS(SELECT 1 FROM outbox_jobs replacement

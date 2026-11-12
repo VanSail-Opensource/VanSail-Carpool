@@ -19,6 +19,20 @@ import { installDIYAudit } from './diy-audit'
 const params = new URLSearchParams(location.search)
 const liveRouting = xnodeMemberApi.routing, livePreview = xnodeMemberApi.previewRouting
 const liveSave = xnodeMemberApi.saveRouting
+// Timeout scenarios retain the real signing/deadline wrapper, but transport
+// must never reach a configured backend, including for the PUT scenario.
+const originalFetch = window.fetch.bind(window)
+window.fetch = async (input, init) => {
+  const url = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url, location.origin)
+  if (url.origin !== location.origin || !/^\/api\/v1\/xnode\/routing(?:\/preview)?$/.test(url.pathname)) return originalFetch(input, init)
+  const signal = init?.signal ?? (input instanceof Request ? input.signal : undefined)
+  if (!signal) throw new Error('Constructed timeout requires a cancellable request')
+  return new Promise<Response>((_resolve, reject) => {
+    const abort = () => reject(signal.reason ?? new DOMException('Aborted', 'AbortError'))
+    if (signal.aborted) abort()
+    else signal.addEventListener('abort', abort, { once: true })
+  })
+}
 setExperience(params.has('admin') ? 'browser' : 'miniapp')
 if (params.has('admin')) { await import('@/browser/styles.css'); initializeBrowserTheme() }
 else { await import('@/styles/main.css') }

@@ -1,5 +1,17 @@
 # Application store
 
+`outbox_deletion.go` protects unfinished financial commands, explicit cleanup
+lanes, live retry targets, legacy paid Emby setup and restriction expiry jobs.
+Eligible deletion and its redacted actor audit commit together; failed expiry
+delivery never proves restoration. `outbox_deletion_test.go` and
+`outbox_expiry_retention_test.go` cover manual deletion, maintenance, exact
+receipt replay, legacy provisioning and atomic audit rollback.
+
+`ip_lookup_lease.go` locks paid lookup reports and validates the current execution
+owner and lease expiry before progress, live evidence or financial completion.
+`ip_lookup_lease_test.go` covers expiry without takeover, replacement owners,
+missing context fences, stale snapshots/refunds and safe terminal replay.
+
 Payment-profile mutations and their audit records commit in one serializable
 transaction. `payment_profile_evidence.go` shares profile locks with order
 admission and preserves provider identity/credentials while any retained order

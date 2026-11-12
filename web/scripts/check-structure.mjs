@@ -2,6 +2,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { dirname, extname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
+import { inspectLocaleDomains } from './locale-domains.mjs'
 const workspace = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const failures = []
 const ignored = new Set([
@@ -81,12 +82,13 @@ function readLocale(locale, domains) {
   for (const domain of domains) {
     const path = resolve(workspace, `web/locales/${locale}/${domain}.json`)
     if (!existsSync(path)) failures.push(`${pathLabel(path)} is missing`)
-    else Object.assign(messages, JSON.parse(readFileSync(path, 'utf8')))
+    else messages[domain] = JSON.parse(readFileSync(path, 'utf8'))
   }
   return flatten(messages)
 }
 function checkLocales() {
   const manifest = JSON.parse(readFileSync(resolve(workspace, 'web/locales/manifest.json'), 'utf8'))
+  failures.push(...inspectLocaleDomains(resolve(workspace, 'web/locales'), manifest))
   const [primary, ...translations] = manifest.locales
   const expected = readLocale(primary, manifest.domains)
   for (const locale of translations) {

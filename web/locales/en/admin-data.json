@@ -74,7 +74,7 @@
     "create": "Create backup",
     "maintenance": "Run maintenance",
     "maintenanceTitle": "Run maintenance now?",
-    "maintenanceDescription": "A verified backup will be created first, then database records and migration snapshots older than seven days will be removed. You can run this again on the same day.",
+    "maintenanceDescription": "A verified backup is created first. Maintenance then removes eligible expired operational records while retaining financial and recovery evidence. You can run this again on the same day.",
     "maintenanceConfirm": "Run maintenance",
     "maintenanceQueued": "Maintenance is queued. Backups and jobs will refresh after it completes.",
     "maintenanceSucceeded": "Maintenance completed. Backups and jobs have been refreshed.",
@@ -104,7 +104,7 @@
     "noJobs": "No synchronization jobs",
     "noJobsHint": "Scheduled work and retries will appear here.",
     "deleteJobTitle": "Delete synchronization job?",
-    "deleteJobDescription": "Successful work is removed automatically. Pending, failed, and legacy completed work may be removed manually; a currently processing job remains protected.",
+    "deleteJobDescription": "Delete only an eligible job that no longer needs retry or recovery. A job currently being processed cannot be removed.",
     "deleteJob": "Delete job"
   },
   "databaseRecord": {

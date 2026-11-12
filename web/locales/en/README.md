@@ -23,9 +23,9 @@ in parity with the matching `zh-CN` file and preserve `{placeholder}` names.
 - `admin-onboarding.json` contains visual onboarding-editor copy.
 - `admin-data.json` contains database editor and backup-management copy.
 - `admin-operations.json` contains settings, audit, payment, and entitlement copy.
-- `admin-workflows.json` contains aggregate user profiles, bulk extensions, operation resolution, and backup-upload copy.
+- `admin-workflows.json` contains aggregate user profiles, bulk extensions, and operation resolution copy.
 - `commerce.json` contains funding, payment, catalog, and checkout copy.
-- `connections.json` contains member scan, block, expiry, and unblock copy.
+- `connections.json` contains member IP observations, expiry, and exact-address grants.
 - `core.json` contains application, navigation, status, and shared action copy.
 - `home.json` contains member Home traffic, UTC range, term, and reset labels.
 - `member.json` contains dashboard, onboarding, account, and Emby member copy.
@@ -45,8 +45,6 @@ in parity with the matching `zh-CN` file and preserve `{placeholder}` names.
 - `admin-usdt.json` ? English built-in USDT configuration, status and review copy.
 
 `xnode.json` owns node enrollment, shared policy, Xray/snippet editing and live metrics.
-
-- `xnode-migration.json` provides localized migration status, source setup and recovery guidance.
 
 - `public-subscription.json` provides public bearer subscription, format and import guidance.
 

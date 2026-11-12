@@ -26,6 +26,9 @@ func (s *Store) retryAttempt_ClaimIPLookupLiveStage(ctx context.Context, id stri
 		return iplookup.LiveStage{}, false, err
 	}
 	defer func() { _ = tx.Rollback() }()
+	if err := lockIPLookupProcessingRunTx(ctx, tx, id); err != nil {
+		return iplookup.LiveStage{}, false, err
+	}
 	stage, err := ipLiveStageTx(ctx, tx, id)
 	if err != nil {
 		return stage, false, err
@@ -54,7 +57,14 @@ func saveLiveStageTx(ctx context.Context, tx *sql.Tx, id string, stage iplookup.
 	if err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `UPDATE ip_lookup_reports SET live_state_json=$1 WHERE id=$2 AND status='processing'`, string(raw), id)
+	result, err := tx.ExecContext(ctx, `UPDATE ip_lookup_reports SET live_state_json=$1 WHERE id=$2 AND status='processing'`, string(raw), id)
+	if err != nil {
+		return err
+	}
+	n, err := result.RowsAffected()
+	if err == nil && n != 1 {
+		return ErrConflict
+	}
 	return err
 }
 
@@ -62,7 +72,8 @@ func saveLiveStageTx(ctx context.Context, tx *sql.Tx, id string, stage iplookup.
 func (s *Store) MarkIPLookupLiveAttempt(ctx context.Context, id string) error {
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_reports SET live_state_json=jsonb_set((live_state_json)::jsonb,'{attempted}',('true')::jsonb,true)::text WHERE id=$1 AND status='processing' AND (CASE ((live_state_json)::jsonb #> '{status}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (live_state_json)::jsonb #>> '{status}' END)='processing'`, id)
+	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_reports SET live_state_json=jsonb_set((live_state_json)::jsonb,'{attempted}',('true')::jsonb,true)::text WHERE id=$1 AND status='processing' AND (CASE ((live_state_json)::jsonb #> '{status}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (live_state_json)::jsonb #>> '{status}' END)='processing'
+		AND ((COALESCE(lease_owner,'')='' AND $2='') OR (lease_owner=$2 AND vansail_timestamp(lease_expires_at)>clock_timestamp()))`, id, iplookup.RunLeaseOwner(ctx))
 	if err != nil {
 		return err
 	}
@@ -81,6 +92,9 @@ func (s *Store) retryAttempt_FinishIPLookupLiveStage(ctx context.Context, id str
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
+	if err := lockIPLookupProcessingRunTx(ctx, tx, id); err != nil {
+		return err
+	}
 	previous, err := ipLiveStageTx(ctx, tx, id)
 	if err != nil {
 		return err

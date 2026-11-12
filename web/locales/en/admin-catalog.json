@@ -1,7 +1,7 @@
 {
   "adminCatalog": {
     "title": "Catalog",
-    "copy": "Manage live fixed-term plan terms and sparse overrides for upstream X-Node squads.",
+    "copy": "Manage retained fixed-term plan terms and sparse overrides for upstream X-Node squads.",
     "chooseRecord": "Choose a catalog record.",
     "newCombo": "New fixed-term plan",
     "comboSummary": "{traffic} for {days} days",
@@ -20,7 +20,7 @@
     "noSquads": "No upstream squads",
     "noSquadsHint": "Refresh from X-Node to configure optional access.",
     "hideTitle": "Hide this fixed-term plan?",
-    "hideDescription": "The fixed-term plan is hidden from new checkout. Existing and historical purchases keep their live reference, so later edits still affect them.",
+    "hideDescription": "This plan will no longer be selectable for new administrator grants. Existing purchases and their renewal eligibility are retained.",
     "hideCombo": "Hide fixed-term plan"
   },
   "adminCatalogEditor": {
@@ -44,8 +44,8 @@
     },
     "includedSquads": "Included live squads",
     "noSquads": "Refresh X-Node squads before assigning them.",
-    "available": "Available to users",
-    "liveTermsHint": "Hiding blocks new checkout. Changes to this live record affect active, queued, and historical purchases.",
+    "available": "Available for new grants",
+    "liveTermsHint": "Hiding prevents new administrator grants. Existing purchases keep their live plan reference and remain eligible for renewal.",
     "save": "Save fixed-term plan",
     "invalidFields": "Check the name, price, traffic, quotas and validity before saving."
   }

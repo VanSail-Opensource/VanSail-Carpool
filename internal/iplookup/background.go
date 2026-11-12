@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
@@ -24,19 +23,11 @@ type backgroundRuntime struct {
 	work     sync.WaitGroup
 	done     chan struct{}
 	stopping bool
-	owner    string
 }
 
 // StartBackground attaches durable lookups to the application, never a browser request.
 func (w *Worker) StartBackground(ctx context.Context, queue *upstreamqueue.Queue) {
-	owner, err := ids.New()
-	if err != nil {
-		if w.OnBackgroundError != nil {
-			w.OnBackgroundError("IP_LOOKUP_FAILED")
-		}
-		return
-	}
-	b := &backgroundRuntime{ctx: ctx, queue: queue, active: map[string]bool{}, done: make(chan struct{}), owner: owner}
+	b := &backgroundRuntime{ctx: ctx, queue: queue, active: map[string]bool{}, done: make(chan struct{})}
 	w.background = b
 	go func() {
 		defer close(b.done)

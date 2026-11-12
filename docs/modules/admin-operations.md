@@ -38,8 +38,8 @@ Readiness checks required settings, enabled-provider completeness, and at least 
 - Entitlement cancellation and payment refund append durable compensating commands; they never mutate provider state first and hope persistence follows.
 - A terminal failed/expired payment may receive one locally funded courtesy credit only with a 3-500 byte reason. Its ledger entry, dedicated idempotency record, and audit event commit together; it never changes the original order to provider-paid or calls a provider.
 - Activity games/draws, coupons/imports, and Emby retries use their module services so validation, transactions, and idempotency remain centralized.
-- Job retry is allowed only for an eligible failed job and cannot change kind or typed payload. Successful jobs are removed at completion; pending, failed, and legacy done jobs may be deleted, while processing jobs return `409`.
-- Every audit insertion transactionally retains the newest 200 events. Sensitive values are redacted before persistence.
+- Job retry is allowed only for an eligible failed job and cannot change kind or typed payload. Successful jobs are removed at completion. Manual deletion rejects processing jobs, unfinished provider commands, live retry targets, unresolved legacy Emby setup, required restriction expiry and unfinished financial/account-cleanup lanes with `409`. Resolve or retry the underlying work first. Eligible deletion and a sanitized `outbox.delete` actor audit commit together; receipts remain available for exact replay.
+- Audit events are retained durably; the bounded administrator list is a page of that history. Sensitive values are redacted before persistence.
 
 Payment profiles are durable records per provider account. EZPay and BEPusdt
 may each have multiple independent profiles, with separate endpoint,
@@ -47,7 +47,7 @@ encrypted credential, provider name, acknowledgement, and channel selection.
 The member method list uses each profile's stable ID so channels from accounts
 with the same provider remain independently selectable.
 
-## Read-only database catalog
+## Guarded database recovery editor
 
 The administrator can inspect allowlisted PostgreSQL tables and typed, redacted
 record pages. Native server catalogs supply validated table/column identifiers
@@ -56,9 +56,11 @@ values are sealed and bind the filter fingerprint; pages remain bounded.
 
 Wire values preserve exact decimal-string integers/numerics and typed booleans,
 nulls and base64 binary values. Sensitive fields are masked and excluded from
-broad search. Generic mutations return a read-only error before creating any
-review or backup. Domain APIs own changes to credentials, finance and desired
-state, preserving their transaction and synchronization contracts.
+broad search. Protected tables reject generic mutations. Eligible recovery edits
+require an exact one-use review, a reason, explicit table/action confirmation,
+a verified rescue backup and an unchanged record fingerprint. Mutation, review
+consumption and actor audit commit together. Direct edits bypass domain hooks;
+use the domain APIs for ordinary credential, financial and desired-state work.
 
 ## PostgreSQL archive administration
 
@@ -78,7 +80,7 @@ All failures use the request-ID envelope. Unauthorized responses do not reveal t
 
 - Authorization tests cover missing/expired sessions, non-admin identity, forged roles, exact administrator ID, and bootstrap setup.
 - Settings tests cover human-major TXB conversion, ordered rail validation, write-only secret rotation, nonce uniqueness, and redacted audits.
-- Database tests cover identifier injection, declared/composite-key cursors, exact large values, typed null/boolean/binary transport, sensitive masking and mutation refusal without side effects.
+- Database tests cover identifier injection, declared/composite-key cursors, exact large values, typed null/boolean/binary transport, sensitive masking, protected-table refusal and guarded mutation/replay boundaries.
 - Hosted recovery checks cover restricted-role exports, isolated logical/physical restoration, PITR, exact table/sequence fingerprints and encryption invariants.
 
 ## Aggregate user workflows
@@ -143,7 +145,7 @@ an `OperationReceipt`.
 
 Bulk extension filters use inclusive OR across combo IDs and add-on squad UUIDs.
 Only currently active purchases qualify, each user is targeted once, and every
-queued successor shifts by the same calendar-day count at both boundaries so
+queued successor shifts by the same extension duration at both boundaries so
 its duration remains unchanged. The preview and job use the same target query.
 
 The shared provider-operation worker records operation and item intent before

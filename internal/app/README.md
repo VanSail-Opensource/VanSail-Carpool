@@ -86,7 +86,7 @@ waits for the scheduler and provider workers to finish before returning.
 - `payment_refund_adapter.go` reconciles ambiguous Telegram Stars refunds from authoritative transaction history.
 - `payment_refund_adapter_test.go` checks exact charge, amount, owner, direction and later-page proof before a local Stars refund is accepted.
 - `stars_test_helpers_test.go` supplies a queued Telegram history endpoint for refund and reconciliation regressions.
-- `application_lifecycle.go` starts and stops provider queues, the scheduler, HTTP serving, and database resources in dependency order.
+- `application_lifecycle.go` starts and stops provider queues, the scheduler, HTTP serving, and database resources in dependency order. It attaches the IP lookup lease runtime before outbox dispatch and joins that runtime on startup failure.
 - Startup upload reconciliation receives an independent ten-minute context so a large verified candidate is not truncated by the ordinary bootstrap deadline.
 - `provider_queues.go` configures, starts, and shuts down the independent X-Node and Emby admission queues.
 - `adapters.go` implements Telegram identity/membership and payment-provider bridges used by domain services.

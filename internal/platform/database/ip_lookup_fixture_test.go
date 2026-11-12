@@ -56,7 +56,11 @@ func submitIP(t *testing.T, service *iplookup.Service, user, key string, refresh
 
 func finishIP(t *testing.T, store *Store, operationID string, failed bool) iplookup.Report {
 	t.Helper()
-	ctx := context.Background()
+	return finishIPWithContext(t, context.Background(), store, operationID, failed)
+}
+
+func finishIPWithContext(t *testing.T, ctx context.Context, store *Store, operationID string, failed bool) iplookup.Report {
+	t.Helper()
 	r, _, err := store.IPLookupRun(ctx, operationID)
 	if err != nil {
 		t.Fatal(err)

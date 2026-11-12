@@ -47,7 +47,7 @@ func TestIPLookupGlobalAdmissionIsFIFOAcrossOwners(t *testing.T) {
 	if err != nil || check.Operation.Status != "queued" || check.Progress.Phase != "queued" {
 		t.Fatalf("waiting check attempted: %+v %v", check, err)
 	}
-	finishIP(t, store, first.ID, false)
+	finishIPWithContext(t, iplookup.WithRunLease(ctx, "recovery"), store, first.ID, false)
 	if claimed, err := peer.ClaimIPLookupLease(ctx, second.ID, "later", now.Add(62*time.Second)); err != nil || !claimed {
 		t.Fatalf("next report not admitted: %v %v", claimed, err)
 	}
