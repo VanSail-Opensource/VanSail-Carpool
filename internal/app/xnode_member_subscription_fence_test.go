@@ -97,3 +97,20 @@ func TestMemberSubscriptionURLFailureDiscardsProjection(t *testing.T) {
 		t.Fatalf("failed URL returned a partial subscription: view=%+v, err=%v", view, err)
 	}
 }
+
+func TestMemberSubscriptionRetriesFirstSyncProofGainWithOriginalLinkIntent(t *testing.T) {
+	f, repository, provider := newSubscriptionReadFixture(t)
+	ctx := context.Background()
+	if _, err := f.store.DB().ExecContext(ctx, `UPDATE xnode_identities SET first_synced_at=NULL WHERE user_id=$1`, f.user.ID); err != nil {
+		t.Fatal(err)
+	}
+	repository.afterEndpoints = func(ctx context.Context) error {
+		_, err := f.store.DB().ExecContext(ctx, `UPDATE xnode_identities SET first_synced_at=$1 WHERE user_id=$2`,
+			time.Now().UTC().Format(time.RFC3339Nano), f.user.ID)
+		return err
+	}
+	view, err := provider.LoadUnifiedSubscription(ctx, f.user, true)
+	if err != nil || repository.mutations != 1 || !view.Ready || view.SubscriptionURL == nil || *view.SubscriptionURL == "" {
+		t.Fatalf("first-sync recovery lost requested links: view=%+v err=%v mutations=%d", view, err, repository.mutations)
+	}
+}

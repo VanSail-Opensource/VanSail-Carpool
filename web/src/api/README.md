@@ -98,3 +98,11 @@ receipt authentication and error recovery, and required response descriptions.
 `embyConnection.ts` uses generated OpenAPI types for the atomic write-only administrator connection resource. It sends both fields and the expected version together; no credentials appear in read responses.
 
 `hourly.ts` uses generated OpenAPI schemas for owner-only hourly enrollment, explicit extra-credit consent, and independent browser administrator policy/offer CAS requests. Large integer units remain decimal strings.
+
+`xnodeMember.test.ts` covers cookie-free public bearer reads, status-preserving
+errors without session-expiry events, caller cancellation and the 30-second
+transport/body deadline. Public reads never enter the signed session transport.
+
+Public metadata uses `contracts/responses.ts` before returning any 2xx body.
+Malformed required shapes become a retryable read failure without entering Vue
+state; validation stores neither bearer tokens nor response payloads.

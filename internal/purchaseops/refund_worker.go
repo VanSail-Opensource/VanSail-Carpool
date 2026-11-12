@@ -74,6 +74,9 @@ func (w *Worker) handleRefund(ctx context.Context, operation providerops.Operati
 	if err != nil {
 		return w.complete(ctx, operation, item, providerops.StatusPendingReview, "REFUND_USAGE_RECHECK_FAILED")
 	}
+	if !state.Quiesced {
+		return w.complete(ctx, operation, item, providerops.StatusPendingReview, "REFUND_QUIESCE_AMBIGUOUS")
+	}
 	return w.finishQuiescedRefund(ctx, operation, item, facts, remoteID, state.UsedTrafficBytes)
 }
 

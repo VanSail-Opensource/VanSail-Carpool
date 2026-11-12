@@ -62,5 +62,5 @@ func (s *Service) exportPostgres(ctx context.Context, temporary, final string) e
 		os.Remove(temporary)
 		return fmt.Errorf("PostgreSQL archive verification failed")
 	}
-	return os.Rename(temporary, final)
+	return publishArchive(temporary, final, syncArchiveDirectory)
 }

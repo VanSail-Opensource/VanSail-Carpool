@@ -1,5 +1,7 @@
 import type { components } from './generated'
-import { request } from './http'
+import { ApiError, request } from './http'
+import { withRequestDeadline } from './requestDeadline'
+import { isResponseCompatible } from './contracts/responses'
 
 type Schema = components['schemas']
 export type XNodeSubscription = Schema['XNodeSubscription']
@@ -34,7 +36,15 @@ export const xnodeMemberApi = {
 
 // Public bearer pages do not send a browser/Mini App session or request signature.
 export async function publicSubscriptionMetadata(token: string, signal?: AbortSignal): Promise<XNodeSubscription> {
-  const response = await fetch(`/api/v1/subscriptions/${encodeURIComponent(token)}/metadata`, { credentials: 'omit', cache: 'no-store', signal, headers: { Accept: 'application/json' } })
-  if (!response.ok) throw new Error('SUBSCRIPTION_UNAVAILABLE')
-  return await response.json() as XNodeSubscription
+  const path = `/api/v1/subscriptions/${encodeURIComponent(token)}/metadata`
+  return withRequestDeadline(30_000, signal, async (requestSignal) => {
+    const response = await fetch(path, {
+      credentials: 'omit', cache: 'no-store', signal: requestSignal, headers: { Accept: 'application/json' },
+    })
+    // Preserve status for bearer recovery without invoking session-expiry events.
+    if (!response.ok) throw new ApiError(response.status, { code: 'SUBSCRIPTION_UNAVAILABLE', message: 'SUBSCRIPTION_UNAVAILABLE' })
+    const payload: unknown = await response.json()
+    if (!isResponseCompatible(path, 'GET', payload)) throw new ApiError(502, { code: 'SUBSCRIPTION_UNAVAILABLE', message: 'SUBSCRIPTION_UNAVAILABLE' })
+    return payload as XNodeSubscription
+  })
 }

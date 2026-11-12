@@ -72,9 +72,9 @@ func TestLiveComboControlUsesInstantsAtFractionalBoundaries(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, test := range []struct {
-		name             string
-		from, until, at  time.Time
-		want             bool
+		name            string
+		from, until, at time.Time
+		want            bool
 	}{
 		{name: "future fractional start", from: now.Add(500 * time.Millisecond), until: now.Add(time.Hour), at: now},
 		{name: "future fractional expiry", from: now.Add(-time.Hour), until: now.Add(500 * time.Millisecond), at: now, want: true},

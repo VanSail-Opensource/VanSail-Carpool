@@ -3,27 +3,20 @@ package xnode
 import "context"
 
 func (s *Service) subscriptionMetadata(ctx context.Context, identity Identity) (SubscriptionMetadata, error) {
-	fence, err := s.BeginSubscriptionRead(ctx, identity)
-	if err != nil {
-		return SubscriptionMetadata{}, err
-	}
-	result, readErr := s.readSubscriptionMetadata(ctx, identity)
-	if err = s.CheckSubscriptionRead(ctx, fence); err != nil {
-		return SubscriptionMetadata{}, err
-	}
-	return result, readErr
+	return ReadSubscription(ctx, s, identity, func(current Identity) (SubscriptionMetadata, error) {
+		return s.readSubscriptionMetadata(ctx, current)
+	})
 }
 
 func (s *Service) serviceSubscriptionMetadata(ctx context.Context, identity Identity) (SubscriptionMetadata, error) {
-	fence, err := s.BeginSubscriptionRead(ctx, identity)
-	if err != nil {
-		return SubscriptionMetadata{}, err
-	}
-	result, readErr := s.readServiceSubscriptionMetadata(ctx, identity)
-	if err = s.CheckSubscriptionRead(ctx, fence); err != nil {
-		return SubscriptionMetadata{}, err
-	}
-	return result, readErr
+	return ReadSubscription(ctx, s, identity, func(current Identity) (SubscriptionMetadata, error) {
+		return s.readServiceSubscriptionMetadata(ctx, current)
+	})
+}
+
+type subscriptionPublication struct {
+	raw      []byte
+	metadata SubscriptionMetadata
 }
 
 func (s *Service) BearerSubscriptionForAgent(ctx context.Context, token, explicit, agent string) ([]byte, SubscriptionMetadata, error) {
@@ -31,13 +24,11 @@ func (s *Service) BearerSubscriptionForAgent(ctx context.Context, token, explici
 	if err != nil {
 		return nil, SubscriptionMetadata{}, err
 	}
-	fence, err := s.BeginSubscriptionRead(ctx, identity)
-	if err != nil {
-		return nil, SubscriptionMetadata{}, err
-	}
-	raw, metadata, readErr := s.readBearerSubscriptionForAgent(ctx, identity, explicit, agent)
-	if err = s.CheckSubscriptionRead(ctx, fence); err != nil {
-		return nil, SubscriptionMetadata{}, err
-	}
-	return raw, metadata, readErr
+	// Every retry retains the original token hash/cipher in the identity anchor.
+	// It cannot follow a revoked bearer into a replacement token or lifecycle.
+	result, err := ReadSubscription(ctx, s, identity, func(current Identity) (subscriptionPublication, error) {
+		raw, metadata, err := s.readBearerSubscriptionForAgent(ctx, current, explicit, agent)
+		return subscriptionPublication{raw: raw, metadata: metadata}, err
+	})
+	return result.raw, result.metadata, err
 }

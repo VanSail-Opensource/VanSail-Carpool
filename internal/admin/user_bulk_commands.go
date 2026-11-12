@@ -7,6 +7,7 @@ import (
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
 const MaxExtensionMinutes = 3650 * 24 * 60
@@ -29,7 +30,7 @@ func (s *UserWorkflows) CreateBulkExtension(ctx context.Context, actorID, key st
 	if !validCommand(actorID, key, request.Reason) || request.DurationMinutes < 1 || request.DurationMinutes > MaxExtensionMinutes {
 		return model.OperationReceipt{}, errors.New("invalid bulk extension")
 	}
-	filter, err := s.normalizeBulkFilter(ctx, request)
+	filter, err := normalizeBulkFilterInput(request)
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
@@ -41,6 +42,13 @@ func (s *UserWorkflows) CreateBulkExtension(ctx context.Context, actorID, key st
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
+	if receipt, found, err := s.repository.ProviderOperationForActorKey(ctx, actorID, providerops.KindAdminBulkExtension,
+		strings.TrimSpace(key), fingerprint); found || err != nil {
+		return receipt, err
+	}
+	if err := s.validateBulkFilter(ctx, filter); err != nil {
+		return model.OperationReceipt{}, err
+	}
 	return s.repository.CreateAdminBulkExtension(ctx, database.AdminBulkExtensionInput{
 		ActorUserID: actorID, IdempotencyKey: strings.TrimSpace(key), RequestFingerprint: fingerprint,
 		Reason: request.Reason, Filter: filter, DurationMinutes: request.DurationMinutes,
@@ -48,6 +56,14 @@ func (s *UserWorkflows) CreateBulkExtension(ctx context.Context, actorID, key st
 }
 
 func (s *UserWorkflows) normalizeBulkFilter(ctx context.Context, request BulkExtension) (database.AdminBulkExtensionFilter, error) {
+	filter, err := normalizeBulkFilterInput(request)
+	if err != nil {
+		return database.AdminBulkExtensionFilter{}, err
+	}
+	return filter, s.validateBulkFilter(ctx, filter)
+}
+
+func normalizeBulkFilterInput(request BulkExtension) (database.AdminBulkExtensionFilter, error) {
 	comboIDs, err := normalizeIDs(request.ComboIDs)
 	if err != nil {
 		return database.AdminBulkExtensionFilter{}, err
@@ -59,10 +75,14 @@ func (s *UserWorkflows) normalizeBulkFilter(ctx context.Context, request BulkExt
 	if len(comboIDs) == 0 && len(addons) == 0 {
 		return database.AdminBulkExtensionFilter{}, errors.New("at least one bulk extension filter is required")
 	}
-	for _, comboID := range comboIDs {
+	return database.AdminBulkExtensionFilter{ComboIDs: comboIDs, AddonSquadUUIDs: addons}, nil
+}
+
+func (s *UserWorkflows) validateBulkFilter(ctx context.Context, filter database.AdminBulkExtensionFilter) error {
+	for _, comboID := range filter.ComboIDs {
 		if _, err := s.repository.ComboByID(ctx, comboID, false); err != nil {
-			return database.AdminBulkExtensionFilter{}, err
+			return err
 		}
 	}
-	return database.AdminBulkExtensionFilter{ComboIDs: comboIDs, AddonSquadUUIDs: addons}, nil
+	return nil
 }

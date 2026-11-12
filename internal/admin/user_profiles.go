@@ -23,6 +23,7 @@ type UserWorkflowRepository interface {
 	ListPaymentOrders(context.Context, string, int) ([]model.PaymentOrder, error)
 	ListRefundsForUser(context.Context, string, int) ([]model.Refund, error)
 	ListAdminOperationsForUser(context.Context, string, int) ([]model.OperationReceipt, error)
+	ProviderOperationForActorKey(context.Context, string, string, string, string) (model.OperationReceipt, bool, error)
 	ListCouponGrants(context.Context, string, time.Time) ([]coupons.Grant, error)
 	SuccessfulAffiliateReferrals(context.Context, string, int) (affiliates.ReferralPage, error)
 	ComboByID(context.Context, string, bool) (model.Combo, error)

@@ -112,11 +112,21 @@ func (s *Service) RevokeSubscription(ctx context.Context, id string) (string, er
 	if isPAYGIdentity(identity) || isHourlyIdentity(identity) {
 		return "", ErrInvalid
 	}
-	if err = s.newSubscription(&identity); err != nil {
+	repo, ok := s.repo.(interface {
+		RotateXNodeSubscription(context.Context, Identity, []byte, string) (Identity, error)
+	})
+	if !ok {
+		return "", ErrUnavailable
+	}
+	next := identity
+	if err = s.newSubscription(&next); err != nil {
 		return "", err
 	}
-	if _, err = s.repo.SaveXNodeIdentity(ctx, identity); err != nil {
+	identity, err = repo.RotateXNodeSubscription(ctx, identity, next.SubscriptionHash, next.SubscriptionCipher)
+	if err != nil {
 		return "", err
 	}
-	return s.SubscriptionURL(identity)
+	return ReadSubscription(ctx, s, identity, func(current Identity) (string, error) {
+		return s.SubscriptionURL(current)
+	})
 }

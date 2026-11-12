@@ -8,16 +8,31 @@ import (
 	"time"
 )
 
+type statisticsPublication struct {
+	statistics model.Statistics
+	link       string
+}
+
 func (s *Service) Statistics(ctx context.Context, id string) (model.Statistics, string, error) {
-	result, identity, err := s.accountStatistics(ctx, id)
+	identity, err := s.Identity(ctx, id)
 	if err != nil {
-		return result, "", err
+		return model.Statistics{}, "", err
 	}
-	if _, err = s.SubscriptionReadiness(ctx, identity); err != nil {
-		return result, "", err
-	}
-	link, err := s.SubscriptionURL(identity)
-	return result, link, err
+	result, err := ReadSubscription(ctx, s, identity, func(current Identity) (statisticsPublication, error) {
+		statistics, identity, err := s.accountStatistics(ctx, strconv.FormatInt(current.ProxyUserID, 10))
+		if err != nil {
+			return statisticsPublication{}, err
+		}
+		if _, err = s.SubscriptionReadiness(ctx, identity); err != nil {
+			return statisticsPublication{}, err
+		}
+		link, err := s.SubscriptionURL(identity)
+		if err != nil {
+			return statisticsPublication{}, err
+		}
+		return statisticsPublication{statistics: statistics, link: link}, nil
+	})
+	return result.statistics, result.link, err
 }
 func (s *Service) accountStatistics(ctx context.Context, id string) (model.Statistics, Identity, error) {
 	identity, err := s.Identity(ctx, id)
@@ -25,22 +40,24 @@ func (s *Service) accountStatistics(ctx context.Context, id string) (model.Stati
 		return model.Statistics{}, Identity{}, err
 	}
 	result := model.Statistics{UsedTrafficBytes: "0", LifetimeTrafficBytes: "0", TrafficLimitBytes: "0", Categories: []string{}, SparklineData: []string{}, TopNodes: []model.TopNode{}}
-	if identity.CurrentPeriodID != "" {
-		// Usage belongs to the active purchase. A refunded or cancelled
-		// purchase keeps its settled period for accounting, but that period is
-		// no longer a live entitlement, so it must not be shown as usage.
-		purchase, err := s.EffectivePurchase(ctx, identity.UserID)
-		if err != nil {
-			return result, Identity{}, err
-		}
-		if purchase != nil {
+	// A retained predecessor is historical usage, even while its successor is
+	// waiting for a native period. Never label those counters as the new term.
+	purchase, err := s.EffectivePurchase(ctx, identity.UserID)
+	if err != nil {
+		return result, Identity{}, err
+	}
+	if purchase != nil {
+		result.TrafficLimitBytes = strconv.FormatInt(purchase.TrafficLimitBytes, 10)
+		if identity.CurrentPeriodID != "" {
 			period, err := s.repo.XNodePeriod(ctx, identity.CurrentPeriodID)
 			if err != nil {
 				return result, Identity{}, err
 			}
-			result.UsedTrafficBytes = strconv.FormatInt(period.UsedBytes, 10)
-			result.TrafficLimitBytes = strconv.FormatInt(period.LimitBytes, 10)
-			result.LastTrafficResetAt = period.LastResetAt
+			if period.PurchaseID == purchase.ID {
+				result.UsedTrafficBytes = strconv.FormatInt(period.UsedBytes, 10)
+				result.TrafficLimitBytes = strconv.FormatInt(period.LimitBytes, 10)
+				result.LastTrafficResetAt = period.LastResetAt
+			}
 		}
 	}
 	periods, err := s.repo.XNodePeriods(ctx, identity.ProxyUserID)

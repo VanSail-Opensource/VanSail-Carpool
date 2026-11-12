@@ -2,6 +2,7 @@ package xnode
 
 import (
 	"context"
+	"errors"
 	"time"
 )
 
@@ -34,7 +35,7 @@ func (s *Service) BeginSubscriptionRead(ctx context.Context, identity Identity) 
 		return SubscriptionReadFence{}, err
 	}
 	fence.identity = subscriptionIdentitySnapshot(identity)
-	if fence.identity != subscriptionIdentitySnapshot(current) {
+	if fresh := subscriptionIdentitySnapshot(current); fence.identity != fresh && !subscriptionProofGained(fence.identity, fresh) {
 		return SubscriptionReadFence{}, ErrConflict
 	}
 	var boundary time.Time
@@ -46,6 +47,9 @@ func (s *Service) BeginSubscriptionRead(ctx context.Context, identity Identity) 
 		fence.boundary = boundary
 	}
 	if err = s.checkSubscriptionReadEpoch(ctx, fence); err != nil {
+		if errors.Is(err, errSubscriptionReadContention) {
+			return fence, err // Retain the owner anchor for a complete-read retry.
+		}
 		return SubscriptionReadFence{}, err
 	}
 	return fence, nil
@@ -62,7 +66,9 @@ func (s *Service) CheckSubscriptionRead(ctx context.Context, fence SubscriptionR
 	if err != nil {
 		return err
 	}
-	if fence.identity != subscriptionIdentitySnapshot(current) {
+	fresh := subscriptionIdentitySnapshot(current)
+	gainedProof := subscriptionProofGained(fence.identity, fresh)
+	if fence.identity != fresh && !gainedProof {
 		return ErrConflict
 	}
 	owner, _, err := s.subscriptionReadOwner(ctx, current, s.now())
@@ -72,7 +78,13 @@ func (s *Service) CheckSubscriptionRead(ctx context.Context, fence SubscriptionR
 	if owner != fence.owner {
 		return ErrConflict
 	}
-	return s.checkSubscriptionReadEpoch(ctx, fence)
+	if err = s.checkSubscriptionReadEpoch(ctx, fence); err != nil {
+		return err
+	}
+	if gainedProof {
+		return errSubscriptionReadContention
+	}
+	return nil
 }
 
 func (s *Service) checkSubscriptionReadEpoch(ctx context.Context, fence SubscriptionReadFence) error {
@@ -86,7 +98,7 @@ func (s *Service) checkSubscriptionReadEpoch(ctx context.Context, fence Subscrip
 	}
 	if version != fence.version || s.localCompileRevision.Load() != fence.local ||
 		!fence.boundary.IsZero() && !s.now().Before(fence.boundary) {
-		return ErrConflict
+		return errSubscriptionReadContention
 	}
 	return nil
 }

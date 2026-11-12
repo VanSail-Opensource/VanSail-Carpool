@@ -917,6 +917,7 @@ Provider requests remain outside every transaction.
 - `admin_coupon_grants_retry_generated.go` wraps the transactional methods in `admin_coupon_grants.go`.
 - `admin_entitlement_edit_retry_generated.go` wraps the transactional methods in `admin_entitlement_edit.go`.
 - `admin_entitlement_refund_retry_generated.go` wraps the transactional methods in `admin_entitlement_refund.go`.
+- `admin_mutation_begin_retry_generated.go` wraps the transactional methods in `admin_mutation_begin.go`.
 - `admin_operation_resolution_retry_generated.go` wraps the transactional methods in `admin_operation_resolution.go`.
 - `admin_user_provider_commands_retry_generated.go` wraps the transactional methods in `admin_user_provider_commands.go`.
 - `administration_records_retry_generated.go` wraps the transactional methods in `administration_records.go`.
@@ -1050,6 +1051,7 @@ Provider requests remain outside every transaction.
 - `xnode_routing_access_retry_generated.go` wraps the transactional methods in `xnode_routing_access.go`.
 - `xnode_routing_plans_retry_generated.go` wraps the transactional methods in `xnode_routing_plans.go`.
 - `xnode_routing_recovery_retry_generated.go` wraps the transactional methods in `xnode_routing_recovery.go`.
+- `xnode_subscription_retry_generated.go` wraps the transactional methods in `xnode_subscription.go`.
 - `xnode_traffic_retry_generated.go` wraps the transactional methods in `xnode_traffic.go`.
 - `xnode_update_expectation_retry_generated.go` wraps the transactional methods in `xnode_update_expectation.go`.
 
@@ -1650,3 +1652,9 @@ preference regressions exercise the native panel owner interface.
 `xnode_compile_version_test.go` verifies that the next access boundary uses exact
 instants for mixed whole-second and fractional UTC timestamps while retaining a
 broad indexed candidate scan.
+
+- `admin_mutation_begin.go` atomically admits audited maintenance, outbox retry and payment refund commands, binding refunds to their payment owner.
+- `admin_mutation_begin_test.go` verifies audit rollback, replay, owner binding and rejection of unrelated privileged intents against PostgreSQL.
+- `outbox_retry_errors_test.go` verifies storage failures retain their PostgreSQL error instead of becoming permanent business conflicts.
+- `xnode_subscription.go` rotates only subscription token material under owner and captured-credential checks, preserving concurrent period and first-sync changes.
+- `xnode_subscription_test.go` verifies token replay/owner conflicts and preservation of unrelated identity state.

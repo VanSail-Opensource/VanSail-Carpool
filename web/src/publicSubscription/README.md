@@ -20,3 +20,13 @@ Public and authenticated member controls use the canonical `downloadUrl` configu
 Base64 is the primary format. Stash, sing-box, Clash, Xray and explicit plain native links retain separate selections; enabled metadata controls availability.
 
 `PublicSubscriptionPage.vue` retains explicit-format selection and shows server-provided tuning omissions for the selected client.
+
+Pending first deployment polls only while visible and stops after an error.
+Definite bearer absence/revocation clears the metadata; transient failures keep
+last-good details with a warning but disable download, import, copy and QR until
+an explicit retry succeeds. Superseded/disposed requests and copy results cannot
+restore stale state. `usePublicSubscription.test.ts` covers these recovery and
+visibility boundaries in hosted CI.
+
+The public transport validates required response shapes before assigning metadata,
+so null/missing format maps cannot replace the last-good page state.

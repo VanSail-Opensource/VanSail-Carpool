@@ -1283,6 +1283,12 @@ No lock spans rendering, and unchanged PAYG/hourly inventory policies remain
 independent from this publication check. `subscription_read_test.go` covers
 lifecycle/material/epoch/expiry changes; `subscription_publish_test.go` rotates
 tokens or restricts the owner during real inventory and response-selection reads.
+`account_statistics.go` uses the same fence before returning a dashboard bearer;
+its active quota projection excludes a retained predecessor's period. Token
+rotation in `identities.go` uses an atomic token-only compare-and-update and then
+checks the current publication snapshot, preserving newer credentials, periods
+and first-sync proof. Internal probe rotation remains possible; probes still
+cannot authorize a bearer subscription.
 
 `routing_entitlements.go` prunes authoritative endpoint/entitlement loss,
 including administrator-disabled product groups. Disabled nodes/endpoints and
@@ -1456,3 +1462,9 @@ bounded historical-owner AAD resolver. `account_purge_ip_secret_test.go` checks
 that wrong purge owners and altered node/digest scopes fail before native
 control. Ciphertext is never resealed; current applied subject/agent proof,
 cleanup admission and acknowledged scoped removal are still required.
+
+`subscription_read_retry.go` repeats a complete subscription read at most three
+times for first-deployment proof gain or compile/time contention, retaining the
+initial credentials, token, period and owner authority across attempts.
+`subscription_read_retry_test.go` covers proof races, epoch/time contention,
+authority changes between owner and epoch reads, and the retry bound.

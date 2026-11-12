@@ -8,6 +8,10 @@ work. The database URL is protected process input and is never logged.
 - `service.go` owns deletion, path containment and service dependencies.
 - `service_part2.go` owns publication, verified completion and managed-file pruning.
 - `postgres.go` runs installed PostgreSQL client tools with bounded contexts.
+- `publication.go` syncs the renamed archive's parent directory before completed
+  metadata is allowed. A directory-sync failure preserves the visible archive
+  while reporting uncertain durability. `publication_test.go` covers publication,
+  directory failure and rename failure with actual filesystem evidence.
 - `download.go` opens contained regular completed files for authenticated download.
 - `paths.go` limits download and deletion to managed direct children of the
   configured directory, rejecting symlinked parent paths and unrelated files.

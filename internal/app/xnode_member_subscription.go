@@ -36,10 +36,12 @@ func (a proxyProvider) LoadMemberSubscription(ctx context.Context, id string, en
 	if err != nil {
 		return subscription.MemberSubscription{}, err
 	}
-	fence, err := a.native.BeginSubscriptionRead(ctx, identity)
-	if err != nil {
-		return subscription.MemberSubscription{}, err
-	}
+	return xnode.ReadSubscription(ctx, a.native, identity, func(current xnode.Identity) (subscription.MemberSubscription, error) {
+		return a.readMemberSubscription(ctx, current, enabled, links)
+	})
+}
+
+func (a proxyProvider) readMemberSubscription(ctx context.Context, identity xnode.Identity, enabled []string, links bool) (subscription.MemberSubscription, error) {
 	readiness, err := a.native.SubscriptionReadiness(ctx, identity)
 	if err != nil {
 		return subscription.MemberSubscription{}, err
@@ -76,9 +78,6 @@ func (a proxyProvider) LoadMemberSubscription(ctx context.Context, id string, en
 			return subscription.MemberSubscription{}, err
 		}
 		result.SubscriptionURL = &link
-	}
-	if err := a.native.CheckSubscriptionRead(ctx, fence); err != nil {
-		return subscription.MemberSubscription{}, err
 	}
 	return result, nil
 }

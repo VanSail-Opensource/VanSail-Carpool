@@ -55,8 +55,10 @@ func (w *ComboControlWorker) HandleProviderOperation(ctx context.Context, operat
 		return errors.New("combo control has an invalid target")
 	}
 	item := items[0]
-	if item.Status == providerops.StatusSucceeded {
-		_, err = w.repository.CompleteProviderOperation(ctx, operation.Receipt.ID, providerops.Completion{Status: providerops.StatusSucceeded, ResultJSON: "{}"}, now)
+	if providerops.Terminal(item.Status) {
+		completion := providerops.Completion{Status: item.Status, ErrorCode: item.ErrorCode,
+			ProviderReference: item.ProviderReference, ResultJSON: item.ResultJSON}
+		_, err = w.repository.CompleteProviderOperation(ctx, operation.Receipt.ID, completion, now)
 		return err
 	}
 	if item.Status == providerops.StatusQueued {

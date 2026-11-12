@@ -253,8 +253,9 @@ recovers its exact receipt outcome after an interrupted final commit without
 starting another backup or retention pass.
 
 `xnode_member_subscription.go` brackets readiness, inventory, credential export and
-subscription URL projection with the native subscription read fence. Changed
-owner generations, restrictions, native material, compile revisions or paid time
-boundaries discard the entire response. URL failures also return no partial
-subscription. `xnode_member_subscription_fence_test.go` changes restrictions and
-subscription tokens during a real inventory read and checks metadata/link refusal.
+subscription URL projection with the native subscription read helper. It retries
+the complete read at most three times for first-sync proof gain or benign compile
+revision/time contention while binding the original owner generation, restrictions,
+native material and token. Authority changes and URL failures discard the entire
+response. `xnode_member_subscription_fence_test.go` verifies restriction/token
+refusal and first-sync proof recovery with the original requested links.

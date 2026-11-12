@@ -14,7 +14,7 @@ import (
 )
 
 type mutationOperationRepository interface {
-	CreateProviderOperation(context.Context, providerops.CreateInput, time.Time) (providerops.Operation, bool, error)
+	CreateAdminMutation(context.Context, providerops.CreateInput, time.Time) (providerops.Operation, bool, error)
 	ProviderOperationForActorKey(context.Context, string, string, string, string) (model.OperationReceipt, bool, error)
 	ProviderOperationItems(context.Context, string) ([]providerops.Item, error)
 	BeginProviderOperationAttempt(context.Context, string, time.Time) (providerops.Operation, error)
@@ -76,18 +76,12 @@ func (s *Service) queueMutation(ctx context.Context, actorID, ownerID, kind, key
 	if receipt, found, err := repository.ProviderOperationForActorKey(ctx, actorID, kind, strings.TrimSpace(key), fingerprint); found || err != nil {
 		return receipt, err
 	}
-	operation, replayed, err := repository.CreateProviderOperation(ctx, providerops.CreateInput{
+	operation, _, err := repository.CreateAdminMutation(ctx, providerops.CreateInput{
 		ActorUserID: actorID, OwnerUserID: ownerID, Kind: kind, IdempotencyKey: strings.TrimSpace(key),
 		RequestFingerprint: fingerprint, SealedTarget: string(target),
 		Items: []providerops.ItemInput{{Key: "target", TargetType: targetType, TargetID: targetID}},
 	}, s.now().UTC())
-	if err != nil || replayed {
-		return operation.Receipt, err
-	}
-	if err := s.audit(ctx, actorID, kind+".queue", targetType, targetID, map[string]string{"operationId": operation.Receipt.ID}); err != nil {
-		return model.OperationReceipt{}, err
-	}
-	return operation.Receipt, nil
+	return operation.Receipt, err
 }
 
 func mutationFingerprint(kind, targetID string, target []byte) string {

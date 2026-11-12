@@ -119,3 +119,7 @@ func (*userWorkflowRepositoryStub) CreateAdminTemporaryBan(context.Context, data
 func (*userWorkflowRepositoryStub) CreateAdminTemporaryUnban(context.Context, string, string, string, string, string, time.Time) (model.OperationReceipt, error) {
 	return model.OperationReceipt{}, nil
 }
+
+func (*userWorkflowRepositoryStub) ProviderOperationForActorKey(context.Context, string, string, string, string) (model.OperationReceipt, bool, error) {
+	return model.OperationReceipt{}, false, nil
+}

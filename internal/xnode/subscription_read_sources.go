@@ -51,7 +51,7 @@ func (s *Service) subscriptionReadOwner(ctx context.Context, identity Identity, 
 			return subscriptionOwnerState{}, time.Time{}, err
 		}
 		return subscriptionOwnerState{
-			id:         owner.ID, status: owner.AccountStatus, onboarding: owner.OnboardingState,
+			id: owner.ID, status: owner.AccountStatus, onboarding: owner.OnboardingState,
 			generation: owner.AccountGeneration, blocked: owner.BotBlocked, restricted: restricted,
 		}, time.Time{}, nil
 	}
@@ -60,7 +60,9 @@ func (s *Service) subscriptionReadOwner(ctx context.Context, identity Identity, 
 		return subscriptionOwnerState{}, time.Time{}, err
 	}
 	if access == nil {
-		return subscriptionOwnerState{}, time.Time{}, ErrNotFound
+		// Probe token rotation retains its existing internal contract. A read
+		// fence grants no access: bearer and service metadata reject probes.
+		return subscriptionOwnerState{}, time.Time{}, nil
 	}
 	var boundary time.Time
 	for _, at := range []time.Time{access.StartedAt, access.ExpiresAt} {

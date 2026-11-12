@@ -8,6 +8,7 @@ import (
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
 // AdminEntitlementCreate describes one zero-charge, administrator-owned manual
@@ -90,9 +91,6 @@ func (s *UserWorkflows) EditEntitlement(ctx context.Context, actorID, userID, pu
 		return model.Purchase{}, err
 	}
 	edit.ComboID = strings.TrimSpace(edit.ComboID)
-	if err := s.validateComboAndSquads(ctx, edit.ComboID, edit.SquadUUIDs); err != nil {
-		return model.Purchase{}, err
-	}
 	edit.ValidFrom, edit.ValidUntil, edit.Version = edit.ValidFrom.UTC(), edit.ValidUntil.UTC(), edit.Version.UTC()
 	fingerprint, err := commandFingerprint(struct {
 		UserID, PurchaseID, Key string
@@ -100,6 +98,14 @@ func (s *UserWorkflows) EditEntitlement(ctx context.Context, actorID, userID, pu
 	}{userID, purchaseID, strings.TrimSpace(key), edit})
 	if err != nil {
 		return model.Purchase{}, err
+	}
+	if _, found, err := s.repository.ProviderOperationForActorKey(ctx, actorID, providerops.KindAdminEntitlementEdit,
+		strings.TrimSpace(key), fingerprint); err != nil {
+		return model.Purchase{}, err
+	} else if !found {
+		if err := s.validateComboAndSquads(ctx, edit.ComboID, edit.SquadUUIDs); err != nil {
+			return model.Purchase{}, err
+		}
 	}
 	return s.repository.EditAdminEntitlement(ctx, database.AdminEntitlementEditInput{
 		ActorUserID: actorID, UserID: userID, PurchaseID: purchaseID, IdempotencyKey: strings.TrimSpace(key),
@@ -125,35 +131,6 @@ func (s *UserWorkflows) RefundEntitlement(ctx context.Context, actorID, userID, 
 	return s.repository.RefundAdminEntitlement(ctx, database.AdminEntitlementRefundInput{
 		ActorUserID: actorID, UserID: userID, PurchaseID: purchaseID, IdempotencyKey: strings.TrimSpace(key),
 		RequestFingerprint: fingerprint, Reason: reason, AmountTXBMinor: amountTXBMinor,
-	}, s.now().UTC())
-}
-
-// ReplaceCombo queues a no-charge active configuration replacement.
-func (s *UserWorkflows) ReplaceCombo(ctx context.Context, actorID, userID, key string, replacement ComboReplacement) (model.OperationReceipt, error) {
-	replacement.Reason = strings.TrimSpace(replacement.Reason)
-	if !validCommand(actorID, key, replacement.Reason) || userID == "" {
-		return model.OperationReceipt{}, errors.New("invalid combo replacement")
-	}
-	var err error
-	replacement.AddonSquadUUIDs, err = normalizeUUIDs(replacement.AddonSquadUUIDs)
-	if err != nil {
-		return model.OperationReceipt{}, err
-	}
-	replacement.ComboID = strings.TrimSpace(replacement.ComboID)
-	if err := s.validateComboAndSquads(ctx, replacement.ComboID, replacement.AddonSquadUUIDs); err != nil {
-		return model.OperationReceipt{}, err
-	}
-	fingerprint, err := commandFingerprint(struct {
-		UserID      string
-		Replacement ComboReplacement
-	}{userID, replacement})
-	if err != nil {
-		return model.OperationReceipt{}, err
-	}
-	return s.repository.ReplaceAdminCombo(ctx, database.AdminComboReplacementInput{
-		ActorUserID: actorID, UserID: userID, ComboID: replacement.ComboID,
-		IdempotencyKey: strings.TrimSpace(key), RequestFingerprint: fingerprint,
-		Reason: replacement.Reason, AddonSquadUUIDs: replacement.AddonSquadUUIDs,
 	}, s.now().UTC())
 }
 

@@ -402,3 +402,7 @@ The editor has no cadence selector; `window.__xnodeAudit.writes` records success
 `service-error`, `service-save-error`, `slow`, and `zh` for the existing states.
 Add `service-reactive` to exercise reactive API results and confirm editor copies
 work without cloning a Vue proxy or mutating the loaded term.
+
+Public subscription `malformed` returns a constructed invalid metadata shape;
+the actual transport must show read recovery without exposing a usable link or
+crashing the page. Ready fixtures include current first-deployment fields.

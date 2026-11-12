@@ -25,7 +25,8 @@ Audited administrative operations for catalog data, settings, balances, refunds,
 - `user_profiles.go` builds the user aggregate from identity, balance, active and queued entitlements, Emby, payments, refunds, and open operations.
 - `user_command_types.go` defines the complete entitlement, combo replacement, and minute-normalized bulk-extension command inputs.
 - `user_command_validation.go` normalizes IDs and squads and fingerprints idempotent administrator commands.
-- `user_entitlement_commands.go` validates full edits, exactly-once refunds, and no-charge combo replacements.
+- `user_entitlement_commands.go` validates manual grants, full edits, and exactly-once refunds.
+- `user_combo_replacement.go` recovers accepted no-charge replacement intents before current catalog validation.
 - `user_bulk_commands.go` validates minute-precise inclusive-OR bulk previews and durable extension jobs.
 - `user_operation_resolution.go` validates idempotent audited resolutions for ambiguous provider outcomes without dispatching another provider call.
 - `user_operation_worker.go` applies exact local entitlement state through the
@@ -46,6 +47,8 @@ Audited administrative operations for catalog data, settings, balances, refunds,
 - `catalog_test.go` covers optional setting validators.
 - `user_profiles_test.go` covers aggregate selection, ordering, and synchronization projection.
 - `user_profiles_test_helpers_test.go` contains focused aggregate-profile repository doubles.
+- `user_command_replay_test.go` covers retained edit/replacement/bulk intents through catalog and provider failures, changed payload conflicts, and fresh command validation.
+- `user_command_replay_test_helpers_test.go` supplies actor, kind, key and fingerprint-bound workflow fixtures.
 - `user_operation_worker_test.go` covers ambiguous provider outcomes and partial bulk completion.
 - `user_operation_worker_test_helpers_test.go` contains reusable provider-operation worker fixtures.
 - `README.md` documents the package layout.
@@ -126,3 +129,16 @@ pending until generation-bound deployment proof exists; synchronized describes
 that historical proof and does not assert current agent health or traffic access.
 Missing native material is not_provisioned, and retained recovery reasons remain
 failed. Legacy proxy links and wallet funding never stand in for native proof.
+
+Entitlement edits, combo replacements and bulk extensions check the existing
+actor-scoped operation key and unchanged normalized request fingerprint before
+mutable catalog or provider reads. An exact accepted replacement or extension
+returns its receipt; an exact edit uses the store's protected replay path to
+hydrate its purchase. New intents still validate current combos and squads, and
+bulk previews still read current targets. Replay-storage errors never admit new
+work. Missing squad validation capability fails closed.
+
+Queued maintenance, outbox retries and payment refunds require the database
+`CreateAdminMutation` contract: the command, outbox job and actor audit commit in
+one transaction. Audit failure prevents admission, and replay adds no second job
+or audit. The service no longer appends a separate post-admission audit.
