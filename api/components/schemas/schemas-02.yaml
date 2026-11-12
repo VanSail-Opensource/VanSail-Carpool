@@ -224,7 +224,7 @@ CatalogNode:
       type: string
     countryCode:
       type: string
-      pattern: '^[A-Z]{2}$'
+      pattern: '^(?:[A-Z]{2})?$'
     consumptionMultiplier:
       type: number
       const: 1

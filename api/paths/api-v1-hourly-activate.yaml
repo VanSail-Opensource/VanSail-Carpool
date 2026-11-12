@@ -37,15 +37,7 @@
     },
     "parameters": [
       {
-        "name": "Idempotency-Key",
-        "in": "header",
-        "required": true,
-        "description": "Owner- and account-generation-scoped action key, at most96 UTF-8 bytes. Retry an uncertain action with the same key and terms.",
-        "schema": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 96
-        }
+        "$ref": "../openapi.yaml#/components/parameters/HourlyIdempotencyKey"
       }
     ],
     "requestBody": {

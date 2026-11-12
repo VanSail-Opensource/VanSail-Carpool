@@ -42,7 +42,7 @@ PaymentProfile:
       items: { type: string }
     endpoint: { type: string, format: uri }
     merchantId: { type: string }
-    credential: { type: string, description: Masked write-only credential. }
+    credential: { type: string, description: Masked credential placeholder; no plaintext secret is returned. }
     acknowledgement: { type: string }
     enabled: { type: boolean }
     configured: { type: boolean }
@@ -60,6 +60,9 @@ PaymentProfileWrite:
       items: { type: string }
     endpoint: { type: string, format: uri }
     merchantId: { type: string }
-    credential: { type: string, description: Leave blank to retain the masked credential. }
+    credential:
+      type: string
+      writeOnly: true
+      description: Blank or masked input retains an existing credential only while provider, endpoint and merchant are unchanged. Changing that identity requires a fresh credential. If retained orders still require this account, create a replacement profile and disable the old profile instead; credential or identity edits return PAYMENT_PROFILE_IN_USE.
     acknowledgement: { type: string }
     enabled: { type: boolean }

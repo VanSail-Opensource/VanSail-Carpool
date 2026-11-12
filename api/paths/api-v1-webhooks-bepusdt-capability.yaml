@@ -19,7 +19,7 @@ post:
     content:
       application/json:
         schema:
-          oneOf:
+          anyOf:
             - $ref: '../openapi.yaml#/components/schemas/BEPusdtNotification'
             - $ref: '../openapi.yaml#/components/schemas/BEPusdtUnsignedNotification'
   responses:

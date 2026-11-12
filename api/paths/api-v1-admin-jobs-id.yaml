@@ -2,11 +2,12 @@ delete:
   security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin]
   operationId: deleteAdminJob
-  summary: Delete a non-processing synchronization job
+  summary: Delete an eligible operational job
+  description: Processing work and jobs required for financial settlement, live retries or unresolved recovery are protected even when their status is pending or failed.
   parameters:
     - $ref: '../openapi.yaml#/components/parameters/ResourceID'
   responses:
-    '204': { description: Pending, failed, or legacy done job deleted. }
+    '204': { description: Eligible operational job deleted. }
     '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
     '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
     '404': { $ref: '../openapi.yaml#/components/responses/NotFound' }

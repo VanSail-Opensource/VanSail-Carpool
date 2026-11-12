@@ -1,3 +1,6 @@
+parameters:
+  - $ref: '../openapi.yaml#/components/parameters/BrowserSessionScope'
+
 post:
   security: [{ cookieSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }, { browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags:

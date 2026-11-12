@@ -33,8 +33,8 @@ delete:
   security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin]
   operationId: archiveAdminCombo
-  summary: Archive a combo from future sales
-  description: Combos referenced by purchases are always hidden rather than hard-deleted.
+  summary: Hide a combo from new selections
+  description: Referenced combos retain their definitions and paid terms. Hiding removes availability for new selections; existing owners remain eligible for manual and automatic renewal under the current renewal policy.
   parameters:
     - $ref: '../openapi.yaml#/components/parameters/ResourceID'
   responses:

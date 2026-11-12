@@ -2,7 +2,7 @@ post:
   tags: [Webhooks]
   operationId: receiveTelegramWebhook
   summary: Receive Telegram bot updates
-  description: Validates the configured Telegram webhook secret header. Relevant join requests, chat-member updates, pre-checkout queries, and successful payments are processed idempotently.
+  description: Validates the configured Telegram webhook secret header. Relevant join requests, chat-member updates, pre-checkout queries, successful payments and refund evidence are processed idempotently.
   security: []
   parameters:
     - name: X-Telegram-Bot-Api-Secret-Token

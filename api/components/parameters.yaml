@@ -30,14 +30,6 @@ ConnectionScanID:
   required: true
   schema: { type: string, minLength: 1 }
 
-ImportID:
-  name: importID
-  in: path
-  required: true
-  schema:
-    type: string
-    minLength: 1
-
 DatabaseTableName:
   name: table
   in: path
@@ -56,6 +48,25 @@ IdempotencyKey:
     type: string
     minLength: 1
     maxLength: 128
+
+HourlyIdempotencyKey:
+  name: Idempotency-Key
+  in: header
+  required: true
+  description: Owner- and account-generation-scoped hourly action key, at most 96 UTF-8 bytes. Retry an uncertain action with the same key and payload.
+  schema:
+    type: string
+    minLength: 1
+    maxLength: 96
+
+BrowserSessionScope:
+  name: X-TXC-Session-Scope
+  in: header
+  required: false
+  description: Set to browser when using the independent browser session and request-signing key on a shared route. Omit to use the Mini App session. This selector grants no additional permissions.
+  schema:
+    type: string
+    enum: [browser]
 
 OptionalIdempotencyKey:
   name: Idempotency-Key

@@ -1,10 +1,10 @@
 get:
   tags: [Catalog]
   operationId: getCatalog
-  summary: List purchasable combos and add-on squads
+  summary: List visible catalog definitions and add-on squads
   responses:
     '200':
-      description: Current visible catalog. The server will recalculate all prices at purchase time.
+      description: Current visible definitions for catalog display, owned-term renewal and available add-on selections. New fixed-term purchase creation is closed; each supported quote or commit revalidates its current terms.
       content:
         application/json:
           schema:

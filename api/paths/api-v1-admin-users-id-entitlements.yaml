@@ -13,6 +13,7 @@ post:
         schema: { $ref: '../openapi.yaml#/components/schemas/AdminEntitlementCreateRequest' }
   responses:
     '201':
+      description: Created entitlement.
       content:
         application/json:
           schema: { $ref: '../openapi.yaml#/components/schemas/AdminEntitlement' }

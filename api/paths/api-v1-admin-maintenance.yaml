@@ -3,7 +3,7 @@ post:
   tags: [Admin, Database Administration]
   operationId: runAdminMaintenance
   summary: Queue a complete maintenance run now
-  description: Creates and verifies a backup before database retention cleanup and migration-snapshot pruning. Manual commands may run again on the same local date.
+  description: Creates and verifies a backup before removing eligible expired operational records. Financial history and unresolved recovery evidence are retained. Manual commands may run again on the same local date.
   parameters:
     - $ref: '../openapi.yaml#/components/parameters/IdempotencyKey'
   responses:

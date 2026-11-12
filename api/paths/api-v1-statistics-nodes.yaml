@@ -5,6 +5,7 @@ get:
   summary: Get the shared on-demand ten-second node metrics cache
   responses:
     '200':
+      description: Current node usage projection and freshness information.
       content:
         application/json:
           schema: { $ref: '../openapi.yaml#/components/schemas/StatisticsNodesSnapshot' }

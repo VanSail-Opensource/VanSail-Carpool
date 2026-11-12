@@ -16,4 +16,14 @@ describe('generated OpenAPI release contract', () => {
 
     expect(contractChecks).toEqual([true, true, true])
   })
+
+  it('represents all current native lifecycle states and shared browser selection', () => {
+    type Synchronization = components['schemas']['AdminUserSummary']['synchronization']['status']
+    const statuses: Synchronization[] = ['synchronized', 'pending', 'failed', 'not_provisioned']
+    type Headers = NonNullable<paths['/api/v1/me']['get']['parameters']['header']>
+    const headers: Headers = { 'X-TXC-Session-Scope': 'browser' }
+
+    expect(statuses).toHaveLength(4)
+    expect(headers['X-TXC-Session-Scope']).toBe('browser')
+  })
 })

@@ -71,3 +71,9 @@ Audit recovery regressions: `AdminBulkExtensionDialog.test.ts` rejects stale fil
 `useAdminUserHourly.test.ts` verifies uncertain keys remain bound to the member,
 enrollment and policy version, and a previous member's late response cannot
 replace the current receipt or release the current action's pending state.
+
+Administrator list and profile synchronization badges show the server's exact
+current-credential lifecycle state independently of wallet funding. Pending
+first deployment, retained failure and missing provisioning remain visible.
+`AdminSynchronization.test.ts` covers all four statuses with positive balances;
+these labels describe historical deployment evidence rather than node liveness.

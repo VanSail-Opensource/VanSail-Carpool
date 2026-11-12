@@ -92,10 +92,32 @@ jobs:
         working-directory: web
         run: npm ci
       - name: Generate API types
+        id: api_generate
         working-directory: web
         run: npm run generate:api
       - name: Require committed generated contract
+        id: api_contract
         run: git diff --exit-code -- web/src/api/generated.ts web/src/api/contracts/responseSchemas.json
+      - name: Report generated public contract when the commit is stale
+        if: failure() && steps.api_generate.outcome == 'success' && steps.api_contract.outcome == 'failure'
+        working-directory: web
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs'
+          import { createHash } from 'node:crypto'
+          const files = ['src/api/generated.ts', 'src/api/contracts/responseSchemas.json']
+          for (const path of files) {
+            const content = readFileSync(path, 'utf8')
+            const sha256 = createHash('sha256').update(content).digest('hex')
+            const total = Math.ceil(content.length / 12000)
+            for (let index = 0; index < total; index++) {
+              console.log('AUDIT_GENERATED_FILE ' + JSON.stringify({
+                path: 'web/' + path, index, total, sha256, bytes: Buffer.byteLength(content),
+                content: content.slice(index * 12000, (index + 1) * 12000),
+              }))
+            }
+          }
+          NODE
       - name: Enforce repository structure and localization
         working-directory: web
         run: npm run audit:structure

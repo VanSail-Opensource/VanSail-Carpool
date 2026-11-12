@@ -13,6 +13,7 @@ post:
         schema: { $ref: '../openapi.yaml#/components/schemas/ComboReplacementRequest' }
   responses:
     '202':
+      description: Durable operation receipt for the requested combo replacement.
       content:
         application/json:
           schema: { $ref: '../openapi.yaml#/components/schemas/OperationReceipt' }

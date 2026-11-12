@@ -1,3 +1,6 @@
+parameters:
+  - $ref: '../openapi.yaml#/components/parameters/BrowserSessionScope'
+
 get:
   tags: [Billing]
   operationId: getPaymentReturnStatus
@@ -13,7 +16,6 @@ get:
       requestTimestamp: []
       requestNonce: []
       requestSignature: []
-    - panelApiToken: []
   parameters:
     - name: provider
       in: path
@@ -45,3 +47,8 @@ get:
       $ref: '../openapi.yaml#/components/responses/Forbidden'
     '404':
       $ref: '../openapi.yaml#/components/responses/NotFound'
+    '500':
+      description: Payment storage is temporarily unavailable (PAYMENT_LOAD_FAILED); this does not establish that the order is absent or unpaid.
+      content:
+        application/json:
+          schema: { $ref: '../openapi.yaml#/components/schemas/ApiError' }

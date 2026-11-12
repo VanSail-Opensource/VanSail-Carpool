@@ -20,7 +20,7 @@ AffiliateTXBReward:
   required: [kind, txbMinor]
   properties:
     kind: { type: string, const: txb }
-    txbMinor: { type: integer, format: int64, minimum: 1 }
+    txbMinor: { type: integer, format: int64, minimum: 1, maximum: 100000000000 }
 AffiliateExtensionReward:
   type: object
   additionalProperties: false

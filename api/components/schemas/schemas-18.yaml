@@ -124,12 +124,13 @@ OperationResolutionRequest:
     reason: { type: string, minLength: 3, maxLength: 500 }
 
 AdminSynchronization:
+  description: Historical application of the current native credentials, independent of current node liveness. A current lifecycle requires its own authenticated deployment proof; retained recovery errors take precedence.
   type: object
   additionalProperties: false
   required: [status]
   properties:
     status: { type: string, enum: [synchronized, pending, failed, not_provisioned] }
-    remoteUserId: { type: [string, 'null'] }
+    remoteUserId: { type: [string, 'null'], description: Current native identity ID when provisioned. }
     lastError: { type: [string, 'null'] }
 
 AdminUserDetail:

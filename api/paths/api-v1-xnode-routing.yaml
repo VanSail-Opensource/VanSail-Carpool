@@ -64,13 +64,7 @@
     },
     "parameters": [
       {
-        "name": "Idempotency-Key",
-        "in": "header",
-        "required": true,
-        "schema": {
-          "type": "string",
-          "maxLength": 128
-        }
+        "$ref": "../openapi.yaml#/components/parameters/IdempotencyKey"
       }
     ]
   }

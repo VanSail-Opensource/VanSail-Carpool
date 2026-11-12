@@ -106,7 +106,7 @@ User:
     recoveryReason:
       type: string
       enum: ['', proxy_user_missing, proxy_identity_conflict]
-      description: A confirmed username conflict restarts onboarding at username entry after refunds.
+      description: Retained account recovery reason used to report native identity recovery.
     createdAt:
       $ref: '../../openapi.yaml#/components/schemas/Timestamp'
     updatedAt:

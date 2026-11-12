@@ -7,6 +7,7 @@ get:
     - $ref: '../openapi.yaml#/components/parameters/ResourceID'
   responses:
     '200':
+      description: Current refund eligibility and exact quoted amounts.
       content:
         application/json:
           schema: { $ref: '../openapi.yaml#/components/schemas/MemberRefundQuote' }
@@ -22,6 +23,7 @@ post:
     - $ref: '../openapi.yaml#/components/parameters/IdempotencyKey'
   responses:
     '202':
+      description: Durable operation receipt for the requested refund.
       content:
         application/json:
           schema: { $ref: '../openapi.yaml#/components/schemas/OperationReceipt' }

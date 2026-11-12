@@ -12,6 +12,7 @@ post:
         schema: { $ref: '../openapi.yaml#/components/schemas/BulkExtensionCreateRequest' }
   responses:
     '202':
+      description: Durable operation receipt for the confirmed bulk extension.
       content:
         application/json:
           schema: { $ref: '../openapi.yaml#/components/schemas/OperationReceipt' }

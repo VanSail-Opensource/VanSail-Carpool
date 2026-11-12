@@ -10,7 +10,17 @@
     }
   ],
   "put": {
-    "security": [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}],
+    "security": [
+      {
+        "browserSession": [],
+        "requestTimestamp": [],
+        "requestNonce": [],
+        "requestSignature": []
+      },
+      {
+        "panelApiToken": []
+      }
+    ],
     "tags": [
       "Administration"
     ],
@@ -58,7 +68,17 @@
     }
   },
   "get": {
-    "security": [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}],
+    "security": [
+      {
+        "browserSession": [],
+        "requestTimestamp": [],
+        "requestNonce": [],
+        "requestSignature": []
+      },
+      {
+        "panelApiToken": []
+      }
+    ],
     "tags": [
       "Administration"
     ],
@@ -79,6 +99,49 @@
       },
       "403": {
         "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      }
+    }
+  },
+  "delete": {
+    "security": [
+      {
+        "browserSession": [],
+        "requestTimestamp": [],
+        "requestNonce": [],
+        "requestSignature": []
+      },
+      {
+        "panelApiToken": []
+      }
+    ],
+    "tags": [
+      "Administration"
+    ],
+    "operationId": "deleteUnusedXNodeNode",
+    "summary": "Delete an unused, never-enrolled native node",
+    "description": "Existing nodes must be disabled and never enrolled, with no desired, accepted or applied deployment revision, no removing or retired lifecycle state, no retained history and no endpoint dependency. Enrolled or historical nodes require POST /api/v1/admin/xnode/nodes/{id}/removal so routing and accounting can drain. Repeating this DELETE for an absent node succeeds.",
+    "responses": {
+      "204": {
+        "description": "Unused node draft removed, or already absent."
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      },
+      "409": {
+        "description": "The existing node is enabled, enrolled, published, in a removal lifecycle, referenced by an endpoint, or required by retained history. Use the durable removal command where applicable.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/ApiError"
+            }
+          }
+        }
+      },
+      "503": {
+        "$ref": "../openapi.yaml#/components/responses/ServiceUnavailable"
       }
     }
   }

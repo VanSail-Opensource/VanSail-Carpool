@@ -6,6 +6,7 @@ get:
     - $ref: '../openapi.yaml#/components/parameters/OperationID'
   responses:
     '200':
+      description: Current durable receipt visible to the operation owner.
       content:
         application/json:
           schema: { $ref: '../openapi.yaml#/components/schemas/OperationReceipt' }

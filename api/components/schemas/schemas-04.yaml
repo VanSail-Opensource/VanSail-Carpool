@@ -158,6 +158,7 @@ PaymentMethodID:
       enum:
         - ezpay:alipay
         - ezpay:wxpay
+        - ezpay:wechat
         - ezpay:qqpay
         - ezpay:bank
         - ezpay:jdpay
@@ -183,7 +184,8 @@ PaymentMethodID:
         - stars
         - coupon
     - type: string
-      pattern: '^(ezpay|bepusdt):[^:]+:(alipay|wxpay|qqpay|bank|jdpay|usdt\.trc20|usdt\.erc20|usdt\.polygon|usdt\.bep20|usdt\.aptos|usdt\.solana|usdt\.xlayer|usdt\.arbitrum|usdt\.plasma|usdt\.ton|usdc\.trc20|usdc\.erc20|usdc\.polygon|usdc\.bep20|usdc\.aptos|usdc\.solana|usdc\.xlayer|usdc\.arbitrum|usdc\.base)$'
+      description: Profile-qualified provider rail; wechat is retained only for persisted EZPay profiles.
+      pattern: '^(?:ezpay:[^:]+:(?:alipay|wxpay|wechat|qqpay|bank|jdpay)|bepusdt:[^:]+:(?:usdt\.trc20|usdt\.erc20|usdt\.polygon|usdt\.bep20|usdt\.aptos|usdt\.solana|usdt\.xlayer|usdt\.arbitrum|usdt\.plasma|usdt\.ton|usdc\.trc20|usdc\.erc20|usdc\.polygon|usdc\.bep20|usdc\.aptos|usdc\.solana|usdc\.xlayer|usdc\.arbitrum|usdc\.base))$'
 
 PaymentOrderMethodID:
   description: Stable method ID for new orders; legacy pending snapshots may expose an empty value or provider alias.

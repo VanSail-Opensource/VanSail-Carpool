@@ -9,7 +9,7 @@ post:
       in: path
       required: true
       schema: { type: string }
-    - $ref: '../openapi.yaml#/components/parameters/IdempotencyKey'
+    - $ref: '../openapi.yaml#/components/parameters/HourlyIdempotencyKey'
   requestBody:
     required: true
     content:
@@ -17,6 +17,7 @@ post:
         schema: { $ref: '../openapi.yaml#/components/schemas/HourlyDisableRequest' }
   responses:
     '202':
+      description: Durable operation receipt for the administrator's hourly disable action.
       content:
         application/json:
           schema: { $ref: '../openapi.yaml#/components/schemas/OperationReceipt' }

@@ -87,6 +87,9 @@ large exact values. Older PAYG history remains a separate compatibility read.
 - `forecasts.ts`: Administrator-scoped user forecast projection and cursor-paginated per-user pricing contracts.
 
 Generated API compatibility regression: `openapiContract.test.ts`.
+`openapiInputBoundaries.test.ts` validates source-contract callback composition,
+provider-owned rails, exact amount limits, nullable values, partial settings,
+receipt authentication and error recovery, and required response descriptions.
 
 - `pricingReads.ts`: Bounds concurrent optional analytical dataset reads to three, with abortable admission; commerce requests keep their independent transport.
 

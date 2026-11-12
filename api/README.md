@@ -43,36 +43,49 @@ configuration requires the `native_firewall_port_ranges_v1` agent capability;
 unsupported agents retain their previous applied configuration.
 
 - Browser access uses the `browser-auth.yaml` schemas and public browser/session
-  paths. All administrator paths require browser-scoped session signatures;
+  paths. Administrator resource paths accept signed browser sessions or their
+  explicit API-token scopes; token management requires a signed browser session.
   `/admin-access` is the sole Mini App administrator exception. Shared `/me`,
-  display-currency, and browser IP Lookup calls explicitly select browser scope
-  with `X-TXC-Session-Scope: browser`. Browser session restoration also reports
-  verified member redirect state without creating member/browser privileges.
+  display-currency, IP Lookup and payment-return status calls explicitly select
+  browser scope with `X-TXC-Session-Scope: browser` when using browser credentials.
+  Browser session restoration also reports verified member redirect state without
+  creating additional member or administrator privileges.
 - `GET /api/v1/admin/billing/amount-limits` returns global billing limits without
   requiring member wallet access. Its shape matches the existing admin PUT.
 
-- IP Lookup subnet addresses add optional `ports` (the existing port/task/finding contract, at most three entries) and the `suspected` status. Red remains `flagged`; older saved rows can omit probes. Existing quote fields express free shared work with zero charge/quota, and existing progress endpoints distinguish queued from executing checks.
+- IP Lookup exposes reputation and network context for an exact address. Signed
+  quotes preserve their original charge/quota terms across same-intent retries;
+  authenticated progress reads report shared work without creating an operation.
+  Legacy inventory, subnet-probe and administrator source-diagnostic routes are
+  retired.
 
 - Active-term squad additions use `POST /api/v1/purchases/{id}/addons/quote` and idempotent `POST /api/v1/purchases/{id}/addons`; the regular purchase route accepts historical receipt replay only after new fixed-term sales close.
 
 - `openapi.yaml` is the public OpenAPI 3.1 entry point. It registers all API paths, reusable components, and the authenticated browser request-signing requirement.
 - `paths/` contains one bounded Path Item Object per API URL and an index mapping filenames to routes.
 - Manual maintenance uses an idempotent `POST /api/v1/admin/maintenance` command that returns the shared durable operation receipt.
-- `components/security-schemes.yaml` defines the session cookie plus timestamp, nonce, and HMAC signature schemes.
+- `components/security-schemes.yaml` defines independent Mini App and browser
+  sessions, request-signing headers, scoped API tokens and checkout capabilities.
 - `components/parameters.yaml` contains reusable path, query, and idempotency parameters.
 - `components/responses.yaml` contains reusable API error responses.
 - `components/schemas/` contains bounded definitions grouped into shards with a schema index.
-- IP Lookup refusal kinds include inventory pool/database/abuse categories and `cloudflare_cdn`; confirmed services share one comma-separated protocol source per port. Public probe evidence preserves its existing schema, and private inventory checkpoints never enter the API response.
 - Automatic renewal is represented by one owner-only `GET`/`PUT /api/v1/purchases/{id}/auto-renewal` resource. It always quotes and schedules one next cycle; manual multi-term renewal is not part of the public contract.
 - Member-facing display currency is represented by `GET`/`PUT /api/v1/me/display-currency`; CNY and USD use server-managed TXB-per-currency rates only for presentation.
 - Community access uses `GET /api/v1/community/membership/check` for strict active-combo visibility, `POST /api/v1/community/membership/check` for canonical Telegram facts, and `POST /api/v1/community/invites/{kind}` for one requested group or channel link.
 - Squad profile schemas in `schemas-02.yaml` describe local Broadband, China Optimized, and International Network metadata; they do not alter the X-Node upstream contract.
 - Each public squad product carries its required live `accessibleNodes` projection, including nullable provider names; purchase quotes retain the authoritative selected-squad union.
 
-Generate TypeScript types from the root entry point with `npm run generate:api` in `web/`. Authenticated operations inherit all four AND-combined security schemes. Telegram authentication, provider callbacks, payment returns, operational probes, and static delivery retain their explicit unsigned protocols.
+Generate TypeScript types and runtime response shapes from the root entry point
+with `npm run generate:api` in `web/`. The default member authorization combines
+its cookie, timestamp, nonce and HMAC signature. Each explicit security entry is
+an alternative authorization path; browser credentials and API tokens apply only
+where listed. Provider-return status requires an existing checkout capability or
+signed owner authentication; its navigation routes are public.
 
 
-`API_TOKENS.md` documents scoped bearer authentication, management, expiry and migration operation polling.
+`API_TOKENS.md` documents scoped bearer authentication, management, expiry and
+scoped operation polling. Administrator and native scopes remain independent;
+generic database and backup mutations require both write families.
 
 `GET /api/v1/admin/xnode/service-identities/{id}/subscription` returns private
 metadata and the existing bearer URL for explicitly imported standalone access.

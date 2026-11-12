@@ -1,11 +1,14 @@
 post:
   tags: [Onboarding]
   operationId: acceptSharingAgreement
-  summary: Accept the no-sharing agreement and provision X-Node
+  summary: Accept the current published agreements and complete local onboarding
   description: |
-    Records acceptance and ensures an ACTIVE X-Node user with a 2099
-    upstream expiry, zero traffic, NO_RESET, and no squads. Recoverable partial
-    failures remain resumable and are reconciled by username and Telegram ID.
+    Requires the current positive agreement revision and exact unique set of
+    published agreement IDs while the account is at the agreement step.
+    Records acceptance and completes local onboarding. Durable background work
+    provisions native subscription credentials and applicable PAYG access.
+    Traffic admission still follows the current entitlement and PAYG policy;
+    this response does not establish deployment completion or node liveness.
   requestBody:
     required: true
     content:
