@@ -34,9 +34,6 @@
   .side-rail__member strong { color: var(--text); font-size: 0.72rem; }
   .side-rail__member span { color: var(--text-faint); font-size: 0.63rem; }
   .side-rail__footer .language-control { width: 100%; justify-content: flex-start; }
-
-  .page--catalog,
-  .page--connections,
   .page--statistics,
   .page--activity,
   .page--emby { max-width: 1180px; }
@@ -46,7 +43,6 @@
   .page-header { margin-bottom: 2.4rem; }
 
   .section-block,
-  .combo-section,
   .squad-selector { padding: clamp(1.1rem, 1.6vw, 1.45rem); }
 }
 

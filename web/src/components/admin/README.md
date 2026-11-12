@@ -36,7 +36,6 @@ forms preserve their drafts so an administrator can correct or retry the action.
 - `AdminCatalogPanel.vue` manages combos and squads.
 - `AdminCouponsPanel.vue` manages coupon definitions.
 - `AdminDatabasePanel.vue` browses protected database tables.
-- `AdminEmbyPanel.vue` monitors Emby provisioning.
 - `AdminEntitlementsPanel.vue` manages entitlements.
 - `AdminOnboardingPanel.vue` loads, saves, and publishes visual onboarding drafts.
 - `onboarding/` contains bilingual content indexes with focused editors and text previews.
@@ -56,7 +55,6 @@ limit field for squad products, a table-name search for database recovery work,
 and mobile-safe backup controls. Balance adjustments use the shared audited
 admin endpoint for both credits and deductions.
 - `AdminSectionState.vue` is the shared loading/error/content presence boundary. Panel roots stay still; focused child workflows own their local Motion state.
-
 
 Combo editing accepts the API-supported empty description and zero price. Its Zod submission schema enforces exact decimal money/traffic bounds, validity and quotas, with visible localized feedback for invalid drafts. Busy or failed saves retain the draft.
 

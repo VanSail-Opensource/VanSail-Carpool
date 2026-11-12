@@ -61,9 +61,9 @@ func (s *Service) OwnedSubscription(ctx context.Context, user string) (Subscript
 	}
 	return s.subscriptionMetadata(ctx, identity)
 }
-func (s *Service) subscriptionMetadata(ctx context.Context, identity Identity) (SubscriptionMetadata, error) {
+func (s *Service) readSubscriptionMetadata(ctx context.Context, identity Identity) (SubscriptionMetadata, error) {
 	if identity.UserID == "" {
-		return s.serviceSubscriptionMetadata(ctx, identity)
+		return s.readServiceSubscriptionMetadata(ctx, identity)
 	}
 	result := SubscriptionMetadata{Username: identity.Username, UsedBytes: "0", LimitBytes: "0", Formats: map[string]bool{}}
 	owner, err := s.repo.UserByID(ctx, identity.UserID)
@@ -114,12 +114,8 @@ func (s *Service) subscriptionMetadata(ctx context.Context, identity Identity) (
 func (s *Service) BearerSubscription(ctx context.Context, token, format string) ([]byte, SubscriptionMetadata, error) {
 	return s.BearerSubscriptionForAgent(ctx, token, format, "")
 }
-func (s *Service) BearerSubscriptionForAgent(ctx context.Context, token, explicit, agent string) ([]byte, SubscriptionMetadata, error) {
-	identity, err := s.bearerIdentity(ctx, token)
-	if err != nil {
-		return nil, SubscriptionMetadata{}, err
-	}
-	metadata, err := s.subscriptionMetadata(ctx, identity)
+func (s *Service) readBearerSubscriptionForAgent(ctx context.Context, identity Identity, explicit, agent string) ([]byte, SubscriptionMetadata, error) {
+	metadata, err := s.readSubscriptionMetadata(ctx, identity)
 	if err != nil {
 		return nil, metadata, err
 	}

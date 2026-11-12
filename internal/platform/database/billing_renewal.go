@@ -140,7 +140,6 @@ func (s *Store) renew(ctx context.Context, input RenewalInput, excludedAddonIDs 
 		return model.RenewalBatch{}, err
 	}
 	start := quote.EffectiveAt
-	idsForBatch := make([]string, 0, input.TermCount)
 	for index := 0; index < input.TermCount; index++ {
 		purchaseID, err := ids.New()
 		if err != nil {
@@ -178,7 +177,6 @@ func (s *Store) renew(ctx context.Context, input RenewalInput, excludedAddonIDs 
 		if err := enqueuePurchaseTransitionTx(ctx, tx, purchaseID, status, from, now); err != nil {
 			return model.RenewalBatch{}, err
 		}
-		idsForBatch = append(idsForBatch, purchaseID)
 	}
 	if _, err := insertLedgerTx(ctx, tx, input.UserID, -quote.TotalPrice.MinorInt64(), newBalance, "purchase_debit", batchID, "renewal batch", now); err != nil {
 		return model.RenewalBatch{}, err

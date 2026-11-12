@@ -1270,6 +1270,20 @@ source isolation, private JSON, expired/replaced peers and unchanged-digest
 reconfirmation. Database first-sync tests cover purge/rejoin, same-period
 rotation, concurrent child material replacement and caller-supplied fake proof.
 
+Credential-bearing reads are bracketed by `BeginSubscriptionRead` and
+`CheckSubscriptionRead` in `subscription_read.go`. The private snapshots in
+`subscription_read_sources.go` bind native credentials, subscription token,
+readiness proof, period and owner generation/restriction to the database and
+local compile revisions. `subscription_publish.go` checks after metadata,
+document rendering, and browser/empty-response selection; a changed authority
+discards every partial URL or document. Member Home adapters use the same
+bracket around inventory and host links. Missing epoch support fails closed.
+Purchase and standalone access time boundaries also invalidate a slow read.
+No lock spans rendering, and unchanged PAYG/hourly inventory policies remain
+independent from this publication check. `subscription_read_test.go` covers
+lifecycle/material/epoch/expiry changes; `subscription_publish_test.go` rotates
+tokens or restricts the owner during real inventory and response-selection reads.
+
 `routing_entitlements.go` prunes authoritative endpoint/entitlement loss,
 including administrator-disabled product groups. Disabled nodes/endpoints and
 provisioning or quota pauses suspend the graph while preserving IDs.

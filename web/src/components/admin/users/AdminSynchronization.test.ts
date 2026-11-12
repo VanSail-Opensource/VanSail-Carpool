@@ -1,4 +1,3 @@
-import { defineComponent } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -23,14 +22,14 @@ vi.mock('@/i18n', async (importOriginal) => ({
   useI18n: () => ({ t: (key: string) => key }),
 }))
 
-const StatusBadgeStub = defineComponent({
-  props: ['tone', 'label'],
+const StatusBadgeStub = {
+  props: { tone: String, label: String },
   template: '<span data-sync :data-tone="tone">{{ label }}</span>',
-})
-const TableStub = defineComponent({
+}
+const TableStub = {
   props: { data: { type: Array, default: () => [] } },
   template: '<div><div v-for="(item, index) in data" :key="index"><slot name="status-cell" :row="{ original: item }" /></div></div>',
-})
+}
 const stubs = {
   StatusBadge: StatusBadgeStub, UTable: TableStub,
   AdminSectionState: { template: '<div><slot /></div>' },

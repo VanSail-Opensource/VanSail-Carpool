@@ -1,17 +1,21 @@
-import '@/styles/main.css'
+import '@/browser/styles.css'
+import { setExperience } from '@/utils/experience'
+import { initializeBrowserTheme } from '@/browser/theme'
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { createRouter, createWebHistory } from 'vue-router'
 import ui from '@nuxt/ui/vue-plugin'
-import { api } from '@/api/client'
 import { pmApi } from '@/api/pm'
-import { memberOperationsApi } from '@/api/memberOperations'
+import { operationReceiptLoaderKey, type OperationReceiptLoader } from '@/composables/operationReceiptLoader'
 import { ApiError } from '@/api/http'
 import type { OperationReceipt, PMConversation, PMDelivery } from '@/api/types'
 import { setLocale, t } from '@/i18n'
 import PMAdminAudit from './PMAdminAudit.vue'
 
+setExperience('browser')
+initializeBrowserTheme()
 const params = new URLSearchParams(location.search)
+setLocale(params.has('zh') ? 'zh-CN' : 'en')
 if (params.has('reduced')) {
   const native = window.matchMedia.bind(window)
   window.matchMedia = query => { const media = native(query); if (query === '(prefers-reduced-motion: reduce)') Object.defineProperty(media, 'matches', { value: true }); return media }
@@ -22,11 +26,11 @@ let conversations: PMConversation[] = [make('ada', 'Ada'), { ...make('mira', 'Mi
 if (params.has('empty')) conversations = []
 const state = { changes: 0, repairs: 0, reads: 0, polls: 0, lastRepair: null as unknown, failure: params.has('error') }
 const receipts = new Map<string, OperationReceipt>()
-api.getAdminResource = async () => {
+async function loadConversation(): Promise<PMConversation | null> {
   state.reads++
   if (params.has('slow')) await new Promise(resolve => setTimeout(resolve, 10_000))
   if (state.failure) throw new ApiError(503, { code: 'PM_QUEUE_UNAVAILABLE', message: '' })
-  return { items: [...conversations], page: { nextCursor: null } } as never
+  return conversations.find(item => item.id === params.get('user')) ?? conversations[0] ?? null
 }
 const deliveries: PMDelivery[] = [
   { operationId: 'uncertain-delivery', status: 'pending_review', direction: 'inbound', sourceChatId: '42', sourceMessageId: '10', resultMessageId: null, topicId: '50', errorCode: 'PM_DELIVERY_UNCERTAIN', createdAt: date },
@@ -49,7 +53,7 @@ pmApi.repair = async (id, body) => {
   conversations = conversations.map(item => item.id === id ? { ...item, topicId: body.topicId, profileMessageId: body.profileMessageId || '91', topicState: 'ready', profileState: 'ready' } : item)
   return receipt()
 }
-memberOperationsApi.getOperation = async (id) => {
+const loadOperation: OperationReceiptLoader = async (id) => {
   state.polls++
   if (params.has('pollerror')) throw new ApiError(503, { code: 'PM_QUEUE_UNAVAILABLE', message: '' })
   const item = receipts.get(id)!
@@ -57,7 +61,7 @@ memberOperationsApi.getOperation = async (id) => {
   receipts.set(id, next); return next
 }
 Object.assign(window, { __pmAudit: state, __pmConversations: () => conversations, __pmLocale: setLocale })
-const app = createApp(PMAdminAudit)
+const app = createApp(PMAdminAudit, { loadConversation }).provide(operationReceiptLoaderKey, loadOperation)
 app.config.globalProperties.$t = t
 app.use(createPinia())
 const router = createRouter({ history: createWebHistory(), routes: [{ path: '/fixtures/pm-admin-audit.html', component: PMAdminAudit }] })

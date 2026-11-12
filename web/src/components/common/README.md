@@ -8,7 +8,6 @@
 - Operation notices use simultaneous presence because a receipt, polling failure
   and retry action can coexist. Sequential single-child presence hides recovery
   controls with newer Motion versions.
-- `LanguageSwitcher.vue` controls the active locale.
 - `DualCurrencyMoney.vue` renders an authoritative TXB amount with an optional second-line approximate CNY/USD amount for checkout totals.
 - `SwitchField.vue` and `TxbAmountField.vue` provide domain form fields; `TxbAmountField.vue` keeps exact TXB entry and can add a bounded `USlider` for member funding without weakening minor-unit validation.
 - Amount text remains a decimal string through entry and validation, so large

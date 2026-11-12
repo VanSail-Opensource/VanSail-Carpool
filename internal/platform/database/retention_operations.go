@@ -30,14 +30,7 @@ func pruneProviderOperationsTx(ctx context.Context, tx *sql.Tx, cutoff, now time
 		SELECT id FROM provider_operations operation WHERE status IN ('queued','processing','pending_review','partial') AND created_at<$1
 		AND kind<>'node_compensation'
 		AND NOT EXISTS (SELECT 1 FROM xnode_ddns_changes change WHERE change.operation_id=operation.id AND change.phase IN ('staging','routes'))
-		AND (kind NOT ILIKE 'telegram_pm_%' OR created_at<=$2) AND NOT (operation.kind IN ('member_squad_switch','member_early_activation') AND EXISTS(
-	SELECT 1 FROM provider_operation_items item JOIN purchases purchase ON purchase.id=item.target_id
-	WHERE item.operation_id=operation.id AND item.target_type='purchase' AND purchase.user_id=operation.owner_user_id
-	AND purchase.valid_from<=$3 AND purchase.valid_until>$4 AND
-	((operation.kind='member_squad_switch' AND purchase.status='active') OR
-	 (operation.kind='member_early_activation' AND purchase.status IN ('active','activating','failed')))
-	AND NOT EXISTS(SELECT 1 FROM purchases other WHERE other.user_id=purchase.user_id AND other.id<>purchase.id
-		AND other.status IN ('active','activating') AND other.valid_from<=$5 AND other.valid_until>$6)))`, stamp(cutoff), stamp(now.Add(-pmReceiptRetention)), stamp(now), stamp(now), stamp(now), stamp(now))
+		AND (kind NOT ILIKE 'telegram_pm_%' OR created_at<=$2) AND NOT (`+liveComboControlPredicate(3)+`)`, stamp(cutoff), stamp(now.Add(-pmReceiptRetention)), stamp(now), stamp(now), stamp(now), stamp(now))
 	if err != nil {
 		return fmt.Errorf("select stale operations: %w", err)
 	}

@@ -1634,3 +1634,19 @@ pending proof, cleared credentials, inactive owners and retained recovery reason
 catalog using the bounded owner pricing-read context; it preserves the catalog
 unchanged when dynamic pricing is disabled. Checkout settlement rechecks its own
 eligibility and immutable price evidence.
+
+`renewal_batch.go` releases its identifier query before purchase hydration, so
+legacy renewal creation and replay also work with a single database connection.
+`renewal_batch_test.go` verifies ordered terms, exact replay and a single debit
+under that pool limit. The unused batch identifier accumulator is removed.
+
+`member_control_projection_test.go` covers unresolved command priority, durable
+receipt order, superseded or expired failure visibility, and fractional timestamp
+boundaries. The display and retention/retry paths share the same typed live-term
+predicate. Unresolved receipts remain visible; old failures do not replace newer
+successful commands. The unused remote-proxy preference adapter is retired;
+preference regressions exercise the native panel owner interface.
+
+`xnode_compile_version_test.go` verifies that the next access boundary uses exact
+instants for mixed whole-second and fractional UTC timestamps while retaining a
+broad indexed candidate scan.

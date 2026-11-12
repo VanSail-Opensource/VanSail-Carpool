@@ -80,8 +80,13 @@ func TestAdminNativeSynchronizationMatchesBoundedListAndDetail(t *testing.T) {
 			if onboarding == "" {
 				onboarding = "complete"
 			}
-			if _, err := store.DB().ExecContext(ctx, `UPDATE users SET account_status=$1,onboarding_state=$2,recovery_reason=$3,proxy_user_id=$4 WHERE id=$5`,
-				status, onboarding, test.recoveryReason, nullText(test.legacy), user.ID); err != nil {
+			// Complete onboarding while the owner is active; the lifecycle trigger
+			// correctly rejects setting completion on an already unavailable owner.
+			if _, err := store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state=$1 WHERE id=$2`, onboarding, user.ID); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := store.DB().ExecContext(ctx, `UPDATE users SET account_status=$1,recovery_reason=$2,proxy_user_id=$3 WHERE id=$4`,
+				status, test.recoveryReason, nullText(test.legacy), user.ID); err != nil {
 				t.Fatal(err)
 			}
 			detail, err := store.AdminUserSynchronization(ctx, user.ID)

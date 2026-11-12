@@ -32,8 +32,6 @@
 - `telegramContext.ts` classifies the native `TelegramWebviewProxy` bridge, launch markers, SDK-captured `WebView.initParams`, platforms, and user agents before route construction, and skips the delayed-context wait for the public SDK placeholder in regular browsers.
 - `telegram.test.ts` covers Telegram capability behavior, semantic impact mapping, non-delegated selection, and listener disposal.
 - `telegramHaptics.test.ts` verifies one delegated action impact plus one bet outcome notification, older SDK behavior and safe host-call failure. `notifyBetOutcome` adds no second result-time impact.
-- `validation.ts` contains shared input validation helpers.
-- `validation.test.ts` covers validation boundaries.
 - `latestRequest.ts` supplies generation guards so disposed or superseded async
   work cannot overwrite current Vue state or restart timers.
 

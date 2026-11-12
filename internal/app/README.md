@@ -251,3 +251,10 @@ The pagination contract follows [Telegram Bot API](https://core.telegram.org/bot
 `maintenance_operation_recovery_test.go` verifies that a completed maintenance item
 recovers its exact receipt outcome after an interrupted final commit without
 starting another backup or retention pass.
+
+`xnode_member_subscription.go` brackets readiness, inventory, credential export and
+subscription URL projection with the native subscription read fence. Changed
+owner generations, restrictions, native material, compile revisions or paid time
+boundaries discard the entire response. URL failures also return no partial
+subscription. `xnode_member_subscription_fence_test.go` changes restrictions and
+subscription tokens during a real inventory read and checks metadata/link refusal.

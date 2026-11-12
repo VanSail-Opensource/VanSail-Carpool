@@ -1,5 +1,7 @@
 package catalog
 
+// Historical manual renewal behavior is retained only for regression fixtures.
+
 import (
 	"context"
 	"errors"
@@ -88,4 +90,32 @@ func (s *Service) Renew(ctx context.Context, user model.User, purchaseID string,
 		return selection.RenewExcludingAddons(ctx, input, unavailable, s.now().UTC())
 	}
 	return repository.Renew(ctx, input, s.now().UTC())
+}
+
+// renewalComboRepository resolves the combo that one owned renewal provisions.
+type renewalComboRepository interface {
+	RenewalCombo(context.Context, string, string) (model.Combo, error)
+}
+
+// renewalCatalog hydrates only an owned renewal selection. The store resolves
+// the purchase's own combo, so a hidden or inactive combo row stays renewable and
+// the recorded purchase bundle keeps precedence over the live one. Hydration then
+// validates the same owned selection the store commits: retained add-ons bypass
+// storefront visibility, while unavailable paid squads are excluded. The provider
+// adapter keeps all live reads behind the existing queue.
+func (s *Service) renewalCatalog(ctx context.Context, userID, purchaseID, comboID string, addonIDs []string) (model.Catalog, []string, string, error) {
+	resolver, ok := s.repository.(renewalComboRepository)
+	if !ok {
+		return model.Catalog{}, nil, "", errors.New("renewal selection is unavailable")
+	}
+	combo, err := resolver.RenewalCombo(ctx, userID, purchaseID)
+	if err != nil {
+		return model.Catalog{}, nil, "", err
+	}
+	// A concurrent combo replacement between the quote and this resolution must
+	// not hydrate a different product than the quote priced.
+	if combo.ID != comboID {
+		return model.Catalog{}, nil, "", database.ErrNotFound
+	}
+	return s.hydrateRenewalCatalog(ctx, []model.Combo{combo}, addonIDs)
 }

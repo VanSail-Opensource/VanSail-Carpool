@@ -18,14 +18,13 @@
 - `dashboard-01.css` styles dashboard summaries and account details.
 - `dashboard-02.css` styles dashboard lists, actions, and secondary states.
 - `home-01.css` styles the wrapping balance/action row, paired Home language/currency controls, 44px Home actions, narrow-phone subscription layout, Nuxt UI usage-progress detail, and traffic surfaces.
-- `home-02.css` styles traffic details, ride facts, and Around TX links on Home.
+- `home-02.css` styles ride facts and Around TX links on Home.
 - `home-03.css` styles the compact renewal term slider and separated quote total/date block.
 - `home-05.css` keeps Home's card stream and alerts in the same single-column order on phones and desktop, with shrinkable grid tracks for long ride names.
 - `statistics-01.css` styles the independently divided statistics sections, centered refresh control, KPI panels, dense icon-based node rows, and compact states.
 - `statistics-02.css` styles the responsive generic SVG donut, labeled pies, traffic tooltips, legends, and normalized stacked bars.
 - `affiliates-01.css` styles flat member metrics, tier progress, referral rows, and tablet expansion.
-- `catalog-01.css` styles catalog browsing and plan presentation, including variable-height responsive columns for optional squads.
-- `catalog-02.css` styles catalog selection and checkout details.
+- `catalog-01.css` retains shared link styling and squad-selector spacing; active cards own their responsive presentation.
 - `billing-01.css` styles funding controls.
 - `billing-02.css` styles provider-payment details.
 - `billing-03.css` styles crypto currency/network selection plus the compact payment-instruction rhythm, address copy, QR loading, and fixed countdown.

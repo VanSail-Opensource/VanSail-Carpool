@@ -165,7 +165,6 @@
 
 @media (prefers-reduced-transparency: reduce) {
   .bottom-nav__list,
-  .catalog-action,
   .dialog-overlay,
   .tg-glass-backdrop,
   .tg-glass-modal,
@@ -181,8 +180,7 @@
   .tg-glass-menu,
   .tg-glass-tooltip,
   .tg-glass-toast,
-  .bottom-nav__list,
-  .catalog-action {
+  .bottom-nav__list {
     background-color: var(--surface-raised) !important;
   }
 

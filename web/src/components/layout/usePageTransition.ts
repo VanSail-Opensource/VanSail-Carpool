@@ -50,16 +50,6 @@ export function usePageTransition(router: Router, items: () => NavigationMenuIte
       : 'forward'
   })
 
-  function leave(element: Element): void {
-    if (!(element instanceof HTMLElement)) return
-
-    // aria-hidden is universally safe for the short outgoing interval.
-    // Avoid relying on HTMLElement.inert here: older Telegram WebViews can
-    // expose an engine that does not implement inert.
-    element.setAttribute('aria-hidden', 'true')
-    element.querySelector('#main-content')?.removeAttribute('id')
-  }
-
   onScopeDispose(removeGuard)
   const stopWideWatch = wideViewport
     ? (() => {
@@ -74,5 +64,5 @@ export function usePageTransition(router: Router, items: () => NavigationMenuIte
     : () => undefined
   onScopeDispose(stopWideWatch)
 
-  return { direction, wide, leave }
+  return { direction, wide }
 }

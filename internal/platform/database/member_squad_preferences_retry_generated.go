@@ -7,15 +7,6 @@ import (
 	time "time"
 )
 
-func (s *Store) EnabledSquadsForRemote(ctx context.Context, remoteID string, owned []string) ([]string, error) {
-	for retryIndex := 0; ; retryIndex++ {
-		r0, r1 := s.retryAttempt_EnabledSquadsForRemote(ctx, remoteID, owned)
-		if !s.retryTransaction(ctx, r1, retryIndex) {
-			return r0, r1
-		}
-	}
-}
-
 func (s *Store) BeginSquadSwitch(ctx context.Context, input providerops.CreateInput, purchaseID, uuid string, enabled bool, now time.Time) (providerops.Operation, error) {
 	for retryIndex := 0; ; retryIndex++ {
 		r0, r1 := s.retryAttempt_BeginSquadSwitch(ctx, input, purchaseID, uuid, enabled, now)
