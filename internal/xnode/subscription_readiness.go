@@ -39,16 +39,20 @@ func (s *Service) SubscriptionReadiness(ctx context.Context, identity Identity) 
 
 type appliedMemberConfig struct {
 	revision   uint64
-	principals []int64
+	principals []FirstSyncSubject
 	validUntil map[int64]time.Time
 	appliedAt  time.Time
 }
 
-func firstSyncCandidates(config wire.Config, revision uint64, now time.Time) *appliedMemberConfig {
+func firstSyncCandidates(config wire.Config, revision uint64, now time.Time, subjects map[int64]FirstSyncSubject) *appliedMemberConfig {
 	evidence := &appliedMemberConfig{revision: revision, validUntil: map[int64]time.Time{}}
 	for _, user := range config.Users {
-		if user.ID > 0 && !user.BlockNew && len(user.InboundTags) > 0 && len(user.Credentials) > 0 && (user.ValidUntil == nil || user.ValidUntil.After(now)) {
-			evidence.principals = append(evidence.principals, int64(user.ID))
+		if user.ID > 0 && user.AccountingPeriod != "" && !user.BlockNew && len(user.InboundTags) > 0 && len(user.Credentials) > 0 && (user.ValidUntil == nil || user.ValidUntil.After(now)) {
+			subject, ok := subjects[int64(user.ID)]
+			if !ok || subject.ProxyUserID != int64(user.ID) || subject.PeriodID != user.AccountingPeriod {
+				continue
+			}
+			evidence.principals = append(evidence.principals, subject)
 			if user.ValidUntil != nil {
 				evidence.validUntil[int64(user.ID)] = *user.ValidUntil
 			}
@@ -68,10 +72,10 @@ func (m *Master) recordFirstSyncAck(peer *agentPeer, revision uint64) {
 	peer.mu.Lock()
 	if evidence := peer.firstSync; evidence != nil && evidence.revision == revision && peer.revision == revision && evidence.appliedAt.IsZero() {
 		evidence.appliedAt = m.service.Now()
-		eligible := make([]int64, 0, len(evidence.principals))
-		for _, id := range evidence.principals {
-			if deadline := evidence.validUntil[id]; deadline.IsZero() || deadline.After(evidence.appliedAt) {
-				eligible = append(eligible, id)
+		eligible := make([]FirstSyncSubject, 0, len(evidence.principals))
+		for _, subject := range evidence.principals {
+			if deadline := evidence.validUntil[subject.ProxyUserID]; deadline.IsZero() || deadline.After(evidence.appliedAt) {
+				eligible = append(eligible, subject)
 			}
 		}
 		evidence.principals = eligible
@@ -87,7 +91,7 @@ func (m *Master) recordFirstSyncAck(peer *agentPeer, revision uint64) {
 // Called by existing joined reconciliation workers, independently of traffic ACKs.
 func (m *Master) confirmFirstSync(ctx context.Context, peer *agentPeer) error {
 	repo, ok := m.service.repo.(interface {
-		ConfirmXNodeFirstSync(context.Context, string, uint64, []int64, time.Time) error
+		ConfirmXNodeFirstSync(context.Context, string, uint64, []FirstSyncSubject, time.Time) error
 	})
 	if !ok {
 		return nil

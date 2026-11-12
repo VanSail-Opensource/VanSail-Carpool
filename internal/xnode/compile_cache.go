@@ -17,6 +17,7 @@ type compiledState struct {
 	until        time.Time
 	config       wire.Config
 	fingerprint  [32]byte
+	firstSync    map[int64]FirstSyncSubject
 }
 
 type compileFailure struct {
@@ -31,7 +32,11 @@ type compileFailure struct {
 func (m *Master) cachedConfiguration(ctx context.Context, peer *agentPeer, _ bool) (wire.Config, error) {
 	repo, supported := m.service.repo.(compileVersionRepository)
 	if !supported {
-		return m.service.Compile(ctx, peer.nodeID)
+		config, subjects, err := m.service.compileWithFirstSync(ctx, peer.nodeID)
+		if err == nil {
+			peer.compiled = &compiledState{config: config, firstSync: subjects}
+		}
+		return config, err
 	}
 	now := m.service.now()
 	localVersion := m.service.localCompileRevision.Load()
@@ -49,7 +54,7 @@ func (m *Master) cachedConfiguration(ctx context.Context, peer *agentPeer, _ boo
 	if sameFailure && now.Before(failed.at) {
 		return wire.Config{}, failed.err
 	}
-	config, err := m.service.Compile(ctx, peer.nodeID)
+	config, subjects, err := m.service.compileWithFirstSync(ctx, peer.nodeID)
 	if err != nil {
 		if m.compileMayBackoff() {
 			delay := time.Second
@@ -89,10 +94,11 @@ func (m *Master) cachedConfiguration(ctx context.Context, peer *agentPeer, _ boo
 		// A coarse database epoch changed, but this node's effective dependencies
 		// did not. Preserve the prepared wire candidate and native proof.
 		saved.version, saved.localVersion, saved.until = version, localVersion, next
+		saved.firstSync = subjects
 		peer.compileFailure = nil
 		return saved.config, nil
 	}
-	peer.compiled = &compiledState{version: version, localVersion: localVersion, until: next, config: config, fingerprint: fingerprint}
+	peer.compiled = &compiledState{version: version, localVersion: localVersion, until: next, config: config, fingerprint: fingerprint, firstSync: subjects}
 	peer.compileFailure = nil
 	return config, nil
 }

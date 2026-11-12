@@ -120,3 +120,10 @@ outbox jobs using their original owner, kind and request fingerprint. Wrong-owne
 ciphertexts are refused without rewriting evidence or exposing passwords. The
 verification is kind-specific: unrelated plaintext refund command targets remain
 valid and are not mistaken for encrypted envelopes.
+
+Schema 49 conservatively clears historical member first-sync timestamps once.
+New confirmation binds compiled owner generation, accounting period and both
+principal/owner credential hashes, under serializable lifecycle/material locks.
+Purge and material rotation clear prior proof; token-only changes preserve it.
+Fresh authenticated membership restores readiness, including forced publication
+when the native digest is unchanged. No financial or credential data is migrated.

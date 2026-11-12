@@ -895,11 +895,12 @@ Access-group deletion: `xnode_group_usage.go` derives distinct current/queued pa
 <!-- generated transaction retry map -->
 
 Generated adapters repeat complete rolled-back PostgreSQL operations for SQLSTATE
-40001/40P01, with bounded context-aware backoff. Serializable retries retain the complete operation boundary.
+40001/40P01, with bounded context-aware backoff.
 The generator excludes methods that access SQL outside their transaction or own
 mutable in-memory batches. Provider requests remain outside every transaction.
 
 - `account_block_retry_generated.go` wraps the transactional methods in `account_block.go`.
+- `account_purge_resume_retry_generated.go` wraps the transactional methods in `account_purge_resume.go`.
 - `account_purge_retry_generated.go` wraps the transactional methods in `account_purge.go`.
 - `account_rejoin_payg_retry_generated.go` wraps the transactional methods in `account_rejoin_payg.go`.
 - `activity_draws_part2_retry_generated.go` wraps the transactional methods in `activity_draws_part2.go`.
@@ -985,7 +986,6 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `pricing_feature_snapshot_retry_generated.go` wraps the transactional methods in `pricing_feature_snapshot.go`.
 - `pricing_forecast_storage_retry_generated.go` wraps the transactional methods in `pricing_forecast_storage.go`.
 - `pricing_health_retry_generated.go` wraps the transactional methods in `pricing_health.go`.
-- `pricing_member_catalog_retry_generated.go` wraps the transactional methods in `pricing_member_catalog.go`.
 - `pricing_offer_coupons_retry_generated.go` wraps the transactional methods in `pricing_offer_coupons.go`.
 - `pricing_optimization_retry_generated.go` wraps the transactional methods in `pricing_optimization.go`.
 - `pricing_optimization_snapshot_retry_generated.go` wraps the transactional methods in `pricing_optimization_snapshot.go`.
@@ -1010,6 +1010,7 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `retention_payg_retry_generated.go` wraps the transactional methods in `retention_payg.go`.
 - `retention_retry_generated.go` wraps the transactional methods in `retention.go`.
 - `retired_detector_retry_generated.go` wraps the transactional methods in `retired_detector.go`.
+- `settings_emby_retry_generated.go` wraps the transactional methods in `settings_emby.go`.
 - `store_part2_retry_generated.go` wraps the transactional methods in `store_part2.go`.
 - `store_retry_generated.go` wraps the transactional methods in `store.go`.
 - `telegram_boost_receipts_retry_generated.go` wraps the transactional methods in `telegram_boost_receipts.go`.
@@ -1032,10 +1033,13 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `xnode_diy_retry_generated.go` wraps the transactional methods in `xnode_diy.go`.
 - `xnode_firewall_policy_retry_generated.go` wraps the transactional methods in `xnode_firewall_policy.go`.
 - `xnode_firewall_tx_retry_generated.go` wraps the transactional methods in `xnode_firewall_tx.go`.
+- `xnode_first_sync_retry_generated.go` wraps the transactional methods in `xnode_first_sync.go`.
 - `xnode_group_delete_retry_generated.go` wraps the transactional methods in `xnode_group_delete.go`.
 - `xnode_groups_retry_generated.go` wraps the transactional methods in `xnode_groups.go`.
+- `xnode_identities_retry_generated.go` wraps the transactional methods in `xnode_identities.go`.
 - `xnode_metered_probes_retry_generated.go` wraps the transactional methods in `xnode_metered_probes.go`.
 - `xnode_named_services_retry_generated.go` wraps the transactional methods in `xnode_named_services.go`.
+- `xnode_node_delete_retry_generated.go` wraps the transactional methods in `xnode_node_delete.go`.
 - `xnode_nodes_retry_generated.go` wraps the transactional methods in `xnode_nodes.go`.
 - `xnode_payg_accounts_retry_generated.go` wraps the transactional methods in `xnode_payg_accounts.go`.
 - `xnode_payg_jobs_retry_generated.go` wraps the transactional methods in `xnode_payg_jobs.go`.
@@ -1046,6 +1050,7 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `xnode_routing_plans_retry_generated.go` wraps the transactional methods in `xnode_routing_plans.go`.
 - `xnode_routing_recovery_retry_generated.go` wraps the transactional methods in `xnode_routing_recovery.go`.
 - `xnode_traffic_retry_generated.go` wraps the transactional methods in `xnode_traffic.go`.
+- `xnode_update_expectation_retry_generated.go` wraps the transactional methods in `xnode_update_expectation.go`.
 
 <!-- end generated transaction retry map -->
 
@@ -1601,3 +1606,19 @@ of a saturated `time.Duration`. Queue selection compares actual timestamps;
 unrepresentable resulting dates fail the enclosing transaction.
 `member_queue_rebase_test.go` exercises both transitions with dates in year 2500,
 preserved nanosecond offsets, term durations, prices and expected wallet amounts.
+
+`xnode_first_sync.go` records readiness only for the exact compiled owner generation,
+open period and principal/owner credential hashes. Sorted lifecycle and identity
+locks fence purge/rejoin and concurrent credential replacement; complete-operation
+retry repeats all checks after serialization conflicts. `xnode_first_sync_test.go`
+and `xnode_first_sync_lifecycle_test.go` cover replay, fake proof, material rotation,
+concurrent child rotation and lifecycle replacement. Purge/material retirement and
+credential upserts invalidate proof; token-only rotation preserves it.
+
+`xnode_node_delete.go` restricts direct cleanup to disabled, never-enrolled nodes
+without published revisions, lifecycle transitions, endpoints or retained history.
+It follows the queued-removal epoch/node lock order and retries serialization
+conflicts. Enrolled/historical nodes use the durable removal workflow.
+`xnode_node_delete_test.go` checks eligibility, missing-node replay, history without
+foreign keys and a concurrent first enrollment. The two corresponding generated
+retry adapters preserve the repository's serializable write-transaction policy.

@@ -159,6 +159,16 @@ jobs:
             gofmt -d .
             exit 1
           fi
+      - name: Verify generated database retry adapters
+        shell: bash
+        run: |
+          go run scripts/generate_db_retries.go
+          git diff --exit-code -- internal/platform/database
+          untracked="$(git ls-files --others --exclude-standard -- internal/platform/database)"
+          if [[ -n "$untracked" ]]; then
+            printf '%s\n' "$untracked"
+            exit 1
+          fi
       - name: Vet packages
         run: go vet ./...
       - name: Measure fixed catalog pricing work

@@ -31,7 +31,7 @@ func purgeAccountMaterialTx(ctx context.Context, tx *sql.Tx, id string, now time
 		{`DELETE FROM xnode_customizations WHERE user_id=$1 OR proxy_user_id IN (SELECT proxy_user_id FROM xnode_payg_accounts WHERE user_id=$2)`, []any{id, id}},
 		{`DELETE FROM panel_entry_verification WHERE telegram_id=(SELECT telegram_id FROM users WHERE id=$1)`, []any{id}},
 		{`INSERT INTO coupon_grant_discards(grant_id,user_id,discarded_at) SELECT id,user_id,$1 FROM coupon_grants WHERE user_id=$2 AND status='active' ON CONFLICT(grant_id) DO NOTHING`, []any{stamp(now), id}},
-		{`UPDATE xnode_identities SET credentials_cipher='',subscription_cipher='',subscription_hash=NULL,current_period_id=NULL,access_disabled=1 WHERE user_id=$1 OR proxy_user_id IN (SELECT proxy_user_id FROM xnode_payg_accounts WHERE user_id=$2)`, []any{id, id}},
+		{`UPDATE xnode_identities SET credentials_cipher='',subscription_cipher='',subscription_hash=NULL,current_period_id=NULL,access_disabled=1,first_synced_at=NULL WHERE user_id=$1 OR proxy_user_id IN (SELECT proxy_user_id FROM xnode_payg_accounts WHERE user_id=$2)`, []any{id, id}},
 		{`UPDATE xnode_payg_accounts SET credit_bytes=0,credit_started_at=NULL WHERE user_id=$1`, []any{id}},
 	}
 	for _, q := range queries {

@@ -1248,11 +1248,27 @@ tuning, split and routing choices survive. Paid exemption creation is retired.
 
 Member subscription readiness is centralized in `subscription_readiness.go`.
 Only exact authenticated state.applied membership can stage proof. Joined master
-reconciliation persists first_synced_at once on the owner identity; no traffic
-acknowledgment waits for it. Old node-wide applied revisions cannot backfill user
-membership, so pending owners request a fresh per-node synchronization. Metadata,
+reconciliation persists first_synced_at on the owner identity; no traffic
+acknowledgment waits for it. `subscription_proof.go` privately captures the exact
+compiled principal, owner, account generation, accounting period and credential
+material hashes. These fields never enter an agent or public JSON payload. The
+confirmation transaction locks owner lifecycle and native identity rows, then
+matches the current open period and material before recording proof. Delayed
+acknowledgments cannot confirm a replacement lifecycle or same-period credential
+rotation. Purge/material retirement and native credential replacement clear old
+readiness; ordinary saves and subscription-token-only rotation preserve it.
+
+Migration 00049 conservatively clears existing member proof once because older
+evidence did not bind those sources. Master restart/reconnect publishes a fresh
+configuration, and pending owners request a forced per-node synchronization even
+when its native digest is unchanged. Offline owners wait for a fresh applied
+acknowledgment. No node-wide revision can backfill user membership. Metadata,
 Home URLs, host links and bearer exports withhold credentials until proof; normal
 export/access rules continue afterward. Service subscriptions remain independent.
+`subscription_proof_test.go` and `subscription_readiness_test.go` cover captured
+source isolation, private JSON, expired/replaced peers and unchanged-digest
+reconfirmation. Database first-sync tests cover purge/rejoin, same-period
+rotation, concurrent child material replacement and caller-supplied fake proof.
 
 `routing_entitlements.go` prunes authoritative endpoint/entitlement loss,
 including administrator-disabled product groups. Disabled nodes/endpoints and
@@ -1261,6 +1277,14 @@ provisioning or quota pauses suspend the graph while preserving IDs.
 Dependency changes compile via the existing revoke/apply/enable queue;
 legacy node-only graphs never rebind automatically after dependency changes.
 Owner PAYG history uses the existing exact recorded 72-hour per-node repository.
+
+The compatibility direct node DELETE path is limited to disabled, never-enrolled
+nodes with no published revision, lifecycle transition, endpoint dependency or
+retained history. It locks the node against first enrollment and returns conflict
+for ineligible existing nodes; deleting an already absent node is idempotent.
+Enrolled and historical nodes use the queued removal operation below. Database
+`xnode_node_delete_test.go` covers offline enrollment, historical rows without node
+foreign keys, endpoint dependencies, lifecycle state and concurrent first bind.
 
 Node removal runs node.remove as an existing durable operation, never a wire command. It fences encrypted routing reads with the compile revision, prunes squad/service bindings and routing choices, fences new admission, waits for apply and committed quiescent traffic barriers, seals per-period evidence, then revokes the exact drained peer. Offline participants and accounting gaps remain explicit resumable dependencies. Historical nodes retain evidence behind retired_at; never-enrolled unreferenced nodes are deleted.
 

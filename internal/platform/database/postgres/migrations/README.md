@@ -157,3 +157,10 @@ additive metadata: no purchase, wallet entry, settlement receipt or native
 principal is converted.
 
 `00048_telegram_star_reconciliation.sql` adds a protected per-bot cursor, monotonic page generation, exact boundary hash and scheduled continuation time. Existing balances, payments and historical receipts remain unchanged. The cursor is part of the native schema/backup contract; restoring an older snapshot safely replays idempotent provider history.
+
+`00049_native_first_sync_reconfirmation.sql` clears historical member first-sync
+proof once because earlier acknowledgments did not bind the current owner
+lifecycle and credential material. Fresh authenticated configuration membership
+reconfirms readiness; offline members wait for an applied acknowledgment. Native
+credentials, periods, purchases, balances and immutable financial evidence remain
+unchanged. The forward-only migration does not run again on ordinary startup.

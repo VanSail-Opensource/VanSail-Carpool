@@ -157,7 +157,7 @@ func (m *Master) syncNodeLocked(ctx context.Context, peer *agentPeer, force bool
 		}
 	}
 	peer.mu.Lock()
-	peer.firstSync = firstSyncCandidates(normalized, revision, m.service.Now())
+	peer.firstSync = firstSyncCandidates(normalized, revision, m.service.Now(), peer.compiled.firstSync)
 	peer.revision = revision
 	peer.digest, peer.lastControls = digest, controls
 	if peer.failedDigest != digest {
