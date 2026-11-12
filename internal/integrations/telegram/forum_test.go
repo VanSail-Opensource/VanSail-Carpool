@@ -81,3 +81,21 @@ func TestPMForumMethodsPreserveCopyReferencesAndProfileRouting(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestTopicProfileEditPreservesContradictoryError(t *testing.T) {
+	for _, status := range []int{http.StatusBadRequest, http.StatusServiceUnavailable} {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(status)
+			_, _ = w.Write([]byte(`{"ok":false,"error_code":400,"description":"Bad Request: message is not modified"}`))
+		}))
+		client, err := NewClient("123:token", WithBaseURL(server.URL), WithHTTPClient(server.Client()))
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = client.EditTopicProfile(context.Background(), TopicProfileRequest{ChatID: -100123, MessageID: 51, Text: "Profile"})
+		server.Close()
+		if (err == nil) != (status == http.StatusBadRequest) {
+			t.Fatalf("HTTP%d unchanged-message classification: %v", status, err)
+		}
+	}
+}

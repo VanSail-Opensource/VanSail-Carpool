@@ -85,7 +85,7 @@ func TestConnectionIPBlockExpiryPreservesTerminalUnblockReceipt(t *testing.T) {
 					t.Fatal("terminal receipt blocked confirmed IP cleanup", err)
 				}
 			}
-			if _, err := store.ConnectionIPBlockByID(ctx, block.ID); !errors.Is(err, ErrNotFound) {
+			if _, err := store.ConnectionIPBlockByID(ctx, block.ID); !errors.Is(err, connections.ErrIPBlockNotFound) {
 				t.Fatal("expired sensitive target was not scrubbed", err)
 			}
 			retained, err := store.ProviderOperationByID(ctx, unblock.Receipt.ID)

@@ -20,13 +20,18 @@ func TestMaintenanceKeepsPaidRefundedAndUncertainPaymentEvidence(t *testing.T) {
 		t.Helper()
 		order, err := store.CreatePaymentOrder(ctx, model.PaymentOrder{UserID: owner.ID, Provider: "stars",
 			Status: "pending", TXBMinor: 100, PayableAmount: "1", PayableCurrency: "XTR", RateSnapshot: "1",
-			ExpiresAt: old.Add(time.Hour)})
+			ExpiresAt: now.Add(time.Hour)})
 		if err != nil {
 			t.Fatal(err)
 		}
 		return order
 	}
 	paid, refunded, failed, uncertain := create(), create(), create(), create()
+	// Backdate the complete fixture after creation so the fixture constructor
+	// does not expire the earlier pending orders while seeding the later ones.
+	if _, err := store.DB().ExecContext(ctx, `UPDATE payment_orders SET created_at=$1,updated_at=$1,expires_at=$2 WHERE user_id=$3`, stamp(old), stamp(old.Add(time.Hour)), owner.ID); err != nil {
+		t.Fatal(err)
+	}
 	// A cancelled order can settle later; its old cancellation marker must not
 	// make the now-paid charge eligible for deletion through an OR condition.
 	if _, _, err := store.CancelPaymentOrder(ctx, paid.ID, owner.ID, "user", old); err != nil {
