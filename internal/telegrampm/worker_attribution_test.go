@@ -87,7 +87,7 @@ func TestAttributedTextAndCaptionDelivery(t *testing.T) {
 func TestFooterPhaseRetriesDoNotReplayOriginalCopy(t *testing.T) {
 	w, r, s := attributionFixture("copy-footer")
 	r.items["footer"] = providerops.Item{Key: "footer", TargetType: "pm_outbound_footer", TargetID: "-100123:4", Status: providerops.StatusQueued}
-	s.textErr = &telegram.APIError{ErrorCode: 429, Description: "limited"}
+	s.textErr = &telegram.APIError{HTTPStatus: 429, ErrorCode: 429, Description: "limited"}
 	if err := w.HandleProviderOperation(context.Background(), r.operation, model.OutboxJob{Attempts: 1}); err == nil {
 		t.Fatal("expected retry")
 	}

@@ -87,7 +87,7 @@ func (s *Server) xnodeError(w http.ResponseWriter, r *http.Request, err error) {
 		status, code = http.StatusConflict, "XNODE_CONFLICT"
 	}
 	if (errors.As(err, &policy) || errors.Is(err, xnode.ErrUnavailable)) && !errors.As(err, &capability) {
-		s.deps.Logger.Warn("X-Node operation unavailable", "request_id", middlewareRequestID(r), "path", r.URL.Path, "error_code", code, "cause", xnode.SafeOperationCause(err))
+		s.deps.Logger.Warn("X-Node operation unavailable", "request_id", middlewareRequestID(r), "path", redactedRequestPath(r.URL.Path), "error_code", code, "cause", xnode.SafeOperationCause(err))
 	}
 	s.writeError(w, r, status, code, "The node action could not be completed.")
 }

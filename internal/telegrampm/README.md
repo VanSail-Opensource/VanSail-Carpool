@@ -14,10 +14,10 @@ a bounded encrypted pending envelope for attribution; other copies use reference
   then queues incoming/outgoing references. Commands and payment service messages
   remain on their existing paths. Configured admin webhook identities may refresh
   their existing account metadata; this never initializes panel-entry evidence.
-- `callbacks.go` authorizes panel-admin profile refresh/moderation and recipient
-  read acknowledgments against the exact conversation and message references.
+- `callbacks.go` authorizes panel-admin profile refresh/moderation against the
+  exact current conversation and profile-message references.
 - `copy.go` owns localized PM guidance and topic names; `profile_card.go` renders
-  account facts, refresh/moderation controls, and the Main Mini App deep link.
+  account facts, refresh/moderation controls, and the administrator browser profile link.
   The injected profile reader builds aggregates outside Telegram's queued request callback.
 - `worker.go` sequences durable topic/profile/relay/repair phases and revalidates
   configuration and identity inside each queued provider callback.
@@ -66,8 +66,9 @@ forum replies and callback identity/card scope. `worker_test_helpers_test.go`
 supplies reference-only repositories/senders. `worker_delivery_test.go` covers
 execution-time moderation, success replay and definitive topic recovery;
 `worker_recovery_test.go` covers ambiguous phases, safe rate-limit retries and
-wrong-thread repair rejection. `profile_card_test.go` covers onboarding hiding,
-automated suites are required or run.
+wrong-thread repair rejection. `profile_card_test.go` covers onboarding privacy,
+PAYG aggregates and safe browser links. Automated suites run in hosted CI;
+local automated suites are prohibited by the repository instructions.
 
 ## Administrator attribution and pending content
 
@@ -92,6 +93,11 @@ receipts. Settled ciphertext is erased transactionally. Unsent repair waiters
 retain it for at most 24 hours. Expiry clears ciphertext while preserving a tiny
 marker until operation pruning: a new job with erased content fails explicitly,
 including after an explicit retry, rather than reverting to an unattributed
-legacy copy. Migration 068 adds footer phases to existing unsent reference-only
-outbound operations. No Telegram files or historical message bodies are mirrored.
+legacy copy. Outbound operations retain a separate durable footer phase when attribution
+cannot fit in the original text/caption or only legacy references are available. No Telegram files or historical message bodies are mirrored.
 The real PM delivery dialog displayed the expired/invalid-content guidance in English at 390px and Chinese at 1280px through Chrome DevTools MCP, with no overflow or console warnings. Delivery/recovery correctness is validated by hosted regressions; this browser evidence does not constitute a real Telegram delivery.
+
+`worker_error_proof_test.go` verifies that missing-topic/profile recovery requires
+canonical descriptions with matching HTTP/body status and consistent retry
+metadata. Ambiguous append-only responses retain review state and references;
+idempotent profile edits remain retryable without creating duplicate cards.

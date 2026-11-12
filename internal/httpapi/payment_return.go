@@ -50,7 +50,7 @@ func (s *Server) paymentReturnStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	details, err := s.deps.Billing.ReturnDetails(r.Context(), provider, orderID)
 	if err != nil {
-		s.writeError(w, r, http.StatusNotFound, "PAYMENT_NOT_FOUND", "Payment order not found.")
+		s.paymentReadError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, details)
@@ -59,7 +59,7 @@ func (s *Server) paymentReturnStatus(w http.ResponseWriter, r *http.Request) {
 func (s *Server) paymentReturnOwnerStatus(w http.ResponseWriter, r *http.Request) {
 	details, err := s.deps.Billing.ReturnDetailsForOwner(r.Context(), chiURLParam(r, "provider"), chiURLParam(r, "orderID"), currentUser(r).ID)
 	if err != nil {
-		s.writeError(w, r, http.StatusNotFound, "PAYMENT_NOT_FOUND", "Payment order not found.")
+		s.paymentReadError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, details)

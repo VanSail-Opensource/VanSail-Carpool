@@ -359,3 +359,10 @@ Payment profile retargets with a blank or masked credential return HTTP409 with
 store validate the account identity. Profile mutation audit events commit with
 the underlying storage changes, and deletion passes the authenticated actor
 through the profile manager to that transaction.
+
+Payment status reads preserve actual missing/foreign-order responses and return a
+retryable server error when persistence is temporarily unavailable.
+`payment_read_errors_test.go` covers the owned order, signed-owner return and valid
+checkout-capability return handlers without exposing storage diagnostics.
+`xnode_error_log_test.go` verifies native subscription failures redact bearer paths
+through the shared request-path helper, including metadata and browser landing URLs.
