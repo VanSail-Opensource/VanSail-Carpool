@@ -52,4 +52,3 @@ func (s *Store) retryAttempt_DeductBalance(ctx context.Context, userID string, a
 	}
 	return s.LedgerEntryByID(ctx, entryID)
 }
-

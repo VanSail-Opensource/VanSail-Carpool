@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
@@ -25,7 +26,7 @@ func (s *paymentProfileTestStore) GetSetting(_ context.Context, key string) (dat
 	return database.Setting{}, database.ErrNotFound
 }
 
-func (s *paymentProfileTestStore) PutSetting(context.Context, string, string, bool, *string) error {
+func (s *paymentProfileTestStore) PutAdminSetting(context.Context, string, string, bool, string, time.Time) error {
 	return errors.New("unexpected settings write")
 }
 

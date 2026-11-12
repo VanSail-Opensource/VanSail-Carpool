@@ -70,4 +70,3 @@ func (s *Store) retryAttempt_BeginConnectionIPBlock(ctx context.Context, input c
 	}
 	return block, operation, false, nil
 }
-

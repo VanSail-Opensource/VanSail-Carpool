@@ -45,12 +45,15 @@ afterEach(() => {
 
 describe('public bearer subscription recovery', () => {
   it('rejects an invalid bearer without starting a read or timer', async () => {
+    const schedule = vi.spyOn(globalThis, 'setTimeout')
     const { state } = harness('invalid')
     await flushPromises()
     expect(readMetadata).not.toHaveBeenCalled()
     expect(state.failed.value).toBe(true)
     expect(state.link.value).toBe('')
-    expect(vi.getTimerCount()).toBe(0)
+    expect(schedule).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(10_000)
+    expect(readMetadata).not.toHaveBeenCalled()
   })
 
   it.each([401, 403, 404, 410])('clears pending metadata and stops polling after HTTP %s', async (status) => {

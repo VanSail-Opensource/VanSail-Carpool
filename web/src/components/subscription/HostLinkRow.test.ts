@@ -14,7 +14,7 @@ const stubs = { ...base, ...Object.fromEntries(Object.entries(base).map(([key, v
 function host(uuid: string): SubscriptionHost {
   return { uuid, name: uuid, publishedName: uuid, nameOverride: '', countryCodes: [], squadUuids: [], link: null, linkErrorCode: '' }
 }
-beforeEach(() => save.mockReset())
+beforeEach(() => { save.mockReset() })
 
 describe('host name editor identity', () => {
   it.each(['success', 'failure'])('ignores a previous host save %s after the row is replaced', async (outcome) => {

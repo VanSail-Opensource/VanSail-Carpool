@@ -26,7 +26,8 @@ describe('public subscription metadata transport', () => {
     expect(options?.credentials).toBe('omit')
     expect(options?.cache).toBe('no-store')
     const headers = new Headers(options?.headers)
-    expect([...headers.keys()]).toEqual(['accept'])
+    expect([...headers.keys()].map(key => key.toLowerCase())).toEqual(['accept'])
+    expect(headers.get('Accept')).toBe('application/json')
     expect(options?.signal).toBeInstanceOf(AbortSignal)
   })
 

@@ -1,12 +1,14 @@
 import { readFileSync } from 'node:fs'
-import { URL } from 'node:url'
+import { resolve } from 'node:path'
+import { pathToFileURL, URL } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { parse } from 'yaml'
 import { z } from 'zod'
 
 type Document = Record<string, unknown>
 type JSONSchema = Parameters<typeof z.fromJSONSchema>[0]
-const rootURL = new URL('../../../api/openapi.yaml', import.meta.url)
+// A literal new URL(..., import.meta.url) is rewritten to an HTTP asset by Vite.
+const rootURL = pathToFileURL(resolve(process.cwd(), '../api/openapi.yaml'))
 const documents = new Map<string, Document>()
 
 function readDocument(url: URL): Document {

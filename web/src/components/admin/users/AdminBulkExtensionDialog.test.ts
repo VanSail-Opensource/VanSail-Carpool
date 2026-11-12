@@ -9,7 +9,7 @@ import AdminBulkExtensionDialog from './AdminBulkExtensionDialog.vue'
 
 vi.mock('motion-v', async importOriginal => ({ ...await importOriginal<typeof import('motion-v')>(), AnimatePresence: { template: '<div><slot /></div>' }, motion: { div: { template: '<div><slot /></div>' } } }))
 afterEach(() => vi.restoreAllMocks())
-beforeEach(() => vi.spyOn(adminOperationsApi, 'getCatalogOptions').mockResolvedValue({ combos: [], squads: [] }))
+beforeEach(() => { vi.spyOn(adminOperationsApi, 'getCatalogOptions').mockResolvedValue({ combos: [], squads: [] }) })
 const preview = { matchedUsers: 3, activePurchases: 3, queuedSuccessors: 0 } as BulkExtensionPreview
 
 async function render() {

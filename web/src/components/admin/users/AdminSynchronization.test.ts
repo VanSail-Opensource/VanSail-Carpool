@@ -31,10 +31,11 @@ const TableStub = {
   template: '<div><div v-for="(item, index) in data" :key="index"><slot name="status-cell" :row="{ original: item }" /></div></div>',
 }
 const stubs = {
-  StatusBadge: StatusBadgeStub, UTable: TableStub,
+  StatusBadge: StatusBadgeStub, UTable: TableStub, Table: TableStub,
   AdminSectionState: { template: '<div><slot /></div>' },
   AdminUserSearchFilters: true, AdminBulkExtensionDialog: true, InlineNotice: true,
   UInput: true, UButton: true, UAvatar: true, UIcon: true, UAlert: true,
+  Input: true, Button: true, Avatar: true, Icon: true, Alert: true,
 }
 const cases = [
   { status: 'synchronized', tone: 'success' },
