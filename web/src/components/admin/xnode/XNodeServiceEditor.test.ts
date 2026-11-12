@@ -10,7 +10,7 @@ vi.mock('@/i18n', () => ({ useI18n: () => ({ t: (key: string) => key }) }))
 
 const stubs = {
   // Nuxt UI's Vite auto-imports resolve to the unprefixed component names.
-  Modal: { template: '<div><slot name="body" /></div>' },
+  Modal: { props: { open: Boolean, close: Boolean, dismissible: Boolean }, emits: ['update:open'], template: '<div><slot name="body" /></div>' },
   FormField: { props: { label: { type: String, default: '' } }, template: '<label :data-label="label"><slot /></label>' },
   Input: defineComponent({ props: { modelValue: { type: String, default: '' } }, emits: ['update:modelValue'], setup: (props, { emit }) => () => h('input', { value: props.modelValue, onInput: (event: Event) => emit('update:modelValue', (event.target as HTMLInputElement).value) }) }),
   CheckboxGroup: defineComponent({ emits: ['update:modelValue'], setup: (_, { emit }) => () => h('button', { type: 'button', 'data-groups': '', onClick: () => emit('update:modelValue', ['group']) }) }),
@@ -51,4 +51,20 @@ describe('named-service quota form', () => {
     expect(item.access).toMatchObject({ strategy: 'DAY', limitBytes: '1000' })
     wrapper.unmount()
   })
+  it('blocks keyboard resubmission and modal dismissal while saving', async () => {
+    const wrapper = editor(null)
+    await wrapper.get('[data-label="common.name"] input').setValue('new-service')
+    await wrapper.get('[data-label="namedServices.expiry"] input').setValue(new Date(Date.now() + 86400000).toISOString().slice(0, 16))
+    await wrapper.get('[data-groups]').trigger('click')
+    await wrapper.setProps({ busy: true })
+    await wrapper.get('form').trigger('submit')
+    const modal = wrapper.findComponent(stubs.Modal)
+    modal.vm.$emit('update:open', false)
+    expect(modal.props('dismissible')).toBe(false)
+    expect(modal.props('close')).toBe(false)
+    expect(wrapper.emitted('save')).toBeUndefined()
+    expect(wrapper.emitted('close')).toBeUndefined()
+    wrapper.unmount()
+  })
+
 })

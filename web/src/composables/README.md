@@ -86,3 +86,7 @@ separate. Action quotes and permission decisions still await the backend.
 `useSquadAddition.ts` retains one retry key per purchase/squad/coupon selection, including activation-code corrections, and rejects late load/mutation results after reset. A pending retry only bypasses quote readiness for that same selection.
 
 `useAdminDatabase.ts` allows newer read queries to supersede pending searches while keeping mutations exclusive. Query generations and abort signals prevent stale filters/table responses from replacing the latest rows. `useAdminDatabase.test.ts` covers out-of-order filters and table changes. `useAutoRenewal.test.ts`, `usePurchaseOperations.test.ts` and `useSquadAddition.test.ts` also cover stale purchase responses and retained retry identity after reset.
+
+`useClipboard.ts` fences feedback by copy attempt, exposes an owner reset and
+cancels its feedback timer on scope disposal. `useClipboard.test.ts` covers
+out-of-order results, owner replacement and timer cleanup in hosted CI.

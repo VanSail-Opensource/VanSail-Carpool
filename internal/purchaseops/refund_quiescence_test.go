@@ -35,7 +35,7 @@ func TestMemberRefundRequiresConfirmedQuiescence(t *testing.T) {
 		{name: "confirmed existing closure recovers", itemStatus: providerops.StatusProcessing,
 			states: []RemoteState{{Quiesced: true}}, wantFinals: 1},
 		{name: "settled usage restores access", itemStatus: providerops.StatusQueued,
-			states: []RemoteState{{Quiesced: true, UsedTrafficBytes: 1}},
+			states:     []RemoteState{{Quiesced: true, UsedTrafficBytes: 1}},
 			wantStatus: providerops.StatusFailed, wantCode: ReasonTrafficUsed, wantQuiesces: 1, wantRestores: 1},
 	}
 	for _, test := range tests {

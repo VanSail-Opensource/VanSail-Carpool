@@ -22,16 +22,16 @@ const valid = computed(() => /^[A-Za-z0-9._-]{1,128}$/.test(draft.value.name) &&
 </script>
 
 <template>
-  <UModal :open="true" :title="t(item ? 'namedServices.edit' : 'namedServices.add')" @update:open="!$event && emit('close')">
+  <UModal :open="true" :title="t(item ? 'namedServices.edit' : 'namedServices.add')" :dismissible="!busy" :close="!busy" @update:open="!$event && !busy && emit('close')">
     <template #body>
       <UAlert v-if="error" color="warning" :title="error" />
-      <form class="grid gap-4" @submit.prevent="valid && emit('save', draft)">
+      <form class="grid gap-4" @submit.prevent="!busy && valid && emit('save', draft)">
         <UFormField :label="t('common.name')"><UInput v-model="draft.name" required :disabled="!!item || busy" class="w-full" /></UFormField>
         <UFormField :label="t('namedServices.quota')"><UInput v-model="draft.access.limitBytes" inputmode="numeric" required :disabled="busy" class="w-full" /></UFormField>
         <UFormField :label="t('namedServices.expiry')"><UInput v-model="expiry" type="datetime-local" required :disabled="busy" class="w-full" /></UFormField>
         <UFormField :label="t('namedServices.groups')"><UCheckboxGroup v-model="draft.access.groupIds" :items="groups" :disabled="busy" /></UFormField>
         <USwitch v-model="draft.access.disabled" :label="t('namedServices.disabled')" :disabled="busy" />
-        <UButton type="submit" :label="t('common.save')" :disabled="!valid" :loading="busy" class="justify-self-end" />
+        <UButton type="submit" :label="t('common.save')" :disabled="busy || !valid" :loading="busy" class="justify-self-end" />
       </form>
     </template>
   </UModal>

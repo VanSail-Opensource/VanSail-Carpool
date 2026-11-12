@@ -1468,3 +1468,7 @@ times for first-deployment proof gain or compile/time contention, retaining the
 initial credentials, token, period and owner authority across attempts.
 `subscription_read_retry_test.go` covers proof races, epoch/time contention,
 authority changes between owner and epoch reads, and the retry bound.
+
+`account_statistics_test.go` verifies subscription-token changes during statistics
+reads discard the result, and that a closed predecessor period does not supply
+the currently effective purchase's traffic limit.

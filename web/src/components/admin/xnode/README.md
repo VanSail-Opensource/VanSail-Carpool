@@ -344,3 +344,23 @@ names rendered correctly. The mobile optional-domain/PEM layout was inspected
 without horizontal overflow. Console checks were clear and mock fetch/XHR made
 no actual failing requests. PEM envelopes were synthetic; real key/name matching
 is covered by hosted backend regressions. No live issuance was performed.
+
+Service routing reads and saves capture both native owner and node identity.
+Changing either invalidates older requests; saving outbounds preserves unsaved
+rules and saving rules preserves unsaved outbounds. Named-service list refreshes
+cannot overwrite newer mutation reloads, returned subscription links identify
+their owner, and disposed views cannot restart loading.
+
+Configuration, snippet, group and endpoint writes capture their payload before
+the shared mutation runner executes. Editors clone reactive API data through the
+existing compatibility helper and retain failed drafts. Busy dialogs and fields
+stay locked until the result is known. Group writes include only editable
+identity/name/enabled/binding fields; server-derived membership remains read-only.
+
+`XNodeServiceRouting.test.ts` covers owner replacement, late saves, reactive
+snapshots and independent routing drafts. `XNodeServiceUsers.test.ts` covers
+stale refreshes, owner-labelled links and disposal during a save.
+`XNodeEditorSnapshots.test.ts` covers deferred configuration/group writers and
+busy controls. `XNodeServiceEditor.test.ts` also guards busy keyboard submission
+and modal dismissal. These additions require hosted CI; no new browser execution
+is claimed for the audit reconstruction.

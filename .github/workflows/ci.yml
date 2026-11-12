@@ -171,9 +171,43 @@ jobs:
           cache: true
           cache-dependency-path: go.sum
       - name: Download and verify modules
+        id: module_generate
         run: |
           go mod download
+          go mod tidy
           go mod verify
+          go list -m -json github.com/VanSail-Opensource/X-Node
+      - name: Require committed module metadata
+        id: module_contract
+        shell: bash
+        run: |
+          git diff --exit-code -- go.mod go.sum
+          untracked="$(git ls-files --others --exclude-standard -- go.mod go.sum)"
+          if [[ -n "$untracked" ]]; then
+            printf '%s\n' "$untracked"
+            exit 1
+          fi
+      - name: Report public module metadata when the commit is stale
+        if: failure() && steps.module_generate.outcome == 'success' && steps.module_contract.outcome == 'failure'
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+          for name in ("go.mod", "go.sum"):
+              raw = Path(name).read_bytes()
+              content = raw.decode("utf-8")
+              total = (len(content) + 11999) // 12000
+              for index in range(total):
+                  print("AUDIT_MODULE_FILE " + json.dumps({
+                      "path": name,
+                      "index": index,
+                      "total": total,
+                      "sha256": hashlib.sha256(raw).hexdigest(),
+                      "bytes": len(raw),
+                      "content": content[index * 12000:(index + 1) * 12000],
+                  }))
+          PY
       - name: Require gofmt
         shell: bash
         run: |

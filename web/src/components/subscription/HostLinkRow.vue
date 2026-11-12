@@ -16,24 +16,31 @@ const editOpen = shallowRef(false)
 const draft = shallowRef('')
 const saving = shallowRef(false)
 const saveError = shallowRef<string | null>(null)
+const names = createLatestRequest()
+const copies = createLatestRequest()
 const preview = computed(() => (draft.value.trim() || props.host.publishedName || props.host.name).replaceAll('{price}', props.host.priceLabel || ''))
 function editName(): void {
+  if (saving.value) return
   draft.value = props.host.nameOverride || ''
   saveError.value = null
   editOpen.value = true
 }
 async function saveName(): Promise<void> {
   if (saving.value) return
+  const hostID = props.host.uuid
+  const name = draft.value
+  const generation = names.begin()
   saving.value = true
   saveError.value = null
   try {
-    await subscriptionApi.saveHostName(props.host.uuid, draft.value)
+    await subscriptionApi.saveHostName(hostID, name)
+    if (!names.isCurrent(generation) || props.host.uuid !== hostID) return
     emit('saved')
     editOpen.value = false
-  } catch (error) { saveError.value = localizedError(error, 'hostNames.saveFailed') }
-  finally { saving.value = false }
+  } catch (error) { if (names.isCurrent(generation)) saveError.value = localizedError(error, 'hostNames.saveFailed') }
+  finally { if (names.isCurrent(generation)) saving.value = false }
 }
-const { copy, copied } = useClipboard()
+const { copy, copied, reset: resetClipboard } = useClipboard()
 const open = shallowRef(false)
 const qr = shallowRef<string | null>(null)
 const qrError = shallowRef(false)
@@ -52,15 +59,35 @@ watch(() => [open.value, props.host.link] as const, async ([show, link]) => {
     if (latest.isCurrent(token)) qr.value = value
   } catch { if (latest.isCurrent(token)) qrError.value = true }
 })
-onScopeDispose(() => latest.dispose())
-async function copyLink(): Promise<void> { if (props.host.link) copyError.value = !await copy(props.host.link) }
+watch(() => props.host.uuid, () => {
+  names.invalidate()
+  saving.value = false
+  saveError.value = null
+  editOpen.value = false
+  draft.value = ''
+  open.value = false
+}, { flush: 'sync' })
+watch(() => [props.host.uuid, props.host.link] as const, () => {
+  copies.invalidate()
+  resetClipboard()
+  copyError.value = false
+}, { flush: 'sync' })
+onScopeDispose(() => { latest.dispose(); names.dispose(); copies.dispose() })
+async function copyLink(): Promise<void> {
+  const generation = copies.begin()
+  const link = props.host.link
+  copyError.value = false
+  if (!link) return
+  const success = await copy(link)
+  if (copies.isCurrent(generation)) copyError.value = !success
+}
 </script>
 
 <template>
   <li class="host-link" :class="{ 'host-link--custom': host.customRoute || host.splitXhttp }">
     <div class="host-link__row">
       <span class="host-link__flags"><CountryFlag v-for="country in flags" :key="country" :code="country" /></span>
-      <UButton class="host-link__name" color="neutral" variant="link" :aria-label="t('hostNames.edit', { name: host.name })" @click="editName">{{ host.name || host.uuid }}</UButton>
+      <UButton class="host-link__name" :disabled="saving" color="neutral" variant="link" :aria-label="t('hostNames.edit', { name: host.name })" @click="editName">{{ host.name || host.uuid }}</UButton>
       <UButton color="neutral" variant="ghost" :icon="copied ? 'i-ph-check-bold' : 'i-ph-copy'" :disabled="!host.link" :aria-label="t(copied ? 'common.copied' : 'subscription.copyHost', { name: host.name })" data-haptic="copy" @click="copyLink" />
       <UButton color="neutral" variant="ghost" icon="i-ph-qr-code" :disabled="!host.link" :aria-label="t('subscription.qrHost', { name: host.name })" data-haptic="open" @click="open = true" />
     </div>
@@ -68,13 +95,13 @@ async function copyLink(): Promise<void> { if (props.host.link) copyError.value 
       <UBadge v-if="host.customRoute" color="primary" variant="subtle">{{ t('hostNames.customRoute') }}</UBadge>
       <UBadge v-if="host.splitXhttp" color="primary" variant="subtle">{{ t('hostNames.splitXhttp') }}</UBadge>
     </div>
-    <UModal v-model:open="editOpen" :title="t('hostNames.title')" :description="t('hostNames.hint', { placeholder: '{price}' })" :dismissible="!saving">
+    <UModal :open="editOpen" :close="!saving" @update:open="!saving && (editOpen = $event)" :title="t('hostNames.title')" :description="t('hostNames.hint', { placeholder: '{price}' })" :dismissible="!saving">
       <template #body>
         <form class="host-link__editor" @submit.prevent="saveName">
-          <UFormField :label="t('hostNames.name')"><UInput v-model="draft" :maxlength="100" :placeholder="host.publishedName || host.name" class="w-full" /></UFormField>
+          <UFormField :label="t('hostNames.name')"><UInput v-model="draft" :disabled="saving" :maxlength="100" :placeholder="host.publishedName || host.name" class="w-full" /></UFormField>
           <p>{{ t('hostNames.preview', { name: preview }) }}</p>
           <InlineNotice v-if="saveError" tone="warning">{{ saveError }}</InlineNotice>
-          <UButton type="submit" :loading="saving" :label="t('common.save')" />
+          <UButton type="submit" :disabled="saving" :loading="saving" :label="t('common.save')" />
         </form>
       </template>
     </UModal>
