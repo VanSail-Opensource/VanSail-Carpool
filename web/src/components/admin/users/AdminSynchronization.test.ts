@@ -49,8 +49,11 @@ function summary(status: AdminUserSummary['synchronization']['status']): AdminUs
   return {
     user: {
       id: 'member-1', telegramId: '123', displayName: 'Member', firstName: 'Member',
-      lastName: '', telegramUsername: '', createdAt, updatedAt: createdAt,
-    } as AdminUserSummary['user'],
+      lastName: '', telegramUsername: '', username: null, role: 'user',
+      onboardingState: 'complete', groupJoined: false, channelJoined: false,
+      policyAcceptedAt: createdAt, agreementRevision: 1, recoveryReason: '',
+      createdAt, updatedAt: createdAt,
+    },
     balance: { currency: 'TXB', minor: '10000', display: '100.00 TXB' },
     createdAt, synchronization: { status },
   }
@@ -70,7 +73,14 @@ describe('administrator native synchronization display', () => {
   })
 
   it.each(cases)('keeps $status visible in a funded member profile', ({ status, tone }) => {
-    const detail = { ...summary(status), activeCombo: null } as AdminUserDetail
+    const { user, balance } = summary(status)
+    const detail: AdminUserDetail = {
+      user: { ...user }, balance: { ...balance }, synchronization: { status },
+      activeCombo: null, entitlements: [], embyAccounts: [], payments: [],
+      refunds: [], operations: [], ipBlocks: [], couponWallet: [],
+      affiliateHistory: { items: [], page: 1, pageSize: 5, total: 0, totalPages: 0 },
+      temporaryBan: null, pmConversation: null,
+    }
     const wrapper = mount(AdminUserOverview, { props: { detail }, global: { stubs } })
 
     expect(wrapper.get('[data-sync]').text()).toBe('adminUserProfile.sync.' + status)

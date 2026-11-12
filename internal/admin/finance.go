@@ -15,10 +15,6 @@ type courtesyCreditRepository interface {
 	CourtesyCreditPayment(context.Context, string, string, string, time.Time) (model.CourtesyCredit, error)
 }
 
-type atomicCancellationRepository interface {
-	CancelAdminPurchase(context.Context, string, string, string, time.Time) (model.Purchase, error)
-}
-
 // AdjustBalanceWithReference appends an audited adjustment with a caller-owned idempotency reference.
 func (s *Service) AdjustBalanceWithReference(ctx context.Context, actorID, userID string, delta int64, referenceID, reason string) (model.LedgerEntry, error) {
 	reason = strings.TrimSpace(reason)
@@ -35,34 +31,6 @@ func (s *Service) DeductBalanceWithReference(ctx context.Context, actorID, userI
 		return model.LedgerEntry{}, errors.New("positive amount and reason are required")
 	}
 	return s.repository.DeductAdminBalance(ctx, actorID, userID, amount, referenceID, reason, s.now().UTC())
-}
-
-// Refund reverses one settled payment and applies the debt policy transactionally.
-func (s *Service) Refund(ctx context.Context, actorID, orderID, reason string) (model.PaymentOrder, error) {
-	reason = strings.TrimSpace(reason)
-	if reason == "" || len(reason) > 500 {
-		return model.PaymentOrder{}, errors.New("refund reason is required")
-	}
-	order, err := s.repository.PaymentOrderByID(ctx, orderID)
-	if err != nil {
-		return model.PaymentOrder{}, err
-	}
-	// Persist the administrator's intent before any irreversible provider call.
-	// Telegram's refunded-payment webhook and reconciliation loop complete a
-	// local reversal if the process stops after a successful Stars refund.
-	if err := s.audit(ctx, actorID, "payment.refund", "payment", orderID, map[string]any{"reason": reason, "phase": "requested"}); err != nil {
-		return model.PaymentOrder{}, err
-	}
-	if order.Status != "refunded" && s.refunder != nil {
-		if err := s.refunder.RefundProvider(ctx, order); err != nil {
-			return model.PaymentOrder{}, fmt.Errorf("refund provider payment: %w", err)
-		}
-	}
-	order, err = s.repository.RefundPayment(ctx, &actorID, orderID, reason, s.now().UTC())
-	if err != nil {
-		return model.PaymentOrder{}, err
-	}
-	return order, nil
 }
 
 // CourtesyCredit credits a terminal failed or expired order locally without
@@ -85,17 +53,7 @@ func (s *Service) CancelEntitlement(ctx context.Context, actorID, purchaseID, re
 	if reason == "" || len(reason) > 500 {
 		return model.Purchase{}, errors.New("cancellation reason is required")
 	}
-	if repository, ok := s.repository.(atomicCancellationRepository); ok {
-		return repository.CancelAdminPurchase(ctx, actorID, purchaseID, reason, s.now().UTC())
-	}
-	purchase, err := s.repository.CancelPurchase(ctx, purchaseID, reason, s.now().UTC())
-	if err != nil {
-		return model.Purchase{}, err
-	}
-	if err := s.audit(ctx, actorID, "entitlement.cancel", "purchase", purchaseID, map[string]any{"reason": reason}); err != nil {
-		return model.Purchase{}, err
-	}
-	return purchase, nil
+	return s.repository.CancelAdminPurchase(ctx, actorID, purchaseID, reason, s.now().UTC())
 }
 
 // RunBackup executes a verified online backup and audits the request.
@@ -108,14 +66,6 @@ func (s *Service) RunBackup(ctx context.Context, actorID string) (model.BackupRu
 		return model.BackupRun{}, err
 	}
 	return run, nil
-}
-
-// RetryJob makes a failed synchronization eligible again.
-func (s *Service) RetryJob(ctx context.Context, actorID, jobID string) error {
-	if err := s.repository.RetryOutboxJob(ctx, jobID, s.now().UTC()); err != nil {
-		return err
-	}
-	return s.audit(ctx, actorID, "job.retry", "job", jobID, nil)
 }
 
 func (s *Service) audit(ctx context.Context, actorID, action, targetType, targetID string, detail any) error {

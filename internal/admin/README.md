@@ -10,9 +10,9 @@ Audited administrative operations for catalog data, settings, balances, refunds,
 - `catalog.go` manages combos, typed squad profiles, and upstream squad imports; X-Node remains authoritative for node accessibility, while administrator projections initialize required node arrays without storing assignments.
   The compatibility import endpoint reads and audits the live list; the retired
   identity-mirroring refresh/mark-missing repository contracts are removed.
-- `finance.go` validates balance adjustments, deductions, refunds,
-  terminal-payment courtesy credits, and entitlement cancellations; production
-  persistence commits their audit and user notification atomically.
+- `finance.go` validates reference-bound balance adjustments and deductions,
+  terminal-payment courtesy credits, atomic entitlement cancellations, and backup requests.
+  Payment refunds and outbox retries use the durable mutation queue.
 - `settings.go` defines editable settings, encrypted storage access, masked payment profiles, safe listing, and readiness checks.
 - `payment_profiles.go` validates, encrypts, resolves, and resolves provider-account profiles. Retained order references protect account identity and credentials from retargeting or deletion.
 - `payment_profile_channels.go` discovers BEPUSDT currency/network rails through the queued readiness probe and disables profiles whose probe fails.
@@ -34,7 +34,11 @@ Audited administrative operations for catalog data, settings, balances, refunds,
 - `user_account_commands.go` grants and idempotently retires only purchase-discount wallet coupons.
 - `service_test.go` covers settings forwarding and catalog operations.
 - `mutation_operations_test.go` covers idempotent manual-maintenance queueing and its audit event.
-- `finance_test.go` covers balance, refund, cancellation, backup, and retry operations.
+- `finance_test.go` covers reference-bound balances, courtesy credits, atomic cancellation, and backup operations.
+- `mutation_queue_test.go` covers queued refund/retry intent, replay before mutable reads, and retry failure classification.
+- `refund_worker_test_helpers_test.go` supplies actual mutation-worker fixtures with observable attempt and persistence boundaries.
+- `refund_worker_recovery_test.go` covers transient order reads and exact terminal item recovery after receipt persistence fails.
+- `refund_worker_outcomes_test.go` covers Stars proof, definitive rejection, ambiguous outcomes, and local persistence recovery.
 - `service_test_helpers_test.go` contains shared admin service test doubles.
 - `settings_test.go` covers secret handling, safe listing, readiness, and validators.
 - `payment_profiles_test.go` covers provider profile validation, encryption, masking, and readiness behavior.
@@ -107,6 +111,14 @@ caller-owned stable reference. Test-only random-reference entry points and the
 legacy non-atomic ledger/audit fallback are removed. `finance_test.go` and
 `zero_coverage_test.go` exercise the same reference-bound interface as HTTP and
 Telegram; database regressions verify immutable replay and atomic audit storage.
+
+Cancellation requires the actor-attributed `CancelAdminPurchase` transaction;
+there is no separate cancellation/audit fallback. The unused synchronous refund
+and retry service entry points are retired. Refund work validates its local target
+before claiming a fresh provider attempt, so a temporary order-read failure stays
+retryable. A terminal item restores its recorded receipt status and metadata
+without rereading mutable payment state or issuing another refund. Existing
+processing Stars attempts still require provider proof before local settlement.
 
 Administrator list and detail synchronization use the same bounded native
 projection. Active, fully onboarded owners with current credential material are

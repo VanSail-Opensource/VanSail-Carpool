@@ -46,9 +46,9 @@ type adminCatalogRepository struct {
 	courtesyErr       error
 	cancelledPurchase model.Purchase
 	cancelledID       string
+	cancelActor       string
+	cancelReason      string
 	cancelErr         error
-	retriedJobID      string
-	retryErr          error
 	audits            []adminAuditCall
 	auditErr          error
 }
@@ -136,19 +136,18 @@ func (r *adminCatalogRepository) ListRefunds(context.Context, int) ([]model.Refu
 func (r *adminCatalogRepository) ListAllPurchases(context.Context, int) ([]model.Purchase, error) {
 	return nil, nil
 }
-func (r *adminCatalogRepository) CancelPurchase(_ context.Context, id, _ string, _ time.Time) (model.Purchase, error) {
-	r.cancelledID = id
-	return r.cancelledPurchase, r.cancelErr
+func (r *adminCatalogRepository) CancelAdminPurchase(_ context.Context, actorID, id, reason string, _ time.Time) (model.Purchase, error) {
+	r.cancelActor, r.cancelledID, r.cancelReason = actorID, id, reason
+	if r.cancelErr != nil {
+		return model.Purchase{}, r.cancelErr
+	}
+	return r.cancelledPurchase, r.auditErr
 }
 func (r *adminCatalogRepository) ListBackupRuns(context.Context, int) ([]model.BackupRun, error) {
 	return nil, nil
 }
 func (r *adminCatalogRepository) ListOutboxJobs(context.Context, int) ([]model.OutboxJob, error) {
 	return nil, nil
-}
-func (r *adminCatalogRepository) RetryOutboxJob(_ context.Context, id string, _ time.Time) error {
-	r.retriedJobID = id
-	return r.retryErr
 }
 func (r *adminCatalogRepository) ListAuditEvents(context.Context, int) ([]model.AuditEvent, error) {
 	return nil, nil

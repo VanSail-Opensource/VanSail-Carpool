@@ -22,13 +22,11 @@ type CatalogRepository interface {
 	DeductAdminBalance(context.Context, string, string, int64, string, string, time.Time) (model.LedgerEntry, error)
 	ListPaymentOrders(context.Context, string, int) ([]model.PaymentOrder, error)
 	PaymentOrderByID(context.Context, string) (model.PaymentOrder, error)
-	RefundPayment(context.Context, *string, string, string, time.Time) (model.PaymentOrder, error)
 	ListRefunds(context.Context, int) ([]model.Refund, error)
 	ListAllPurchases(context.Context, int) ([]model.Purchase, error)
-	CancelPurchase(context.Context, string, string, time.Time) (model.Purchase, error)
+	CancelAdminPurchase(context.Context, string, string, string, time.Time) (model.Purchase, error)
 	ListBackupRuns(context.Context, int) ([]model.BackupRun, error)
 	ListOutboxJobs(context.Context, int) ([]model.OutboxJob, error)
-	RetryOutboxJob(context.Context, string, time.Time) error
 	ListAuditEvents(context.Context, int) ([]model.AuditEvent, error)
 	AppendAudit(context.Context, *string, string, string, string, string, time.Time) error
 }

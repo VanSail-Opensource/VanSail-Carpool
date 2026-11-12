@@ -40,47 +40,6 @@ func TestAdminAdjustBalance(t *testing.T) {
 	}
 }
 
-func TestAdminRefund(t *testing.T) {
-	t.Parallel()
-
-	if _, err := newAdminServiceForTest(&adminCatalogRepository{}, nil, &adminSquadImporter{}, &adminBackupRunner{}, &adminRefunder{}).Refund(context.Background(), "admin", "order", " "); err == nil {
-		t.Fatal("Refund() accepted blank reason")
-	}
-
-	repository := &adminCatalogRepository{paymentOrder: model.PaymentOrder{ID: "order-1", Status: "paid"}, refundedOrder: model.PaymentOrder{ID: "order-1", Status: "refunded"}}
-	refunder := &adminRefunder{}
-	service := newAdminServiceForTest(repository, nil, &adminSquadImporter{}, &adminBackupRunner{}, refunder)
-	order, err := service.Refund(context.Background(), "admin", "order-1", "provider reversal")
-	if err != nil || order.Status != "refunded" || refunder.calls != 1 || repository.refundActor == nil || *repository.refundActor != "admin" || repository.audits[0].action != "payment.refund" {
-		t.Fatalf("Refund() = (%+v, %v), provider calls %d, actor %v", order, err, refunder.calls, repository.refundActor)
-	}
-
-	repository.paymentOrder.Status = "refunded"
-	if _, err := service.Refund(context.Background(), "admin", "order-1", "replay"); err != nil || refunder.calls != 1 {
-		t.Fatalf("Refund(replay) = %v, provider calls %d", err, refunder.calls)
-	}
-
-	testError := errors.New("failure")
-	tests := []struct {
-		name       string
-		repository *adminCatalogRepository
-		refunder   *adminRefunder
-	}{
-		{name: "lookup", repository: &adminCatalogRepository{paymentOrderErr: testError}, refunder: &adminRefunder{}},
-		{name: "provider", repository: &adminCatalogRepository{paymentOrder: model.PaymentOrder{Status: "paid"}}, refunder: &adminRefunder{err: testError}},
-		{name: "database", repository: &adminCatalogRepository{paymentOrder: model.PaymentOrder{Status: "paid"}, refundErr: testError}, refunder: &adminRefunder{}},
-		{name: "audit", repository: &adminCatalogRepository{paymentOrder: model.PaymentOrder{Status: "paid"}, auditErr: testError}, refunder: &adminRefunder{}},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
-			if _, err := newAdminServiceForTest(test.repository, nil, &adminSquadImporter{}, &adminBackupRunner{}, test.refunder).Refund(context.Background(), "admin", "order", "reason"); err == nil {
-				t.Fatal("Refund() unexpectedly succeeded")
-			}
-		})
-	}
-}
-
 func TestAdminCourtesyCredit(t *testing.T) {
 	t.Parallel()
 
@@ -101,7 +60,7 @@ func TestAdminCourtesyCredit(t *testing.T) {
 	}
 }
 
-func TestAdminCancelBackupAndRetry(t *testing.T) {
+func TestAdminCancelAndBackup(t *testing.T) {
 	t.Parallel()
 
 	repository := &adminCatalogRepository{cancelledPurchase: model.Purchase{ID: "purchase-1", Status: "cancelled"}}
@@ -112,15 +71,12 @@ func TestAdminCancelBackupAndRetry(t *testing.T) {
 		t.Fatal("CancelEntitlement() accepted blank reason")
 	}
 	purchase, err := service.CancelEntitlement(context.Background(), "admin", "purchase-1", "requested")
-	if err != nil || purchase.Status != "cancelled" || repository.cancelledID != "purchase-1" {
+	if err != nil || purchase.Status != "cancelled" || repository.cancelledID != "purchase-1" || repository.cancelActor != "admin" || repository.cancelReason != "requested" {
 		t.Fatalf("CancelEntitlement() = (%+v, %v), ID %q", purchase, err, repository.cancelledID)
 	}
 	run, err := service.RunBackup(context.Background(), "admin")
 	if err != nil || run.ID != "backup-1" {
 		t.Fatalf("RunBackup() = (%+v, %v)", run, err)
-	}
-	if err := service.RetryJob(context.Background(), "admin", "job-1"); err != nil || repository.retriedJobID != "job-1" {
-		t.Fatalf("RetryJob() = %v, ID %q", err, repository.retriedJobID)
 	}
 
 	testError := errors.New("failure")
@@ -134,19 +90,11 @@ func TestAdminCancelBackupAndRetry(t *testing.T) {
 		t.Fatalf("RunBackup(error) = (%+v, %v)", got, err)
 	}
 	backup.err = nil
-	repository.retryErr = testError
-	if err := service.RetryJob(context.Background(), "admin", "job"); err == nil {
-		t.Fatal("RetryJob() ignored repository failure")
-	}
-	repository.retryErr = nil
 	repository.auditErr = testError
 	if _, err := service.CancelEntitlement(context.Background(), "admin", "purchase", "reason"); err == nil {
 		t.Fatal("CancelEntitlement() ignored audit failure")
 	}
 	if _, err := service.RunBackup(context.Background(), "admin"); err == nil {
 		t.Fatal("RunBackup() ignored audit failure")
-	}
-	if err := service.RetryJob(context.Background(), "admin", "job"); err == nil {
-		t.Fatal("RetryJob() ignored audit failure")
 	}
 }

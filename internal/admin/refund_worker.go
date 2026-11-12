@@ -7,6 +7,7 @@ import (
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	jobpayload "github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
@@ -17,16 +18,30 @@ type paymentRefundReconciler interface {
 }
 
 func (w *MutationWorker) handlePaymentRefund(ctx context.Context, operation providerops.Operation, job model.OutboxJob) error {
-	operation, item, fresh, err := w.start(ctx, operation, "payment_order")
+	item, err := w.target(ctx, operation, "payment_order")
 	if err != nil {
 		return err
+	}
+	if providerops.Terminal(item.Status) {
+		return w.completeResult(ctx, operation, item, providerops.Completion{
+			Status: item.Status, ProviderReference: item.ProviderReference, ErrorCode: item.ErrorCode, ResultJSON: item.ResultJSON,
+		})
 	}
 	reason, err := refundReason(job)
 	if err != nil {
 		return err
 	}
-	order, err := w.repository.PaymentOrderByID(ctx, item.TargetID)
+	// Local read failures must leave a fresh item queued. Claiming first would
+	// incorrectly make a later Stars retry look like an ambiguous provider call.
+	order, orderErr := w.repository.PaymentOrderByID(ctx, item.TargetID)
+	if orderErr != nil && !errors.Is(orderErr, database.ErrNotFound) {
+		return orderErr
+	}
+	operation, item, fresh, err := w.claim(ctx, operation, item)
 	if err != nil {
+		return err
+	}
+	if orderErr != nil {
 		return w.complete(ctx, operation, item, providerops.StatusFailed, "PAYMENT_NOT_FOUND")
 	}
 	if order.Status == "refunded" {
