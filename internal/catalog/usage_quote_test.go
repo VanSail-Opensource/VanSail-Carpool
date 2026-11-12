@@ -19,8 +19,8 @@ type catalogUsageRemote struct {
 	end    time.Time
 }
 
-func (r *catalogUsageRemote) NodeUsage(_ context.Context, userID string, start, end time.Time) (model.DashboardNodeUsage, error) {
-	r.userID, r.start, r.end = userID, start, end
+func (r *catalogUsageRemote) NodeUsageForMember(_ context.Context, user model.User, start, end time.Time) (model.DashboardNodeUsage, error) {
+	r.userID, r.start, r.end = user.ID, start, end
 	return r.report, r.err
 }
 
@@ -31,9 +31,11 @@ func TestNodeUsageValidatesRangeAndNormalizesDates(t *testing.T) {
 	end := start.Add(24 * time.Hour)
 	remote := &catalogUsageRemote{catalogProxy: &catalogProxy{}, report: model.DashboardNodeUsage{Nodes: []model.DashboardNodeUsageNode{{UUID: "node-1"}}}}
 	service := newCatalogServiceForTest(&catalogRepository{}, remote)
-	report, err := service.NodeUsage(context.Background(), model.User{ProxyUserID: &remoteID}, start, end)
-	if err != nil || report.StartDate != "2026-08-10" || report.EndDate != "2026-08-11" || remote.userID != remoteID || !remote.start.Equal(start.UTC()) {
-		t.Fatalf("NodeUsage() = (%+v, %v), remote = %+v", report, err, remote)
+	for _, legacy := range []*string{nil, &remoteID} {
+		report, err := service.NodeUsage(context.Background(), model.User{ID: "member-1", ProxyUserID: legacy}, start, end)
+		if err != nil || report.StartDate != "2026-08-10" || report.EndDate != "2026-08-11" || remote.userID != "member-1" || !remote.start.Equal(start.UTC()) {
+			t.Fatalf("NodeUsage() = (%+v, %v), remote = %+v", report, err, remote)
+		}
 	}
 
 	testErr := errors.New("usage unavailable")
@@ -45,12 +47,13 @@ func TestNodeUsageValidatesRangeAndNormalizesDates(t *testing.T) {
 		remote ProxyClient
 		want   error
 	}{
-		{"zero start", model.User{ProxyUserID: &remoteID}, time.Time{}, end, remote, ErrDashboardNodeUsageRange},
-		{"reversed", model.User{ProxyUserID: &remoteID}, end, start, remote, ErrDashboardNodeUsageRange},
-		{"too wide", model.User{ProxyUserID: &remoteID}, start, start.Add(31 * 24 * time.Hour), remote, ErrDashboardNodeUsageRange},
+		{"zero start", model.User{ID: "member-1"}, time.Time{}, end, remote, ErrDashboardNodeUsageRange},
+		{"reversed", model.User{ID: "member-1"}, end, start, remote, ErrDashboardNodeUsageRange},
+		{"too wide", model.User{ID: "member-1"}, start, start.Add(31 * 24 * time.Hour), remote, ErrDashboardNodeUsageRange},
 		{"missing identity", model.User{}, start, end, remote, ErrDashboardNodeUsageUnavailable},
-		{"missing provider", model.User{ProxyUserID: &remoteID}, start, end, &catalogProxy{}, ErrDashboardNodeUsageUnavailable},
-		{"provider error", model.User{ProxyUserID: &remoteID}, start, end, &catalogUsageRemote{catalogProxy: &catalogProxy{}, err: testErr}, testErr},
+		{"legacy identity only", model.User{ProxyUserID: &remoteID}, start, end, remote, ErrDashboardNodeUsageUnavailable},
+		{"missing provider", model.User{ID: "member-1"}, start, end, &catalogProxy{}, ErrDashboardNodeUsageUnavailable},
+		{"provider error", model.User{ID: "member-1"}, start, end, &catalogUsageRemote{catalogProxy: &catalogProxy{}, err: testErr}, testErr},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

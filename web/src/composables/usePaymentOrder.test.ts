@@ -175,6 +175,55 @@ describe('payment order polling', () => {
     scope.stop()
   })
 
+  it.each(['failed', 'succeeded'] as const)('keeps a pending checkout after a %s cancellation receipt', async (status) => {
+    vi.useFakeTimers()
+    createPaymentOrder.mockResolvedValue(accepted('payment_create'))
+    cancelPaymentOrder.mockResolvedValue(accepted('payment_cancel'))
+    getPaymentOrder.mockResolvedValue(pendingOrder)
+    const onPaid = vi.fn()
+    const scope = effectScope()
+    const payment = scope.run(() => usePaymentOrder({ onPaid }))!
+
+    payment.chooseMethod('ezpay:alipay')
+    await payment.createOrder()
+    await finishOperation('payment_create')
+    await payment.cancelOrder()
+    getOperation.mockResolvedValueOnce(receipt('payment_cancel', status))
+    await vi.advanceTimersByTimeAsync(1500)
+
+    expect(payment.order.value?.status).toBe('pending')
+    expect(payment.stage.value).toBe('pending')
+    expect(payment.canCreate.value).toBe(false)
+    if (status === 'failed') expect(payment.error.value).toBeTruthy()
+
+    getPaymentOrder.mockResolvedValue({ ...pendingOrder, status: 'paid', paidAt: timestamp })
+    await vi.advanceTimersByTimeAsync(2700)
+    expect(payment.stage.value).toBe('paid')
+    expect(onPaid).toHaveBeenCalledOnce()
+    scope.stop()
+  })
+
+  it('uses the refunded order state after a completed cancellation receipt', async () => {
+    vi.useFakeTimers()
+    createPaymentOrder.mockResolvedValue(accepted('payment_create'))
+    cancelPaymentOrder.mockResolvedValue(accepted('payment_cancel'))
+    getPaymentOrder.mockResolvedValueOnce(pendingOrder)
+      .mockResolvedValueOnce({ ...pendingOrder, status: 'refunded', refundedAt: timestamp })
+    const scope = effectScope()
+    const payment = scope.run(() => usePaymentOrder({ onPaid: vi.fn() }))!
+
+    payment.chooseMethod('ezpay:alipay')
+    await payment.createOrder()
+    await finishOperation('payment_create')
+    await payment.cancelOrder()
+    await finishOperation('payment_cancel')
+
+    expect(payment.order.value?.status).toBe('refunded')
+    expect(payment.stage.value).toBe('configure')
+    expect(payment.error.value).toBe(t('payment.terminalStatus', { status: t('payment.status.refunded') }))
+    scope.stop()
+  })
+
   it('blocks duplicate payment when provider outcome needs review', async () => {
     vi.useFakeTimers()
     createPaymentOrder.mockResolvedValue(accepted('payment_create'))

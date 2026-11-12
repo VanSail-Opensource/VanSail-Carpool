@@ -150,7 +150,11 @@ Turnstile uses an independent bounded provider queue in `provider_queues.go`, wi
   transport liveness remains independent of accounting settlement in Master.Metrics.
 
 
-- `xnode_usage.go`: Entry points: `NodeUsage`.
+- `xnode_usage.go`: `NodeUsageForMember` resolves the authenticated panel owner's
+  native identity, ignores stale historical proxy pointers, and retains exact
+  decimal daily/total counters across native and imported history.
+  `xnode_usage_test.go` covers owner isolation, missing identities, invalid
+  counters, and totals beyond the signed 64-bit range.
 
 
 
@@ -189,9 +193,9 @@ PAYG jobs use the existing durable outbox and master executor. Startup and 30-se
 
 `retention.go` runs bounded PAYG expiry independently at startup and each transition tick, reporting counts and failures without coupling deletion to account repairs.
 
-- `pricing_worker.go`: Single joined 20-second worker, three-second shared work budget, rotating bounded batches and pressure/storage gates.
+- `pricing_worker.go`: Single joined five-second worker with independent bounded
+  stage budgets, rotating batches and pressure/storage gates.
 - `pricing_health.go`: Reuse authenticated X-Node CPU/memory and connection health without raw telemetry SQL.
-- `pricing_notice.go`: Queued model requests and nonblocking renewal price notifications.
 - `pricing_health_notice.go`: Queued administrator incident notifications containing sanitized facts.
 - `pricing_change_notice.go`: Notify administrators after direct audited pricing edits and material campaigns; no approval stage.
 
@@ -218,6 +222,12 @@ Node-outage observation and its scheduler have been retired. Existing pre-retire
 - `xnode_retired_reset_test.go`: Hosted regression refusing unpaid reset receipts without changing native periods. Historical paid reset fixtures and replay checks remain in the existing purchase tests.
 
 The Emby adapter resolves URL/token from `SettingsService.EmbyCredentials` in one database snapshot inside the existing upstream queue executor. Validation precedes client creation and every outbound request; independent settings reads are forbidden for this coupled credential.
+
+Queued password changes transfer copied secret-buffer ownership to the executor.
+Cancellation can return before a transport stops, so only that executor clears
+its active buffers; calls canceled before execution clear them in the caller.
+`emby_password_queue_test.go` checks cancellation, caller-buffer reuse and final
+cleanup with a deliberately delayed provider callback.
 
 `payment_callback_profiles.go` selects a retained order's exact payment account
 before authenticating its complete callback. Legacy two-part orders use the
@@ -265,3 +275,6 @@ revision/time contention while binding the original owner generation, restrictio
 native material and token. Authority changes and URL failures discard the entire
 response. `xnode_member_subscription_fence_test.go` verifies restriction/token
 refusal and first-sync proof recovery with the original requested links.
+
+`payment_profile_revision_test.go` checks that delayed discovery and deletion
+cannot disable, replace, or erase a newer saved account revision.

@@ -93,9 +93,21 @@ func (s *Store) authenticatedSession(ctx context.Context, hash []byte, scope str
 		var r result
 		var raw string
 		var e error
-		r.user, e = scanUser(tx.QueryRowContext(ctx, userSelect+` JOIN sessions ON sessions.user_id=users.id WHERE sessions.token_hash=$1 AND sessions.scope=$2 AND sessions.expires_at>$3 AND users.account_status='active' FOR UPDATE OF users`, hash, scope, stamp(at)))
+		r.user, e = scanUser(tx.QueryRowContext(ctx, userSelect+` JOIN sessions ON sessions.user_id=users.id WHERE sessions.token_hash=$1 AND sessions.scope=$2 AND users.account_status='active' FOR UPDATE OF users`, hash, scope))
 		if e != nil {
 			return r, e
+		}
+		e = tx.QueryRowContext(ctx, `SELECT expires_at FROM sessions WHERE token_hash=$1 AND scope=$2`, hash, scope).Scan(&raw)
+		if e != nil {
+			return r, e
+		}
+		if r.expires, e = parseStamp(raw); e != nil {
+			return r, e
+		}
+		// Authentication must compare exact instants before recording activity.
+		// RFC3339Nano text order differs at whole and fractional seconds.
+		if !r.expires.After(at) {
+			return r, ErrNotFound
 		}
 		if e = cancelCleanupCandidateTx(ctx, tx, r.user.ID, "authenticated", at); e != nil {
 			return r, e
@@ -106,12 +118,7 @@ func (s *Store) authenticatedSession(ctx context.Context, hash []byte, scope str
 			}
 			r.user.BotBlocked = false
 		}
-		e = tx.QueryRowContext(ctx, `SELECT expires_at FROM sessions WHERE token_hash=$1 AND scope=$2 AND expires_at>$3`, hash, scope, stamp(at)).Scan(&raw)
-		if e != nil {
-			return r, e
-		}
-		r.expires, e = parseStamp(raw)
-		return r, e
+		return r, nil
 	})
 	return r.user, r.expires, err
 }

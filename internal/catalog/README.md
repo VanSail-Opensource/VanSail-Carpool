@@ -25,7 +25,8 @@ ends at expiry and applies equally to administrators using member commerce.
 
 This package builds the live catalog, validates purchase selections against current X-Node squads, and serves member purchase and dashboard workflows.
 
-- `service.go` defines repository/provider contracts and coordinates quotes, purchases, process-local dashboard caching, and subscription revocation without durable bearer storage.
+- `service.go` defines production repository/provider contracts and coordinates owned commerce and process-local dashboard caching.
+- `legacy_commerce_fixture_test.go` retains closed new-purchase quote/commit and direct subscription rotation helpers only as historical regression fixtures. Production member checkout supports exact historical replay, and credential rotation uses durable provider operations.
 - `catalog.go` hydrates sparse local merchandising and typed squad profiles with live X-Node squad identities and one read-only node snapshot.
 - `automatic_renewal_test.go` covers catalog blocking and enablement eligibility without running provider calls.
 - `legacy_renewal_fixture_test.go` retains historical manual batch quote/commit behavior only for regression fixtures. Manual renewal has no production service or public member entry point.
@@ -40,11 +41,13 @@ This package builds the live catalog, validates purchase selections against curr
 - `dashboard.go` composes current balance and entitlement data with cached or live upstream statistics and handles subscription URL revocation.
 - `revoke_operations.go` stores credential-rotation intent with only a hash of the prior subscription URL.
 - `revoke_worker.go` performs one queued rotation and reconciles ambiguous provider outcomes.
+- `revoke_recovery_test.go` verifies that a terminal rotation item recovers its exact parent receipt without another provider call, transient owner lookup errors stay retryable, and missing credentials cannot prove a successful rotation.
 - `revoke_lifecycle.go` owns the single-item receipt lifecycle and dashboard-cache invalidation.
 - `nodes.go` queries accessibility once per unique live squad, filters disabled nodes, attaches deterministic node groups to each product, and derives the authoritative quote union from that hydrated snapshot. Node assignments are never persisted.
 - `node_selection.go` normalizes combo and add-on squad selection for quote node unioning.
 - `catalog_node_groups_test.go`, `nodes_test.go`, `node_projection_test.go`, and `node_selection_test.go` verify grouping, filtering, deterministic ordering, node/selection deduplication, quote reuse, and provider failure handling.
 - `usage.go` validates a member-selected UTC range and projects live, bounded per-node traffic through the optional queued provider reader.
+- Native usage resolves the authenticated member's own identity through `NodeUsageForMember`; a stale legacy identity cannot select another owner's counters. The native adapter retains exact decimal totals even when combined daily usage exceeds signed 64-bit range.
 - `service_test.go` verifies forwarding, validation errors, dashboard freshness, and subscription revocation behavior.
 - `live_catalog_test.go` verifies missing live squads are rejected during catalog hydration and purchase validation.
 - `usage_quote_test.go` verifies bounded node-usage ranges, quote selection validation, and purchase-history forwarding.

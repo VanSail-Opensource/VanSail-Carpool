@@ -55,12 +55,13 @@ func TestPaymentProfileRetainsEveryOrderAccount(t *testing.T) {
 
 func TestPaymentProfileMutationRollsBackWhenAuditCannotCommit(t *testing.T) {
 	t.Parallel()
-	for _, operation := range []string{"save", "delete", "availability"} {
+	for _, operation := range []string{"save", "delete", "availability", "conditional availability"} {
 		t.Run(operation, func(t *testing.T) {
 			t.Parallel()
 			ctx, store := context.Background(), newTestStore(t)
 			input := PaymentProfileInput{ID: "audited-account", Provider: "ezpay", ProviderName: "Before", Endpoint: "https://account.example", CredentialCiphertext: "ciphertext", Enabled: true}
-			if _, err := store.SavePaymentProfile(ctx, input); err != nil {
+			profile, err := store.SavePaymentProfile(ctx, input)
+			if err != nil {
 				t.Fatal(err)
 			}
 			if _, err := store.DB().ExecContext(ctx, `CREATE FUNCTION reject_profile_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'audit unavailable'; END $$`); err != nil {
@@ -69,7 +70,6 @@ func TestPaymentProfileMutationRollsBackWhenAuditCannotCommit(t *testing.T) {
 			if _, err := store.DB().ExecContext(ctx, `CREATE TRIGGER reject_profile_audit BEFORE INSERT ON audit_events FOR EACH ROW WHEN (NEW.target_type='payment_profile') EXECUTE FUNCTION reject_profile_audit()`); err != nil {
 				t.Fatal(err)
 			}
-			var err error
 			switch operation {
 			case "save":
 				input.ProviderName, input.CredentialCiphertext = "After", ""
@@ -78,6 +78,8 @@ func TestPaymentProfileMutationRollsBackWhenAuditCannotCommit(t *testing.T) {
 				err = store.DeletePaymentProfile(ctx, input.ID, "")
 			case "availability":
 				_, err = store.SetPaymentProfileEnabled(ctx, input.ID, false)
+			case "conditional availability":
+				_, _, err = store.DisablePaymentProfileIfUnchanged(ctx, input.ID, profile.UpdatedAt)
 			}
 			if err == nil {
 				t.Fatal("mutation ignored failed audit")

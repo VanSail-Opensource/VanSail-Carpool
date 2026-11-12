@@ -62,24 +62,38 @@ func (m *PaymentProfileManager) RefreshPaymentProfile(ctx context.Context, id st
 		return model.PaymentProfile{}, err
 	}
 	if runtime.Provider != "bepusdt" || !runtime.Enabled {
-		m.cache.Remove(id)
+		m.cache.Remove(id, runtime.UpdatedAt)
 		return runtime.PaymentProfile, nil
 	}
 	channels, err := m.discover(ctx, runtime)
 	if err != nil {
 		return m.disableFailed(ctx, runtime.PaymentProfile, err)
 	}
-	m.cache.Replace(id, channels)
-	runtime.EnabledChannels = m.cache.PaymentProfileRails(id)
-	return runtime.PaymentProfile, nil
+	return m.publishChannels(ctx, runtime, channels)
+}
+
+func (m *PaymentProfileManager) publishChannels(ctx context.Context, probed model.PaymentProfileRuntime, channels []model.PaymentChannel) (model.PaymentProfile, error) {
+	current, err := m.settings.PaymentProfileByID(ctx, probed.ID, "")
+	if err != nil {
+		return model.PaymentProfile{}, err
+	}
+	if !current.UpdatedAt.Equal(probed.UpdatedAt) || !current.Enabled || current.Provider != "bepusdt" {
+		return current.PaymentProfile, errors.New("payment profile changed during channel discovery")
+	}
+	// A save after the check cannot make these rails authorize the replacement:
+	// every cache consumer also matches the durable profile revision exactly.
+	m.cache.Replace(probed.ID, probed.UpdatedAt, channels)
+	current.EnabledChannels = m.cache.PaymentProfileRails(current.ID, current.UpdatedAt)
+	return current.PaymentProfile, nil
 }
 
 // DeletePaymentProfile removes an unused profile and its process-local rails.
 func (m *PaymentProfileManager) DeletePaymentProfile(ctx context.Context, id, actorID string) error {
+	revision := m.cache.Revision(id)
 	if err := m.settings.DeletePaymentProfile(ctx, id, actorID); err != nil {
 		return err
 	}
-	m.cache.Remove(id)
+	m.cache.Remove(id, revision)
 	return nil
 }
 
@@ -111,10 +125,13 @@ func (m *PaymentProfileManager) absolute(path string) string {
 }
 
 func (m *PaymentProfileManager) disableFailed(ctx context.Context, profile model.PaymentProfile, cause error) (model.PaymentProfile, error) {
-	m.cache.Remove(profile.ID)
-	disabled, disableErr := m.settings.DisablePaymentProfile(ctx, profile.ID)
-	notifyErr := m.notifyFailure(ctx, profile, cause)
-	return disabled, errors.Join(fmt.Errorf("discover BEPUSDT profile %q: %w", profile.ID, cause), disableErr, notifyErr)
+	current, disabled, disableErr := m.settings.DisablePaymentProfileIfUnchanged(ctx, profile.ID, profile.UpdatedAt)
+	m.cache.Remove(profile.ID, profile.UpdatedAt)
+	var notifyErr error
+	if disabled && disableErr == nil {
+		notifyErr = m.notifyFailure(ctx, profile, cause)
+	}
+	return current, errors.Join(fmt.Errorf("discover BEPUSDT profile %q: %w", profile.ID, cause), disableErr, notifyErr)
 }
 
 func (m *PaymentProfileManager) notifyFailure(ctx context.Context, profile model.PaymentProfile, cause error) error {

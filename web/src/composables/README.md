@@ -24,7 +24,7 @@ separate. Action quotes and permission decisions still await the backend.
 - `useCouponRedemption.ts` redeems a coupon code for the guided purchase flow.
 - `useCouponRedemption.test.ts` covers guided redemption normalization and idempotency reuse.
 - `useAutoRenewal.ts` owns the owner-scoped automatic-renewal status load, eligibility, and server toggle update.
-- `useDisplayCurrency.ts` keeps the persisted member display choice and read-only CNY/USD rate snapshot in one reactive source of truth.
+- `useDisplayCurrency.ts` keeps the persisted member display choice and read-only CNY/USD rate snapshot in one reactive source of truth. Selection supersedes earlier reads; session hydration retires previous-owner replies and resets pending state. Logout clears currency/rates. Deferred-response regressions in `useDisplayCurrency.test.ts` cover these ownership boundaries.
 - `useAutoRenewal.test.ts` covers the server-ineligible toggle constraint.
 - `useClipboard.ts` provides safe clipboard feedback.
 
@@ -37,7 +37,7 @@ separate. Action quotes and permission decisions still await the backend.
 - `useCommunityMembership.ts` refreshes canonical Telegram membership and strict active-combo access, opens requested-space invites, and unregisters its Telegram activation refresh handler on teardown.
 - `useCommunityAccess.ts` shares the read-only server-confirmed valid-combo and positive-balance gate between the shell, the sidebar entrances and Home product sections. Both reads refresh together after navigation or a completed payment.
 - `useCommunityMembership.test.ts` covers invite opening, error feedback, Telegram activation refresh, and event cleanup; `useOnboarding.test.ts` covers username-free intro-to-agreement progression.
-- `usePaymentOrder.ts` coordinates durable checkout/cancellation receipts with payment-sheet presentation states.
+- `usePaymentOrder.ts` coordinates durable checkout/cancellation receipts with payment-sheet presentation states. Cancellation always projects the fetched payment order: a failed receipt cannot label a still-pending checkout cancelled, and polling continues until the authoritative order becomes terminal.
 - `usePaymentCountdown.ts` owns a disposal-safe one-second payment-window countdown used only for presentation and replacement prompts.
 - `usePaymentConfiguration.ts` owns exact TXB bounds, display-currency amount input, one canonical TXB-minor order amount, and selected payment method state; display switches re-render the field without repricing the order, and a missing stored rate falls back to TXB entry.
 - `usePaymentOrderOperations.ts` retains stable creation keys per method/amount and cancellation keys per order, then polls payment provider-operation receipts without replaying provider calls. An uncertain request can be retried unchanged without binding a different checkout to its key.

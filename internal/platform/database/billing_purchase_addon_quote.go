@@ -72,6 +72,9 @@ func quotePurchaseAddonsTx(ctx context.Context, tx *sql.Tx, input PurchaseAddonI
 		if loadErr != nil {
 			return model.PurchaseAddonQuote{}, nil, loadErr
 		}
+		if product.BillingMode == "payg" {
+			return model.PurchaseAddonQuote{}, nil, ErrNotFound
+		}
 		if _, found := existing[product.GroupID]; found {
 			return model.PurchaseAddonQuote{}, nil, ErrSquadAlreadyAdded
 		}

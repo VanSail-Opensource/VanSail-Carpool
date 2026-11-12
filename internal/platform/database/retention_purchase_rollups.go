@@ -11,9 +11,16 @@ func compactPurchasesTx(ctx context.Context, tx *sql.Tx, cutoff, now time.Time, 
 	if _, err := tx.ExecContext(ctx, `CREATE TEMP TABLE maintenance_purchase_candidates(id TEXT PRIMARY KEY)`); err != nil {
 		return fmt.Errorf("create purchase cleanup set: %w", err)
 	}
+	// Commerce keys have no expiry. Tombstones retain historical totals but do
+	// not carry the request fingerprint or the full result needed for replay.
+	// Keep keyed purchases, adjustment parents and complete renewal receipts.
 	_, err := tx.ExecContext(ctx, `INSERT INTO maintenance_purchase_candidates(id)
 		SELECT purchase.id FROM purchases purchase
 		WHERE purchase.status IN ('expired','cancelled','failed') AND purchase.updated_at<$1
+		AND purchase.idempotency_key IS NULL AND purchase.renewal_batch_id IS NULL
+		AND purchase.auto_renew_source_purchase_id IS NULL
+		AND NOT EXISTS (SELECT 1 FROM purchase_addon_adjustments adjustment WHERE adjustment.purchase_id=purchase.id)
+		AND NOT EXISTS (SELECT 1 FROM renewal_batches batch WHERE batch.source_purchase_id=purchase.id)
 		AND NOT EXISTS (SELECT 1 FROM xnode_periods period WHERE period.purchase_id=purchase.id)
 		AND NOT EXISTS (SELECT 1 FROM outbox_jobs job WHERE job.status IN ('pending','processing')
 			AND (CASE ((job.payload)::jsonb #> '{purchaseId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (job.payload)::jsonb #>> '{purchaseId}' END)=purchase.id)

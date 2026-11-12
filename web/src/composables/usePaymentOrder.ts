@@ -6,7 +6,7 @@ import type { OperationReceipt } from '@/api/types'
 import { localizedError, t } from '@/i18n'
 import { notifyHaptic } from '@/utils/telegram'
 import { createLatestRequest } from '@/utils/latestRequest'
-import { resolveOrderSelection, resolveReissueCandidate } from './paymentOrderHelpers'
+import { isTerminalPaymentStatus, resolveOrderSelection, resolveReissueCandidate } from './paymentOrderHelpers'
 import { usePaymentConfiguration } from './usePaymentConfiguration'
 import { type PaymentCommand, usePaymentOrderOperations } from './usePaymentOrderOperations'
 import { usePaymentTarget } from './usePaymentTarget'
@@ -137,7 +137,7 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
     if (!latest.isCurrent(token)) return
     if (receipt.status === 'succeeded') {
       if (command.kind === 'create') await presentCreatedOrder(current, token)
-      else finishCancellation(current)
+      else await presentCancellationOutcome(current, token)
       return
     }
     await target.remember(current)
@@ -147,11 +147,13 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
       : receipt.errorMessage
       ? t('cryptoPayment.rejected', { message: receipt.errorMessage })
       : t('payment.operationStatus', { status: t(`operations.status.${receipt.status}`) })
-    if (current.status === 'paid') handlePaid()
+    if (command.kind === 'cancel' && (isTerminalPaymentStatus(current.status) || ['failed', 'compensated'].includes(receipt.status))) {
+      await presentCancellationOutcome(current, token)
+    } else if (current.status === 'paid') handlePaid()
     else if (command.kind === 'create' && ['failed', 'compensated'].includes(receipt.status)) {
       stage.value = 'configure'
       canReissue.value = true
-    } else stage.value = receipt.status === 'failed' && command.kind === 'cancel' ? 'cancelled' : 'review'
+    } else stage.value = 'review'
   }
   async function presentCreatedOrder(current: FeaturePaymentOrder, token: number): Promise<void> {
     canRecreate.value = (current.provider === 'bepusdt' || current.provider === 'builtin_usdt')
@@ -165,13 +167,12 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
       notifyHaptic('error')
     }
   }
-  function finishCancellation(current: FeaturePaymentOrder): void {
-    void target.remember(current)
-    if (current.status === 'paid') handlePaid()
-    else {
-      stage.value = 'cancelled'
-      target.cancelled()
-    }
+  async function presentCancellationOutcome(current: FeaturePaymentOrder, token: number): Promise<void> {
+    const result = await target.present(current)
+    if (!latest.isCurrent(token)) return
+    if (result === 'pending') stage.value = 'pending'
+    else if (result === 'missing') stage.value = 'review'
+    if (current.status === 'cancelled') target.cancelled()
   }
   function handleOrderTerminal(current: FeaturePaymentOrder): void {
     canRecreate.value = false

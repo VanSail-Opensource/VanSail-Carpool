@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	jobpayload "github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
@@ -24,17 +26,34 @@ func (s *Service) HandleProviderOperation(ctx context.Context, operation provide
 	if err != nil {
 		return err
 	}
+	// A completed item is the immutable outcome of an earlier attempt. Recover
+	// its parent receipt before reading mutable credentials or calling the provider.
+	if providerops.Terminal(item.Status) {
+		if item.Status == providerops.StatusSucceeded {
+			s.InvalidateDashboard(item.TargetID)
+		}
+		completion := providerops.Completion{Status: item.Status, ErrorCode: item.ErrorCode,
+			ProviderReference: item.ProviderReference, ResultJSON: item.ResultJSON}
+		_, err := repository.CompleteProviderOperation(ctx, operation.Receipt.ID, completion, s.now().UTC())
+		return err
+	}
 	target, err := revokeOperationTarget(job)
 	if err != nil {
 		return err
 	}
 	user, err := repository.UserByID(ctx, item.TargetID)
+	if err != nil && !errors.Is(err, database.ErrNotFound) {
+		return err
+	}
 	if err != nil || user.ProxyUserID == nil {
 		return s.finishRevoke(ctx, repository, operation, item, providerops.StatusFailed, "XNODE_IDENTITY_REQUIRED")
 	}
 	current, err := s.provider.Dashboard(ctx, *user.ProxyUserID)
 	if err != nil {
 		return err
+	}
+	if strings.TrimSpace(current.SubscriptionURL) == "" {
+		return errors.New("current subscription credential is unavailable")
 	}
 	if item.Status == providerops.StatusProcessing {
 		if subscriptionHash(current.SubscriptionURL) != target.PreviousHash {
@@ -57,7 +76,7 @@ func (s *Service) HandleProviderOperation(ctx context.Context, operation provide
 		return s.finishRevoke(ctx, repository, operation, item, providerops.StatusSucceeded, "")
 	}
 	after, reconcileErr := s.provider.Dashboard(ctx, *user.ProxyUserID)
-	if reconcileErr == nil && subscriptionHash(after.SubscriptionURL) != target.PreviousHash {
+	if reconcileErr == nil && strings.TrimSpace(after.SubscriptionURL) != "" && subscriptionHash(after.SubscriptionURL) != target.PreviousHash {
 		s.InvalidateDashboard(user.ID)
 		return s.finishRevoke(ctx, repository, operation, item, providerops.StatusSucceeded, "")
 	}

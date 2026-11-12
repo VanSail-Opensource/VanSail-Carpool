@@ -1,5 +1,31 @@
 # Application store
 
+Purchase queue admission compares parsed paid boundaries at nanosecond precision;
+variable-width timestamp strings and PostgreSQL's microsecond timestamps must
+not shorten an existing term. Active-term add-on settlement rechecks the squad's
+billing mode inside the transaction, so a catalog change cannot admit a PAYG
+squad as a fixed-price add-on. The unused unscoped `CancelPurchase` entry point
+has been removed; cancellations use the owned or durable command paths.
+
+Payment discovery can disable only the exact private `updated_at` revision it
+probed. Profile edits and re-enablement advance that revision under the same row
+lock; stale discovery returns the current profile without an availability audit.
+Profile writers return their committed transaction snapshot, so a subsequent
+edit cannot be mistaken for the discovery result being applied.
+
+Purchase compaction retains keyed checkout rows, add-on adjustment parents, and
+every manual or automatic renewal receipt term. These requests have no key
+expiry, so their exact fingerprints and replay results also have no time limit.
+Historical tombstones lack that information and cannot substitute for the
+receipt. This deliberately grows retained financial state with accepted
+commerce commands; only unkeyed, unreferenced legacy terms remain eligible for
+history compaction.
+
+Session authentication, browser handoff exchange and browser renewal compare
+parsed expiration instants. Whole-second and fractional RFC3339Nano values must
+not accept an expired bearer or reject one that is still live. Authentication
+records account activity only after the exact expiry check succeeds.
+
 `outbox_deletion.go` protects unfinished financial commands, explicit cleanup
 lanes, live retry targets, legacy paid Emby setup and restriction expiry jobs.
 Eligible deletion and its redacted actor audit commit together; failed expiry
@@ -934,7 +960,6 @@ Provider requests remain outside every transaction.
 - `billing_payment_settlement_retry_generated.go` wraps the transactional methods in `billing_payment_settlement.go`.
 - `billing_purchase_addons_retry_generated.go` wraps the transactional methods in `billing_purchase_addons.go`.
 - `billing_purchase_cancellation_retry_generated.go` wraps the transactional methods in `billing_purchase_cancellation.go`.
-- `billing_purchases_retry_generated.go` wraps the transactional methods in `billing_purchases.go`.
 - `billing_quote_retry_generated.go` wraps the transactional methods in `billing_quote.go`.
 - `billing_refunds_retry_generated.go` wraps the transactional methods in `billing_refunds.go`.
 - `billing_renewal_retry_generated.go` wraps the transactional methods in `billing_renewal.go`.
@@ -981,6 +1006,7 @@ Provider requests remain outside every transaction.
 - `panel_entry_verification_retry_generated.go` wraps the transactional methods in `panel_entry_verification.go`.
 - `payment_operation_resolution_retry_generated.go` wraps the transactional methods in `payment_operation_resolution.go`.
 - `payment_operations_retry_generated.go` wraps the transactional methods in `payment_operations.go`.
+- `payment_profile_revision_retry_generated.go` wraps the transactional methods in `payment_profile_revision.go`.
 - `payment_profiles_retry_generated.go` wraps the transactional methods in `payment_profiles.go`.
 - `payment_refund_resolution_retry_generated.go` wraps the transactional methods in `payment_refund_resolution.go`.
 - `pricing_compute_retry_generated.go` wraps the transactional methods in `pricing_compute.go`.
@@ -1666,3 +1692,11 @@ broad indexed candidate scan.
 - `legacy_connection_ip_block_fixture_test.go` seeds historical encrypted block rows and jobs for supported unblock/expiry recovery tests; production no longer admits retired blocks.
 - `legacy_ledger_fixture_test.go` retains unaudited deduction setup only for wallet and concurrency regression fixtures.
 `store_test.go` verifies the live agreement transition is idempotent and never rewinds completed signup. The unused username-reservation alias has been removed.
+
+Audit regressions: `billing_purchase_addon_mode_test.go` rejects a live PAYG mode
+change inside add-on settlement; `billing_purchase_boundary_test.go` preserves
+exact fractional purchase boundaries; `payment_profile_revision_test.go` protects
+saved and re-enabled profiles from stale discovery;
+`retention_purchase_replay_test.go` preserves charged receipts and replay after
+compaction; `session_timestamp_test.go` checks exact authentication, renewal and
+handoff expiry without recording activity for expired credentials.

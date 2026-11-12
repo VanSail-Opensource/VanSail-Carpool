@@ -29,7 +29,7 @@ type paymentProfileReader interface {
 }
 
 type paymentProfileChannelReader interface {
-	PaymentProfileChannels(string) []model.PaymentChannel
+	PaymentProfileChannels(string, time.Time) []model.PaymentChannel
 }
 
 type paymentProfileRuntimeReader interface {

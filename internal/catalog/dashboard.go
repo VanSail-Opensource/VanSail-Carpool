@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
 type memberDashboardReader interface {
@@ -85,19 +84,6 @@ func (s *Service) Dashboard(ctx context.Context, user model.User) (model.Dashboa
 	dashboard.StatisticsWarning = "Live usage is unavailable. Showing the latest cached data."
 	dashboard.FetchedAt = cached.fetchedAt
 	return dashboard, nil
-}
-
-// RevokeSubscription rotates the bearer URL and invalidates the process-local cache.
-func (s *Service) RevokeSubscription(ctx context.Context, user model.User) (string, error) {
-	if user.ProxyUserID == nil {
-		return "", database.ErrNotFound
-	}
-	url, err := s.provider.RevokeSubscription(ctx, *user.ProxyUserID)
-	if err != nil {
-		return "", err
-	}
-	s.InvalidateDashboard(user.ID)
-	return url, nil
 }
 
 // InvalidateDashboard drops usage cached before an entitlement reset or change.

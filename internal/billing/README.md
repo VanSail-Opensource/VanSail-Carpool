@@ -34,7 +34,7 @@ Payment-method discovery, exact decimal arithmetic, checkout creation, provider 
   and retryable Telegram failures.
 - `gateway_contracts.go` defines the server-owned provider checkout/event contracts and gateway interfaces.
 - `payment_methods.go` builds the configured rail list, including coupon funding and independently selectable provider-account profiles.
-- `payment_channel_cache.go` stores the current process-local BEPUSDT currency/network rails discovered by queued readiness probes.
+- `payment_channel_cache.go` stores process-local BEPUSDT currency/network rails bound to the exact durable profile revision. A save immediately makes old discoveries ineligible; delayed probes and cleanup cannot overwrite a newer cached revision. `payment_channel_cache_test.go` covers replacement, removal, missing revisions, and snapshot isolation.
 - `events.go` validates and authorizes provider events, settles orders, and exposes the narrow return receipt projection.
 - `payment_return.go` issues checkout-only fixed-expiry v2 capabilities and owner-filtered legacy receipt reads; see `docs/payment-return-security.md`. Public navigation cannot renew access.
 - `payment_return_test.go` covers expiry, provider/order binding, old formats, retry immutability, missing keys and owner lookup.

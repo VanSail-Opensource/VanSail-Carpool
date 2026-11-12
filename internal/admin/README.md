@@ -154,3 +154,10 @@ forwarding, write failure and the absence of a second audit phase.
 Manual backup requests use `BackupRunner.RunForActor`: the backup attempt and
 its actor audit must commit before export begins. The service has no separate
 post-export audit phase; failed exports retain the admitted attempt.
+
+Payment discovery consumes the private durable profile revision in every rail
+projection. Failed probes disable only the exact enabled revision they observed
+through `DisablePaymentProfileIfUnchanged`; a concurrent save or re-enable keeps
+its current configuration and discovery. The availability audit commits with the
+conditional disable. Historical callback account lookup remains independent of
+current rail availability.

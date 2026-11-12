@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -39,14 +40,37 @@ func (s *Store) BrowserSession(ctx context.Context, hash []byte, now time.Time) 
 
 // RenewBrowserSession extends only a live session, at most daily; the bearer and signing key remain stable.
 func (s *Store) RenewBrowserSession(ctx context.Context, hash []byte, now, expires time.Time) (bool, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
-	result, err := s.db.ExecContext(ctx, `UPDATE sessions SET expires_at=$1,renewed_at=$2 WHERE token_hash=$3 AND scope='browser' AND expires_at>$4 AND renewed_at<=$5`, stamp(expires), stamp(now), hash, stamp(now), stamp(now.Add(-24*time.Hour)))
-	if err != nil {
-		return false, fmt.Errorf("renew browser session: %w", err)
-	}
-	count, err := result.RowsAffected()
-	return count > 0, err
+	return hourlyCreditTransaction(ctx, s, func(tx *sql.Tx) (bool, error) {
+		var rawExpiry, rawRenewed string
+		err := tx.QueryRowContext(ctx, `SELECT expires_at,renewed_at FROM sessions WHERE token_hash=$1 AND scope='browser' FOR UPDATE`, hash).Scan(&rawExpiry, &rawRenewed)
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		if err != nil {
+			return false, err
+		}
+		currentExpiry, err := parseStamp(rawExpiry)
+		if err != nil {
+			return false, err
+		}
+		if !currentExpiry.After(now) {
+			return false, nil
+		}
+		if rawRenewed != "" {
+			renewed, err := parseStamp(rawRenewed)
+			if err != nil {
+				return false, err
+			}
+			if renewed.After(now.Add(-24 * time.Hour)) {
+				return false, nil
+			}
+		}
+		_, err = tx.ExecContext(ctx, `UPDATE sessions SET expires_at=$1,renewed_at=$2 WHERE token_hash=$3 AND scope='browser'`, stamp(expires), stamp(now), hash)
+		if err != nil {
+			return false, fmt.Errorf("renew browser session: %w", err)
+		}
+		return true, nil
+	})
 }
 
 // DeleteBrowserSession revokes one browser device without affecting any other session.

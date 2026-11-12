@@ -18,8 +18,8 @@ var (
 	ErrDashboardNodeUsageUnavailable = errors.New("dashboard node usage is unavailable")
 )
 
-type remoteUsageReader interface {
-	NodeUsage(context.Context, string, time.Time, time.Time) (model.DashboardNodeUsage, error)
+type memberUsageReader interface {
+	NodeUsageForMember(context.Context, model.User, time.Time, time.Time) (model.DashboardNodeUsage, error)
 }
 
 // NodeUsage returns a bounded, live per-node usage projection for the member.
@@ -28,14 +28,14 @@ func (s *Service) NodeUsage(ctx context.Context, user model.User, start, end tim
 	if start.IsZero() || end.IsZero() || start.After(end) || end.Sub(start) > (dashboardNodeUsageMaximumDays-1)*24*time.Hour {
 		return model.DashboardNodeUsage{}, ErrDashboardNodeUsageRange
 	}
-	if user.ProxyUserID == nil {
+	if user.ID == "" {
 		return model.DashboardNodeUsage{}, ErrDashboardNodeUsageUnavailable
 	}
-	reader, ok := s.provider.(remoteUsageReader)
+	reader, ok := s.provider.(memberUsageReader)
 	if !ok {
 		return model.DashboardNodeUsage{}, ErrDashboardNodeUsageUnavailable
 	}
-	report, err := reader.NodeUsage(ctx, *user.ProxyUserID, start.UTC(), end.UTC())
+	report, err := reader.NodeUsageForMember(ctx, user, start.UTC(), end.UTC())
 	if err != nil {
 		return model.DashboardNodeUsage{}, fmt.Errorf("read dashboard node usage: %w", err)
 	}

@@ -45,6 +45,11 @@ afterEach(() => {
 
 describe('public bearer subscription recovery', () => {
   it('rejects an invalid bearer without starting a read or timer', async () => {
+    // The first Vue renderer starts a 3s devtools-discovery timer in Happy DOM.
+    // Finish that unrelated startup before observing subscription scheduling.
+    const warmup = mount({ render: () => null })
+    warmup.unmount()
+    await vi.runOnlyPendingTimersAsync()
     const schedule = vi.spyOn(globalThis, 'setTimeout')
     const { state } = harness('invalid')
     await flushPromises()

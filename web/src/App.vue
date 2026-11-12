@@ -27,9 +27,8 @@ const uiLocale = computed(() => locale.value === 'zh-CN' ? zh_cn : en)
 watch(() => sessionStore.onboardingComplete ? sessionStore.user?.id ?? null : null, id => preferences.bind(id), { immediate: true })
 
 watch(() => sessionStore.user?.id, (userID) => {
-  if (!userID) return
   displayCurrency.hydrate(sessionStore.user?.displayCurrency)
-  void displayCurrency.refresh()
+  if (userID) void displayCurrency.refresh()
 }, { immediate: true })
 
 let refreshingOnboarding = false

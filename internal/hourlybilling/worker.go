@@ -36,10 +36,9 @@ func (s *Service) HandleProviderOperation(ctx context.Context, operation provide
 	if providerops.Terminal(item.Status) {
 		return s.finish(ctx, operation, item, item.Status, item.ErrorCode)
 	}
-	target, err := s.decode(ctx, operation, job)
-	targetErr := err
-	if err != nil && !errors.Is(err, database.ErrAccountUnavailable) {
-		return wait("HOURLY_TARGET_PENDING", err)
+	target, targetErr := s.decode(ctx, operation, job)
+	if targetErr != nil && !errors.Is(targetErr, database.ErrAccountUnavailable) {
+		return wait("HOURLY_TARGET_PENDING", targetErr)
 	}
 	if item.TargetID != target.GroupID {
 		return wait("HOURLY_TARGET_MISMATCH", database.ErrConflict)

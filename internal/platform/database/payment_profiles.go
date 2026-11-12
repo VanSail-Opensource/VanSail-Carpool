@@ -47,9 +47,9 @@ func (s *Store) savePaymentProfile(ctx context.Context, input PaymentProfileInpu
 	if err := paymentProfileActorTx(ctx, tx, input.ActorID); err != nil {
 		return model.PaymentProfile{}, err
 	}
-	var previousProvider, previousEndpoint, previousMerchant, previousCredential string
-	err = tx.QueryRowContext(ctx, `SELECT provider,endpoint,merchant_id,credential_ciphertext FROM payment_profiles WHERE id=$1 FOR UPDATE`, input.ID).
-		Scan(&previousProvider, &previousEndpoint, &previousMerchant, &previousCredential)
+	var previousProvider, previousEndpoint, previousMerchant, previousCredential, previousUpdated string
+	err = tx.QueryRowContext(ctx, `SELECT provider,endpoint,merchant_id,credential_ciphertext,updated_at FROM payment_profiles WHERE id=$1 FOR UPDATE`, input.ID).
+		Scan(&previousProvider, &previousEndpoint, &previousMerchant, &previousCredential, &previousUpdated)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return model.PaymentProfile{}, fmt.Errorf("lock payment profile: %w", err)
 	}
@@ -65,7 +65,10 @@ func (s *Store) savePaymentProfile(ctx context.Context, input PaymentProfileInpu
 	if providerName == "" {
 		providerName = input.Provider
 	}
-	now := nowUTC()
+	now, err := paymentProfileRevision(previousUpdated)
+	if err != nil {
+		return model.PaymentProfile{}, err
+	}
 	result, err := tx.ExecContext(ctx, `INSERT INTO payment_profiles(id,provider,provider_name,enabled_channels,endpoint,merchant_id,credential_ciphertext,acknowledgement,enabled,created_at,updated_at)
 		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT(id) DO UPDATE SET provider=excluded.provider,provider_name=excluded.provider_name,enabled_channels=excluded.enabled_channels,endpoint=excluded.endpoint,merchant_id=excluded.merchant_id,credential_ciphertext=CASE WHEN excluded.credential_ciphertext='' THEN payment_profiles.credential_ciphertext ELSE excluded.credential_ciphertext END,acknowledgement=excluded.acknowledgement,enabled=excluded.enabled,updated_at=excluded.updated_at
 		WHERE excluded.credential_ciphertext<>'' OR
@@ -84,18 +87,18 @@ func (s *Store) savePaymentProfile(ctx context.Context, input PaymentProfileInpu
 	if err := paymentProfileAuditTx(ctx, tx, input.ActorID, "payment_profile.update", input.ID, now); err != nil {
 		return model.PaymentProfile{}, err
 	}
-	if err := tx.Commit(); err != nil {
-		return model.PaymentProfile{}, fmt.Errorf("commit payment profile update: %w", err)
-	}
-	record, err := s.PaymentProfileRecordByID(ctx, input.ID, "")
+	record, err := scanPaymentProfile(tx.QueryRowContext(ctx, paymentProfileSelect+` WHERE id=$1`, input.ID))
 	if err != nil {
 		return model.PaymentProfile{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		return model.PaymentProfile{}, fmt.Errorf("commit payment profile update: %w", err)
 	}
 	return record.PaymentProfile, nil
 }
 
 func (s *Store) ListPaymentProfiles(ctx context.Context) ([]model.PaymentProfile, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT id,provider,provider_name,enabled_channels,endpoint,merchant_id,credential_ciphertext,acknowledgement,enabled FROM payment_profiles ORDER BY provider,provider_name,id`)
+	rows, err := s.db.QueryContext(ctx, paymentProfileSelect+` ORDER BY provider,provider_name,id`)
 	if err != nil {
 		return nil, err
 	}
@@ -128,13 +131,17 @@ func (s *Store) setPaymentProfileEnabled(ctx context.Context, id string, enabled
 	}
 	defer tx.Rollback()
 	var previous int
-	if err := tx.QueryRowContext(ctx, `SELECT enabled FROM payment_profiles WHERE id=$1 FOR UPDATE`, id).Scan(&previous); err != nil {
+	var previousUpdated string
+	if err := tx.QueryRowContext(ctx, `SELECT enabled,updated_at FROM payment_profiles WHERE id=$1 FOR UPDATE`, id).Scan(&previous, &previousUpdated); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return model.PaymentProfile{}, ErrNotFound
 		}
 		return model.PaymentProfile{}, err
 	}
-	now := nowUTC()
+	now, err := paymentProfileRevision(previousUpdated)
+	if err != nil {
+		return model.PaymentProfile{}, err
+	}
 	result, err := tx.ExecContext(ctx, `UPDATE payment_profiles SET enabled=$1,updated_at=$2 WHERE id=$3`,
 		boolInt(enabled), stamp(now), id)
 	if err != nil {
@@ -151,11 +158,14 @@ func (s *Store) setPaymentProfileEnabled(ctx context.Context, id string, enabled
 			return model.PaymentProfile{}, err
 		}
 	}
+	record, err := scanPaymentProfile(tx.QueryRowContext(ctx, paymentProfileSelect+` WHERE id=$1`, id))
+	if err != nil {
+		return model.PaymentProfile{}, err
+	}
 	if err := tx.Commit(); err != nil {
 		return model.PaymentProfile{}, err
 	}
-	record, err := s.PaymentProfileRecordByID(ctx, id, "")
-	return record.PaymentProfile, err
+	return record.PaymentProfile, nil
 }
 
 // DeletePaymentProfile removes a profile only after its provider attempts are gone.
@@ -204,13 +214,13 @@ func (s *Store) PaymentProfileRecord(ctx context.Context, provider, rail string)
 
 // PaymentProfileRecordByID loads one profile account and optionally checks its rail.
 func (s *Store) PaymentProfileRecordByID(ctx context.Context, id, rail string) (PaymentProfileRecord, error) {
-	record, err := scanPaymentProfile(s.db.QueryRowContext(ctx, `SELECT id,provider,provider_name,enabled_channels,endpoint,merchant_id,credential_ciphertext,acknowledgement,enabled FROM payment_profiles WHERE id=$1`, id))
+	record, err := scanPaymentProfile(s.db.QueryRowContext(ctx, paymentProfileSelect+` WHERE id=$1`, id))
 	record.Rail = rail
 	return record, err
 }
 
 func (s *Store) paymentProfileRecord(ctx context.Context, provider, rail string) (PaymentProfileRecord, error) {
-	query := `SELECT id,provider,provider_name,enabled_channels,endpoint,merchant_id,credential_ciphertext,acknowledgement,enabled FROM payment_profiles WHERE provider=$1`
+	query := paymentProfileSelect + ` WHERE provider=$1`
 	args := []any{provider}
 	if rail != "" {
 		query += fmt.Sprintf(" AND (',' || enabled_channels || ',') ILIKE $%d", len(args)+1)
@@ -225,13 +235,17 @@ func (s *Store) paymentProfileRecord(ctx context.Context, provider, rail string)
 
 func scanPaymentProfile(row interface{ Scan(...any) error }) (PaymentProfileRecord, error) {
 	var record PaymentProfileRecord
-	var channels string
+	var channels, updated string
 	var enabled int
-	if err := row.Scan(&record.ID, &record.Provider, &record.ProviderName, &channels, &record.Endpoint, &record.MerchantID, &record.CredentialCiphertext, &record.Acknowledgement, &enabled); err != nil {
+	if err := row.Scan(&record.ID, &record.Provider, &record.ProviderName, &channels, &record.Endpoint, &record.MerchantID, &record.CredentialCiphertext, &record.Acknowledgement, &enabled, &updated); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return PaymentProfileRecord{}, ErrNotFound
 		}
 		return PaymentProfileRecord{}, fmt.Errorf("scan payment profile: %w", err)
+	}
+	var err error
+	if record.UpdatedAt, err = parseStamp(updated); err != nil {
+		return PaymentProfileRecord{}, fmt.Errorf("parse payment profile revision: %w", err)
 	}
 	record.Enabled = enabled == 1
 	for _, channel := range strings.Split(channels, ",") {
@@ -251,3 +265,5 @@ func scanPaymentProfile(row interface{ Scan(...any) error }) (PaymentProfileReco
 }
 
 func nowUTC() time.Time { return time.Now().UTC() }
+
+const paymentProfileSelect = `SELECT id,provider,provider_name,enabled_channels,endpoint,merchant_id,credential_ciphertext,acknowledgement,enabled,updated_at FROM payment_profiles`

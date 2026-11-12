@@ -99,17 +99,18 @@ type PaymentChannel struct {
 
 // PaymentProfile is the masked administrative representation of one provider account.
 type PaymentProfile struct {
-	ID              string   `json:"id"`
-	Provider        string   `json:"provider"`
-	ProviderName    string   `json:"providerName"`
-	EnabledChannels []string `json:"enabledChannels"`
-	Endpoint        string   `json:"endpoint"`
-	MerchantID      string   `json:"merchantId"`
-	Credential      string   `json:"credential"`
-	Acknowledgement string   `json:"acknowledgement"`
-	Enabled         bool     `json:"enabled"`
-	Configured      bool     `json:"configured"`
-	Rail            string   `json:"-"`
+	ID              string    `json:"id"`
+	Provider        string    `json:"provider"`
+	ProviderName    string    `json:"providerName"`
+	EnabledChannels []string  `json:"enabledChannels"`
+	Endpoint        string    `json:"endpoint"`
+	MerchantID      string    `json:"merchantId"`
+	Credential      string    `json:"credential"`
+	Acknowledgement string    `json:"acknowledgement"`
+	Enabled         bool      `json:"enabled"`
+	Configured      bool      `json:"configured"`
+	Rail            string    `json:"-"`
+	UpdatedAt       time.Time `json:"-"`
 }
 
 // PaymentProfileRuntime is an internal-only profile with decrypted credentials.

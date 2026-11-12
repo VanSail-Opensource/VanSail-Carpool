@@ -31,6 +31,19 @@ function resolveReference(reference: string, base: URL): { value: unknown; url: 
   return { value: at(readDocument(url), ...keys), url }
 }
 
+function dereference(value: Document, base: URL): Document {
+  const visited = new Set<string>()
+  while (typeof value.$ref === 'string') {
+    const reference = new URL(value.$ref, base).href
+    if (visited.has(reference)) throw new Error(`Circular reference: ${reference}`)
+    visited.add(reference)
+    const resolved = resolveReference(value.$ref, base)
+    value = resolved.value as Document
+    base = resolved.url
+  }
+  return value
+}
+
 // Only the bounded, nonrecursive schemas exercised below are expanded.
 function expand(value: unknown, base: URL): unknown {
   if (Array.isArray(value)) return value.map((child) => expand(child, base))
@@ -141,8 +154,7 @@ describe('OpenAPI input and recovery boundaries', () => {
       for (const [method, operation] of Object.entries(resolved.value as Document)) {
         if (!['get', 'post', 'put', 'patch', 'delete'].includes(method)) continue
         for (const [status, response] of Object.entries((operation as { responses: Document }).responses)) {
-          const value = response as Document
-          const effective = typeof value.$ref === 'string' ? resolveReference(value.$ref, resolved.url).value as Document : value
+          const effective = dereference(response as Document, resolved.url)
           expect(effective.description, route + ' ' + method + ' ' + status).toBeTypeOf('string')
         }
       }
