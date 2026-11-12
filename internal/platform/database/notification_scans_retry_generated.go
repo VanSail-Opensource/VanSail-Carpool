@@ -3,6 +3,7 @@ package database
 
 import (
 	context "context"
+	notifications "github.com/VanSail-Opensource/VanSail-Carpool/internal/notifications"
 	time "time"
 )
 
@@ -15,10 +16,9 @@ func (s *Store) EnqueueExpiryReminderNotifications(ctx context.Context, now time
 	}
 }
 
-func (s *Store) EnqueueTrafficThresholdNotification(ctx context.Context, remoteID string, used, limit int64,
-	remoteReset string, lastReset *time.Time, now time.Time) (bool, error) {
+func (s *Store) EnqueueTrafficThresholdNotification(ctx context.Context, user notifications.TrafficUser, now time.Time) (bool, error) {
 	for retryIndex := 0; ; retryIndex++ {
-		r0, r1 := s.retryAttempt_EnqueueTrafficThresholdNotification(ctx, remoteID, used, limit, remoteReset, lastReset, now)
+		r0, r1 := s.retryAttempt_EnqueueTrafficThresholdNotification(ctx, user, now)
 		if !s.retryTransaction(ctx, r1, retryIndex) {
 			return r0, r1
 		}

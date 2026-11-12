@@ -74,10 +74,10 @@ func (w *Worker) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
 	}
 	if err := w.sender.SendMarkdownV2Message(ctx, payload.ChatID, 0, message); err != nil {
 		var api *telegram.APIError
-		if errors.As(err, &api) {
+		if errors.As(err, &api) && api != nil {
 			description := strings.ToLower(strings.TrimSpace(api.Description))
 			unreachable := api.ErrorCode == 403 && (description == "forbidden: bot was blocked by the user" || description == "forbidden: user is deactivated") || api.ErrorCode == 400 && description == "bad request: chat not found"
-			if unreachable {
+			if unreachable && api.HTTPStatus == api.ErrorCode && api.RetryAfter == 0 {
 				return &outbox.TerminalError{Reason: "telegram_recipient_unreachable", Cause: err}
 			}
 			if api.ErrorCode == 429 && api.RetryAfter > 0 {

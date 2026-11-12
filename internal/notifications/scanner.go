@@ -6,13 +6,15 @@ import (
 	"fmt"
 	"log/slog"
 	"math/bits"
-	"strconv"
 	"time"
 )
 
-// TrafficUser is the narrow Proxy stream projection used by threshold scans.
+// TrafficUser captures one native owner's current billing period for threshold scans.
 type TrafficUser struct {
 	ID                 int64
+	OwnerID            string
+	AccountGeneration  int64
+	PeriodID           string
 	UsedBytes          int64
 	LimitBytes         int64
 	ResetStrategy      string
@@ -22,7 +24,7 @@ type TrafficUser struct {
 // ScanRepository persists reminder and traffic events transactionally.
 type ScanRepository interface {
 	EnqueueExpiryReminderNotifications(context.Context, time.Time) (int, error)
-	EnqueueTrafficThresholdNotification(context.Context, string, int64, int64, string, *time.Time, time.Time) (bool, error)
+	EnqueueTrafficThresholdNotification(context.Context, TrafficUser, time.Time) (bool, error)
 }
 
 // HourlyFundingScanner is optional so existing ScanRepository implementations
@@ -31,7 +33,7 @@ type HourlyFundingScanner interface {
 	EnqueueHourlyFundingWarnings(context.Context, time.Time) (int, error)
 }
 
-// TrafficRemote pages through the documented Proxy user stream.
+// TrafficRemote pages through current native owners and their paid periods.
 type TrafficRemote interface {
 	ListNotificationUsers(context.Context, string, int) ([]TrafficUser, *string, bool, error)
 }
@@ -74,14 +76,13 @@ func (s *Scanner) scanTraffic(ctx context.Context, now time.Time) (int, error) {
 	for {
 		users, next, more, err := s.remote.ListNotificationUsers(ctx, cursor, pageSize)
 		if err != nil {
-			return queued, fmt.Errorf("list Proxy traffic users: %w", err)
+			return queued, fmt.Errorf("list native traffic users: %w", err)
 		}
 		for _, user := range users {
 			if user.ID <= 0 || !aboveNinetyPercent(user.UsedBytes, user.LimitBytes) {
 				continue
 			}
-			inserted, err := s.repository.EnqueueTrafficThresholdNotification(ctx, strconv.FormatInt(user.ID, 10),
-				user.UsedBytes, user.LimitBytes, user.ResetStrategy, user.LastTrafficResetAt, now)
+			inserted, err := s.repository.EnqueueTrafficThresholdNotification(ctx, user, now)
 			if err != nil {
 				return queued, err
 			}

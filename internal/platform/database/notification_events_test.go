@@ -77,36 +77,26 @@ func TestExpiryReminderRequiresNoRenewalOrQueuedSuccessor(t *testing.T) {
 }
 
 func TestTrafficNotificationRearmsAfterResetOnly(t *testing.T) {
-	store := newTestStore(t)
-	user := createTestUser(t, store, 88003)
-	now := time.Date(2026, 8, 20, 0, 0, 0, 0, time.UTC)
-	if _, err := store.AdjustBalance(context.Background(), user.ID, 10_000, "traffic-seed", "seed", now); err != nil {
-		t.Fatal(err)
-	}
-	combo := saveTestCombo(t, store, "Traffic", 100, 30)
-	purchase, err := store.CreatePurchase(context.Background(), PurchaseInput{
-		UserID: user.ID, ComboID: combo.ID, IdempotencyKey: "notification-traffic",
-	}, now)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := store.MarkPurchaseSyncResult(context.Background(), purchase.ID, true, now); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := store.DB().Exec(`UPDATE users SET proxy_user_id='99' WHERE id=$1`, user.ID); err != nil {
-		t.Fatal(err)
-	}
-	firstReset := now
-	inserted, err := store.EnqueueTrafficThresholdNotification(context.Background(), "99", 901, 1000, "DAY", &firstReset, now)
+	store, ctx := newTestStore(t), context.Background()
+	identity, period := notificationNativeUser(t, store, 88003)
+	now := time.Now().UTC()
+	user := notifications.TrafficUser{ID: identity.ProxyUserID, OwnerID: identity.UserID, PeriodID: period.ID}
+	inserted, err := store.EnqueueTrafficThresholdNotification(ctx, user, now)
 	if err != nil || !inserted {
 		t.Fatalf("first threshold = %t, %v", inserted, err)
 	}
-	inserted, err = store.EnqueueTrafficThresholdNotification(context.Background(), "99", 950, 1000, "DAY", &firstReset, now.Add(time.Hour))
+	if _, err := store.DB().Exec(`UPDATE xnode_periods SET used_bytes=950 WHERE id=$1`, period.ID); err != nil {
+		t.Fatal(err)
+	}
+	inserted, err = store.EnqueueTrafficThresholdNotification(ctx, user, now.Add(time.Hour))
 	if err != nil || inserted {
 		t.Fatalf("same-period threshold = %t, %v", inserted, err)
 	}
 	secondReset := now.Add(24 * time.Hour)
-	inserted, err = store.EnqueueTrafficThresholdNotification(context.Background(), "99", 950, 1000, "DAY", &secondReset, secondReset.Add(time.Hour))
+	if _, err := store.DB().Exec(`UPDATE xnode_periods SET last_reset_at=$1 WHERE id=$2`, stamp(secondReset), period.ID); err != nil {
+		t.Fatal(err)
+	}
+	inserted, err = store.EnqueueTrafficThresholdNotification(ctx, user, secondReset.Add(time.Hour))
 	if err != nil || !inserted {
 		t.Fatalf("next-period threshold = %t, %v", inserted, err)
 	}
@@ -114,31 +104,22 @@ func TestTrafficNotificationRearmsAfterResetOnly(t *testing.T) {
 }
 
 func TestNoResetTrafficNotificationIsLifetimeOnly(t *testing.T) {
-	store := newTestStore(t)
-	user := createTestUser(t, store, 88004)
-	now := time.Date(2026, 8, 20, 0, 0, 0, 0, time.UTC)
-	if _, err := store.AdjustBalance(context.Background(), user.ID, 10_000, "no-reset-seed", "seed", now); err != nil {
+	store, ctx := newTestStore(t), context.Background()
+	identity, period := notificationNativeUser(t, store, 88004)
+	now := time.Now().UTC()
+	if _, err := store.DB().Exec(`UPDATE xnode_periods SET strategy='NO_RESET' WHERE id=$1`, period.ID); err != nil {
 		t.Fatal(err)
 	}
-	combo := saveTestCombo(t, store, "No reset", 100, 30)
-	purchase, err := store.CreatePurchase(context.Background(), PurchaseInput{
-		UserID: user.ID, ComboID: combo.ID, IdempotencyKey: "notification-no-reset",
-	}, now)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := store.MarkPurchaseSyncResult(context.Background(), purchase.ID, true, now); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := store.DB().Exec(`UPDATE users SET proxy_user_id='100' WHERE id=$1`, user.ID); err != nil {
-		t.Fatal(err)
-	}
-	firstReset, secondReset := now, now.Add(24*time.Hour)
-	first, err := store.EnqueueTrafficThresholdNotification(context.Background(), "100", 91, 100, "NO_RESET", &firstReset, now)
+	user := notifications.TrafficUser{ID: identity.ProxyUserID, OwnerID: identity.UserID, PeriodID: period.ID}
+	first, err := store.EnqueueTrafficThresholdNotification(ctx, user, now)
 	if err != nil || !first {
 		t.Fatalf("first NO_RESET threshold = %t, %v", first, err)
 	}
-	second, err := store.EnqueueTrafficThresholdNotification(context.Background(), "100", 99, 100, "NO_RESET", &secondReset, secondReset)
+	secondReset := now.Add(24 * time.Hour)
+	if _, err := store.DB().Exec(`UPDATE xnode_periods SET last_reset_at=$1,used_bytes=990 WHERE id=$2`, stamp(secondReset), period.ID); err != nil {
+		t.Fatal(err)
+	}
+	second, err := store.EnqueueTrafficThresholdNotification(ctx, user, secondReset)
 	if err != nil || second {
 		t.Fatalf("replayed NO_RESET threshold = %t, %v", second, err)
 	}

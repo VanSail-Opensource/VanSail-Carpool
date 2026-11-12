@@ -2,8 +2,10 @@ package app
 
 import (
 	"context"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/notifications"
+	"errors"
 	"strconv"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/notifications"
 )
 
 func (a proxyProvider) ListNotificationUsers(ctx context.Context, cursor string, size int) ([]notifications.TrafficUser, *string, bool, error) {
@@ -14,28 +16,21 @@ func (a proxyProvider) ListNotificationUsers(ctx context.Context, cursor string,
 		if err != nil {
 			return nil, nil, false, err
 		}
+		if after < 0 {
+			return nil, nil, false, errors.New("invalid native traffic cursor")
+		}
 	}
-	if size < 1 || size > 500 {
+	if size < 1 || size > 1000 {
 		size = 200
 	}
-	identities, err := a.store.XNodeIdentities(ctx)
+	users, err := a.store.XNodeNotificationUsers(ctx, after, size+1)
 	if err != nil {
 		return nil, nil, false, err
 	}
-	out := []notifications.TrafficUser{}
-	for _, identity := range identities {
-		if identity.ProxyUserID <= after || identity.UserID == "" || identity.CurrentPeriodID == "" {
-			continue
-		}
-		period, err := a.store.XNodePeriod(ctx, identity.CurrentPeriodID)
-		if err != nil {
-			return nil, nil, false, err
-		}
-		out = append(out, notifications.TrafficUser{ID: identity.ProxyUserID, UsedBytes: period.UsedBytes, LimitBytes: period.LimitBytes, ResetStrategy: period.Strategy, LastTrafficResetAt: period.LastResetAt})
-		if len(out) == size {
-			next := strconv.FormatInt(identity.ProxyUserID, 10)
-			return out, &next, true, nil
-		}
+	if len(users) <= size {
+		return users, nil, false, nil
 	}
-	return out, nil, false, nil
+	users = users[:size]
+	next := strconv.FormatInt(users[len(users)-1].ID, 10)
+	return users, &next, true, nil
 }

@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"testing"
 	"time"
@@ -100,4 +101,42 @@ func notificationPayload(t *testing.T, store *Store, key string) jobpayload.User
 		t.Fatal(err)
 	}
 	return payload
+}
+
+func TestHourlyFundingWarningsAdvancePastAlreadyNotifiedPage(t *testing.T) {
+	s, policy, input := hourlyBillingFixture(t)
+	ctx := context.Background()
+	// Keep setup funded while constructing more live enrollments than one scan.
+	if _, err := s.DB().Exec(`UPDATE balances SET txb_minor=1000000000 WHERE user_id=$1`, input.OwnerID); err != nil {
+		t.Fatal(err)
+	}
+	for index := 0; index <= hourlyFundingWarningLimit; index++ {
+		if index == 128 {
+			other := createTestUser(t, s, 89711)
+			input.OwnerID, input.AccountGeneration = other.ID, other.AccountGeneration
+			if _, err := s.AdjustBalance(ctx, other.ID, 1000000000, "warning-page-seed", "fixture", time.Now()); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if index > 0 {
+			input.GroupID = fmt.Sprintf("funding-warning-group-%03d", index)
+			input.ActivationKey = fmt.Sprintf("funding-warning-activation-%03d", index)
+			addHourlyBillingOffer(t, s, input.OwnerID, input.GroupID, 100)
+		}
+		makeDueHourlyBillingFixture(t, s, input, policy, hourlyBillingNow(t, s).Add(-4*time.Hour))
+	}
+	now := hourlyBillingNow(t, s)
+	if _, err := s.DB().Exec(`UPDATE hourly_enrollments SET paid_through=$1`, now.Add(30*time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.DB().Exec(`UPDATE balances SET txb_minor=50`); err != nil {
+		t.Fatal(err)
+	}
+	for index, want := range []int{hourlyFundingWarningLimit, 1, 0} {
+		count, err := s.EnqueueHourlyFundingWarnings(ctx, now)
+		if err != nil || count != want {
+			t.Fatalf("warning scan %d = %d, %v; want %d", index+1, count, err, want)
+		}
+	}
+	assertNotificationCounts(t, s, hourlyFundingWarningLimit+1, hourlyFundingWarningLimit+1)
 }

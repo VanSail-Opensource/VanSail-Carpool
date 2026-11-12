@@ -1568,3 +1568,19 @@ only unsuccessful unpaid terminal details can enter payment rollups. Non-PM
 commands retain sanitized receipts, fingerprints and target facts indefinitely
 so daily cleanup cannot reset idempotency. Settled encrypted outbox payloads are
 still removed; PM delivery receipts retain their explicit 30-day policy.
+
+## Native notification admission and scan fairness
+
+`xnode_notification_users.go` reads bounded pages of active native owners and
+exact current purchased periods, carrying the account generation and period ID
+through notification admission. `xnode_notification_users_test.go` covers native
+accounts without a legacy proxy ID, keyset paging and retired or foreign periods.
+`notification_native_scope_test.go` verifies that lifecycle changes, stale periods,
+retired credentials and updated counters cannot emit a stale traffic warning.
+`notification_scans.go` rechecks this scope and the current strict 90-percent
+threshold under the owner lifecycle lock; reset deduplication uses timestamp
+comparison rather than lexical ordering of differently precise timestamp strings.
+
+Hourly funding scans exclude already-recorded enrollment/boundary events before
+the page limit. `notification_hourly_test.go` includes more live enrollments than
+one page and proves that successive scans reach every eligible enrollment once.
