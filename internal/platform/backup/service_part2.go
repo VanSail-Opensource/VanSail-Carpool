@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 func (s *Service) Run(ctx context.Context) (model.BackupRun, error) {
@@ -33,9 +34,12 @@ func (s *Service) Run(ctx context.Context) (model.BackupRun, error) {
 			size = info.Size()
 		}
 	}
-	if completeErr := s.repository.CompleteBackupRun(ctx, run.ID, size, backupErr, s.now().UTC()); completeErr != nil && backupErr == nil {
-		backupErr = completeErr
-	}
+	// A canceled export must still record its outcome before joined worker
+	// shutdown closes the database; otherwise the run remains running forever.
+	completionCtx, stopCompletion := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+	completeErr := s.repository.CompleteBackupRun(completionCtx, run.ID, size, backupErr, s.now().UTC())
+	stopCompletion()
+	backupErr = errors.Join(backupErr, completeErr)
 	if backupErr != nil {
 		_ = os.Remove(temporaryPath)
 		run.Status = "failed"
@@ -87,8 +91,10 @@ func (s *Service) removeExpiredFiles(ctx context.Context) error {
 			continue
 		}
 		published := strings.HasPrefix(name, "tx-carpool-") && (strings.HasSuffix(name, ".db") || strings.HasSuffix(name, ".dump"))
+		deletionSource := deletionSourceName(name)
 		crashTemporary := strings.HasPrefix(name, ".tx-carpool-") &&
-			(strings.HasSuffix(name, ".db.tmp") || strings.Contains(name, ".db.deleting-") || strings.HasSuffix(name, ".dump.tmp") || strings.Contains(name, ".dump.deleting-"))
+			(strings.HasSuffix(name, ".db.tmp") || strings.HasSuffix(name, ".dump.tmp"))
+		crashTemporary = crashTemporary || deletionSource != ""
 		if entry.IsDir() || (!published && !crashTemporary) {
 			continue
 		}
@@ -100,7 +106,11 @@ func (s *Service) removeExpiredFiles(ctx context.Context) error {
 			continue
 		}
 		if info.ModTime().UTC().Before(cutoff) {
-			protected, protectErr := s.hasActiveRestore(ctx, filepath.Join(s.directory, name))
+			protectedName := name
+			if deletionSource != "" {
+				protectedName = deletionSource
+			}
+			protected, protectErr := s.hasActiveRestore(ctx, filepath.Join(s.directory, protectedName))
 			if protectErr != nil {
 				return protectErr
 			}

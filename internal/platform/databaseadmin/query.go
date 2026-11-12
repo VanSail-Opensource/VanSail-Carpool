@@ -81,13 +81,13 @@ func (s *Service) QueryRecords(ctx context.Context, table string, request QueryR
 			if filter.Value == nil || column.Sensitive || column.Family == storageFamilyBlob {
 				return Page{}, fmt.Errorf("%w: filter value is unavailable", ErrInvalidValue)
 			}
-			value, parseErr := parseFilterValue(column, *filter.Value)
+			value, parseErr := parseEditorValue(column, *filter.Value)
 			if parseErr != nil || value == nil {
 				return Page{}, fmt.Errorf("%w: invalid filter value", ErrInvalidValue)
 			}
 			switch filter.Operator {
 			case "contains", "starts_with":
-				if column.Family != storageFamilyText {
+				if column.Family != storageFamilyText || column.Boolean {
 					return Page{}, fmt.Errorf("%w: text operator requires a text column", ErrInvalidValue)
 				}
 				text, _ := filter.Value.Text()

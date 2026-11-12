@@ -10,7 +10,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 )
@@ -107,17 +106,9 @@ func (s *Service) Delete(ctx context.Context, backupID, actorID string) error {
 }
 
 func (s *Service) resolveBackupFile(path string, allowMissing bool) (string, error) {
-	directory, err := filepath.Abs(s.directory)
+	target, err := s.managedPath(path)
 	if err != nil {
 		return "", err
-	}
-	target, err := filepath.Abs(filepath.Clean(path))
-	if err != nil {
-		return "", err
-	}
-	relative, err := filepath.Rel(directory, target)
-	if err != nil || relative == "." || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) || filepath.IsAbs(relative) {
-		return "", errors.New("backup path escapes the configured directory")
 	}
 	info, err := os.Lstat(target)
 	if err != nil {

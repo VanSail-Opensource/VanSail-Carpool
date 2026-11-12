@@ -1,5 +1,11 @@
 # Application store
 
+Active-term add-on prices use immutable `purchased_term_seconds` when available;
+later catalog duration edits cannot change that denominator. Historical NULL
+snapshots retain their existing fallback without backfilling financial evidence.
+`billing_purchase_addon_duration_test.go` covers shorter/longer catalog edits,
+unchanged quoted proration and the resulting exact wallet debit.
+
 `xnode_configurations.go` deletes only unreferenced native configurations. The
 database foreign key remains authoritative during concurrent node changes and
 protects historical node references. Missing documents return not found; foreign
