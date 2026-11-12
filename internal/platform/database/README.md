@@ -245,10 +245,15 @@ rejections. `xnode_traffic_conflicts_test.go` covers these atomicity contracts.
 
 `xnode_firewall_queue.go` projects lagging dynamic/source banks onto the existing
 durable outbox. Periodic reconciliation preserves pending retry deadlines and
-processing leases. Journal ingestion queues fleet work only when desired firewall
+processing leases. Failed receipts remain unchanged: recovery inserts a fresh job
+only when the existing active-payload index permits it. GeoIP preparation shares
+this coalescing rule; neither path reactivates historical failures beside an
+active claim. Journal ingestion queues fleet work only when desired firewall
 versions change; below-threshold observations, partial expiry and replay still
 commit their event cursors. Reconnects retain full delivery for both banks.
 `xnode_firewall_queue_test.go` covers recovery, bank selection and retry pacing.
+`xnode_firewall_queue_recovery_test.go` covers historical failures, active claims,
+concurrent recovery and continued journal ingestion on PostgreSQL.
 
 Rekeyed traffic aggregates accept either side of the recorded owner mapping.
 Live cumulative counters can move to the new ID while immutable period samples

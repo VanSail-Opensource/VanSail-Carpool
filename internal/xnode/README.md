@@ -165,6 +165,14 @@ the byte boundary, prepaid clock cap and observation failure ordering.
 `payg_continuity_test.go` covers funded authorization across GiB credit boundaries,
 the bounded agent-clock prepaid cap and synchronization before observation errors.
 
+Explicit `Master.Sync` succeeds only when the current target has been published.
+Pending upgrade confirmation, country staging, DDNS protection and activation
+retry backoff return `ErrUnavailable` before callers can start native barriers.
+Background reconciliation retains its ordinary cadence while these dependencies
+are pending; runtime activation remains the separate `WaitApplied` barrier.
+`master_sync_pending_test.go` covers publication gating, dependency recovery and
+period closure stopping before a traffic flush when revocation is unpublished.
+
 `subscription_usage.go` projects existing owner accounting into subscription
 metadata and the HTTP `Subscription-Userinfo` header. An effective combo retains
 its expiry and current matching period's usage/quota even when PAYG hosts are
@@ -642,6 +650,11 @@ administrator document and rejection of unrelated native-core errors.
 - `named_services_test.go`: Hosted standalone quota, routing scope and disable regressions.
 
 Firewall control: `firewall_types.go` defines typed operational interfaces and public-IP validation. `firewall_service.go` gates capabilities, handles durable reports and quote-bound paid grants. Firewall event batches share the 256-event protocol limit; safe rejection codes distinguish malformed batches, storage failures and ACK failures. `firewall_events_test.go` covers the oversized-frame boundary and secret-safe codes. `firewall_reconcile.go` retires old inventory sources and rebuilds learned detection evidence only when its version changes. `firewall_delivery.go` defers existing outbox leases and sends dynamic deltas or bounded snapshots through the per-node queue. `firewall_source_delivery.go` only sends final, acknowledged removals of retired source sets; no proxy inventory crosses this boundary. Agent capability firewall_control_v1 is required; older agents receive protection disabled rather than autonomous banning. Source transfer slots are bounded separately, preserving capacity for immediate exemptions and traffic acknowledgments.
+
+Snapshot identities include the bank and desired version as well as the outbox
+job and attempt, so an explicit retry that resets attempts cannot reuse an
+unfinished snapshot for another version. `firewall_delivery_identity_test.go`
+covers version/bank separation and bounded protocol names.
 
 Task 2 pins protocol/native validation at signed X-Node v2.0.5, source commit `5352b67e882b`. Hosted Quality `39029889093` and signed release `39030494260` succeeded. The version-bound manifest and all amd64/arm64 agent/CLI hashes were independently verified with the production trust root.
 

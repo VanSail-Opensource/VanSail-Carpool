@@ -83,37 +83,46 @@ func (m *Master) reconcile(ctx context.Context) error {
 func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) error {
 	peer.syncMu.Lock()
 	defer peer.syncMu.Unlock()
-	return m.syncNodeLocked(ctx, peer, force)
+	published, err := m.syncNodeLocked(ctx, peer, force)
+	if err != nil {
+		return err
+	}
+	if !published {
+		return syncFailure("publication", ErrUnavailable)
+	}
+	return nil
 }
 
-func (m *Master) syncNodeLocked(ctx context.Context, peer *agentPeer, force bool) error {
+// Pending prerequisites are benign for background reconciliation, but explicit
+// callers must not proceed to native barriers before the target is published.
+func (m *Master) syncNodeLocked(ctx context.Context, peer *agentPeer, force bool) (published bool, err error) {
 	m.mu.RLock()
 	hello := m.live[peer.nodeID].hello
 	m.mu.RUnlock()
 	if hello.UpgradePending {
-		return nil
+		return false, nil
 	}
 	config, err := m.cachedConfiguration(ctx, peer, force)
 	if err != nil {
-		return syncFailure("compile", err)
+		return false, syncFailure("compile", err)
 	}
 	config, ready, err := m.prepareCountryForPeer(ctx, peer, config, hello.Capabilities)
 	if err != nil {
-		return syncFailure("assets", err)
+		return false, syncFailure("assets", err)
 	}
 	if !ready {
-		return nil
+		return false, nil
 	}
 	config, err = m.overlayPAYG(ctx, peer, config, hello.Capabilities)
 	if err != nil {
-		return syncFailure("access", err)
+		return false, syncFailure("access", err)
 	}
 	prepared, err := preparePeerWire(peer, config, hello.Capabilities)
 	if err != nil {
-		return syncFailure("wire", err)
+		return false, syncFailure("wire", err)
 	}
 	if ready, err = m.ddnsRouteProtectionReady(ctx, peer, prepared, hello.Capabilities); err != nil || !ready {
-		return err
+		return false, err
 	}
 	controls := m.connectionControls(prepared.config)
 	digest := prepared.digest
@@ -124,14 +133,15 @@ func (m *Master) syncNodeLocked(ctx context.Context, peer *agentPeer, force bool
 	retry := peer.failedDigest == digest && m.service.now().Before(peer.retryAt)
 	peer.mu.Unlock()
 	if retry {
-		return nil
+		return false, nil
 	}
 	if same && !force {
-		return syncFailure("controls", m.syncControls(ctx, peer, controls, oldControls))
+		err = syncFailure("controls", m.syncControls(ctx, peer, controls, oldControls))
+		return err == nil, err
 	}
 	revision, err := m.service.repo.AdvanceXNodeRevision(ctx, peer.nodeID, previous)
 	if err != nil {
-		return err
+		return false, err
 	}
 	normalized := prepared.config
 	normalized.Users = slices.Clone(prepared.config.Users)
@@ -142,7 +152,7 @@ func (m *Master) syncNodeLocked(ctx context.Context, peer *agentPeer, force bool
 	for _, user := range config.Users {
 		if user.AccountingPeriod != "" && !isPAYGPeriod(user.AccountingPeriod) {
 			if err = m.service.repo.TrackXNodePeriodNode(ctx, user.AccountingPeriod, peer.nodeID); err != nil {
-				return err
+				return false, err
 			}
 		}
 	}
@@ -159,7 +169,7 @@ func (m *Master) syncNodeLocked(ctx context.Context, peer *agentPeer, force bool
 		peer.mu.Lock()
 		peer.digest = ""
 		peer.mu.Unlock()
-		return err
+		return false, err
 	}
 	if !config.Firewall.Enabled {
 		m.mu.Lock()
@@ -170,5 +180,5 @@ func (m *Master) syncNodeLocked(ctx context.Context, peer *agentPeer, force bool
 		}
 		m.mu.Unlock()
 	}
-	return nil
+	return true, nil
 }

@@ -65,7 +65,9 @@ func (m *Master) syncPeer(ctx context.Context, peer *agentPeer, now time.Time) {
 		err = m.confirmFirstSync(child, peer)
 	}
 	if err == nil {
-		err = m.syncNodeLocked(child, peer, force)
+		// Queued prerequisites keep the ordinary reconciliation cadence; only
+		// explicit Sync callers require proof that publication has happened.
+		_, err = m.syncNodeLocked(child, peer, force)
 	}
 	if err != nil {
 		if force {

@@ -19,6 +19,7 @@ func queueFirewallFleetTx(ctx context.Context, tx *sql.Tx, now time.Time) error 
 
 // Read desired revisions once and queue only the banks that need delivery.
 // Existing pending retries and processing leases retain their executor pacing.
+// Failed receipts remain historical; the active-payload index coalesces recovery.
 func queueFirewallMembersTx(ctx context.Context, tx *sql.Tx, node string, now time.Time) error {
 	rows, err := tx.QueryContext(ctx, `SELECT m.node_id,
  (m.force_sync<>0 OR m.applied<c.version),
@@ -59,9 +60,6 @@ func queueFirewallMembersTx(ctx context.Context, tx *sql.Tx, node string, now ti
 			}
 			raw, err := json.Marshal(map[string]string{"nodeId": v.node, "bank": bank.name})
 			if err != nil {
-				return err
-			}
-			if _, err = tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',attempts=0,available_at=$1,updated_at=$2 WHERE kind=$3 AND payload=$4 AND status='failed'`, stamp(now), stamp(now), xnode.FirewallJob, string(raw)); err != nil {
 				return err
 			}
 			if err = insertOutboxTx(ctx, tx, xnode.FirewallJob, string(raw), now, now); err != nil {

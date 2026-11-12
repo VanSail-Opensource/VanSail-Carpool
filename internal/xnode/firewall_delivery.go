@@ -79,7 +79,7 @@ func (m *Master) deliverFirewall(ctx context.Context, node string, sources bool,
 			locked = true
 		}
 	}
-	identity := fmt.Sprintf("fw-%s-%d", job, attempt)
+	identity := firewallSnapshotID(job, attempt, member, sources)
 	if sources {
 		return m.deliverFirewallSources(ctx, peer, member, current, identity)
 	}
@@ -128,4 +128,14 @@ func (m *Master) deliverFirewall(ctx context.Context, node string, sources bool,
 		index++
 	}
 	return repo.MarkFirewallDelivered(ctx, node, member.Version, false, full, member.Epoch)
+}
+
+// Explicit retries can reset attempts. Bind staging to the exact bank/version
+// so a new desired snapshot cannot reuse an unfinished older snapshot identity.
+func firewallSnapshotID(job string, attempt int, member FirewallMember, sources bool) string {
+	bank, version := "dynamic", member.Version
+	if sources {
+		bank, version = "sources", member.SourceVersion
+	}
+	return fmt.Sprintf("fw-%s-%d-%s-%d", job, attempt, bank, version)
 }
