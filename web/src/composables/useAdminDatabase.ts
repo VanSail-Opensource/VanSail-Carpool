@@ -1,10 +1,11 @@
 import { restoreCached, restoreItems } from '@/api/cache/restore'
-import { computed, onMounted, readonly, shallowRef } from 'vue'
+import { computed, onMounted, onScopeDispose, readonly, shallowRef } from 'vue'
 
 import type { DatabaseMutationInput, DatabaseMutationReview, DatabaseQueryInput, DatabaseRow, DatabaseTable } from '@/api/features'
 import { featuresApi } from '@/api/features'
 import { ApiError } from '@/api/http'
 import { localizedError, t } from '@/i18n'
+import { createLatestRequest } from '@/utils/latestRequest'
 
 export function useAdminDatabase() {
   const tables = shallowRef<DatabaseTable[]>([])
@@ -12,7 +13,11 @@ export function useAdminDatabase() {
   const rows = shallowRef<DatabaseRow[]>([])
   const nextCursor = shallowRef<string | null>(null)
   const loading = shallowRef(true)
-  const busy = shallowRef(false)
+  const querying = shallowRef(false)
+  const mutating = shallowRef(false)
+  const busy = computed(() => querying.value || mutating.value)
+  const queries = createLatestRequest()
+  let queryController: AbortController | undefined
   const error = shallowRef<string | null>(null)
   const review = shallowRef<DatabaseMutationReview | null>(null)
   const lastRescueBackupId = shallowRef<string | null>(null)
@@ -53,20 +58,24 @@ export function useAdminDatabase() {
   }
 
   async function queryRows(table: string, input: DatabaseQueryInput, options: { append?: boolean } = {}): Promise<void> {
-    if (busy.value) return
-    busy.value = true
+    if (mutating.value || (options.append && querying.value)) return
+    const ticket = queries.begin()
+    queryController?.abort()
+    queryController = new AbortController()
+    querying.value = true
     error.value = null
     try {
       const base = { ...input, filters: input.filters.map((filter) => ({ ...filter })), limit: Math.min(200, Math.max(1, input.limit || 50)) }
-      if (!options.append) restoreRows(table, base)
-      const response = await featuresApi.queryDatabaseRows(table, { ...base, cursor: options.append ? nextCursor.value ?? undefined : undefined })
       activeQuery.value = base
+      if (!options.append) restoreRows(table, base)
+      const response = await featuresApi.queryDatabaseRows(table, { ...base, cursor: options.append ? nextCursor.value ?? undefined : undefined }, queryController.signal)
+      if (!queries.isCurrent(ticket) || selectedTableName.value !== table) return
       rows.value = options.append ? [...rows.value, ...response.items] : response.items
       nextCursor.value = response.nextCursor
     } catch (caught) {
-      error.value = localizedError(caught, 'errors.databaseRows')
+      if (queries.isCurrent(ticket)) error.value = localizedError(caught, 'errors.databaseRows')
     } finally {
-      busy.value = false
+      if (queries.isCurrent(ticket)) querying.value = false
     }
   }
 
@@ -81,7 +90,7 @@ export function useAdminDatabase() {
 
   async function reviewMutation(input: DatabaseMutationInput): Promise<boolean> {
     if (!selectedTable.value || busy.value) return false
-    busy.value = true
+    mutating.value = true
     error.value = null
     try {
       review.value = await featuresApi.reviewDatabaseMutation(input)
@@ -90,13 +99,13 @@ export function useAdminDatabase() {
       error.value = mutationError(caught, 'errors.mutationReview')
       return false
     } finally {
-      busy.value = false
+      mutating.value = false
     }
   }
 
   async function applyMutation(input: DatabaseMutationInput, confirmation: string): Promise<boolean> {
     if (!review.value || busy.value) return false
-    busy.value = true
+    mutating.value = true
     error.value = null
     try {
       const response = await featuresApi.applyDatabaseMutation({ ...input, reviewHash: review.value.reviewHash, confirmation })
@@ -114,7 +123,7 @@ export function useAdminDatabase() {
       error.value = mutationError(caught, 'errors.mutationApply')
       return false
     } finally {
-      busy.value = false
+      mutating.value = false
     }
   }
 
@@ -123,6 +132,7 @@ export function useAdminDatabase() {
   }
 
   onMounted(() => void loadTables())
+  onScopeDispose(() => { queries.dispose(); queryController?.abort() })
 
   return {
     tables: readonly(tables),

@@ -124,7 +124,10 @@ func automaticRenewalPlanTx(ctx context.Context, tx *sql.Tx, userID, purchaseID 
 	}
 	addonIDs := make([]string, 0, len(addons))
 	for _, addon := range addons {
-		plan.GrossMinor += addon.PriceTXBMinor
+		plan.GrossMinor, err = checkedPriceSum(plan.GrossMinor, addon.PriceTXBMinor)
+		if err != nil {
+			return AutoRenewalPlan{}, err
+		}
 		addonIDs = append(addonIDs, addon.GroupID)
 	}
 	if plan.rewardRenewalPrice == nil {
@@ -134,11 +137,17 @@ func automaticRenewalPlanTx(ctx context.Context, tx *sql.Tx, userID, purchaseID 
 		}
 		plan.Combo.PriceTXBMinor = plan.GrossMinor
 		for _, addon := range addons {
+			if addon.PriceTXBMinor < 0 || plan.Combo.PriceTXBMinor < addon.PriceTXBMinor {
+				return AutoRenewalPlan{}, ErrConflict
+			}
 			plan.Combo.PriceTXBMinor -= addon.PriceTXBMinor
 		}
 		if plan.Combo.PriceTXBMinor < 0 {
 			return AutoRenewalPlan{}, ErrConflict
 		}
+	}
+	if plan.GrossMinor < 0 {
+		return AutoRenewalPlan{}, ErrConflict
 	}
 	plan.NetMinor = plan.GrossMinor
 	discount := coupons.Discount{GrossMinor: plan.GrossMinor, NetMinor: plan.GrossMinor}

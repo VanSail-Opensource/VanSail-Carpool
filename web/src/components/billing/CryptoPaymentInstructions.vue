@@ -76,6 +76,7 @@ function copyAddress(): void {
       block
       icon="i-ph-arrows-clockwise"
       :label="t('cryptoPayment.recreate')"
+      :disabled="stage !== 'pending'"
       :loading="stage === 'creating'"
       data-haptic="confirm"
       @click="emit('recreate')"

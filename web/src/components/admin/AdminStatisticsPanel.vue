@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import LineChart from '@/components/charts/LineChart.vue'
-import { computed, onMounted, reactive, shallowRef } from 'vue'
+import { computed, onMounted, onScopeDispose, reactive, shallowRef } from 'vue'
 
 import type { AdminStatistics, StatisticsQuery } from '@/api/features'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import { useI18n } from '@/i18n'
 import { txbInputFromMinor } from '@/utils/format'
+import { createLatestRequest } from '@/utils/latestRequest'
 
 const props = defineProps<{ title: string; load: (query: StatisticsQuery) => Promise<AdminStatistics> }>()
 const emit = defineEmits<{ close: [] }>()
 const statistics = shallowRef<AdminStatistics | null>(null)
 const loading = shallowRef(true)
 const error = shallowRef<string | null>(null)
+const latest = createLatestRequest()
 const today = new Date().toISOString().slice(0, 10)
 const monthAgo = new Date(Date.now() - 29 * 86_400_000).toISOString().slice(0, 10)
 const filters = reactive<Required<Pick<StatisticsQuery, 'from' | 'to' | 'bucket'>>>({ from: monthAgo, to: today, bucket: 'daily' })
@@ -38,18 +40,21 @@ const tableData = computed(() => (statistics.value?.series ?? []).map((point) =>
 })))
 
 async function refresh(): Promise<void> {
+  const ticket = latest.begin()
   loading.value = true
   error.value = null
   try {
-    statistics.value = await props.load({ ...filters })
+    const response = await props.load({ ...filters })
+    if (latest.isCurrent(ticket)) statistics.value = response
   } catch {
-    error.value = t('adminStatistics.error')
+    if (latest.isCurrent(ticket)) error.value = t('adminStatistics.error')
   } finally {
-    loading.value = false
+    if (latest.isCurrent(ticket)) loading.value = false
   }
 }
 
 onMounted(() => void refresh())
+onScopeDispose(() => latest.dispose())
 </script>
 
 <template>

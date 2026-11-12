@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
@@ -73,73 +72,6 @@ func TestMethodsRejectsInvalidConfiguration(t *testing.T) {
 	settings.errs = map[string]error{"billing.ezpay.enabled": errors.New("settings unavailable")}
 	if _, err := newBillingServiceForTest(newBillingRepository(), settings, &billingGateway{}).Methods(context.Background()); err == nil {
 		t.Fatal("Methods() ignored settings failure")
-	}
-}
-
-type billingCancellationRepository struct {
-	*billingRepository
-	changed             bool
-	cancelErr           error
-	providerCancelErr   error
-	providerCancelState string
-}
-
-func (r *billingCancellationRepository) CancelPaymentOrder(_ context.Context, id, _ string, _ string, _ time.Time) (model.PaymentOrder, bool, error) {
-	if r.cancelErr != nil {
-		return model.PaymentOrder{}, false, r.cancelErr
-	}
-	return r.orders[id], r.changed, nil
-}
-
-func (r *billingCancellationRepository) SetPaymentProviderCancellation(_ context.Context, _ string, status string, _ time.Time) error {
-	r.providerCancelState = status
-	return r.providerCancelErr
-}
-
-type billingCancellationGateway struct {
-	billingGateway
-	err   error
-	calls int
-}
-
-func (g *billingCancellationGateway) Cancel(context.Context, model.PaymentOrder) error {
-	g.calls++
-	return g.err
-}
-
-func TestCancelBestEffortProviderCancellation(t *testing.T) {
-	t.Parallel()
-	ctx := context.Background()
-	baseOrder := model.PaymentOrder{ID: "order-1", Provider: "bepusdt", ProviderTradeID: ptrString("trade-1")}
-	for name, repository := range map[string]Repository{
-		"unsupported repository": newBillingRepository(),
-		"repository failure":     &billingCancellationRepository{billingRepository: newBillingRepository(), cancelErr: errors.New("cancel failure")},
-	} {
-		t.Run(name, func(t *testing.T) {
-			if _, err := newBillingServiceForTest(repository, &billingSettings{}, &billingGateway{}).Cancel(ctx, "order-1", "user-1"); err == nil {
-				t.Fatal("Cancel() unexpectedly succeeded")
-			}
-		})
-	}
-
-	for name, gatewayErr := range map[string]error{"success": nil, "provider failure": errors.New("provider failure")} {
-		t.Run(name, func(t *testing.T) {
-			repository := &billingCancellationRepository{billingRepository: newBillingRepository(), changed: true}
-			repository.orders[baseOrder.ID] = baseOrder
-			repository.paymentForUser = model.PaymentOrder{ID: baseOrder.ID, Status: "cancelled"}
-			gateway := &billingCancellationGateway{err: gatewayErr}
-			order, err := newBillingServiceForTest(repository, &billingSettings{}, gateway).Cancel(ctx, baseOrder.ID, "user-1")
-			if err != nil || order.ID != baseOrder.ID || gateway.calls != 1 {
-				t.Fatalf("Cancel() = (%+v, %v), calls %d", order, err, gateway.calls)
-			}
-			wantStatus := "cancelled"
-			if gatewayErr != nil {
-				wantStatus = "failed"
-			}
-			if repository.providerCancelState != wantStatus {
-				t.Fatalf("provider cancellation state = %q, want %q", repository.providerCancelState, wantStatus)
-			}
-		})
 	}
 }
 

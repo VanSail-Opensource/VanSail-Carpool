@@ -56,8 +56,9 @@ async function load(): Promise<void> {
   }
 }
 
-async function save(): Promise<void> {
-  if (busy.value || !canSave.value) return
+async function save(): Promise<boolean> {
+  if (busy.value || loading.value) return false
+  if (!canSave.value) { error.value = t('adminSettings.amountLimits.rangeInvalid'); return false }
   busy.value = true
   error.value = null
   saved.value = false
@@ -67,8 +68,10 @@ async function save(): Promise<void> {
     draft.maximum = txbInputFromMinor(limits.maximum.minor)
     updatedAt.value = limits.updatedAt
     saved.value = true
+    return true
   } catch (caught) {
     error.value = localizedError(caught, 'errors.adminAction')
+    return false
   } finally {
     busy.value = false
   }

@@ -18,3 +18,5 @@ The inventory now opens creation in a focused modal. Administrative, node and mi
 `APITokenForm.test.ts` guards unique native checkbox labels and cross-group permission retention using real Nuxt UI components. The shared validation field has no outer control label; every permission has an explicit unique control ID.
 
 Successful revocation immediately removes the row and clears its one-time secret. Invalidated list requests cannot restore deleted credentials; a failed refresh retains the filtered list.
+
+Read only and Full administration presets explicitly select both independent administration/node scope families. Initial selection remains only `admin:read`. Labels explain that each write scope includes reads only for its own resource and database/backup tools require both families. `APITokenForm.test.ts` verifies the exact preset arrays.

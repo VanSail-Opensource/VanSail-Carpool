@@ -39,6 +39,7 @@ const { t } = useI18n()
 const couponCode = shallowRef('')
 const couponBusy = shallowRef(false)
 const couponError = shallowRef<string | null>(null)
+const couponAttempts = new Map<string, string>()
 
 const externalMethods = computed(() => props.methods.filter((method) => method.mode === 'order'))
 const selectedMethod = computed(() => props.methods.find((method) => method.id === props.selectedMethodId) ?? null)
@@ -123,11 +124,15 @@ function methodNote(method: FeaturePaymentMethod): string {
 }
 
 async function redeemCoupon(): Promise<void> {
-  if (!couponCode.value.trim() || couponBusy.value) return
+  const code = couponCode.value.trim().toUpperCase()
+  if (!code || couponBusy.value) return
   couponBusy.value = true
   couponError.value = null
   try {
-    const redemption = await featuresApi.redeemCoupon(couponCode.value, createUuid())
+    const key = couponAttempts.get(code) ?? createUuid()
+    couponAttempts.set(code, key)
+    const redemption = await featuresApi.redeemCoupon(code, key)
+    couponAttempts.delete(code)
     emit('couponRedeemed', redemption)
   } catch (caught) {
     couponError.value = localizedError(caught, 'errors.couponRedeem')

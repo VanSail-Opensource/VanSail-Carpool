@@ -43,6 +43,11 @@ uses the courtesy ledger. Failed evidence loads disable confirmation until retry
 
 `useAdminUserMetrics.test.ts` verifies abort/generation isolation between profiles and retirement of pending responses/samples on logout.
 
+Balance adjustments carry an idempotency key for the exact member, signed amount
+and reason. Ambiguous failures retain that key for a safe retry; confirmed
+successes retire it so a subsequent intentional adjustment is distinct.
+`AdminUserBalanceAdjustment.test.ts` covers these recovery boundaries.
+
 The IP table distinguishes stale/unavailable reports from a fresh report with no recent activity. No scan action or receipt polling is needed.
 
 `AdminUserActiveIPs.vue` presents automatically refreshed, owner-scoped sampled

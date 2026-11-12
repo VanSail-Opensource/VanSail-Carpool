@@ -58,6 +58,8 @@ type dashboardResponse struct {
 	AutoRenewalFailure *model.AutoRenewalFailure `json:"autoRenewalFailure"`
 	Statistics         *model.Statistics         `json:"statistics"`
 	SubscriptionURL    *string                   `json:"subscriptionUrl"`
+	SubscriptionReady  bool                      `json:"subscriptionReady"`
+	ActiveSquadNames   []string                  `json:"activeSquadNames"`
 	StatisticsStale    bool                      `json:"statisticsStale"`
 	StatisticsWarning  string                    `json:"statisticsWarning"`
 	FetchedAt          time.Time                 `json:"fetchedAt"`
@@ -73,9 +75,14 @@ func (s *Server) dashboard(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, r, http.StatusBadGateway, "DASHBOARD_UNAVAILABLE", "Live account data is temporarily unavailable.")
 		return
 	}
-	writeJSON(w, http.StatusOK, dashboardResponse{User: mapUser(dashboard.User), Balance: dashboard.Balance, ActivePurchase: dashboard.ActivePurchase,
+	writeJSON(w, http.StatusOK, mapDashboardResponse(dashboard))
+}
+
+func mapDashboardResponse(dashboard model.Dashboard) dashboardResponse {
+	return dashboardResponse{User: mapUser(dashboard.User), Balance: dashboard.Balance, ActivePurchase: dashboard.ActivePurchase,
 		QueuedPurchase: dashboard.QueuedPurchase, AutoRenewalFailure: dashboard.AutoRenewalFailure, Statistics: dashboard.Statistics, SubscriptionURL: dashboard.SubscriptionURL,
-		StatisticsStale: dashboard.StatisticsStale, StatisticsWarning: dashboard.StatisticsWarning, FetchedAt: dashboard.FetchedAt})
+		SubscriptionReady: dashboard.SubscriptionReady, ActiveSquadNames: nonNilStrings(dashboard.ActiveSquadNames),
+		StatisticsStale: dashboard.StatisticsStale, StatisticsWarning: dashboard.StatisticsWarning, FetchedAt: dashboard.FetchedAt}
 }
 
 func (s *Server) catalog(w http.ResponseWriter, r *http.Request) {

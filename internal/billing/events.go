@@ -169,30 +169,3 @@ func (s *Service) ReturnDetails(ctx context.Context, provider, orderID string) (
 	}
 	return paymentReturnDetails(order), nil
 }
-
-// Cancel stops client polling immediately and then performs provider cancellation
-// on a best-effort basis. A later verified paid event remains authoritative.
-func (s *Service) Cancel(ctx context.Context, orderID, userID string) (model.PaymentOrder, error) {
-	repository, ok := s.repository.(cancellationRepository)
-	if !ok {
-		return model.PaymentOrder{}, errors.New("payment cancellation is unavailable")
-	}
-	order, changed, err := repository.CancelPaymentOrder(ctx, orderID, userID, "cancelled by user", s.now().UTC())
-	if err != nil {
-		return model.PaymentOrder{}, err
-	}
-	if !changed || order.Provider != "bepusdt" || order.ProviderTradeID == nil {
-		return order, nil
-	}
-	canceller, ok := s.gateway.(CancellationGateway)
-	if !ok {
-		_ = repository.SetPaymentProviderCancellation(ctx, order.ID, "unsupported", s.now().UTC())
-		return s.repository.PaymentOrderForUser(ctx, order.ID, userID)
-	}
-	status := "cancelled"
-	if err := canceller.Cancel(ctx, order); err != nil {
-		status = "failed"
-	}
-	_ = repository.SetPaymentProviderCancellation(ctx, order.ID, status, s.now().UTC())
-	return s.repository.PaymentOrderForUser(ctx, order.ID, userID)
-}

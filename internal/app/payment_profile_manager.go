@@ -75,8 +75,8 @@ func (m *PaymentProfileManager) RefreshPaymentProfile(ctx context.Context, id st
 }
 
 // DeletePaymentProfile removes an unused profile and its process-local rails.
-func (m *PaymentProfileManager) DeletePaymentProfile(ctx context.Context, id string) error {
-	if err := m.settings.DeletePaymentProfile(ctx, id); err != nil {
+func (m *PaymentProfileManager) DeletePaymentProfile(ctx context.Context, id, actorID string) error {
+	if err := m.settings.DeletePaymentProfile(ctx, id, actorID); err != nil {
 		return err
 	}
 	m.cache.Remove(id)

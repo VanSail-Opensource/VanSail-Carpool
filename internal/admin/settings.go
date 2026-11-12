@@ -119,6 +119,9 @@ func (s *SettingsService) put(ctx context.Context, actorID, key, value string) e
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if err := s.validateLegacyPaymentSettingWrite(ctx, key); err != nil {
+		return err
+	}
 	definition, ok := settingDefinitions[key]
 	if !ok {
 		return fmt.Errorf("unknown setting %q", key)

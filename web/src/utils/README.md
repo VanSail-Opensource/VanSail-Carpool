@@ -42,3 +42,7 @@
 `adminSettingWrites.ts` saves disable toggles before clearing configuration, then keys/destinations before enabling, shared by Turnstile and PM.
 
 - `pricingDisplay.ts`: Exact minor-unit money display through the existing currency preference and localized pricing states/reasons.
+
+Display-currency amount inputs parse decimal strings directly before BigInt
+conversion; they reject fractional minor units and use the same TXB fallback
+for entry and labels when a persisted conversion rate is unavailable.

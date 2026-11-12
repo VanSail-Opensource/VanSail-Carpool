@@ -12,6 +12,9 @@ export function isReadRequest(path: string, method: string): boolean {
 }
 
 export function responseCacheKey(url: string, options: RequestOptions = {}): string | null {
+  // The caller's live/secret response policy applies to our snapshots too,
+  // not only to the browser's HTTP cache.
+  if (options.cache === 'no-store') return null
   const parsed = new URL(url, 'https://session.invalid')
   const path = parsed.pathname
   const method = (options.method ?? 'GET').toUpperCase()

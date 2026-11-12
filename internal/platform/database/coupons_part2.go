@@ -26,6 +26,9 @@ func (s *Store) retryAttempt_RedeemCoupon(ctx context.Context, userID, code, ide
 	}
 	defer func() { _ = tx.Rollback() }()
 	if existing, loadErr := redemptionByKeyTx(ctx, tx, userID, idempotencyKey); loadErr == nil {
+		if err := matchRedemptionCodeTx(ctx, tx, userID, canonical, existing); err != nil {
+			return coupons.RedemptionResult{}, err
+		}
 		existing.Replayed = true
 		return existing, nil
 	} else if !errors.Is(loadErr, ErrNotFound) {

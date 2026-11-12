@@ -51,9 +51,3 @@ func (s *Service) finishRevoke(ctx context.Context, repository revokeOperationRe
 	_, err := repository.CompleteProviderOperation(ctx, operation.Receipt.ID, completion, s.now().UTC())
 	return err
 }
-
-func (s *Service) invalidateDashboard(userID string) {
-	s.cacheMu.Lock()
-	delete(s.cache, userID)
-	s.cacheMu.Unlock()
-}

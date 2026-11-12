@@ -102,18 +102,24 @@ func TestPaymentProfileByIDAndRuntimes(t *testing.T) {
 	}
 
 	settingsRepository := newAdminSettingsRepository()
-	settingsRepository.settings["billing.ezpay.key"] = database.Setting{Key: "billing.ezpay.key", Value: "legacy-secret"}
+	credential := func(id string) string {
+		value, err := testVault(t).Encrypt("payment-profile:"+id, "profile-secret")
+		if err != nil {
+			t.Fatal(err)
+		}
+		return value
+	}
 	directRepository := &paymentProfileByIDRepositoryStub{
 		paymentProfileRepositoryStub: &paymentProfileRepositoryStub{},
 		byIDRecord: database.PaymentProfileRecord{
 			PaymentProfile:       model.PaymentProfile{ID: "profile-1", Provider: "ezpay", EnabledChannels: []string{"alipay"}},
-			CredentialCiphertext: "invalid-ciphertext",
+			CredentialCiphertext: credential("profile-1"),
 		},
 	}
 	service := NewSettingsService(settingsRepository, testVault(t))
 	service.SetPaymentProfileRepository(directRepository)
 	runtime, err := service.PaymentProfileByID(ctx, "profile-1", "alipay")
-	if err != nil || runtime.ID != "profile-1" || runtime.CredentialPlaintext != "legacy-secret" {
+	if err != nil || runtime.ID != "profile-1" || runtime.CredentialPlaintext != "profile-secret" {
 		t.Fatalf("PaymentProfileByID() = (%+v, %v)", runtime, err)
 	}
 	if _, err := service.PaymentProfileByID(ctx, "profile-1", "wxpay"); !errors.Is(err, database.ErrNotFound) {
@@ -128,11 +134,11 @@ func TestPaymentProfileByIDAndRuntimes(t *testing.T) {
 		profiles: []model.PaymentProfile{{ID: "fallback", Provider: "ezpay"}},
 		record: database.PaymentProfileRecord{
 			PaymentProfile:       model.PaymentProfile{ID: "fallback", Provider: "ezpay", EnabledChannels: []string{"alipay"}},
-			CredentialCiphertext: "invalid-ciphertext",
+			CredentialCiphertext: credential("fallback"),
 		},
 	}
 	service.SetPaymentProfileRepository(fallbackRepository)
-	if runtime, err := service.PaymentProfileByID(ctx, "fallback", "alipay"); err != nil || runtime.CredentialPlaintext != "legacy-secret" {
+	if runtime, err := service.PaymentProfileByID(ctx, "fallback", "alipay"); err != nil || runtime.CredentialPlaintext != "profile-secret" {
 		t.Fatalf("PaymentProfileByID(fallback) = (%+v, %v)", runtime, err)
 	}
 	if _, err := service.PaymentProfileByID(ctx, "unknown", ""); !errors.Is(err, database.ErrNotFound) {
@@ -156,7 +162,7 @@ func TestPaymentProfileByIDAndRuntimes(t *testing.T) {
 		}},
 		byIDRecord: database.PaymentProfileRecord{
 			PaymentProfile:       model.PaymentProfile{ID: "configured", Provider: "ezpay"},
-			CredentialCiphertext: "invalid-ciphertext",
+			CredentialCiphertext: credential("configured"),
 		},
 	}
 	service.SetPaymentProfileRepository(runtimesRepository)

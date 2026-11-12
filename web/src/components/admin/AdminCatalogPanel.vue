@@ -95,7 +95,7 @@ async function saveSquad(payload: SquadProductWrite): Promise<void> {
     </div>
     <AdminCatalogEditor v-if="editing !== undefined" :combo="editing ?? undefined" :squads="squads.items.value" :busy="combos.busy.value" :error="combos.error.value" @save="save" @cancel="editing = undefined" />
     <AdminSquadEditor v-if="editingSquad" :squad="editingSquad" :busy="squads.busy.value" :error="squads.error.value" @save="saveSquad" @cancel="editingSquad = null" />
-    <USlideover :open="statisticsTarget !== null" :title="statisticsTarget?.title" @update:open="!$event && (statisticsTarget = null)"><template #body><AdminStatisticsPanel v-if="statisticsTarget" :title="statisticsTarget.title" :load="loadStatistics" @close="statisticsTarget = null" /></template></USlideover>
+    <USlideover :open="statisticsTarget !== null" :title="statisticsTarget?.title" @update:open="!$event && (statisticsTarget = null)"><template #body><AdminStatisticsPanel v-if="statisticsTarget" :key="`${statisticsTarget.kind}:${statisticsTarget.id}`" :title="statisticsTarget.title" :load="loadStatistics" @close="statisticsTarget = null" /></template></USlideover>
     <ConfirmDialog :open="deleting !== null" :title="t('adminCatalog.hideTitle')" :description="t('adminCatalog.hideDescription')" :confirm-label="t('adminCatalog.hideCombo')" :busy="combos.busy.value" danger @update:open="!$event && (deleting = null)" @confirm="remove" />
   </section>
 </template>

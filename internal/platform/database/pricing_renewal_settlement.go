@@ -21,7 +21,7 @@ func pricingRenewalGrossTx(ctx context.Context, tx *sql.Tx, purchase string, gro
 		return 0, err
 	}
 	if c.Mode == "FIXED" {
-		return currentPricingContractGross(c, addons), nil
+		return currentPricingContractGross(c, addons)
 	}
 	q, err := scanPricingQuote(tx.QueryRowContext(ctx, pricingQuoteSelect+` WHERE contract_id=$1 AND state NOT IN ('CANCELLED','EXPIRED') ORDER BY generated_at DESC LIMIT 1`, c.ID))
 	if errors.Is(err, sql.ErrNoRows) {

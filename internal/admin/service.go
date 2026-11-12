@@ -17,7 +17,6 @@ type CatalogRepository interface {
 	SquadProductByID(context.Context, string) (model.SquadProduct, error)
 	SquadProductByGroupID(context.Context, string) (model.SquadProduct, error)
 	ListSquadProducts(context.Context, bool) ([]model.SquadProduct, error)
-	RefreshImportedSquads(context.Context, []database.ImportedSquad) error
 	ListUsers(context.Context, int) ([]model.User, error)
 	AdjustBalance(context.Context, string, int64, string, string, time.Time) (model.LedgerEntry, error)
 	DeductBalance(context.Context, string, int64, string, string, time.Time) (model.LedgerEntry, error)

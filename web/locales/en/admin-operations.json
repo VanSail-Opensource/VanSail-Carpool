@@ -5,6 +5,7 @@
     "working": "Working"
   },
   "adminSettings": {
+    "partialSave": "Some settings could not be saved. Review the errors in each section and retry. Successfully saved changes are already in effect.",
     "title": "System settings",
     "copy": "Secrets are write-only and stay masked after save.",
     "amountLimits": {

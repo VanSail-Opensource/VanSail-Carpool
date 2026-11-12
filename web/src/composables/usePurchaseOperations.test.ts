@@ -1,4 +1,4 @@
-import { effectScope } from 'vue'
+import { effectScope, shallowRef } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { OperationReceipt, MemberRefundQuote } from '@/api/types'
@@ -63,6 +63,33 @@ describe('usePurchaseOperations', () => {
 
     expect(apiMocks.refundPurchase).toHaveBeenNthCalledWith(1, 'purchase-1', 'operation-key-1')
     expect(apiMocks.refundPurchase).toHaveBeenNthCalledWith(2, 'purchase-1', 'operation-key-1')
+    scope.stop()
+  })
+
+  it('keeps a new purchase free of the previous purchase quote and receipt', async () => {
+    let finishQuote!: (value: MemberRefundQuote) => void
+    let finishReceipt!: (value: OperationReceipt) => void
+    apiMocks.getPurchaseRefundQuote.mockReturnValueOnce(new Promise<MemberRefundQuote>(resolve => { finishQuote = resolve }))
+    apiMocks.refundPurchase.mockReturnValueOnce(new Promise<OperationReceipt>(resolve => { finishReceipt = resolve }))
+    const id = shallowRef('purchase-1')
+    const scope = effectScope()
+    const state = scope.run(() => usePurchaseOperations(() => id.value))!
+    const quotePending = state.loadQuote()
+    const mutationPending = state.start('refund')
+    id.value = 'purchase-2'
+    state.reset()
+    finishQuote(quote)
+    finishReceipt(receipt)
+    await quotePending
+    expect(await mutationPending).toBe(false)
+    expect(state.refundQuote.value).toBeNull()
+    expect(state.receipt.value).toBeNull()
+    expect(state.mutating.value).toBe(false)
+    id.value = 'purchase-1'
+    state.reset()
+    apiMocks.refundPurchase.mockResolvedValueOnce(receipt)
+    expect(await state.start('refund')).toBe(true)
+    expect(apiMocks.refundPurchase).toHaveBeenLastCalledWith('purchase-1', 'operation-key-1')
     scope.stop()
   })
 

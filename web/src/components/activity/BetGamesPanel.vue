@@ -5,8 +5,7 @@ import { AnimatePresence, motion } from 'motion-v'
 import type { BetGame } from '@/api/features'
 import TxbAmountField from '@/components/common/TxbAmountField.vue'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
-import { useDisplayCurrency } from '@/composables/useDisplayCurrency'
-import { displayInputFromTXBMinor, displayInputMinimumFromTXBMinor, displayInputToTXBMinor, formatMemberMoney } from '@/utils/displayCurrency'
+import { displayInputCurrency, displayInputFromTXBMinor, displayInputMinimumFromTXBMinor, displayInputToTXBMinor, formatMemberMoney } from '@/utils/displayCurrency'
 import { selectionHaptic } from '@/utils/telegram'
 import { gameIcon } from './gameIcons'
 
@@ -16,7 +15,7 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ bet: [payload: { gameId: string; stakeTxbMinor: string }] }>()
 const { reducedMotion, offset } = useMotionPreferences()
-const { currency } = useDisplayCurrency()
+const inputCurrency = computed(displayInputCurrency)
 
 const selectedId = shallowRef<string | null>(null)
 const stake = shallowRef('')
@@ -40,7 +39,7 @@ watch(() => selected.value?.id, (gameId) => {
 	stake.value = game ? displayInputMinimumFromTXBMinor(game.minimumStakeMinor) : ''
 }, { immediate: true })
 
-watch(currency, () => {
+watch(inputCurrency, () => {
   stake.value = selected.value ? displayInputMinimumFromTXBMinor(selected.value.minimumStakeMinor) : ''
 })
 
@@ -49,7 +48,7 @@ function displayMinor(minor: string): string {
 }
 
 function displayMinimum(minor: string): string {
-  return `${displayInputMinimumFromTXBMinor(minor)} ${currency.value}`
+  return `${displayInputMinimumFromTXBMinor(minor)} ${inputCurrency.value}`
 }
 
 function submit(): void {
@@ -100,7 +99,7 @@ function selectGame(id: string): void {
         :min-minor="selected.minimumStakeMinor"
         :max-minor="selected.maximumStakeMinor"
         :hint="$t('activity.stakeRange', { minimum: displayMinimum(selected.minimumStakeMinor), maximum: displayMinor(selected.maximumStakeMinor) })"
-        :suffix="currency"
+        :suffix="inputCurrency"
         :display-value="displayInputFromTXBMinor"
         :display-minimum="displayInputMinimumFromTXBMinor"
         :parse-display-value="displayInputToTXBMinor"

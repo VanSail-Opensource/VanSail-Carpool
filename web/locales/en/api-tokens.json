@@ -10,7 +10,7 @@
     "readOnly": "Read only",
     "fullAccess": "Full administration",
     "permissions": "Permissions",
-    "permissionsHint": "Write permission includes reading that resource. Full administration also controls commerce and system settings.",
+    "permissionsHint": "Administration and node permissions are separate. Write permission includes reading its resource. Database and backup access requires both groups. Full administration selects both write permissions.",
     "create": "Create token",
     "nameRequired": "Enter a name of 1–80 characters.",
     "scopeRequired": "Select at least one permission.",
@@ -42,8 +42,8 @@
       "xnode": "Nodes"
     },
     "scopes": {
-      "admin:read": "Read all administration data",
-      "admin:write": "Control all administration",
+      "admin:read": "Read commerce and administration",
+      "admin:write": "Control commerce and administration",
       "xnode:read": "Read nodes and configuration",
       "xnode:write": "Configure nodes and run commands"
     }

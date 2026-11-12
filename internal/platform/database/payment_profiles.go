@@ -13,6 +13,7 @@ import (
 
 // PaymentProfileInput contains one provider-account profile and its enabled channels.
 type PaymentProfileInput struct {
+	ActorID                                          string
 	ID, Provider, ProviderName, Endpoint, MerchantID string
 	EnabledChannels                                  []string
 	CredentialCiphertext, Acknowledgement            string
@@ -26,18 +27,65 @@ type PaymentProfileRecord struct {
 }
 
 func (s *Store) SavePaymentProfile(ctx context.Context, input PaymentProfileInput) (model.PaymentProfile, error) {
+	for attempt := 0; ; attempt++ {
+		profile, err := s.savePaymentProfile(ctx, input)
+		if !s.retryTransaction(ctx, err, attempt) {
+			return profile, err
+		}
+	}
+}
+
+func (s *Store) savePaymentProfile(ctx context.Context, input PaymentProfileInput) (model.PaymentProfile, error) {
 	if input.ID == "" || input.Provider == "" || input.Endpoint == "" {
 		return model.PaymentProfile{}, ErrConflict
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return model.PaymentProfile{}, fmt.Errorf("begin payment profile update: %w", err)
+	}
+	defer tx.Rollback()
+	if err := paymentProfileActorTx(ctx, tx, input.ActorID); err != nil {
+		return model.PaymentProfile{}, err
+	}
+	var previousProvider, previousEndpoint, previousMerchant, previousCredential string
+	err = tx.QueryRowContext(ctx, `SELECT provider,endpoint,merchant_id,credential_ciphertext FROM payment_profiles WHERE id=$1 FOR UPDATE`, input.ID).
+		Scan(&previousProvider, &previousEndpoint, &previousMerchant, &previousCredential)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return model.PaymentProfile{}, fmt.Errorf("lock payment profile: %w", err)
+	}
+	if err == nil && (input.Provider != previousProvider || input.Endpoint != previousEndpoint || input.MerchantID != previousMerchant ||
+		input.CredentialCiphertext != "" && input.CredentialCiphertext != previousCredential) {
+		if referenced, err := paymentProfileReferencedTx(ctx, tx, input.ID, previousProvider); err != nil {
+			return model.PaymentProfile{}, err
+		} else if referenced {
+			return model.PaymentProfile{}, ErrPaymentProfileInUse
+		}
 	}
 	providerName := strings.TrimSpace(input.ProviderName)
 	if providerName == "" {
 		providerName = input.Provider
 	}
-	_, err := s.db.ExecContext(ctx, `INSERT INTO payment_profiles(id,provider,provider_name,enabled_channels,endpoint,merchant_id,credential_ciphertext,acknowledgement,enabled,created_at,updated_at)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT(id) DO UPDATE SET provider=excluded.provider,provider_name=excluded.provider_name,enabled_channels=excluded.enabled_channels,endpoint=excluded.endpoint,merchant_id=excluded.merchant_id,credential_ciphertext=CASE WHEN excluded.credential_ciphertext='' THEN payment_profiles.credential_ciphertext ELSE excluded.credential_ciphertext END,acknowledgement=excluded.acknowledgement,enabled=excluded.enabled,updated_at=excluded.updated_at`,
-		input.ID, input.Provider, providerName, strings.Join(input.EnabledChannels, ","), input.Endpoint, input.MerchantID, input.CredentialCiphertext, input.Acknowledgement, boolInt(input.Enabled), stamp(nowUTC()), stamp(nowUTC()))
+	now := nowUTC()
+	result, err := tx.ExecContext(ctx, `INSERT INTO payment_profiles(id,provider,provider_name,enabled_channels,endpoint,merchant_id,credential_ciphertext,acknowledgement,enabled,created_at,updated_at)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT(id) DO UPDATE SET provider=excluded.provider,provider_name=excluded.provider_name,enabled_channels=excluded.enabled_channels,endpoint=excluded.endpoint,merchant_id=excluded.merchant_id,credential_ciphertext=CASE WHEN excluded.credential_ciphertext='' THEN payment_profiles.credential_ciphertext ELSE excluded.credential_ciphertext END,acknowledgement=excluded.acknowledgement,enabled=excluded.enabled,updated_at=excluded.updated_at
+		WHERE excluded.credential_ciphertext<>'' OR
+			(payment_profiles.provider=excluded.provider AND payment_profiles.endpoint=excluded.endpoint AND payment_profiles.merchant_id=excluded.merchant_id)`,
+		input.ID, input.Provider, providerName, strings.Join(input.EnabledChannels, ","), input.Endpoint, input.MerchantID, input.CredentialCiphertext, input.Acknowledgement, boolInt(input.Enabled), stamp(now), stamp(now))
 	if err != nil {
 		return model.PaymentProfile{}, fmt.Errorf("save payment profile: %w", err)
+	}
+	if affected, err := result.RowsAffected(); err != nil {
+		return model.PaymentProfile{}, fmt.Errorf("inspect payment profile update: %w", err)
+	} else if affected != 1 {
+		// An omitted credential means retain it for the same provider account,
+		// never forward a write-only secret to a replacement destination.
+		return model.PaymentProfile{}, ErrConflict
+	}
+	if err := paymentProfileAuditTx(ctx, tx, input.ActorID, "payment_profile.update", input.ID, now); err != nil {
+		return model.PaymentProfile{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		return model.PaymentProfile{}, fmt.Errorf("commit payment profile update: %w", err)
 	}
 	record, err := s.PaymentProfileRecordByID(ctx, input.ID, "")
 	if err != nil {
@@ -65,8 +113,30 @@ func (s *Store) ListPaymentProfiles(ctx context.Context) ([]model.PaymentProfile
 
 // SetPaymentProfileEnabled changes availability without rewriting credentials.
 func (s *Store) SetPaymentProfileEnabled(ctx context.Context, id string, enabled bool) (model.PaymentProfile, error) {
-	result, err := s.db.ExecContext(ctx, `UPDATE payment_profiles SET enabled=$1,updated_at=$2 WHERE id=$3`,
-		boolInt(enabled), stamp(nowUTC()), id)
+	for attempt := 0; ; attempt++ {
+		profile, err := s.setPaymentProfileEnabled(ctx, id, enabled)
+		if !s.retryTransaction(ctx, err, attempt) {
+			return profile, err
+		}
+	}
+}
+
+func (s *Store) setPaymentProfileEnabled(ctx context.Context, id string, enabled bool) (model.PaymentProfile, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return model.PaymentProfile{}, err
+	}
+	defer tx.Rollback()
+	var previous int
+	if err := tx.QueryRowContext(ctx, `SELECT enabled FROM payment_profiles WHERE id=$1 FOR UPDATE`, id).Scan(&previous); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return model.PaymentProfile{}, ErrNotFound
+		}
+		return model.PaymentProfile{}, err
+	}
+	now := nowUTC()
+	result, err := tx.ExecContext(ctx, `UPDATE payment_profiles SET enabled=$1,updated_at=$2 WHERE id=$3`,
+		boolInt(enabled), stamp(now), id)
 	if err != nil {
 		return model.PaymentProfile{}, fmt.Errorf("set payment profile enabled: %w", err)
 	}
@@ -76,36 +146,46 @@ func (s *Store) SetPaymentProfileEnabled(ctx context.Context, id string, enabled
 		}
 		return model.PaymentProfile{}, ErrNotFound
 	}
+	if previous != boolInt(enabled) {
+		if err := paymentProfileAuditTx(ctx, tx, "", "payment_profile.availability", id, now); err != nil {
+			return model.PaymentProfile{}, err
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return model.PaymentProfile{}, err
+	}
 	record, err := s.PaymentProfileRecordByID(ctx, id, "")
 	return record.PaymentProfile, err
 }
 
 // DeletePaymentProfile removes a profile only after its provider attempts are gone.
-func (s *Store) retryAttempt_DeletePaymentProfile(ctx context.Context, id string) error {
+func (s *Store) retryAttempt_DeletePaymentProfile(ctx context.Context, id, actorID string) error {
 
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin payment profile deletion: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
+	if err := paymentProfileActorTx(ctx, tx, actorID); err != nil {
+		return err
+	}
 	var provider string
-	if err := tx.QueryRowContext(ctx, `SELECT provider FROM payment_profiles WHERE id=$1`, id).Scan(&provider); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT provider FROM payment_profiles WHERE id=$1 FOR UPDATE`, id).Scan(&provider); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrNotFound
 		}
 		return fmt.Errorf("load payment profile for deletion: %w", err)
 	}
-	prefix := provider + ":" + id + ":"
-	var active int
-	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM payment_orders WHERE status IN ('creating','pending')
-		AND substr(method_id,1,length($1))=$2`, prefix, prefix).Scan(&active); err != nil {
-		return fmt.Errorf("check payment profile orders: %w", err)
-	}
-	if active > 0 {
-		return ErrConflict
+	if referenced, err := paymentProfileReferencedTx(ctx, tx, id, provider); err != nil {
+		return err
+	} else if referenced {
+		return ErrPaymentProfileInUse
 	}
 	if _, err := tx.ExecContext(ctx, `DELETE FROM payment_profiles WHERE id=$1`, id); err != nil {
 		return fmt.Errorf("delete payment profile: %w", err)
+	}
+	if err := paymentProfileAuditTx(ctx, tx, actorID, "payment_profile.delete", id, nowUTC()); err != nil {
+		return err
 	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("commit payment profile deletion: %w", err)

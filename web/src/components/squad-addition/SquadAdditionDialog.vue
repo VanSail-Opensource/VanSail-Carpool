@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, shallowRef, watch } from 'vue'
+import { computed, onScopeDispose, shallowRef, watch } from 'vue'
 import PricingQuoteNotice from '@/components/common/PricingQuoteNotice.vue'
 import { useRouter } from 'vue-router'
 
@@ -21,6 +21,7 @@ const activationOpen = shallowRef(false)
 const activationTarget = shallowRef<SquadProduct | null>(null)
 const activationPrompting = shallowRef(false)
 let activationResolver: ((code: string | null) => void) | null = null
+let generation = 0
 const emptyIncludedIds = computed<readonly string[]>(() => [])
 const comboId = computed<string | null>(() => props.active.comboId)
 const activeSquadUuids = computed(() => props.active.squadUuids)
@@ -32,9 +33,11 @@ const {
 const { featuredIds, orderedIds } = useCatalogSquadPresentation(visibleSquads, emptyIncludedIds, comboId)
 
 watch([open, () => props.active.id], ([visible]) => {
+  generation++
+  activationPrompting.value = false
+  if (activationResolver) resolveActivation(null)
   if (!visible) {
     reset()
-    if (activationResolver) resolveActivation(null)
     return
   }
   step.value = 1
@@ -43,7 +46,9 @@ watch([open, () => props.active.id], ([visible]) => {
 }, { immediate: true })
 
 async function continueToCheckout(): Promise<void> {
+  const ticket = generation
   if (!selectedSquadIds.value.length || !(await refreshQuote())) return
+  if (ticket !== generation || !open.value) return
   step.value = 2
 }
 
@@ -63,17 +68,18 @@ function resolveActivation(code: string | null): void {
 
 async function confirm(): Promise<void> {
   if (activationPrompting.value) return
+  const ticket = generation
   activationPrompting.value = true
   try {
     const codes: Record<string, string> = {}
     for (const squad of activationSquads.value) {
       const code = await requestActivationCode(squad)
-      if (!code) return
+      if (!code || ticket !== generation || !open.value) return
       codes[squad.groupId] = code
     }
-    if (await confirmPurchase(codes)) emit('changed')
+    if (await confirmPurchase(codes) && ticket === generation) emit('changed')
   } finally {
-    activationPrompting.value = false
+    if (ticket === generation) activationPrompting.value = false
   }
 }
 
@@ -85,6 +91,8 @@ function goHome(): void {
   close()
   void router.push('/home')
 }
+
+onScopeDispose(() => { generation++; if (activationResolver) resolveActivation(null) })
 </script>
 
 <template>

@@ -38,7 +38,7 @@ func (s *Service) HandleProviderOperation(ctx context.Context, operation provide
 	}
 	if item.Status == providerops.StatusProcessing {
 		if subscriptionHash(current.SubscriptionURL) != target.PreviousHash {
-			s.invalidateDashboard(user.ID)
+			s.InvalidateDashboard(user.ID)
 			return s.finishRevoke(ctx, repository, operation, item, providerops.StatusSucceeded, "")
 		}
 		return s.finishRevoke(ctx, repository, operation, item, providerops.StatusPendingReview, "REVOKE_OUTCOME_AMBIGUOUS")
@@ -48,17 +48,17 @@ func (s *Service) HandleProviderOperation(ctx context.Context, operation provide
 		return err
 	}
 	if subscriptionHash(current.SubscriptionURL) != target.PreviousHash {
-		s.invalidateDashboard(user.ID)
+		s.InvalidateDashboard(user.ID)
 		return s.finishRevoke(ctx, repository, operation, item, providerops.StatusSucceeded, "")
 	}
 	_, callErr := s.provider.RevokeSubscription(ctx, *user.ProxyUserID)
 	if callErr == nil {
-		s.invalidateDashboard(user.ID)
+		s.InvalidateDashboard(user.ID)
 		return s.finishRevoke(ctx, repository, operation, item, providerops.StatusSucceeded, "")
 	}
 	after, reconcileErr := s.provider.Dashboard(ctx, *user.ProxyUserID)
 	if reconcileErr == nil && subscriptionHash(after.SubscriptionURL) != target.PreviousHash {
-		s.invalidateDashboard(user.ID)
+		s.InvalidateDashboard(user.ID)
 		return s.finishRevoke(ctx, repository, operation, item, providerops.StatusSucceeded, "")
 	}
 	if definitiveCatalogFailure(s.provider, callErr) {

@@ -14,7 +14,7 @@ type paymentProfileChannelReader interface {
 
 type paymentProfileMutationRepository interface {
 	SetPaymentProfileEnabled(context.Context, string, bool) (model.PaymentProfile, error)
-	DeletePaymentProfile(context.Context, string) error
+	DeletePaymentProfile(context.Context, string, string) error
 }
 
 // SetPaymentProfileChannels attaches the process-local discovery source.
@@ -52,10 +52,10 @@ func (s *SettingsService) DisablePaymentProfile(ctx context.Context, id string) 
 }
 
 // DeletePaymentProfile removes a profile that has no open checkout attempts.
-func (s *SettingsService) DeletePaymentProfile(ctx context.Context, id string) error {
+func (s *SettingsService) DeletePaymentProfile(ctx context.Context, id, actorID string) error {
 	repository, ok := s.profiles.(paymentProfileMutationRepository)
 	if !ok {
 		return errors.New("payment profile mutation is unavailable")
 	}
-	return repository.DeletePaymentProfile(ctx, id)
+	return repository.DeletePaymentProfile(ctx, id, actorID)
 }

@@ -1,8 +1,9 @@
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { FeaturePaymentMethod } from '@/api/features'
+import { featuresApi } from '@/api/features'
 import { setLocale } from '@/i18n'
 
 import BalancePaymentConfiguration from './BalancePaymentConfiguration.vue'
@@ -17,6 +18,7 @@ const methods: FeaturePaymentMethod[] = [
 
 describe('BalancePaymentConfiguration', () => {
   afterEach(() => {
+    vi.restoreAllMocks()
     setLocale('en')
     document.body.innerHTML = ''
   })
@@ -99,6 +101,31 @@ describe('BalancePaymentConfiguration', () => {
     expect(wrapper.get('[data-test="payment-submit"]').text()).toContain('Reissue payment')
     expect(wrapper.text()).toContain('BEPUSDT rejected the order')
     expect(wrapper.find('[data-test="choose-channel"]').exists()).toBe(false)
+  })
+
+  it('reuses coupon redemption keys after an ambiguous response only for the same normalized code', async () => {
+    const redeem = vi.spyOn(featuresApi, 'redeemCoupon').mockRejectedValue(new Error('lost response'))
+    const wrapper = mount(BalancePaymentConfiguration, {
+      props: { amount: '20.00', methods, selectedMethodId: 'coupon', stage: 'configure', error: null, amountValid: true, canCreate: false, canReissue: false },
+      global: { stubs: {
+        PaymentProviderStep: true,
+        UAlert: true,
+      } },
+    })
+    const submit = async (code: string) => {
+      await wrapper.get('input').setValue(code)
+      await wrapper.get('button').trigger('click')
+      await flushPromises()
+    }
+    await submit(' summer ')
+    await submit('SUMMER')
+    await submit('WINTER')
+    await submit('summer')
+    expect(redeem.mock.calls[0][0]).toBe('SUMMER')
+    expect(redeem.mock.calls[1][1]).toBe(redeem.mock.calls[0][1])
+    expect(redeem.mock.calls[2][1]).not.toBe(redeem.mock.calls[0][1])
+    expect(redeem.mock.calls[3][1]).toBe(redeem.mock.calls[0][1])
+    wrapper.unmount()
   })
 })
 

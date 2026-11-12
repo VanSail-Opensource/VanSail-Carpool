@@ -15,6 +15,9 @@ exact amount: network fees are additional and must not reduce the received amoun
 Receipt access denial clears details and stops polling through `usePaymentReturn`.
 The shared receipt exposes a native Telegram entrance link when owner
 authentication is needed; it never imports browser-admin initialization into the Mini App.
-- `BalancePaymentSheet.test.ts` verifies provider labels stay distinct from provider-owned payment channels, such as EZPay and Alipay, and verifies the two-step transition.
+- Coupon redemption retains an attempt key per normalized code after ambiguous failures and retires it after confirmed success, matching the server's uppercase/trimmed code contract.
+- `BalancePaymentSheet.test.ts` verifies provider labels stay distinct from provider-owned payment channels, such as EZPay and Alipay, the two-step transition, and safe coupon redemption retries.
 
 Provider and channel changes use semantic selection feedback with a 140ms Motion check reveal and an opacity-only reduced-motion path; navigation is soft, order confirmation is rigid, retries are light, and order cancellation is heavy.
+
+`PaymentCryptoChannelPicker.vue` keeps a currency available when any of its networks is available, even if its first listed network is disabled.

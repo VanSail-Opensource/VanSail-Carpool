@@ -8,11 +8,13 @@ Audited administrative operations for catalog data, settings, balances, refunds,
 
 - `service.go` defines admin-facing dependency contracts, service construction, backup deletion, and settings forwarding.
 - `catalog.go` manages combos, typed squad profiles, and upstream squad imports; X-Node remains authoritative for node accessibility, while administrator projections initialize required node arrays without storing assignments.
+  The compatibility import endpoint reads and audits the live list; the retired
+  identity-mirroring refresh/mark-missing repository contracts are removed.
 - `finance.go` validates balance adjustments, deductions, refunds,
   terminal-payment courtesy credits, and entitlement cancellations; production
   persistence commits their audit and user notification atomically.
 - `settings.go` defines editable settings, encrypted storage access, masked payment profiles, safe listing, and readiness checks.
-- `payment_profiles.go` validates, encrypts, resolves, and safely deletes provider-account profiles when no open order references them.
+- `payment_profiles.go` validates, encrypts, resolves, and resolves provider-account profiles. Retained order references protect account identity and credentials from retargeting or deletion.
 - `payment_profile_channels.go` discovers BEPUSDT currency/network rails through the queued readiness probe and disables profiles whose probe fails.
 - `payment_profile_readiness.go` maps enabled provider profiles to stable readiness diagnostics.
 - `setting_validators.go` contains the individual setting-value validators.
@@ -46,8 +48,10 @@ Audited administrative operations for catalog data, settings, balances, refunds,
 
 Provider profiles have stable IDs, separate endpoint, credential, merchant ID,
 provider name, and acknowledgement values. Channel selection only controls
-which rails are offered for that account. Balance adjustments create unique
-ledger references so repeated reasons remain separate audited operations.
+which rails are offered for that account. Balance changes accept caller-owned
+financial references: retries return the original immutable entry and mismatched
+target, delta or reason conflict. Separate intent keys remain separate audited
+operations even when their reasons are identical.
 
 - `settings_part2.go` contains the remaining settings validation and persistence helpers.
 `user_refund_quote.go` derives an editable administrator refund default from the net debit and observed whole-term weighted traffic. Native snapshots are selected by panel owner and purchase ID; compatible legacy sources retain the ID-and-range fallback. `user_refund_quote_test.go` covers discounts, custom limits, reset periods, cent rounding, queued terms, outages and ownership.
@@ -80,3 +84,15 @@ optional reads and exposes no credentials, proxy/period references, generations,
 activation keys, or fingerprints. `user_entitlement_commands_test.go` covers the
 manual grant, entitlement edits, exact refunds, combo replacement, and the
 active-hourly conflict fence.
+
+`payment_profile_credentials.go` accepts profile-specific authenticated encryption,
+and only the exact provider-named migrated ciphertext with its retained encrypted
+legacy setting may use the historical encryption context. Custom or corrupted
+profiles fail closed. Blank/masked credentials may preserve an unchanged account;
+changing provider, endpoint or merchant requires an explicit replacement. Once any
+order references an account, rotate by creating a new profile and disabling the
+old one, so late callbacks remain verifiable. Storage commits profile writes,
+deletions and their audit events together. Generic writes to migrated legacy
+account endpoints and credentials are refused once that provider has profiles.
+`payment_profile_credentials_test.go` covers migration proof, account isolation,
+retarget validation and protection of the retained legacy settings.

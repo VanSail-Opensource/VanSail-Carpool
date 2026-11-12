@@ -6,6 +6,11 @@ same rules into metadata. Deletes cannot cascade into protected evidence or
 credentials. Financial/accounting/audit evidence, secrets, generated fields and
 existing keys cannot be edited.
 
+All `hourly_*` billing and credit relations are protected, including offers and
+member preferences that require versioned or consent-bearing domain commands.
+`account_cleanup_*` evidence/health and `xnode_usage_*` history are managed state;
+generic writes cannot manufacture purge admission or rewrite usage coverage.
+
 `postgres.go` resolves identifiers and native types through PostgreSQL catalogs.
 Record, key, value and query modules preserve exact numeric strings and redact
 sensitive values. Declared primary keys are required.

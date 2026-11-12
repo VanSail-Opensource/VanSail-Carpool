@@ -1,5 +1,22 @@
 # Application store
 
+Payment-profile mutations and their audit records commit in one serializable
+transaction. `payment_profile_evidence.go` shares profile locks with order
+admission and preserves provider identity/credentials while any retained order
+needs them, including expired/cancelled attempts and legacy method IDs. Rotate
+an account by creating a replacement profile and disabling the old one. An
+omitted credential can never be redirected to another endpoint or merchant.
+`payment_profile_credentials_test.go` and `payment_profile_evidence_test.go`
+cover credential retention, historical callbacks, missing pinned accounts and
+rollback when the audit cannot commit.
+
+`price_arithmetic.go` bounds basket and renewal arithmetic before signed integer
+wraparound; `price_overflow_test.go` covers a four-term total that would otherwise
+wrap to zero and overflowing add-on sums without wallet or entitlement effects.
+Coupon replay binds to the original code in immutable grant/ledger evidence,
+even after a definition is renamed. `coupon_replay_binding_test.go` covers all
+coupon kinds, conflicting reuse and unchanged balance/redemption counts.
+
 Active-term add-on prices use immutable `purchased_term_seconds` when available;
 later catalog duration edits cannot change that denominator. Historical NULL
 snapshots retain their existing fallback without backfilling financial evidence.

@@ -101,6 +101,9 @@ func insertPaymentOrderTx(ctx context.Context, tx *sql.Tx, order model.PaymentOr
 	if order.ID == "" || order.Status != "creating" {
 		return ErrConflict
 	}
+	if err := lockPaymentOrderProfileTx(ctx, tx, order); err != nil {
+		return err
+	}
 	_, err := tx.ExecContext(ctx, `INSERT INTO payment_orders(id,user_id,provider,method_id,provider_rail,status,
 		txb_minor,payable_amount,payable_currency,rate_snapshot,rate_direction,provider_payload,expires_at,created_at,updated_at)
 		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'{}',$12,$13,$14)`, order.ID, order.UserID, order.Provider, order.MethodID,

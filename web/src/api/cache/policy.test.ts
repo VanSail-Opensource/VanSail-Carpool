@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { isReadRequest, responseCacheKey } from './policy'
 
 describe('live activity eligibility', () => {
+  it('honors explicit no-store for otherwise cacheable resources', () => {
+    for (const path of ['/api/v1/hourly', '/api/v1/admin/xnode/nodes/one/metrics', '/api/v1/admin/api-tokens']) {
+      expect(responseCacheKey(path, { cache: 'no-store' })).toBeNull()
+    }
+    expect(responseCacheKey('/api/v1/dashboard')).not.toBeNull()
+  })
   it('never persists member import keys', () => {
     expect(responseCacheKey('/api/v1/subscription')).toBeNull()
   })

@@ -11,6 +11,10 @@
 - `LanguageSwitcher.vue` controls the active locale.
 - `DualCurrencyMoney.vue` renders an authoritative TXB amount with an optional second-line approximate CNY/USD amount for checkout totals.
 - `SwitchField.vue` and `TxbAmountField.vue` provide domain form fields; `TxbAmountField.vue` keeps exact TXB entry and can add a bounded `USlider` for member funding without weakening minor-unit validation.
+- Amount text remains a decimal string through entry and validation, so large
+  values and excess precision cannot be silently rounded by a numeric input.
+  Only the optional bounded slider uses numbers. `TxbAmountField.test.ts` covers
+  exact large values and rejection of fractional minor units.
 - `SwitchField.vue` uses a native label for its entire 52px row, so tapping the copy or surrounding space toggles the associated Nuxt UI switch once. The name and optional help remain separate accessible associations, and disabled switches retain their native guard.
 
 `JsonDocumentField.vue` is the shared localized JSON field. External value changes reset invalid drafts; parsed edits emit update/validity events. It owns no node or administrator state.

@@ -16,14 +16,14 @@ import { writeAdminSettings } from '@/utils/adminSettingWrites'
 import AdminSectionState from './AdminSectionState.vue'
 const { items, loading, busy, error, load, perform } = useAdminSection<AdminSetting>('settings')
 const draft = reactive<Record<string, string>>({})
-const saved = reactive({ visible: false })
+const saved = reactive({ visible: false, failed: false })
 const activitySettings = shallowRef<ActivitySettings | null>(null)
 const activityLoading = shallowRef(true)
 const activityBusy = shallowRef(false)
 const activityError = shallowRef<string | null>(null)
 const savingAll = shallowRef(false)
-type Saveable = { save: () => Promise<void | boolean>; loading: boolean }
-type PaymentProfilesSaveable = { saveAll: () => Promise<void>; loading: boolean }
+type Saveable = { save: () => Promise<boolean>; loading?: boolean }
+type PaymentProfilesSaveable = { saveAll: () => Promise<boolean>; loading: boolean }
 const embyConnectionRef = useTemplateRef<Saveable>('embyConnection')
 const embyConnectionKeys = new Set(['emby.base_url', 'emby.api_token'])
 const activitySettingsRef = useTemplateRef<Saveable>('activitySettings')
@@ -109,15 +109,17 @@ async function saveAll(): Promise<void> {
   if (saving.value || sectionsLoading.value) return
   savingAll.value = true
   saved.visible = false
+  saved.failed = false
   try {
-    const results = await Promise.all([
+    const results = await Promise.allSettled([
       embyConnectionRef.value?.save() ?? Promise.resolve(false),
       saveSettings(),
-      activitySettings.value ? activitySettingsRef.value?.save() ?? Promise.resolve() : Promise.resolve(),
-      billingLimitsRef.value?.save() ?? Promise.resolve(),
-      paymentProfilesRef.value?.saveAll() ?? Promise.resolve(),
+      activitySettings.value ? activitySettingsRef.value?.save() ?? Promise.resolve(false) : Promise.resolve(false),
+      billingLimitsRef.value?.save() ?? Promise.resolve(false),
+      paymentProfilesRef.value?.saveAll() ?? Promise.resolve(false),
     ])
-    saved.visible = results.every(value => value !== false)
+    saved.visible = results.every(result => result.status === 'fulfilled' && result.value === true)
+    saved.failed = !saved.visible
   } finally {
     savingAll.value = false
   }
@@ -133,14 +135,16 @@ async function loadActivitySettings(): Promise<void> {
     activityLoading.value = false
   }
 }
-async function saveActivitySettings(value: ActivitySettingsWrite): Promise<void> {
-  if (activityBusy.value) return
+async function saveActivitySettings(value: ActivitySettingsWrite): Promise<boolean> {
+  if (activityBusy.value) return false
   activityBusy.value = true
   activityError.value = null
   try {
     activitySettings.value = await featuresApi.saveAdminActivitySettings(value)
+    return true
   } catch (caught) {
     activityError.value = localizedError(caught, 'errors.adminAction')
+    return false
   } finally {
     activityBusy.value = false
   }
@@ -152,6 +156,7 @@ onMounted(() => void loadActivitySettings())
     <div class="admin-panel__heading"><div><h2>{{ t('adminSettings.title') }}</h2><p>{{ t('adminSettings.copy') }}</p></div><UButton icon="i-ph-floppy-disk" :disabled="saving || sectionsLoading" :loading="saving" :label="saving ? t('common.saving') : t('adminSettings.save')" type="submit" form="admin-runtime-settings" @click.prevent="saveAll" /></div>
     <UTabs v-model="workspace" :items="tabs" variant="link" :content="false" class="admin-workspace-tabs" />
     <InlineNotice v-if="saved.visible" tone="success" :title="t('adminSettings.saved')">{{ t('adminSettings.savedHint') }}</InlineNotice>
+    <InlineNotice v-if="saved.failed" tone="warning">{{ t('adminSettings.partialSave') }}</InlineNotice>
     <section v-show="workspace === 'activity'" class="settings-activity"><AdminActivitySettings ref="activitySettings" :settings="activitySettings" :busy="activityBusy" :save="saveActivitySettings" /><InlineNotice v-if="activityError" tone="warning">{{ activityError }}</InlineNotice></section>
     <div v-show="workspace === 'payments'" class="settings-payment-workspace"><AdminBillingAmountLimits ref="billingLimits" /><AdminPaymentProfiles ref="paymentProfiles" /></div>
     <div v-show="workspace === 'runtime'">

@@ -20,11 +20,15 @@ separate. Action quotes and permission decisions still await the backend.
 - `useActivity.ts` loads games, draws, and check-in actions.
 - `useActivity.test.ts` checks that ambiguous draw failures reuse the same idempotency key and confirmed draws release it.
 - `useAffiliateCentre.ts` loads member metrics and fixed five-row referral pages.
+- `useAffiliateCentre.test.ts` covers obsolete page replies and retrying a failed
+  page; only current requests update referral data or loading state.
 - `useAdminDatabase.ts` coordinates protected database review and mutation flows.
 - `useAdminSection.ts` provides latest-request-safe administrator list operations and cursor accumulation.
 - `useCatalog.ts` prepares catalog selection, quote freshness, full paid add-on guards, automatic-renewal catalog blocking, and user-scoped session drafts.
 - `catalogQuoteState.ts` owns the request-versioned authoritative catalog quote and its selection fingerprint.
-- `catalogDraft.ts` reads, validates through callers, writes, and clears user-scoped catalog drafts in session storage.
+- `catalogDraft.ts` validates the shape of stored drafts before returning them,
+  then callers reconcile their identifiers against live catalog permissions.
+  `catalogDraft.test.ts` covers corrupt/old storage and account isolation.
 - `catalogLoader.ts` loads catalog, balance, coupon wallet, and validated user-scoped drafts while reporting whether the latest response was applied.
 - `useCatalog.test.ts` covers catalog selection behavior.
 - `useCouponRedemption.ts` redeems a coupon code for the guided purchase flow.
@@ -52,7 +56,11 @@ separate. Action quotes and permission decisions still await the backend.
 - `usePaymentOrder.ts` coordinates durable checkout/cancellation receipts with payment-sheet presentation states.
 - `usePaymentCountdown.ts` owns a disposal-safe one-second payment-window countdown used only for presentation and replacement prompts.
 - `usePaymentConfiguration.ts` owns exact TXB bounds, display-currency amount input, one canonical TXB-minor order amount, and selected payment method state; display switches re-render the field without repricing the order, and a missing stored rate falls back to TXB entry.
-- `usePaymentOrderOperations.ts` retains stable mutation keys and polls payment provider-operation receipts without replaying provider calls.
+- `usePaymentOrderOperations.ts` retains stable creation keys per method/amount and cancellation keys per order, then polls payment provider-operation receipts without replaying provider calls. An uncertain request can be retried unchanged without binding a different checkout to its key.
+- Payment resets and disposal invalidate pending submissions, receipt lookups and
+  presentation work. Superseded replies cannot reopen an earlier checkout or
+  restart its polling. `usePaymentOrderOperations.test.ts` covers ignored late
+  acceptance and per-order cancellation key recovery.
 - `usePaymentTarget.ts` opens accepted provider targets and read-only polls authoritative payment status.
 - `paymentOrderHelpers.ts` validates exact payment bounds and replacement candidates, classifies terminal orders, and renders address-first provider QR payloads.
 - `usePaymentOrder.test.ts` covers payment-order state transitions.
@@ -90,3 +98,9 @@ separate. Action quotes and permission decisions still await the backend.
 - `usePricingQuote.test.ts`: Hosted regression for bounded pending retries, hidden-page pause, stale totals, obsolete responses and disposal.
 
 - `usePendingStatus.ts` replaces one live status after five seconds of pending work; Vue watcher cleanup cancels its timer. It never controls readiness or requests.
+
+`useAutoRenewal.ts` and `usePurchaseOperations.ts` capture purchase identity and invalidate pending reads/writes on reset or scope disposal. Late replies cannot replace another purchase's eligibility, renewal setting or receipt. Refund retry keys remain bound to the original purchase across a reset; hosted regressions cover replacement while requests are pending.
+
+`useSquadAddition.ts` retains one retry key per purchase/squad/coupon selection, including activation-code corrections, and rejects late load/mutation results after reset. A pending retry only bypasses quote readiness for that same selection.
+
+`useAdminDatabase.ts` allows newer read queries to supersede pending searches while keeping mutations exclusive. Query generations and abort signals prevent stale filters/table responses from replacing the latest rows. `useAdminDatabase.test.ts` covers out-of-order filters and table changes. `useAutoRenewal.test.ts`, `usePurchaseOperations.test.ts` and `useSquadAddition.test.ts` also cover stale purchase responses and retained retry identity after reset.

@@ -67,3 +67,7 @@ Combo editing accepts the API-supported empty description and zero price. Its Zo
 The retired outage workspace, navigation and review controls are removed. Generic historical entitlement operations remain available through existing audit tools.
 
 `AdminEmbyConnection.vue` provides private URL/token drafts, configuration presence, local fresh-token guidance and localized load/save/conflict errors. `AdminSettingsPanel.vue` excludes these keys from generic writes and coordinates its exposed save/loading interface with the existing Save action. Failed connection saves do not produce a global success message.
+
+`AdminSettingsPanel.vue` requires an explicit successful result from every child save before announcing completion. `AdminBillingAmountLimits.vue` reports invalid/failed writes; `AdminPaymentProfiles.vue` stops a batch at its first failure and keeps the failed draft/error. The localized partial-save notice explains that earlier successful changes remain applied. `AdminSettingsPanel.test.ts` and `AdminPaymentProfiles.test.ts` cover failure propagation and batch stopping.
+
+`AdminOnboardingPanel.vue` fences responses by active load/action, preserves edits made during a save, and saves the current draft before publishing its returned revision. `AdminOnboardingPanel.test.ts` covers publishing current edits and switching tabs during delayed loads. `AdminStatisticsPanel.vue` is keyed by resource identity in catalog/activity workspaces, so selecting a new record reloads its own statistics; disposed reads cannot repopulate old panels.

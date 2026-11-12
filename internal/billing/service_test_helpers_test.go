@@ -12,12 +12,8 @@ func ptrString(value string) *string { return &value }
 type billingRepository struct {
 	orders         map[string]model.PaymentOrder
 	user           model.User
-	createErr      error
-	updateErr      error
 	lookupErr      error
 	userErr        error
-	failed         bool
-	updatedOrderID string
 	settleDedupe   string
 	settleHash     string
 	paymentForUser model.PaymentOrder
@@ -28,21 +24,7 @@ func newBillingRepository() *billingRepository {
 	return &billingRepository{orders: make(map[string]model.PaymentOrder), user: model.User{ID: "user-1"}}
 }
 
-func (r *billingRepository) CreatePaymentOrder(_ context.Context, order model.PaymentOrder) (model.PaymentOrder, error) {
-	if r.createErr != nil {
-		return model.PaymentOrder{}, r.createErr
-	}
-	order.ID = "order-1"
-	order.CreatedAt = billingTestNow()
-	r.orders[order.ID] = order
-	return order, nil
-}
-
 func (r *billingRepository) UpdatePaymentCheckout(_ context.Context, orderID string, tradeID, paymentURL, qrPayload *string, amount, currency string, expires time.Time) (model.PaymentOrder, error) {
-	if r.updateErr != nil {
-		return model.PaymentOrder{}, r.updateErr
-	}
-	r.updatedOrderID = orderID
 	order := r.orders[orderID]
 	order.Status = "pending"
 	order.ProviderTradeID = tradeID
@@ -56,7 +38,6 @@ func (r *billingRepository) UpdatePaymentCheckout(_ context.Context, orderID str
 }
 
 func (r *billingRepository) FailPaymentOrder(context.Context, string) error {
-	r.failed = true
 	return nil
 }
 

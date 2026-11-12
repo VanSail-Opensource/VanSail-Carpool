@@ -3,6 +3,7 @@ import { onScopeDispose, shallowRef, watch } from 'vue'
 import { api } from '@/api/client'
 import type { OperationReceipt, PaymentOperation } from '@/api/types'
 import { createUuid } from '@/utils/browserCompatibility'
+import { createLatestRequest } from '@/utils/latestRequest'
 import { operationIsActive, useOperationReceipt } from './useOperationReceipt'
 
 export type PaymentCommandKind = 'create' | 'cancel'
@@ -19,8 +20,9 @@ interface PaymentOrderOperationOptions {
 export function usePaymentOrderOperations(options: PaymentOrderOperationOptions) {
   const command = shallowRef<PaymentCommand | null>(null)
   const tracker = useOperationReceipt()
-  let createKey: string | undefined
-  let cancelKey: string | undefined
+  const createKeys = new Map<string, string>()
+  const cancelKeys = new Map<string, string>()
+  const latest = createLatestRequest()
 
   function accept(kind: PaymentCommandKind, result: PaymentOperation): void {
     command.value = { kind, paymentOrderId: result.paymentOrderId }
@@ -28,16 +30,23 @@ export function usePaymentOrderOperations(options: PaymentOrderOperationOptions)
   }
 
   async function queueCreate(methodId: string, txbMinor: string): Promise<void> {
-    createKey ??= createUuid()
-    const result = await api.createPaymentOrder(methodId, txbMinor, createKey)
-    createKey = undefined
+    const token = latest.begin()
+    const fingerprint = JSON.stringify([methodId, txbMinor])
+    const key = createKeys.get(fingerprint) ?? createUuid()
+    createKeys.set(fingerprint, key)
+    const result = await api.createPaymentOrder(methodId, txbMinor, key)
+    if (!latest.isCurrent(token)) return
+    createKeys.delete(fingerprint)
     accept('create', result)
   }
 
   async function queueCancellation(paymentOrderId: string): Promise<void> {
-    cancelKey ??= createUuid()
-    const result = await api.cancelPaymentOrder(paymentOrderId, cancelKey)
-    cancelKey = undefined
+    const token = latest.begin()
+    const key = cancelKeys.get(paymentOrderId) ?? createUuid()
+    cancelKeys.set(paymentOrderId, key)
+    const result = await api.cancelPaymentOrder(paymentOrderId, key)
+    if (!latest.isCurrent(token)) return
+    cancelKeys.delete(paymentOrderId)
     accept('cancel', result)
   }
 
@@ -49,11 +58,12 @@ export function usePaymentOrderOperations(options: PaymentOrderOperationOptions)
   })
 
   function reset(): void {
+    latest.invalidate()
     command.value = null
     tracker.reset()
   }
 
-  onScopeDispose(reset)
+  onScopeDispose(() => { reset(); latest.dispose() })
 
   return {
     receipt: tracker.receipt,

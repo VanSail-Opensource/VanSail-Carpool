@@ -27,3 +27,5 @@ route and bootstrap code remain composition surfaces.
 Traffic reset is absent from reward selectors and current write contracts. Old
 prize definitions cannot serialize as new awards. Historical result projections
 retain their discriminator separately from the supported reward-write type.
+
+`AdminActivitySettings.vue` propagates its typed boolean save result to the aggregate Settings action. `drawDraft.ts` parses configured prize ticks from decimal strings before converting to the numeric API representation, rejecting malformed precision and unsafe integer conversion. Server prize limits remain authoritative. `drawDraft.test.ts` covers fractional-cent/exponent input, exact signed ticks and unsafe renewal serialization.

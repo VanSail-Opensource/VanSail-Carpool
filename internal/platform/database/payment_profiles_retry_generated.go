@@ -5,9 +5,9 @@ import (
 	context "context"
 )
 
-func (s *Store) DeletePaymentProfile(ctx context.Context, id string) error {
+func (s *Store) DeletePaymentProfile(ctx context.Context, id, actorID string) error {
 	for retryIndex := 0; ; retryIndex++ {
-		r0 := s.retryAttempt_DeletePaymentProfile(ctx, id)
+		r0 := s.retryAttempt_DeletePaymentProfile(ctx, id, actorID)
 		if !s.retryTransaction(ctx, r0, retryIndex) {
 			return r0
 		}

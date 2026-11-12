@@ -25,10 +25,6 @@ type adminCatalogRepository struct {
 	squadInput        database.SquadProductInput
 	savedSquadInputs  []database.SquadProductInput
 	saveSquadErr      error
-	markedMissing     bool
-	markMissingErr    error
-	importedSquads    []database.ImportedSquad
-	refreshErr        error
 	listedSquads      []model.SquadProduct
 	listSquadsErr     error
 	adjustedEntry     model.LedgerEntry
@@ -96,14 +92,6 @@ func (r *adminCatalogRepository) SquadProductByGroupID(_ context.Context, uuid s
 }
 func (r *adminCatalogRepository) ListSquadProducts(context.Context, bool) ([]model.SquadProduct, error) {
 	return r.listedSquads, r.listSquadsErr
-}
-func (r *adminCatalogRepository) MarkAllSquadsMissing(context.Context) error {
-	r.markedMissing = true
-	return r.markMissingErr
-}
-func (r *adminCatalogRepository) RefreshImportedSquads(_ context.Context, squads []database.ImportedSquad) error {
-	r.importedSquads = append([]database.ImportedSquad(nil), squads...)
-	return r.refreshErr
 }
 func (r *adminCatalogRepository) ListUsers(context.Context, int) ([]model.User, error) {
 	return nil, nil

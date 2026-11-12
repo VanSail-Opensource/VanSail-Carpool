@@ -13,6 +13,7 @@ export const useBrowserSession = defineStore('browser-session', () => {
   const error = shallowRef<string | null>(null)
   const expired = shallowRef(false)
   let pending: Promise<void> | null = null
+  let identityRevision = 0
   const isAdmin = computed(() => state.value?.kind === 'admin')
 
   function apply(next: BrowserSession): void {
@@ -23,22 +24,33 @@ export const useBrowserSession = defineStore('browser-session', () => {
     } else if (identity.isAdmin) expired.value = true
   }
 
+  function supersedePendingIdentity(): void {
+    identityRevision += 1
+    pending = null
+    loading.value = false
+  }
+
   async function bootstrap(force = false): Promise<void> {
     if (pending) return pending
     if (!force && state.value) return
     loading.value = true
     error.value = null
+    const revision = identityRevision
     pending = (async () => {
       try {
         if (force || !config.value) config.value = await browserAccessApi.config()
-        apply(await browserAccessApi.session())
+        const next = await browserAccessApi.session()
+        if (revision === identityRevision) apply(next)
       } catch (caught) {
+        if (revision !== identityRevision) return
         if (caught instanceof ApiError && (caught.status === 401 || caught.code === 'ADMIN_REQUIRED')) {
           apply({ authenticated: false, kind: 'anonymous', miniAppUrl: config.value?.miniAppUrl ?? '' })
         } else error.value = localizedError(caught, 'browser.loadFailed')
       } finally {
-        loading.value = false
-        pending = null
+        if (revision === identityRevision) {
+          loading.value = false
+          pending = null
+        }
       }
     })()
     return pending
@@ -46,14 +58,19 @@ export const useBrowserSession = defineStore('browser-session', () => {
 
   async function renew(): Promise<void> {
     if (!isAdmin.value || pending) return
-    try { apply(await browserAccessApi.renew()) }
+    const revision = identityRevision
+    try {
+      const next = await browserAccessApi.renew()
+      if (revision === identityRevision) apply(next)
+    }
     catch (caught) {
-      if (caught instanceof ApiError && (caught.status === 401 || caught.status === 403)) await bootstrap(true)
+      if (revision === identityRevision && caught instanceof ApiError && (caught.status === 401 || caught.status === 403)) await bootstrap(true)
     }
   }
 
   async function logout(): Promise<void> {
     await browserAccessApi.logout()
+    supersedePendingIdentity()
     identity.clear()
     expired.value = false
     state.value = null
@@ -63,6 +80,7 @@ export const useBrowserSession = defineStore('browser-session', () => {
   async function exchange(token: string): Promise<string> {
     config.value ??= await browserAccessApi.config()
     const next = await browserAccessApi.exchange(token)
+    supersedePendingIdentity()
     apply(next)
     return next.kind === 'admin' ? next.returnTo ?? '/admin/settings' : '/'
   }

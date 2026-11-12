@@ -49,13 +49,6 @@ type SquadProductInput struct {
 	ActivationCode     string
 }
 
-// ImportedSquad is retained as a compatibility DTO. Upstream squads are no
-// longer persisted by refresh operations.
-type ImportedSquad struct {
-	UUID string
-	Name string
-}
-
 // SaveCombo creates or updates one stable live combo and schedules affected
 // active users for upstream re-synchronization after an edit.
 func (s *Store) retryAttempt_SaveCombo(ctx context.Context, input ComboInput) (model.Combo, error) {

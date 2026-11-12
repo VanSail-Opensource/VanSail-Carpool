@@ -216,3 +216,15 @@ Node-outage observation and its scheduler have been retired. Existing pre-retire
 - `xnode_retired_reset_test.go`: Hosted regression refusing unpaid reset receipts without changing native periods. Historical paid reset fixtures and replay checks remain in the existing purchase tests.
 
 The Emby adapter resolves URL/token from `SettingsService.EmbyCredentials` in one database snapshot inside the existing upstream queue executor. Validation precedes client creation and every outbound request; independent settings reads are forbidden for this coupled credential.
+
+`payment_callback_profiles.go` selects a retained order's exact payment account
+before authenticating its complete callback. Legacy two-part orders use the
+provider-named migrated account and retain their empty event profile ID; disabled
+profiles remain available for historical verification. The all-profile verifier
+is used only when the order is missing, after which settlement still requires
+matching callback tombstones. `payment_profile_fallback.go` prevents explicit
+account, decryption and unavailable-storage failures from selecting global
+credentials. `payment_callback_profiles_test.go` covers shared-key account
+selection, legacy callbacks, missing-order authentication and failure paths.
+
+`payment_profile_test_helpers_test.go` supplies encrypted multi-account settings and durable-order lookup fixtures for callback account-isolation regressions.

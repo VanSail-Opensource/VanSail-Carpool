@@ -139,7 +139,6 @@ func TestAdminImportSquads(t *testing.T) {
 	upstream := []UpstreamSquad{{UUID: "uuid-1", Name: "One"}, {UUID: "uuid-2", Name: "Two"}}
 	repository := &adminCatalogRepository{
 		listedSquads: []model.SquadProduct{{ID: "uuid-1", GroupID: "uuid-1", Name: "Stale", Description: "Local", PriceTXBMinor: 25, Visible: true}},
-		refreshErr:   errors.New("compatibility refresh must not be called"),
 	}
 	importer := &adminSquadImporter{squads: upstream}
 	service := newAdminServiceForTest(repository, nil, importer, &adminBackupRunner{}, &adminRefunder{})
@@ -154,8 +153,8 @@ func TestAdminImportSquads(t *testing.T) {
 	if products[1].ID != "uuid-2" || products[1].Name != "Two" || products[1].Visible || !products[1].UpstreamPresent {
 		t.Fatalf("virtual squad = %+v", products[1])
 	}
-	if len(repository.importedSquads) != 0 {
-		t.Fatalf("ImportSquads() persisted upstream identities: %+v", repository.importedSquads)
+	if len(repository.savedSquadInputs) != 0 {
+		t.Fatalf("ImportSquads() persisted upstream identities: %+v", repository.savedSquadInputs)
 	}
 	if !strings.Contains(repository.audits[0].detail, `"count":2`) {
 		t.Fatalf("import audit = %+v", repository.audits[0])

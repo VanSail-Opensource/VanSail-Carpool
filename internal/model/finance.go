@@ -145,10 +145,12 @@ type CourtesyCredit struct {
 // TXBMoney formats integer hundredths of TXB.
 func TXBMoney(minor int64) Money {
 	sign := ""
-	abs := minor
+	abs := uint64(minor)
 	if minor < 0 {
 		sign = "-"
-		abs = -minor
+		// Negating MinInt64 in signed arithmetic overflows. Convert its
+		// magnitude in two steps so every valid ledger amount formats exactly.
+		abs = uint64(-(minor + 1)) + 1
 	}
 	return Money{Currency: "TXB", Minor: fmt.Sprintf("%d", minor), Display: fmt.Sprintf("%s%d.%02d TXB", sign, abs/100, abs%100)}
 }

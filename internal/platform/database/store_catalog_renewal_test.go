@@ -34,8 +34,8 @@ func TestCatalogUpdatesCannotCreateUnknownRecords(t *testing.T) {
 	if _, err := store.SaveSquadProduct(ctx, SquadProductInput{ID: "invented", GroupID: "invented", Name: "Invented"}); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("SaveSquadProduct(unimported) = %v, want ErrNotFound", err)
 	}
-	if err := store.RefreshImportedSquads(ctx, []ImportedSquad{{UUID: "remote-1", Name: "Remote"}}); err != nil {
-		t.Fatalf("RefreshImportedSquads(): %v", err)
+	if live, err := store.ImportSquad(ctx, "remote-1", "Remote"); err != nil || live.GroupID != "remote-1" || live.Name != "Remote" {
+		t.Fatalf("ImportSquad(): %+v, %v", live, err)
 	}
 	if _, err := store.SquadProductByGroupID(ctx, "remote-1"); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("SquadProductByGroupID(unedited upstream) = %v, want ErrNotFound", err)
@@ -54,11 +54,8 @@ func TestCatalogUpdatesCannotCreateUnknownRecords(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SaveCombo(imported squad): %v", err)
 	}
-	if err := store.RefreshImportedSquads(ctx, nil); err != nil {
-		t.Fatalf("RefreshImportedSquads(empty): %v", err)
-	}
 	if combos, err := store.ListCombos(ctx, true); err != nil || len(combos) != 2 {
-		t.Fatalf("ListCombos(after compatibility refresh) = (%+v, %v)", combos, err)
+		t.Fatalf("ListCombos(with live squad identity) = (%+v, %v)", combos, err)
 	}
 	if loaded, err := store.ComboByID(ctx, squadCombo.ID, true); err != nil || len(loaded.IncludedSquads) != 1 {
 		t.Fatalf("ComboByID(sparse squad identity) = (%+v, %v)", loaded, err)

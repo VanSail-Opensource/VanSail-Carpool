@@ -87,9 +87,8 @@ export function displayInputMinimumFromTXBMinor(minor: string): string {
 }
 
 export function displayInputToTXBMinor(value: string): string {
-  const target = currency.value
-  const numeric = Number(value)
-  const inputMinor = Number.isFinite(numeric) && numeric >= 0 ? moneyFromTxbInput(numeric.toFixed(2)) : ''
+  const target = displayInputCurrency()
+  const inputMinor = moneyFromTxbInput(value)
   if (inputMinor === '' || target === 'TXB') return inputMinor
   const rate = target === 'CNY' ? rates.value.cnyTxbPerUnit : rates.value.usdTxbPerUnit
   const parsedRate = rate ? parseRate(rate) : null

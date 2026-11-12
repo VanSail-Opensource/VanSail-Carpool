@@ -29,6 +29,15 @@ describe('member display currency', () => {
     setDisplayCurrency({ currency: 'CNY', rates: { cnyTxbPerUnit: null, usdTxbPerUnit: null } })
 
     expect(formatMemberMoney(money)).toBe('1.00 TXB')
+    expect(displayInputToTXBMinor('1.01')).toBe('101')
+  })
+
+  it('preserves exact decimal input and rejects excess precision before conversion', () => {
+    setDisplayCurrency({ currency: 'CNY', rates: { cnyTxbPerUnit: '3', usdTxbPerUnit: null } })
+    expect(displayInputToTXBMinor('90071992547409.93')).toBe('27021597764222979')
+    expect(displayInputToTXBMinor('1.005')).toBe('')
+    expect(displayInputToTXBMinor('1e3')).toBe('')
+    expect(displayInputToTXBMinor('')).toBe('')
   })
 
   it('falls back from zero USD to CNY, then to the authoritative TXB amount', () => {

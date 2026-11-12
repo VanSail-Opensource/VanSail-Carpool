@@ -25,7 +25,9 @@ the Telegram SDK or load member shell/theme assets.
 - `BrowserAccess.vue` removes the token fragment before one-use exchange.
 - `BrowserLoading.vue` and `loading.css` provide the centered identity, one localized pending/slow status, and conditional recovery. Initial bootstrap failures retain the requested URL for a forced bootstrap retry; access-link failures keep their separate entrance action. Readiness immediately releases the destination with a noninteractive 160ms cover fade. Reduced motion is static and readable.
 - `session.ts` restores identity, hydrates the neutral session projection,
-  renews cookies, and revokes only the current browser device.
+  renews cookies, and revokes only the current browser device. Successful logout
+  and access exchange invalidate earlier identity reads so late bootstrap or
+  renewal replies cannot resurrect the old session or overwrite the new one.
 - `session.test.ts` covers bootstrap deduplication, browser/member separation,
   stable renewal, expiry without discarding editor identity, scoped cache
   isolation, logout revocation, and one-use exchange in hosted CI.

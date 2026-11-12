@@ -2,9 +2,10 @@ package httpapi
 
 import (
 	"context"
+	"errors"
 	"net/http"
-	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 	"github.com/go-chi/chi/v5"
@@ -12,7 +13,7 @@ import (
 
 type paymentProfileLifecycle interface {
 	RefreshPaymentProfile(context.Context, string) (model.PaymentProfile, error)
-	DeletePaymentProfile(context.Context, string) error
+	DeletePaymentProfile(context.Context, string, string) error
 }
 
 func (s *Server) adminPaymentProfiles(w http.ResponseWriter, r *http.Request) {
@@ -64,12 +65,14 @@ func (s *Server) adminSavePaymentProfileWithID(w http.ResponseWriter, r *http.Re
 		Endpoint: profile.Endpoint, MerchantID: profile.MerchantID, Credential: profile.Credential,
 		Acknowledgement: profile.Acknowledgement, Enabled: profile.Enabled,
 	})
+	if errors.Is(err, admin.ErrPaymentProfileFreshCredential) {
+		s.writeError(w, r, http.StatusConflict, "PAYMENT_PROFILE_FRESH_CREDENTIAL_REQUIRED", "Changing the payment endpoint or merchant requires a replacement credential.")
+		return
+	}
 	if err != nil {
 		s.adminFailure(w, r, err)
 		return
 	}
-	actorID := currentUser(r).ID
-	_ = s.deps.Store.AppendAudit(r.Context(), &actorID, "payment_profile.update", "payment_profile", saved.ID, "{}", time.Now().UTC())
 	if saved.Provider == "bepusdt" {
 		saved, err = s.deps.PaymentProfiles.RefreshPaymentProfile(r.Context(), saved.ID)
 		if err != nil {
@@ -86,11 +89,9 @@ func (s *Server) adminSavePaymentProfileWithID(w http.ResponseWriter, r *http.Re
 
 func (s *Server) adminDeletePaymentProfile(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if err := s.deps.PaymentProfiles.DeletePaymentProfile(r.Context(), id); err != nil {
+	if err := s.deps.PaymentProfiles.DeletePaymentProfile(r.Context(), id, currentUser(r).ID); err != nil {
 		s.adminFailure(w, r, err)
 		return
 	}
-	actorID := currentUser(r).ID
-	_ = s.deps.Store.AppendAudit(r.Context(), &actorID, "payment_profile.delete", "payment_profile", id, "{}", time.Now().UTC())
 	w.WriteHeader(http.StatusNoContent)
 }

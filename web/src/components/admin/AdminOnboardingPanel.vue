@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { restoreRef } from '@/api/cache/restore'
-import { computed, onMounted, shallowRef } from 'vue'
+import { computed, onMounted, onScopeDispose, shallowRef } from 'vue'
 
 import { featuresApi, type OnboardingBundle, type OnboardingLocalizedContent } from '@/api/features'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import { localizedError, useI18n } from '@/i18n'
+import { createLatestRequest } from '@/utils/latestRequest'
 import OnboardingAgreementEditor from './onboarding/OnboardingAgreementEditor.vue'
 import OnboardingWelcomeEditor from './onboarding/OnboardingWelcomeEditor.vue'
 
@@ -18,9 +19,10 @@ const loading = shallowRef(true)
 const busy = shallowRef<'save' | 'publish' | null>(null)
 const error = shallowRef<string | null>(null)
 const message = shallowRef<string | null>(null)
+const latest = createLatestRequest()
 const kindItems = computed(() => [
-  { value: 'welcome', label: t('adminOnboarding.welcome') },
-  { value: 'agreements', label: t('adminOnboarding.agreements') },
+  { value: 'welcome', label: t('adminOnboarding.welcome'), disabled: Boolean(busy.value) },
+  { value: 'agreements', label: t('adminOnboarding.agreements'), disabled: Boolean(busy.value) },
 ])
 
 function syncDraft(next: OnboardingBundle): void {
@@ -28,6 +30,9 @@ function syncDraft(next: OnboardingBundle): void {
 }
 
 async function load(nextKind: BundleKind = kind.value): Promise<void> {
+  if (busy.value) return
+  const ticket = latest.begin()
+  if (kind.value !== nextKind) { bundle.value = null; draft.value = null }
   kind.value = nextKind
   loading.value = !restoreRef(`/api/v1/admin/onboarding/content/${nextKind}`, bundle)
   if (!loading.value && bundle.value) syncDraft(bundle.value)
@@ -36,49 +41,63 @@ async function load(nextKind: BundleKind = kind.value): Promise<void> {
   message.value = null
   try {
     const response = await featuresApi.getAdminOnboardingBundle(nextKind)
-    if (kind.value !== nextKind || JSON.stringify(draft.value) !== originalDraft) return
+    if (!latest.isCurrent(ticket) || kind.value !== nextKind || JSON.stringify(draft.value) !== originalDraft) return
     bundle.value = response
     syncDraft(bundle.value)
   } catch (caught) {
-    error.value = localizedError(caught, 'errors.adminLoad')
+    if (latest.isCurrent(ticket)) error.value = localizedError(caught, 'errors.adminLoad')
   } finally {
-    loading.value = false
+    if (latest.isCurrent(ticket)) loading.value = false
   }
 }
 
 async function save(): Promise<void> {
-  if (!bundle.value || !draft.value || busy.value) return
+  if (!bundle.value || !draft.value || busy.value || loading.value) return
+  const ticket = latest.begin()
+  const originalDraft = JSON.stringify(draft.value)
   busy.value = 'save'
   error.value = null
   message.value = null
   try {
-    bundle.value = await featuresApi.saveAdminOnboardingDraft(kind.value, bundle.value.draftRevision, draft.value)
-    syncDraft(bundle.value)
+    const response = await featuresApi.saveAdminOnboardingDraft(kind.value, bundle.value.draftRevision, JSON.parse(originalDraft) as OnboardingLocalizedContent)
+    if (!latest.isCurrent(ticket)) return
+    bundle.value = response
+    if (JSON.stringify(draft.value) === originalDraft) syncDraft(response)
     message.value = t('adminOnboarding.saved')
   } catch (caught) {
-    error.value = localizedError(caught, 'errors.adminAction')
+    if (latest.isCurrent(ticket)) error.value = localizedError(caught, 'errors.adminAction')
   } finally {
-    busy.value = null
+    if (latest.isCurrent(ticket)) busy.value = null
   }
 }
 
 async function publish(): Promise<void> {
-  if (!bundle.value || busy.value) return
+  if (!bundle.value || !draft.value || busy.value || loading.value) return
+  const ticket = latest.begin()
+  const originalDraft = JSON.stringify(draft.value)
   busy.value = 'publish'
   error.value = null
   message.value = null
   try {
-    bundle.value = await featuresApi.publishAdminOnboarding(kind.value, bundle.value.draftRevision)
-    syncDraft(bundle.value)
+    if (JSON.stringify(bundle.value.draft) !== originalDraft) {
+      const response = await featuresApi.saveAdminOnboardingDraft(kind.value, bundle.value.draftRevision, JSON.parse(originalDraft) as OnboardingLocalizedContent)
+      if (!latest.isCurrent(ticket)) return
+      bundle.value = response
+    }
+    const response = await featuresApi.publishAdminOnboarding(kind.value, bundle.value.draftRevision)
+    if (!latest.isCurrent(ticket)) return
+    bundle.value = response
+    if (JSON.stringify(draft.value) === originalDraft) syncDraft(response)
     message.value = t('adminOnboarding.published')
   } catch (caught) {
-    error.value = localizedError(caught, 'errors.adminAction')
+    if (latest.isCurrent(ticket)) error.value = localizedError(caught, 'errors.adminAction')
   } finally {
-    busy.value = null
+    if (latest.isCurrent(ticket)) busy.value = null
   }
 }
 
 onMounted(() => void load())
+onScopeDispose(() => latest.dispose())
 </script>
 
 <template>

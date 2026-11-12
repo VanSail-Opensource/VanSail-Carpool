@@ -21,7 +21,10 @@ const currencies = computed(() => {
     if (!channel.cryptoCurrency || seen.has(channel.cryptoCurrency)) return false
     seen.add(channel.cryptoCurrency)
     return true
-  })
+  }).map(channel => ({
+    ...channel,
+    disabled: !props.channels.some(candidate => candidate.cryptoCurrency === channel.cryptoCurrency && !candidate.disabled),
+  }))
 })
 const selectedCurrency = computed(() => props.channels.find((item) => item.value === props.selectedMethodId)?.cryptoCurrency
   ?? currencies.value[0]?.cryptoCurrency)

@@ -46,7 +46,10 @@ func ensurePricingContractTx(ctx context.Context, tx *sql.Tx, purchase string, n
 		return c, err
 	}
 	if c.ID != "" {
-		gross = currentPricingContractGross(c, addons)
+		gross, err = currentPricingContractGross(c, addons)
+		if err != nil {
+			return c, err
+		}
 	} else {
 		paid, e := paidPricingAddonTermsTx(ctx, tx, purchase)
 		if e != nil {
@@ -76,6 +79,9 @@ func ensurePricingContractTx(ctx context.Context, tx *sql.Tx, purchase string, n
 	root := c.SourcePurchaseID
 	if root == "" {
 		root = purchase
+	}
+	if gross < 0 || gross > pricing.MaxTotalPrice || p.MaxIncreaseBPS < 0 || p.MaxIncreaseBPS > pricing.Scale {
+		return c, ErrConflict
 	}
 	limit := min(pricing.MaxTotalPrice, gross+gross*p.MaxIncreaseBPS/pricing.Scale)
 	next := renewal.Contract{ID: id, PurchaseID: purchase, UserID: user, ProductID: product, Mode: "DYNAMIC", Price: gross, Ceiling: limit, MaxChangeBPS: p.MaxIncreaseBPS, PolicyVersion: p.Version, RecordedAt: now, Version: c.Version + 1, SourcePurchaseID: root, Addons: basis}

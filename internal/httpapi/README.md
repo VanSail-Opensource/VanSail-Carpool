@@ -78,6 +78,9 @@ onboarding, signed requests and the existing idempotent operation protections.
   Telegram exchange, persisted expiry, browser cookie retention and a signed
   member identity read after advancing the persistence clock in hosted CI.
 - `handlers.go` serves onboarding actions, dashboard, catalog, purchases, balance, and ledger history.
+  Its dashboard projection preserves ordered active squad labels and subscription
+  readiness from the catalog; absent labels serialize as an empty list.
+  `dashboard_response_test.go` covers the populated and empty JSON contracts.
 - `purchases.go` serves the authenticated queued-purchase cancellation and TXB refund endpoint.
 - `member_purchase_operations.go` serves first-term refund quotes, idempotent mutations, and owner-scoped receipts. Member manual resets are not exposed; only previously paid queued reset obligations remain supported.
 - `member_connections.go` preserves scan and drop-route compatibility while the signed-handle command now queues a three-day block followed by disconnect.
@@ -114,6 +117,9 @@ onboarding, signed requests and the existing idempotent operation protections.
 - `admin_catalog.go` manages combos, squad products, and statistics windows; node accessibility is read-only in member catalog quotes.
 - `admin_statistics_window.go` validates administrator statistics date ranges and buckets.
 - `admin_accounts.go` manages user lists, aggregate user detail, balance adjustments, and admin-as-actor block removal.
+  Balance adjustments require a caller-owned `Idempotency-Key`. The actor-scoped
+  reference replays the original immutable ledger entry and rejects changed
+  target, amount, or reason; it cannot apply a second credit after response loss.
 - `admin_inventory_page.go` validates shared cursor, limit, search, and status filters for administrative inventories.
 - `admin_user_detail.go` maps the non-duplicated aggregate profile and its active IP blocks to the public response.
 - `admin_user_commands.go` serves optimistic entitlement edits, entitlement refunds, and no-charge combo replacements.
@@ -166,7 +172,12 @@ onboarding, signed requests and the existing idempotent operation protections.
 - `server_part2.go` contains authenticated request-context, static asset, and transport helper implementations.
 
 - `activity_boost_test.go` covers `GROUP_BOOST_REQUIRED` (403) and `GROUP_BOOST_UNAVAILABLE` (503). Activity overview exposes live `groupBoost` state and effective amounts while preserving unrelated activities during verification failures.
-- `telegram_deduction.go` contains the unchanged administrator deduction command handling split out to keep the affected command module below 200 lines.
+- `telegram_deduction.go` handles administrator deductions with a chat/message-scoped
+  financial reference, so Telegram redelivery cannot deduct twice. It rechecks
+  both configured administrator identity and the current stored administrator role.
+  `telegram_deduction_idempotency_test.go` covers replay, changed amounts, distinct
+  messages and role removal; `admin_balance_idempotency_test.go` exercises the
+  authenticated HTTP retry contract and verifies final wallet balances.
 
 `user_preferences.go` exposes authenticated partial preference updates. `group_member_tag.go` serves owner-scoped live Telegram tag operations.
 `user_preferences_test.go` verifies authenticated-principal updates, unknown identity rejection and onboarding gating.
@@ -200,6 +211,12 @@ onboarding, signed requests and the existing idempotent operation protections.
 - `xnode_operations.go`: Entry points: `xnodeQueueCommand`, `xnodeDeleteNode`, `xnodeDeleteGroup`, `xnodeDeleteEndpoint`.
 
 `api_token_auth.go` authenticates scoped bearer requests without browser cookies. `api_tokens.go` mounts browser-only token management and actor-scoped asynchronous receipt reads. `api_tokens_test.go` covers scopes, role removal, revocation, metadata privacy and session isolation in hosted CI.
+
+Generic database and backup routes require both administrator and X-Node resource
+scopes because they expose state from both domains. Database queries sent by POST
+remain read-only; compatibility row updates and mutation review/apply require
+both write scopes. `api_token_database_scope_test.go` exercises this boundary
+through the actual bearer middleware, including full backup downloads.
 
 `admin_user_provider_commands.go` exposes manual temporary-ban and restoration commands.
 
@@ -336,3 +353,9 @@ hourly conflicts to explicit 409 codes without a wallet movement.
 `admin_user_hourly.go` serves the owner-scoped administrator hourly projection
 and the administrator disable receipt endpoint; neither exposes credentials,
 proxy/period references, activation keys, or Telegram controls.
+
+Payment profile retargets with a blank or masked credential return HTTP409 with
+`PAYMENT_PROFILE_FRESH_CREDENTIAL_REQUIRED`; the dedicated profile service and
+store validate the account identity. Profile mutation audit events commit with
+the underlying storage changes, and deletion passes the authenticated actor
+through the profile manager to that transaction.

@@ -57,6 +57,7 @@ function localizedReason(reason: string | null, fallback: string): string {
 }
 
 async function updateRenewal(next: boolean): Promise<void> {
+  const purchaseId = props.purchase.id
   const previous = enabled.value
   if (next && !canEnable.value) {
     switchValue.value = previous
@@ -65,7 +66,9 @@ async function updateRenewal(next: boolean): Promise<void> {
   if (next === previous) return
   switchValue.value = next
   selectionHaptic()
-  if (await setEnabled(next)) emit('changed')
+  const updated = await setEnabled(next)
+  if (props.purchase.id !== purchaseId) return
+  if (updated) emit('changed')
   else switchValue.value = previous
 }
 </script>

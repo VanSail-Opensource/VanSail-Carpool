@@ -29,6 +29,12 @@ func tableProtection(name string) string {
 	if strings.HasPrefix(name, "activity_") && name != "activity_games" && name != "activity_lucky_prizes" {
 		return "financialEvidence"
 	}
+	if strings.HasPrefix(name, "hourly_") {
+		return "financialEvidence"
+	}
+	if strings.HasPrefix(name, "account_cleanup_") || strings.HasPrefix(name, "xnode_usage_") {
+		return "managedState"
+	}
 	for _, prefix := range []string{"payment_", "usdt_", "billing_", "purchase_", "provider_operation", "xnode_period", "xnode_traffic", "xnode_payg_", "xnode_imported_", "xnode_accounting", "activity_bet", "activity_raffle_ticket", "activity_lucky_result", "admin_operation", "compensation_"} {
 		if strings.HasPrefix(name, prefix) {
 			return "financialEvidence"

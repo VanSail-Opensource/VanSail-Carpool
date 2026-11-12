@@ -28,15 +28,16 @@ func assertCheckoutReturnURL(t *testing.T, service *Service, request ProviderCre
 
 func TestCheckoutReturnCapabilityIsBoundedAndImmutable(t *testing.T) {
 	t.Parallel()
-	repository := newBillingRepository()
+	repository, user := newPaymentOperationStore(t, 9885)
 	gateway := &billingGateway{}
 	service := newBillingServiceForTest(repository, &billingSettings{values: map[string]string{
 		"billing.ezpay.enabled": "true", "billing.rate.txb_per_cny": "1",
 	}}, gateway)
-	order, err := service.CreateOrder(context.Background(), model.User{ID: "user-1"}, "ezpay", 100)
+	queued, err := service.QueueOrder(context.Background(), user, "ezpay", 100, "return-capability")
 	if err != nil {
 		t.Fatal(err)
 	}
+	order, _ := exercisePaymentOperation(t, service, queued)
 	parsed, err := url.Parse(gateway.request.ReturnURL)
 	if err != nil {
 		t.Fatal(err)

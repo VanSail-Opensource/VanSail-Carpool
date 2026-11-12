@@ -12,6 +12,7 @@ import { localizedError, useI18n } from '@/i18n'
 const { t } = useI18n()
 const profiles = shallowRef<AdminPaymentProfile[]>([])
 const loading = shallowRef(true)
+const loaded = shallowRef(false)
 const busy = shallowRef<string | null>(null)
 const error = shallowRef<string | null>(null)
 const success = shallowRef<string | null>(null)
@@ -49,6 +50,7 @@ function emptyProfile(): AdminPaymentProfile {
 }
 
 function addProfile(): void {
+  if (busy.value) return
   const draft = emptyProfile()
   drafts[draft.id] = draft
   profiles.value = [...profiles.value, draft]
@@ -62,10 +64,13 @@ function providerChanged(profile: AdminPaymentProfile): void {
 
 async function load(): Promise<void> {
   loading.value = !restoreItems('/api/v1/admin/payment-profiles', profiles)
+  loaded.value ||= !loading.value
+  error.value = null
   for (const profile of profiles.value) drafts[profile.id] = { ...profile, enabledChannels: [...profile.enabledChannels] }
   const previous = JSON.parse(JSON.stringify(drafts)) as typeof drafts
   try {
     const response = await api.getAdminPaymentProfiles()
+    loaded.value = true
     profiles.value = [...response.items, ...profiles.value.filter(profile => profile.id.startsWith('draft-'))]
     for (const profile of response.items) {
       if (!drafts[profile.id]) drafts[profile.id] = { ...profile, enabledChannels: [...profile.enabledChannels] }
@@ -74,9 +79,9 @@ async function load(): Promise<void> {
   } catch (caught) { error.value = localizedError(caught, 'errors.adminLoad') } finally { loading.value = false }
 }
 
-async function save(profile: AdminPaymentProfile): Promise<void> {
+async function save(profile: AdminPaymentProfile): Promise<boolean> {
   const draft = drafts[profile.id]
-  if (!draft) return
+  if (!draft || busy.value || loading.value) return false
   busy.value = profile.id
   error.value = null
   success.value = null
@@ -89,12 +94,13 @@ async function save(profile: AdminPaymentProfile): Promise<void> {
     drafts[response.id] = { ...response, enabledChannels: [...response.enabledChannels] }
     profiles.value = profiles.value.map((item) => item.id === profile.id ? response : item)
     success.value = t('adminPaymentProfiles.saved')
-  } catch (caught) { error.value = localizedError(caught, 'errors.adminAction') } finally { busy.value = null }
+    return true
+  } catch (caught) { error.value = localizedError(caught, 'errors.adminAction'); return false } finally { busy.value = null }
 }
 
 async function removeProfile(): Promise<void> {
   const profile = deleting.value
-  if (!profile) return
+  if (!profile || busy.value) return
   busy.value = profile.id
   error.value = null
   success.value = null
@@ -108,8 +114,10 @@ async function removeProfile(): Promise<void> {
   } catch (caught) { error.value = localizedError(caught, 'errors.adminAction') } finally { busy.value = null }
 }
 
-async function saveAll(): Promise<void> {
-  for (const profile of profiles.value) await save(profile)
+async function saveAll(): Promise<boolean> {
+  if (busy.value || loading.value || !loaded.value) return false
+  for (const profile of profiles.value) if (!await save(profile)) return false
+  return true
 }
 
 defineExpose({ saveAll, loading })
@@ -121,20 +129,20 @@ onMounted(() => void load())
   <section class="payment-profiles">
     <div class="admin-panel__heading">
       <div><h2>{{ t('adminPaymentProfiles.title') }}</h2><p>{{ t('adminPaymentProfiles.copy') }}</p></div>
-      <UButton icon="i-ph-plus" :label="t('adminPaymentProfiles.add')" @click="addProfile" />
+      <UButton icon="i-ph-plus" :label="t('adminPaymentProfiles.add')" :disabled="Boolean(busy)" @click="addProfile" />
     </div>
     <InlineNotice v-if="success" tone="success">{{ success }}</InlineNotice>
-    <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
+    <InlineNotice v-if="error" tone="warning">{{ error }}<UButton v-if="!loaded" variant="link" :label="t('common.tryAgain')" :disabled="loading" @click="load" /></InlineNotice>
     <UTable class="admin-table" :data="profiles" :columns="columns" :loading="loading">
       <template #name-cell="{ row }">{{ drafts[row.original.id]?.providerName || t('adminPaymentProfiles.unnamed') }}</template>
       <template #provider-cell="{ row }">{{ t(`payment.providers.${drafts[row.original.id]?.provider}`) }}</template>
       <template #endpoint-cell="{ row }"><code>{{ drafts[row.original.id]?.endpoint }}</code></template>
       <template #status-cell="{ row }"><UBadge :color="drafts[row.original.id]?.enabled ? 'success' : 'neutral'" variant="subtle" :label="t(drafts[row.original.id]?.enabled ? 'common.enabled' : 'common.disabled')" /></template>
-      <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :aria-label="t('adminWorkspace.details')" @click="selectedId = row.original.id" /><UButton color="error" variant="ghost" icon="i-ph-trash" :aria-label="t('adminPaymentProfiles.delete')" :disabled="busy === row.original.id" @click="deleting = row.original" /></div></template>
+      <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :aria-label="t('adminWorkspace.details')" :disabled="Boolean(busy)" @click="selectedId = row.original.id" /><UButton color="error" variant="ghost" icon="i-ph-trash" :aria-label="t('adminPaymentProfiles.delete')" :disabled="Boolean(busy)" @click="deleting = row.original" /></div></template>
     </UTable>
     <USlideover :open="!!selected" :title="selected ? drafts[selected.id]?.providerName || t('adminPaymentProfiles.unnamed') : t('adminPaymentProfiles.title')" :description="t('adminPaymentProfiles.copy')" :dismissible="!busy" @update:open="!$event && (selectedId = '')">
       <template #body>
-        <div v-if="selected && drafts[selected.id]" class="admin-editor-form">
+        <fieldset v-if="selected && drafts[selected.id]" class="admin-editor-form" :disabled="Boolean(busy)">
           <SwitchField :id="`payment-profile-${selected.id}`" v-model="drafts[selected.id].enabled" :label="t('common.enabled')" />
           <div v-if="selected.id.startsWith('draft-')"><UFormField :label="t('adminPaymentProfiles.provider')"><USelect v-model="drafts[selected.id].provider" :items="providerItems" @update:model-value="providerChanged(selected)" /></UFormField></div>
           <UFormField :label="t('adminPaymentProfiles.providerName')"><UInput v-model="drafts[selected.id].providerName" /></UFormField>
@@ -145,9 +153,9 @@ onMounted(() => void load())
           <div v-if="drafts[selected.id].provider === 'ezpay'"><UFormField :label="t('adminPaymentProfiles.merchantId')"><UInput v-model="drafts[selected.id].merchantId" /></UFormField></div>
           <UFormField :label="t('adminPaymentProfiles.credential')"><UInput v-model="drafts[selected.id].credential" type="password" :placeholder="selected.configured ? t('adminPaymentProfiles.keepCredential') : ''" autocomplete="new-password" /></UFormField>
           <UFormField :label="t('adminPaymentProfiles.acknowledgement')"><UInput v-model="drafts[selected.id].acknowledgement" /></UFormField>
-        </div>
+        </fieldset>
         <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
-      </template><template #footer><UButton color="neutral" variant="outline" :label="t('common.close')" @click="selectedId = ''" /><UButton v-if="selected" icon="i-ph-floppy-disk" :loading="busy === selected.id" :label="t('common.save')" @click="save(selected)" /></template>
+      </template><template #footer><UButton color="neutral" variant="outline" :label="t('common.close')" :disabled="Boolean(busy)" @click="selectedId = ''" /><UButton v-if="selected" icon="i-ph-floppy-disk" :loading="busy === selected.id" :disabled="Boolean(busy)" :label="t('common.save')" @click="save(selected)" /></template>
     </USlideover>
     <ConfirmDialog
       :open="Boolean(deleting)"
@@ -162,4 +170,4 @@ onMounted(() => void load())
   </section>
 </template>
 
-<style scoped>.payment-profiles { display: grid; gap: 1rem; }</style>
+<style scoped>.payment-profiles { display: grid; gap: 1rem; }.payment-profiles fieldset { border: 0; padding: 0; min-width: 0; }</style>

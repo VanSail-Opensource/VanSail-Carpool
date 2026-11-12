@@ -11,6 +11,8 @@ freshly after shared metadata. `topology_test.go` covers this projection boundar
 and 8 MiB. TTL and entitlement validity checks retain their existing behavior;
 financial state and permissions precede cache lookup. `dashboard_cache_test.go`
 covers owner isolation, eviction, invalidation budget and oversized snapshots.
+Queued subscription rotation uses the same invalidator as entitlement changes,
+releasing both the owner entry and its byte budget after credential replacement.
 
 Dashboard includes optional ordered `activeSquadNames` resolved from local squad
 references for its active term. This avoids fetching the full purchasable catalog

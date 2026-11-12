@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, reactive, shallowRef, watch } from 'vue'
+import { computed, onScopeDispose, reactive, shallowRef, watch } from 'vue'
 import { api } from '@/api/client'
 import TxbAmountField from '@/components/common/TxbAmountField.vue'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import { useI18n, localizedError } from '@/i18n'
 import { moneyFromTxbInput } from '@/utils/format'
+import { createUuid } from '@/utils/browserCompatibility'
 const props = defineProps<{ userId: string }>()
 const emit = defineEmits<{ changed: [] }>()
 const { t } = useI18n()
@@ -12,16 +13,25 @@ const open = shallowRef(false)
 const busy = shallowRef(false)
 const error = shallowRef<string | null>(null)
 const form = reactive({ amountTxb: '', reason: '' })
-const valid = computed(() => { const amount = moneyFromTxbInput(form.amountTxb); return amount !== null && globalThis.BigInt(amount) > 0n && form.reason.length >= 4 })
+const valid = computed(() => { const amount = moneyFromTxbInput(form.amountTxb); return amount !== '' && BigInt(amount) > 0n && form.reason.trim().length >= 4 })
+const attempts = new Map<string, string>()
 let generation = 0
+onScopeDispose(() => { generation++; attempts.clear() })
 watch(() => props.userId, () => { generation++; open.value = false; error.value = null; form.amountTxb = ''; form.reason = '' })
 async function adjust(sign: 1 | -1): Promise<void> {
   const amount = moneyFromTxbInput(form.amountTxb)
   if (!amount || !valid.value || busy.value) return
+  const userId = props.userId
+  const delta = sign === -1 ? `-${amount}` : amount
+  const reason = form.reason.trim()
+  const fingerprint = JSON.stringify([userId, delta, reason])
   const ticket = generation
   busy.value = true; error.value = null
   try {
-    await api.adjustBalance(props.userId, sign === -1 ? `-${amount}` : amount, form.reason)
+    const key = attempts.get(fingerprint) ?? createUuid()
+    attempts.set(fingerprint, key)
+    await api.adjustBalance(userId, delta, reason, key)
+    attempts.delete(fingerprint)
     if (ticket === generation) { open.value = false; form.amountTxb = ''; form.reason = ''; emit('changed') }
   } catch (caught) { if (ticket === generation) error.value = localizedError(caught, 'errors.adminAction') }
   finally { busy.value = false }

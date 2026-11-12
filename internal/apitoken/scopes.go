@@ -52,6 +52,16 @@ func (p Principal) AllowsRequest(method, path string) bool {
 	if method == http.MethodPost && resource == "xnode/firewall/records/search" {
 		write = false
 	}
+	// The generic database editor and full backups contain both commerce and
+	// native control-plane state. A general administrator token must not use
+	// these routes to bypass the explicit X-Node resource boundary.
+	if resource == "database" || strings.HasPrefix(resource, "database/") || resource == "backups" || strings.HasPrefix(resource, "backups/") {
+		parts := strings.Split(resource, "/")
+		if method == http.MethodPost && len(parts) == 4 && parts[0] == "database" && parts[1] == "tables" && parts[3] == "query" {
+			write = false
+		}
+		return p.Allows("admin", write) && p.Allows("xnode", write)
+	}
 	if strings.HasPrefix(resource, "operations/") && !write {
 		return p.Allows("admin", false) || p.Allows("xnode", false)
 	}

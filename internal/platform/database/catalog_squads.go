@@ -131,14 +131,6 @@ func (s *Store) ImportSquad(ctx context.Context, proxySquadUUID, name string) (m
 	return product, nil
 }
 
-// MarkAllSquadsMissing is retained for compatibility and intentionally does
-// nothing because presence is now read directly from Proxy.
-func (s *Store) MarkAllSquadsMissing(context.Context) error { return nil }
-
-// RefreshImportedSquads is retained for compatibility and intentionally does
-// not store upstream-owned identities.
-func (s *Store) RefreshImportedSquads(context.Context, []ImportedSquad) error { return nil }
-
 // ListSquadProductOverrides loads merchandising without derived stock counts.
 // Compilation, inventory and exports must use this bounded-cost read.
 func (s *Store) ListSquadProductOverrides(ctx context.Context, visibleOnly bool) ([]model.SquadProduct, error) {

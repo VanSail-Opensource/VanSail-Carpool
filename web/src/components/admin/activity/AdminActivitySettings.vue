@@ -5,7 +5,7 @@ import type { ActivitySettings, ActivitySettingsWrite } from '@/api/features'
 import { mergeRefreshedDraft } from '@/api/cache/drafts'
 import TxbAmountField from '@/components/common/TxbAmountField.vue'
 import { useI18n } from '@/i18n'
-const props = defineProps<{ settings: ActivitySettings | null; busy: boolean; save: (value: ActivitySettingsWrite) => Promise<void> }>()
+const props = defineProps<{ settings: ActivitySettings | null; busy: boolean; save: (value: ActivitySettingsWrite) => Promise<boolean> }>()
 const draft = reactive({ timezone: 'Asia/Shanghai', dailyRewardMinTxb: '0.00', dailyRewardMaxTxb: '0.00', groupMessageThreshold: 0, groupMessageRewardTxb: '0.00' })
 const { t } = useI18n()
 
@@ -19,8 +19,8 @@ watch(() => props.settings, (settings, previous) => {
   mergeRefreshedDraft(draft, pick(settings), previous ? pick(previous) : undefined)
 }, { immediate: true })
 
-async function saveActivitySettings(): Promise<void> {
-  await props.save({ ...draft })
+function saveActivitySettings(): Promise<boolean> {
+  return props.save({ ...draft })
 }
 
 defineExpose({ save: saveActivitySettings })

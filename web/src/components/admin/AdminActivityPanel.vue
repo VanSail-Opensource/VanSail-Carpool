@@ -47,7 +47,7 @@ function requestRemoval(target: NonNullable<typeof deleting.value>): void {
         <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton color="neutral" variant="ghost" icon="i-ph-chart-bar" :aria-label="t('adminActivityManagement.statisticsFor', { name: row.original.name })" @click="statisticsTarget = { kind: 'game', id: row.original.id, title: t('adminActivityManagement.statisticsTitle', { name: row.original.name }) }" /><UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :aria-label="t('adminActivityManagement.editNamed', { name: row.original.name })" @click="editGame(row.original)" /><UButton color="error" variant="ghost" icon="i-ph-trash" :aria-label="t('adminActivityManagement.deleteNamed', { name: row.original.name })" @click="requestRemoval({ kind: 'game', id: row.original.id, name: row.original.name })" /></div></template>
         <template #empty>{{ t('adminActivityManagement.noGames') }}</template>
       </UTable>
-      <AdminStatisticsPanel v-if="statisticsTarget?.kind === 'game'" :title="statisticsTarget.title" :load="loadStatistics" @close="statisticsTarget = null" />
+      <AdminStatisticsPanel v-if="statisticsTarget?.kind === 'game'" :key="`${statisticsTarget.kind}:${statisticsTarget.id}`" :title="statisticsTarget.title" :load="loadStatistics" @close="statisticsTarget = null" />
     </section>
 
     <section v-show="activeTab === 'draws'" class="activity-admin-section">
@@ -61,7 +61,7 @@ function requestRemoval(target: NonNullable<typeof deleting.value>): void {
         <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton v-if="row.original.kind === 'raffle' && row.original.status === 'draft'" variant="ghost" icon="i-ph-paper-plane-tilt" :aria-label="t('adminDrawRedesign.publish')" :disabled="busy" @click="publishDraw(row.original.id)" /><UButton color="neutral" variant="ghost" icon="i-ph-chart-bar" :aria-label="t('adminActivityManagement.statisticsFor', { name: row.original.name })" @click="statisticsTarget = { kind: 'draw', id: row.original.id, title: t('adminActivityManagement.statisticsTitle', { name: row.original.name }) }" /><UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :aria-label="t('adminActivityManagement.editNamed', { name: row.original.name })" @click="editingDraw = row.original" /><UButton color="error" variant="ghost" icon="i-ph-trash" :aria-label="t('adminActivityManagement.deleteNamed', { name: row.original.name })" @click="requestRemoval({ kind: 'draw', id: row.original.id, name: row.original.name })" /></div></template>
         <template #empty>{{ t('adminActivityManagement.noDraws') }}</template>
       </UTable>
-      <AdminStatisticsPanel v-if="statisticsTarget?.kind === 'draw'" :title="statisticsTarget.title" :load="loadStatistics" @close="statisticsTarget = null" />
+      <AdminStatisticsPanel v-if="statisticsTarget?.kind === 'draw'" :key="`${statisticsTarget.kind}:${statisticsTarget.id}`" :title="statisticsTarget.title" :load="loadStatistics" @close="statisticsTarget = null" />
     </section>
 
     <UAlert v-if="error && !deleting" role="alert" class="admin-error" color="warning" variant="soft" icon="i-ph-warning" :description="error" />

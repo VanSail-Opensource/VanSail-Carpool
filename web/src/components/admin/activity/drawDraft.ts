@@ -82,9 +82,12 @@ function prizeFromSaved(prize: LuckyDrawPrize): PrizeDraft {
 }
 
 function scaled(value: string, factor: number): number | null {
-  const parsed = Number(value)
-  const ticks = Math.round(parsed * factor)
-  return Number.isFinite(parsed) && Number.isSafeInteger(ticks) && Math.abs(parsed * factor - ticks) < 0.000001 ? ticks : null
+  const match = /^([+-]?)(\d+)(?:\.(\d+))?$/.exec(value.trim())
+  const decimals = factor === 10000 ? 4 : factor === 100 ? 2 : 0
+  if (!match || (match[3]?.length ?? 0) > decimals) return null
+  const magnitude = BigInt(match[2]!) * BigInt(factor) + BigInt((match[3] ?? '').padEnd(decimals, '0') || '0')
+  if (magnitude > BigInt(Number.MAX_SAFE_INTEGER)) return null
+  return Number(match[1] === '-' ? -magnitude : magnitude)
 }
 
 function rewardFromDraft(prize: PrizeDraft): RewardWrite | null {
@@ -93,7 +96,7 @@ function rewardFromDraft(prize: PrizeDraft): RewardWrite | null {
   if (prize.kind === 'entitlement_grant') {
     const renewalPriceMinor = moneyFromTxbInput(prize.renewalPrice)
     const gib = Number(prize.trafficLimitGiB)
-    if (!prize.comboId || renewalPriceMinor === '' || !Number.isSafeInteger(gib) || gib <= 0 || gib > 1000000) return null
+    if (!prize.comboId || renewalPriceMinor === '' || !Number.isSafeInteger(Number(renewalPriceMinor)) || !Number.isSafeInteger(gib) || gib <= 0 || gib > 1000000) return null
     return { kind: prize.kind, comboId: prize.comboId, squadUuids: prize.squadUuids,
       renewalPriceMinor: Number(renewalPriceMinor), trafficLimitBytes: gib * 2 ** 30 }
   }

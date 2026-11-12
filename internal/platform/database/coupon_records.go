@@ -131,6 +131,33 @@ func redemptionByKeyTx(ctx context.Context, tx *sql.Tx, userID, key string) (cou
 	return result, nil
 }
 
+// A coupon definition can be renamed after redemption. Bind retries to the
+// original request recorded in its immutable grant source or balance ledger,
+// rather than treating the definition's current code as historical evidence.
+func matchRedemptionCodeTx(ctx context.Context, tx *sql.Tx, userID, canonical string, result coupons.RedemptionResult) error {
+	var originalCode string
+	if result.Grant != nil {
+		if result.Grant.UserID != userID || result.Grant.SourceType != "code" {
+			return ErrConflict
+		}
+		originalCode = result.Grant.SourceID
+	} else {
+		err := tx.QueryRowContext(ctx, `SELECT note FROM ledger_entries
+			WHERE user_id=$1 AND reference_id=$2 AND kind IN ('coupon_balance_add','coupon_balance_multiply')`, userID, result.ID).Scan(&originalCode)
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrConflict
+		}
+		if err != nil {
+			return fmt.Errorf("load original coupon redemption code: %w", err)
+		}
+	}
+	normalized, err := coupons.CanonicalCode(originalCode)
+	if err != nil || normalized != canonical {
+		return ErrConflict
+	}
+	return nil
+}
+
 func scanRedemption(row rowScanner) (coupons.RedemptionResult, error) {
 	var result coupons.RedemptionResult
 	var grantID sql.NullString

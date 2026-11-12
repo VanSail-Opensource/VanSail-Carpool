@@ -117,3 +117,5 @@ Fresh console checks were clear; intercepted mock fetch/XHR made no actual
 failing requests. Checks interrupted by HMR were repeated after files stabilized.
 The final count guard rejected an invented Unallocated-only positive count at
 1440px/English without a chart, while valid idle cost remained 100% at 390px/Chinese.
+
+Purchase changes close a refund dialog and invalidate pending quote/renewal/operation projections. An earlier read cannot undo a confirmed automatic-renewal update.
