@@ -53,10 +53,7 @@ func (s *Server) adminUsers(w http.ResponseWriter, r *http.Request) {
 	items := make([]adminUser, 0, len(users))
 	for _, record := range users {
 		user := record.User
-		status := "not_provisioned"
-		if user.ProxyUserID != nil {
-			status = "synchronized"
-		}
+		status := record.Synchronization.Status
 		items = append(items, adminUser{User: mapUser(user), Balance: record.Balance, CreatedAt: user.CreatedAt, Synchronization: synchronization{Status: status}})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"items": items, "page": map[string]any{"nextCursor": nextCursor}})

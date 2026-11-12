@@ -16,6 +16,7 @@ import (
 // UserWorkflowRepository is the aggregate read surface for one admin profile.
 type UserWorkflowRepository interface {
 	UserByID(context.Context, string) (model.User, error)
+	AdminUserSynchronization(context.Context, string) (database.AdminUserSynchronization, error)
 	Balance(context.Context, string) (model.Money, error)
 	ListPurchases(context.Context, string) ([]model.Purchase, error)
 	EmbyAccountForUser(context.Context, string) (emby.Account, error)
@@ -38,12 +39,8 @@ type UserWorkflowRepository interface {
 	CreateAdminTemporaryUnban(context.Context, string, string, string, string, string, time.Time) (model.OperationReceipt, error)
 }
 
-// UserSynchronization summarizes the local-to-provider identity state.
-type UserSynchronization struct {
-	Status       string
-	RemoteUserID *string
-	LastError    *string
-}
+// UserSynchronization summarizes native credential provisioning and historical deployment.
+type UserSynchronization = database.AdminUserSynchronization
 
 // UserDetail is one non-duplicated aggregate administrator projection.
 type UserDetail struct {
@@ -88,7 +85,10 @@ func (s *UserWorkflows) UserDetail(ctx context.Context, userID string) (UserDeta
 	if err != nil {
 		return UserDetail{}, err
 	}
-	detail := UserDetail{User: user, Synchronization: synchronizationFor(user), EmbyAccounts: []emby.Account{}, CouponWallet: []coupons.Grant{}, AffiliateHistory: affiliates.ReferralPage{Items: []affiliates.Referral{}}}
+	detail := UserDetail{User: user, EmbyAccounts: []emby.Account{}, CouponWallet: []coupons.Grant{}, AffiliateHistory: affiliates.ReferralPage{Items: []affiliates.Referral{}}}
+	if detail.Synchronization, err = s.repository.AdminUserSynchronization(ctx, user.ID); err != nil {
+		return UserDetail{}, err
+	}
 	if detail.Balance, err = s.repository.Balance(ctx, userID); err != nil {
 		return UserDetail{}, err
 	}
@@ -132,15 +132,4 @@ func (s *UserWorkflows) UserDetail(ctx context.Context, userID string) (UserDeta
 		return UserDetail{}, err
 	}
 	return detail, nil
-}
-
-func synchronizationFor(user model.User) UserSynchronization {
-	state := UserSynchronization{Status: "not_provisioned", RemoteUserID: user.ProxyUserID}
-	if user.RecoveryReason != "" {
-		state.Status = "failed"
-		state.LastError = &user.RecoveryReason
-	} else if user.ProxyUserID != nil {
-		state.Status = "synchronized"
-	}
-	return state
 }

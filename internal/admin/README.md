@@ -107,3 +107,10 @@ caller-owned stable reference. Test-only random-reference entry points and the
 legacy non-atomic ledger/audit fallback are removed. `finance_test.go` and
 `zero_coverage_test.go` exercise the same reference-bound interface as HTTP and
 Telegram; database regressions verify immutable replay and atomic audit storage.
+
+Administrator list and detail synchronization use the same bounded native
+projection. Active, fully onboarded owners with current credential material are
+pending until generation-bound deployment proof exists; synchronized describes
+that historical proof and does not assert current agent health or traffic access.
+Missing native material is not_provisioned, and retained recovery reasons remain
+failed. Legacy proxy links and wallet funding never stand in for native proof.

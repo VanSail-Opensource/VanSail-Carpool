@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,8 +15,9 @@ import (
 
 // AdminUserRecord is the list-safe user and aggregate balance projection.
 type AdminUserRecord struct {
-	User    model.User
-	Balance model.Money
+	User            model.User
+	Balance         model.Money
+	Synchronization AdminUserSynchronization
 }
 
 // AdminUserSearchFilter is the normalized, cursor-bound administrative search.
@@ -43,8 +45,9 @@ func (s *Store) ListAdminUsersPage(ctx context.Context, cursor string, filter Ad
 	if err != nil {
 		return nil, nil, err
 	}
-	query := `SELECT ` + userColumns + `,COALESCE(balances.txb_minor,0) FROM users
-		LEFT JOIN balances ON balances.user_id=users.id WHERE users.account_status='active'`
+	query := `SELECT ` + userColumns + `,COALESCE(balances.txb_minor,0),` + adminUserSynchronizationColumns + ` FROM users
+		LEFT JOIN balances ON balances.user_id=users.id
+		LEFT JOIN xnode_identities native ON native.user_id=users.id WHERE users.account_status='active'`
 	args := make([]any, 0, 20)
 	if filter.Search != "" {
 		pattern := "%" + escapeLike(filter.Search) + "%"
@@ -76,11 +79,14 @@ func (s *Store) ListAdminUsersPage(ctx context.Context, cursor string, filter Ad
 	items := make([]AdminUserRecord, 0, limit+1)
 	for rows.Next() {
 		var balanceMinor int64
-		user, scanErr := scanUserWith(rows, &balanceMinor)
+		var nativeID sql.NullInt64
+		var credentialsReady, applied bool
+		user, scanErr := scanUserWith(rows, &balanceMinor, &nativeID, &credentialsReady, &applied)
 		if scanErr != nil {
 			return nil, nil, scanErr
 		}
-		items = append(items, AdminUserRecord{User: user, Balance: model.TXBMoney(balanceMinor)})
+		items = append(items, AdminUserRecord{User: user, Balance: model.TXBMoney(balanceMinor),
+			Synchronization: adminUserSynchronizationFor(user, nativeID, credentialsReady, applied)})
 	}
 	if err := rows.Err(); err != nil {
 		return nil, nil, err

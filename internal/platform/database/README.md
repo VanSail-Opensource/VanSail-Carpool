@@ -1622,3 +1622,9 @@ conflicts. Enrolled/historical nodes use the durable removal workflow.
 `xnode_node_delete_test.go` checks eligibility, missing-node replay, history without
 foreign keys and a concurrent first enrollment. The two corresponding generated
 retry adapters preserve the repository's serializable write-transaction policy.
+
+`admin_user_synchronization.go` projects owner-scoped native credential presence
+and generation-bound historical deployment evidence. The bounded user list uses
+the same projection in its balance query; legacy proxy links never imply native
+readiness. `admin_user_synchronization_test.go` covers list/detail consistency,
+pending proof, cleared credentials, inactive owners and retained recovery reasons.
