@@ -91,11 +91,13 @@ func pruneProviderOperationsTx(ctx context.Context, tx *sql.Tx, cutoff, now time
 			AND NOT (status='failed' AND (`+liveComboControlPredicate(2)+`)))`, stamp(now.Add(-pmReceiptRetention)), stamp(now), stamp(now), stamp(now), stamp(now)); err != nil {
 		return fmt.Errorf("prune provider operation jobs: %w", err)
 	}
-	// Keep terminal operations that durable domain records still use as their
-	// audit or state-transition link. Deleting them would violate foreign keys.
+	// Command keys have no expiry: their sanitized receipts and target facts are
+	// the durable replay boundary even when no domain foreign key points to them.
+	// Settled outbox ciphertext is removed above. Only PM delivery receipts have
+	// an explicit bounded retention contract, and referenced records stay intact.
 	if counts["provider_operations"], err = deleteCount(ctx, tx, `DELETE FROM provider_operations AS operation
 		WHERE `+settledProviderOperation+`
-		AND (kind NOT ILIKE 'telegram_pm_%' OR created_at<=$1)
+		AND kind ILIKE 'telegram_pm_%' AND created_at<=$1
 		AND NOT (status='failed' AND (`+liveComboControlPredicate(2)+`))
 		AND NOT EXISTS (SELECT 1 FROM admin_temporary_bans ban
 			WHERE ban.ban_operation_id=operation.id OR ban.unban_operation_id=operation.id)

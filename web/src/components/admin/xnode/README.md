@@ -1,5 +1,16 @@
 # X-Node administration
 
+Audit recovery: `XNodeDDNSSettings.test.ts` covers stable editable rows, endpoint
+binding isolation after deletion and temporary duplicate job names.
+`XNodeCommands.test.ts` rejects results from a command superseded by a later
+action. `XNodeNodes.test.ts` additionally covers serialized enrollment creation
+and discarded token responses after the selected editor changes.
+`useXNodeWorkspace.test.ts` prevents post-disposal mutation refreshes.
+Certificate observers suspend on browser expiry and recover durable history only
+after verified same-administrator authentication; logout and disposal remain final.
+`XNodeFirewallGrant.test.ts` verifies that grant retries use the submitted
+normalized IP text as their identity.
+
 `XNodeConfigurations.vue` exposes a resource-named delete action beside each
 configuration. It reuses the workspace mutation/reload/error flow, blocks
 duplicate actions while pending and retains failed rows for retry. The existing

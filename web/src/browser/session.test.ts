@@ -95,6 +95,26 @@ describe('isolated browser sessions', () => {
     expect(browser.isAdmin).toBe(true)
   })
 
+  it('resumes mounted observers only after verifying the same administrator', async () => {
+    const restored = vi.fn()
+    window.addEventListener('txc:browser-session-restored', restored)
+    try {
+      const browser = useBrowserSession()
+      await browser.bootstrap()
+      expect(restored).not.toHaveBeenCalled()
+      mocks.session.mockResolvedValue(anonymous)
+      await browser.bootstrap(true)
+      expect(restored).not.toHaveBeenCalled()
+      mocks.session.mockResolvedValue(admin)
+      await browser.bootstrap(true)
+      expect(restored).toHaveBeenCalledTimes(1)
+      mocks.session.mockResolvedValue({ ...admin, user: { ...admin.user, id: 'different-administrator' } })
+      await browser.bootstrap(true)
+      expect(useSessionStore().user?.id).toBe('different-administrator')
+      expect(restored).toHaveBeenCalledTimes(1)
+    } finally { window.removeEventListener('txc:browser-session-restored', restored) }
+  })
+
   it('preserves authentication and cached drafts during a transient renewal failure', async () => {
     const browser = useBrowserSession()
     await browser.bootstrap()

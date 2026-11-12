@@ -19,8 +19,10 @@ export const useBrowserSession = defineStore('browser-session', () => {
   function apply(next: BrowserSession): void {
     state.value = next
     if (next.kind === 'admin') {
+      const sameAdministrator = identity.user?.id === next.user.id
       identity.updateSession(next)
       expired.value = false
+      if (sameAdministrator) globalThis.dispatchEvent(new Event('txc:browser-session-restored'))
     } else if (identity.isAdmin) expired.value = true
   }
 

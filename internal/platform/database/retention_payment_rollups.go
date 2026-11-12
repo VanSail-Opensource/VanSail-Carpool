@@ -11,12 +11,16 @@ func compactPaymentsTx(ctx context.Context, tx *sql.Tx, cutoff, now time.Time, c
 	if _, err := tx.ExecContext(ctx, `CREATE TEMP TABLE maintenance_payment_candidates(id TEXT PRIMARY KEY)`); err != nil {
 		return fmt.Errorf("create payment cleanup set: %w", err)
 	}
+	// A paid charge may be refunded long after the detail retention window.
+	// Retain its exact owner, provider/charge, amount and reversal evidence;
+	// aggregate counts and callback tombstones cannot authenticate that refund.
 	_, err := tx.ExecContext(ctx, `INSERT INTO maintenance_payment_candidates(id)
 		SELECT payment.id FROM payment_orders payment
-		WHERE payment.updated_at<$1 AND (payment.status IN ('paid','expired','failed','refunded') OR payment.cancelled_at IS NOT NULL)
+		WHERE payment.updated_at<$1 AND (payment.status IN ('expired','failed') OR payment.cancelled_at IS NOT NULL)
+		AND payment.status NOT IN ('paid','refunded') AND payment.paid_at IS NULL AND payment.refunded_at IS NULL
 		AND NOT EXISTS (
 			SELECT 1 FROM provider_operation_items item JOIN provider_operations operation ON operation.id=item.operation_id
-			WHERE item.target_type='payment' AND item.target_id=payment.id
+			WHERE item.target_type IN ('payment','payment_order') AND item.target_id=payment.id
 			AND operation.status IN ('queued','processing','pending_review','partial'))
 		AND NOT EXISTS (SELECT 1 FROM affiliate_settlements settlement WHERE settlement.payment_order_id=payment.id)
 		AND NOT EXISTS (SELECT 1 FROM courtesy_credits credit WHERE credit.payment_order_id=payment.id)

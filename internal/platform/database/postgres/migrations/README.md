@@ -155,3 +155,5 @@ changes; minute history never becomes an additional debit or quota source.
 `activationHours`, so existing offers keep their previous eligibility. It is
 additive metadata: no purchase, wallet entry, settlement receipt or native
 principal is converted.
+
+`00048_telegram_star_reconciliation.sql` adds a protected per-bot cursor, monotonic page generation, exact boundary hash and scheduled continuation time. Existing balances, payments and historical receipts remain unchanged. The cursor is part of the native schema/backup contract; restoring an older snapshot safely replays idempotent provider history.

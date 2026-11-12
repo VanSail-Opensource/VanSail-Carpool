@@ -28,3 +28,10 @@ scrolled the sole page container from the focused graph. Explicit interaction
 contained graph wheel input while Ctrl-wheel retained browser zoom. Browser
 emulation does not verify Telegram iOS/Android/desktop host gestures; those remain
 physical-device acceptance checks. No swipe suppression was enabled speculatively.
+
+Paid lookup attempts keep their signed quote and idempotency key when the member
+edits away from an IP and returns after an ambiguous failure. Accepted operation
+IDs remain associated with their exact input; late acceptance and polling errors
+cannot replace a newer address. Receipt reads resume after a visibility pause and
+are fenced by owner, input generation and read generation. `useIPLookup.test.ts`
+covers these transitions without issuing provider traffic.

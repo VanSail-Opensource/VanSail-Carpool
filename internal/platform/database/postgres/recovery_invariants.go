@@ -72,6 +72,10 @@ func VerifyEncryption(ctx context.Context, q queryer, key []byte) error {
 		{query: `SELECT 'xnode.identity.'||CASE WHEN user_id IS NULL THEN 'service.'||service_name ELSE 'user.'||user_id END,credentials_cipher FROM xnode_identities WHERE credentials_cipher<>''`},
 		{query: `SELECT 'xnode.subscription.'||CASE WHEN user_id IS NULL THEN 'service.'||service_name ELSE 'user.'||user_id END,subscription_cipher FROM xnode_identities WHERE subscription_cipher<>''`},
 		{query: `SELECT password_context,password_ciphertext FROM emby_accounts WHERE password_ciphertext<>''`},
+		{query: `SELECT 'emby-operation:'||COALESCE(o.owner_user_id,'')||':'||o.kind||':'||o.request_fingerprint,
+ j.payload::jsonb->>'sealedTarget' FROM outbox_jobs j JOIN provider_operations o ON j.payload::jsonb->>'operationId'=o.id
+ WHERE j.kind='provider_operation' AND o.kind IN ('emby_setup','emby_preferences','emby_password','emby_provision_retry')
+ AND j.payload::jsonb->>'sealedTarget'<>''`},
 		{verify: verifyRecoveryConnectionIPBlocks},
 		{query: `SELECT 'telegram_pm:'||operation_id,encrypted_payload FROM telegram_pm_payloads WHERE encrypted_payload<>''`},
 		{query: `SELECT 'xnode.command.'||o.actor_user_id||'.'||o.idempotency_key,(j.payload::jsonb->>'sealedTarget') FROM outbox_jobs j JOIN provider_operations o ON (j.payload::jsonb->>'operationId')=o.id WHERE j.kind='provider_operation' AND o.kind='xnode_command' AND (j.payload::jsonb->>'sealedTarget')<>''`},

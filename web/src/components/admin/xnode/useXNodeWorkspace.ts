@@ -22,6 +22,7 @@ export function useXNodeWorkspace() {
   let metricController: InstanceType<typeof globalThis.AbortController> | undefined
   let timer: ReturnType<typeof setInterval> | undefined
   async function load(): Promise<void> {
+    if (!active) return
     controller?.abort(); metricController?.abort(); metricLatest.invalidate(); metricInFlight = false
     controller = new globalThis.AbortController()
     const ticket = latest.begin()
@@ -40,9 +41,9 @@ export function useXNodeWorkspace() {
   async function perform(action: () => Promise<unknown>): Promise<boolean> {
     if (busy.value || loading.value || error.value || !active) return false
     busy.value = true; actionError.value = null
-    try { await action(); await load(); return true }
-    catch (caught) { actionError.value = localizedError(caught, 'xnode.saveFailed'); return false }
-    finally { busy.value = false }
+    try { await action(); if (!active) return false; await load(); return active }
+    catch (caught) { if (active) actionError.value = localizedError(caught, 'xnode.saveFailed'); return false }
+    finally { if (active) busy.value = false }
   }
   onMounted(() => {
     void load()

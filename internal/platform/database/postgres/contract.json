@@ -33,6 +33,7 @@
     "squad_product_overrides",
     "statistics_snapshots",
     "telegram_boost_receipts",
+    "telegram_star_reconciliation",
     "telegram_pm_updates",
     "usdt_quotes",
     "usdt_scan_cursors",
@@ -7414,6 +7415,53 @@
         },
         {
           "name": "created_at",
+          "type": "text",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "telegram_star_reconciliation",
+      "columns": [
+        {
+          "name": "bot_id",
+          "type": "bigint",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "generation",
+          "type": "bigint",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "next_offset",
+          "type": "bigint",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "anchor",
+          "type": "text",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "available_at",
+          "type": "text",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
           "type": "text",
           "notNull": true,
           "default": null,

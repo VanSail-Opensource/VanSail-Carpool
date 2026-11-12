@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // TableDigest covers every authoritative column, including exact ciphertext/payloads.
@@ -150,6 +151,12 @@ func hashValue(h hash.Hash, value any) error {
 	case []byte:
 		kind = "b"
 		text = hex.EncodeToString(v)
+	case time.Time:
+		// Native DATE/TIMESTAMPTZ values arrive through pgx as time.Time.
+		// Canonical UTC removes driver/session location differences while
+		// preserving all stored precision and a distinct scalar type.
+		kind = "d"
+		text = v.UTC().Format(time.RFC3339Nano)
 	default:
 		return fmt.Errorf("unsupported recovery value type %T", value)
 	}

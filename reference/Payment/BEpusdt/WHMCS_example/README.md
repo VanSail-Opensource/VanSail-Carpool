@@ -1,32 +1,36 @@
-## 概述
+# Archived BEpusdt WHMCS sample
 
-WHMCS 可用的 BEpusdt 支付网关，开发测试可用的 whmcs 版本是 8.10.1，其它版本没测试过，有问题请到 BEpusdt issue 反馈。
+This directory is protocol reference material only. It is excluded from the
+Carpool image and is not a supported WHMCS gateway. The PHP sources have `.php.txt`
+extensions so they are not deployable PHP entry points. Their internal include
+and callback paths retain the original upstream filenames for historical reading.
 
-## 目录结构
+Do not copy this archive into a web root or WHMCS `modules/gateways` directory.
+Use Carpool's maintained Go payment integration and retained order recovery path.
 
-```
-whcms-gateway-epusdt/
- | epusdt.php
- │
- |-callback
- │      epusdt_notify.php
- │      epusdt_return.php
- │
- └─epusdt
-     │  whmcs.json
-     │
-     └─lib
-        epusdt.php
-```
+## Contents and provenance
 
-## 对接
+- `epusdt.php.txt`: upstream gateway settings, invoice request and payment redirect.
+- `callback/epusdt_notify.php.txt`: upstream signed callback/invoice credit sketch.
+- `callback/epusdt_return.php.txt`: upstream browser return redirect.
+- `epusdt/lib/epusdt.php.txt`: upstream HTTP client and MD5 protocol signatures.
+- `epusdt/whmcs.json`: original manifest, including its MIT license declaration,
+  author fields and upstream URLs.
+- `README.upstream.md`: preserved original overview and installation text. It is
+  historical documentation, not installation guidance for this repository.
 
-解压后文件复制到 `modules/gateways` 目录下即可
+The manifest identifies <https://github.com/v03413/whcms-gateway-bepusdt> and
+<https://github.com/v03413/BEpusdt>. The imported files did not pin a source
+revision; this archive does not assert compatibility with later provider versions.
 
-## 声明
+## Known unsafe or incomplete assumptions
 
-```
-仅用于学习交流使用
-作者仅完成代码的开发和开源活动(开源即任何人都可以下载使用或修改分发)，从未参与用户的任何运营和盈利活动。
-且不知晓用户后续将程序源代码用于何种用途，故用户使用过程中所带来的任何法律责任即由用户自己承担。
-```
+The sample credits a callback amount without a retained local invoice/amount/
+currency binding, interpolates the provider payment URL into JavaScript without
+escaping or a URL scheme restriction, and presents a raw provider error as HTML.
+Its callback also uses `money` while the copied API document describes `amount`.
+It is not suitable as a starting point for a live financial integration.
+
+The text archive retains these behaviors to explain the historical protocol.
+No production callback, payment amount, retry policy or gateway is changed by
+retiring these samples. See [the payment reference inventory](../../README.md).

@@ -10,4 +10,4 @@ $epay_config['apiurl'] = 'http://pay.www.com/';
 $epay_config['pid'] = '1000';
 
 //商户密钥
-$epay_config['key'] = 'WWc3Z2jkK7jhNGPALcGKjHLPK47wRK85';
+$epay_config['key'] = 'RETIRED_EXAMPLE_DO_NOT_CONFIGURE';

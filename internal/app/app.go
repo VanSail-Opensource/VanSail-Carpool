@@ -120,6 +120,10 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	adminUserWorkflows := admin.NewUserWorkflows(store, provider)
 	entitlementWorker := entitlements.NewWorker(store, provider, provider)
 	outboxWorker := outbox.NewWorker(store)
+	stars, err := newStarsReconciler(store, billingService, queuedTelegramClient, cfg.TelegramBotToken, outboxWorker)
+	if err != nil {
+		return cleanup(err)
+	}
 	accountCleanup, err := newAccountCleanup(store, queuedTelegramClient, cfg.TelegramBotToken, cfg.AdminTelegramIDs, outboxWorker)
 	if err != nil {
 		return cleanup(err)
@@ -152,7 +156,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	}
 	for _, kind := range []string{xnode.PAYGJob, xnode.PAYGRecoveryJob} {
 		if err = outboxWorker.Register(kind, xnodeMaster); err != nil {
-			return nil, err
+			return cleanup(err)
 		}
 	}
 	if err = outboxWorker.Register(xnode.DIYReconcileJob, xnodeMaster); err != nil {
@@ -266,9 +270,10 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		xnodeService:  xnodeService, xnodeMaster: xnodeMaster,
 		config: cfg, logger: logger, httpServer: httpServer, store: store, outbox: outboxWorker,
 		backups: backupService, maintenance: maintenanceService, telegram: queuedTelegramClient, settings: settings,
-		catalog: catalogService, billing: billingService, statistics: statisticsService, affiliates: affiliateService,
+		catalog: catalogService, statistics: statisticsService, affiliates: affiliateService,
 		hourly:         hourlyService,
 		accountCleanup: accountCleanup,
+		stars:          stars,
 		notifications:  userNotificationScanner, upstreams: upstreams, paymentProfiles: paymentProfiles,
 		ipLookup: ipLookupWorker,
 		usdt:     usdtService,

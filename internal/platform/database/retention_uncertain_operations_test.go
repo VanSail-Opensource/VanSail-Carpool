@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -83,8 +82,12 @@ func TestMaintenancePreservesUncertainReceiptsAndEncryptedContinuations(t *testi
 			}
 		}
 		for _, id := range remove {
-			if _, err := s.ProviderOperationByID(ctx, id); !errors.Is(err, ErrNotFound) {
-				t.Fatal("known settled/unattempted compaction stopped", err)
+			if _, err := s.ProviderOperationByID(ctx, id); err != nil {
+				t.Fatal("known settled/unattempted replay receipt was deleted", err)
+			}
+			var jobs int
+			if err := s.DB().QueryRowContext(ctx, `SELECT count(*) FROM outbox_jobs WHERE kind='provider_operation' AND payload::jsonb->>'operationId'=$1`, id).Scan(&jobs); err != nil || jobs != 0 {
+				t.Fatal("settled encrypted continuation was not compacted", jobs, err)
 			}
 		}
 	}

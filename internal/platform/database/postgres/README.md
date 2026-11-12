@@ -49,6 +49,10 @@ entry or settlement receipt is converted.
   accounting. `db-schema fingerprint` exposes the bounded evidence document.
   Boolean values retain a distinct deterministic type in these fingerprints;
   `recovery_digest_bool_test.go` covers true/false and scalar type separation.
+  Native DATE and TIMESTAMPTZ values retain their own type and canonical UTC
+  precision. `recovery_digest_time_test.go` checks location/precision boundaries;
+  `recovery_time_integration_test.go` fingerprints populated hourly rows through
+  pgx, checks time-zone stability and detects a one-microsecond stored change.
 
 Schema 32 replaces the live JSON checks, time/string expression indexes and paid
 access trigger functions, then drops obsolete compatibility functions without
@@ -110,3 +114,9 @@ financial/operational evidence. `recovery_payment_test.go` covers exact scope,
 key, envelope and historical-proof boundaries;
 `recovery_payment_integration_test.go` exercises the complete read-only snapshot
 against isolated hosted PostgreSQL and checks retained records remain unchanged.
+
+`recovery_emby_test.go` verifies the retained encrypted Emby command targets in
+outbox jobs using their original owner, kind and request fingerprint. Wrong-owner
+ciphertexts are refused without rewriting evidence or exposing passwords. The
+verification is kind-specific: unrelated plaintext refund command targets remain
+valid and are not mistaken for encrypted envelopes.

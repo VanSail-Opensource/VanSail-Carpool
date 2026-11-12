@@ -60,7 +60,7 @@ the refund path only for an already provider-paid order.
 - Provider redirects arriving first leave the order pending. The return redirect carries a short-lived HMAC capability; a regular browser may poll only the matching provider/order receipt projection, while Telegram retains owner-scoped full-order polling. Browser return pages receive only order ID, amount, provider, channel, status, and timing metadata; owner, checkout URL, QR, trade, and provider payload data remain private.
 - EZPay returns `success` only for a valid accepted/replayed notification. BEPusdt returns configurable acknowledgement text (`ok` or `success`, default `ok`) to support both bundled reference variants; invalid notifications deliberately do not receive it.
 - Stars reconciliation queries durable Telegram charge/order state after lost updates without trusting the client.
-- Backup-gated daily compaction may remove terminal payment detail older than seven days. Immutable ledger entries, callback tombstones, refunds still needed for lineage, and every live or open-operation order remain retained; order creation never prunes evidence opportunistically.
+- Backup-gated daily compaction may remove unsuccessful, unpaid terminal payment detail older than seven days. Paid and refunded orders retain the exact owner, provider charge, amount, currency and reversal evidence needed to authenticate delayed refunds. Immutable ledger entries, callback tombstones, and every live or open-operation order remain retained; order creation never prunes evidence opportunistically.
 
 Balance funding also exposes a `coupon` method. It redeems only `balance_add`
 and `balance_multiply` coupons; purchase-discount grants remain catalog-only.

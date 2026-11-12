@@ -513,7 +513,7 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
   continuations. Generic expiry can fail/refund only exact never-started intents;
   typed PM/IP reconciliation and explicitly settled compaction remain available.
   `retention_uncertain_operations_test.go` covers review/partial/failed-parent
-  custody, old timeout evidence, exact no-refund behavior and known compaction;
+  custody, old timeout evidence, exact no-refund behavior and settled payload compaction;
   `retention_attempt_race_test.go` covers a concurrent committed attempt while
   maintenance waits for its candidate row lock. `retention_sync_jobs.go` retains
   unknown failed-job targets, allowing the existing live-term recovery to transfer
@@ -521,7 +521,7 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
   `retention_operation_compensation.go` locks legacy Emby setup evidence before
   compensation; `retention_emby_uncertainty_test.go` verifies that a zero-attempt
   parent cannot override an attempted or already recorded remote creation.
-- `retention_operation_compensation.go` refunds stale traffic-reset and Emby-setup debits before their operations are removed.
+- `retention_operation_compensation.go` refunds proven never-started traffic-reset and Emby-setup debits while retaining their command receipts.
 - `retention_housekeeping.go` prunes completed notification events, expired or superseded sessions, abandoned pre-username users, and old maintenance runs.
 - `continuity.go` retains native paid-successor projections and retires unclaimed legacy preparation jobs without deleting history.
 - `statistics.go` — catalog and activity administrator statistics.
@@ -1004,6 +1004,7 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `telegram_pm_commands_retry_generated.go` wraps the transactional methods in `telegram_pm_commands.go`.
 - `telegram_pm_moderation_retry_generated.go` wraps the transactional methods in `telegram_pm_moderation.go`.
 - `telegram_pm_recovery_retry_generated.go` wraps the transactional methods in `telegram_pm_recovery.go`.
+- `telegram_star_reconciliation_retry_generated.go` wraps the transactional methods in `telegram_star_reconciliation.go`.
 - `usdt_quotes_retry_generated.go` wraps the transactional methods in `usdt_quotes.go`.
 - `usdt_review_retry_generated.go` wraps the transactional methods in `usdt_review.go`.
 - `usdt_settlement_retry_generated.go` wraps the transactional methods in `usdt_settlement.go`.
@@ -1545,3 +1546,13 @@ and exact operation identity before updating the owner's identity.
 `admin_operation_recovery_test.go` verifies that bulk extensions and combo
 replacements recover their immutable receipts after the original targets expire,
 without reapplying changes or accepting a changed request fingerprint.
+
+`telegram_star_reconciliation.go` stores one per-bot chronological history boundary and atomically pairs generation-fenced progress with its next outbox page. `telegram_star_reconciliation_retry_generated.go` retries complete rolled-back cursor transactions. `telegram_star_reconciliation_review.go` retains unmatched authenticated refund proof once in existing immutable audit events. `telegram_star_reconciliation_test.go` covers concurrent admission, stale generations, polling delays, exhausted-job recovery and cursor/outbox rollback. `telegram_star_reconciliation_review_test.go` verifies deduplicated review evidence and native recovery digests containing the cursor.
+
+`retention_financial_receipts_test.go` verifies late paid-order refunds, retained
+reversal evidence, open `payment_order` targets and exact bulk-extension replay
+after repeated maintenance. Paid and refunded orders are financial evidence;
+only unsuccessful unpaid terminal details can enter payment rollups. Non-PM
+commands retain sanitized receipts, fingerprints and target facts indefinitely
+so daily cleanup cannot reset idempotency. Settled encrypted outbox payloads are
+still removed; PM delivery receipts retain their explicit 30-day policy.

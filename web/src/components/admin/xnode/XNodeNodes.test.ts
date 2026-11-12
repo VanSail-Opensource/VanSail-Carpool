@@ -5,7 +5,7 @@ import { defineComponent, h, onMounted } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { XNode, XNodeConfiguration } from '@/api/xnode'
 
-const api = vi.hoisted(() => ({ node: vi.fn(), saveNode: vi.fn() }))
+const api = vi.hoisted(() => ({ node: vi.fn(), saveNode: vi.fn(), enroll: vi.fn() }))
 vi.mock('@/api/xnode', () => ({ xnodeApi: api }))
 vi.mock('@/i18n', () => ({ useI18n: () => ({ t: (key: string) => key }), localizedError: (_caught: unknown, key: string) => key }))
 import XNodeNodes from './XNodeNodes.vue'
@@ -51,6 +51,23 @@ describe('retired node traffic multiplier controls', () => {
     await wrapper.get('form').trigger('submit'); await flushPromises()
     expect(api.saveNode.mock.calls[0]?.[0]).toMatchObject({ name: 'Singapore', configId: 'config' })
     expect(api.saveNode.mock.calls[0]?.[0]).not.toHaveProperty('multiplier')
+    wrapper.unmount()
+  })
+
+  it('serializes enrollment creation and ignores the token after another editor opens', async () => {
+    let finish!: (value: unknown) => void
+    api.enroll.mockReturnValue(new Promise(resolve => { finish = resolve }))
+    const wrapper = editor([node, { ...node, id: 'second', name: 'Second' }])
+    const actions = wrapper.findAll('[aria-label="xnode.enroll"]')
+    await actions[0]!.trigger('click')
+    await actions[1]!.trigger('click')
+    expect(api.enroll).toHaveBeenCalledExactlyOnceWith('node')
+    await wrapper.findAll('[aria-label="common.edit"]')[1]!.trigger('click')
+    await flushPromises()
+    finish({ token: 'late-first-node-secret', masterUrl: 'https://panel.example', expiresAt: '2026-12-01T00:00:00Z' })
+    await flushPromises()
+    expect(wrapper.find('[data-label="xnode.enrollmentToken"]').exists()).toBe(false)
+    expect(wrapper.html()).not.toContain('late-first-node-secret')
     wrapper.unmount()
   })
 })

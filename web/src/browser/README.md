@@ -10,7 +10,9 @@ the Telegram SDK or load member shell/theme assets.
 
 - `main.ts` initializes browser theme, Vue, Pinia, router, and Nuxt UI.
 - `BrowserApp.vue` owns localized providers, renewal, and an expiry overlay that
-  preserves mounted editors while login opens in another tab.
+  preserves mounted editors while the same administrator logs in through another
+  tab. A different administrator identity replaces the console subtree so prior
+  drafts, one-time secrets and operation context cannot transfer between actors.
 - `router.ts` owns browser history, protected routes, aliases, and payment returns.
 - `routeRecovery.ts` retries recognized lazy-chunk failures once at the failed
   destination, preserves query/hash, and exposes persistent errors through the
@@ -19,6 +21,8 @@ the Telegram SDK or load member shell/theme assets.
 - `BrowserConsole.vue` composes dashboard navigation and route content.
   Breadcrumbs identify the active page; the centered workspace stays readable
   on wide displays, with wrapping action rows and contained tables on phones.
+- `BrowserApp.test.ts` covers draft continuity through expiry and console
+  replacement when a different administrator takes over the browser session.
 - `navigation.ts` groups every admin section, including IP Lookup and USDT.
 - `BrowserPreferences.vue` provides independent locale and appearance controls.
 - `BrowserLanding.vue` explains services, directs administrators to Mini App access links, and forwards members.
@@ -28,6 +32,8 @@ the Telegram SDK or load member shell/theme assets.
   renews cookies, and revokes only the current browser device. Successful logout
   and access exchange invalidate earlier identity reads so late bootstrap or
   renewal replies cannot resurrect the old session or overwrite the new one.
+  A verified same-administrator response resumes suspended metric and certificate
+  observers; logout and disposal remain final for those mounted observers.
 - `session.test.ts` covers bootstrap deduplication, browser/member separation,
   stable renewal, expiry without discarding editor identity, scoped cache
   isolation, logout revocation, and one-use exchange in hosted CI.

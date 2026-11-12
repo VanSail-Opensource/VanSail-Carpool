@@ -19,6 +19,7 @@ describe('IP Lookup request safety', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     vi.useFakeTimers()
+    Object.defineProperty(document, 'hidden', { configurable: true, value: false })
     account.user.id = 'member'
     mocks.routeQuery.check = undefined
     mocks.state.mockResolvedValue({ enabled: true, lookupFee: quote.charge, refreshFee: quote.charge, allowance: null })
@@ -165,6 +166,91 @@ describe('IP Lookup request safety', () => {
     state.ip.value = '1.1.1.1'
     await flushPromises()
     expect(state.check.value).toBeNull()
+    wrapper.unmount()
+  })
+
+  it('retains an accepted receipt for its IP without replacing a newer input', async () => {
+    const wrapper = mount(Harness)
+    await flushPromises()
+    state.ip.value = quote.ip
+    await vi.advanceTimersByTimeAsync(400)
+    let accept!: (value: { id: string }) => void
+    mocks.submit.mockReturnValueOnce(new Promise(resolve => { accept = resolve }))
+    const first = state.submit()
+    state.ip.value = '1.1.1.1'
+    await flushPromises()
+    accept({ id: 'accepted-original' })
+    await first
+    expect(mocks.check).not.toHaveBeenCalled()
+    expect(mocks.replace).not.toHaveBeenCalled()
+    expect(state.check.value).toBeNull()
+    expect(state.requestedIP.value).toBe('1.1.1.1')
+    mocks.check.mockResolvedValue({ operation: { id: 'accepted-original', status: 'succeeded' }, requestedIP: quote.ip, report: null })
+    state.ip.value = quote.ip
+    await flushPromises()
+    expect(mocks.check).toHaveBeenCalledWith('accepted-original')
+    expect(state.check.value?.operation.id).toBe('accepted-original')
+    expect(mocks.submit).toHaveBeenCalledOnce()
+    wrapper.unmount()
+  })
+
+  it('keeps an ambiguous signed attempt when editing away and returning to its IP', async () => {
+    const wrapper = mount(Harness)
+    await flushPromises()
+    state.ip.value = quote.ip
+    await vi.advanceTimersByTimeAsync(400)
+    mocks.submit.mockRejectedValue(new Error('response lost'))
+    await state.submit()
+    const originalQuote = mocks.submit.mock.calls[0]![0]
+    state.ip.value = '1.1.1.1'
+    await flushPromises()
+    state.ip.value = quote.ip
+    await vi.advanceTimersByTimeAsync(400)
+    await state.submit()
+    expect(mocks.submit).toHaveBeenCalledTimes(2)
+    expect(mocks.submit.mock.calls[1]![0]).toEqual(originalQuote)
+    expect(mocks.submit.mock.calls[1]![1]).toBe(mocks.submit.mock.calls[0]![1])
+    wrapper.unmount()
+  })
+
+  it('ignores obsolete receipt failures after entering another IP', async () => {
+    const wrapper = mount(Harness)
+    await flushPromises()
+    state.ip.value = quote.ip
+    await vi.advanceTimersByTimeAsync(400)
+    mocks.submit.mockResolvedValueOnce({ id: 'old-operation' })
+    let rejectCheck!: (error: Error) => void
+    mocks.check.mockReturnValueOnce(new Promise((_resolve, reject) => { rejectCheck = reject }))
+    const first = state.submit()
+    await flushPromises()
+    state.ip.value = '1.1.1.1'
+    await flushPromises()
+    rejectCheck(new Error('old receipt unavailable'))
+    await first
+    expect(state.errorCode.value).toBe('')
+    await vi.advanceTimersByTimeAsync(6000)
+    expect(mocks.check).toHaveBeenCalledOnce()
+    wrapper.unmount()
+  })
+
+  it('resumes its accepted receipt after a hidden-page polling pause', async () => {
+    const wrapper = mount(Harness)
+    await flushPromises()
+    state.ip.value = quote.ip
+    await vi.advanceTimersByTimeAsync(400)
+    mocks.submit.mockResolvedValueOnce({ id: 'active-operation' })
+    mocks.check.mockResolvedValue({ operation: { id: 'active-operation', status: 'processing' }, requestedIP: quote.ip, report: null })
+    await state.submit()
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true })
+    document.dispatchEvent(new Event('visibilitychange'))
+    await vi.advanceTimersByTimeAsync(10_000)
+    expect(mocks.check).toHaveBeenCalledOnce()
+    mocks.check.mockResolvedValue({ operation: { id: 'active-operation', status: 'succeeded' }, requestedIP: quote.ip, report: null })
+    Object.defineProperty(document, 'hidden', { configurable: true, value: false })
+    document.dispatchEvent(new Event('visibilitychange'))
+    await flushPromises()
+    expect(mocks.check).toHaveBeenCalledTimes(2)
+    expect(state.busy.value).toBe(false)
     wrapper.unmount()
   })
 

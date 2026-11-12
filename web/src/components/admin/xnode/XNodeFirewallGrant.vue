@@ -11,7 +11,7 @@ import { createUuid } from '@/utils/browserCompatibility'
 const { t } = useI18n()
 const draft = reactive({ prefix: '', hours: 24, reason: '' })
 const submitting = shallowRef(false), error = shallowRef<string | null>(null)
-const fingerprint = computed(() => JSON.stringify(draft))
+const fingerprint = computed(() => JSON.stringify({ prefix: draft.prefix.trim(), hours: draft.hours, reason: draft.reason }))
 const lastSubmitted = shallowRef('')
 const keys = new Map<string, string>()
 let active = true
@@ -32,7 +32,7 @@ async function submit() {
   const parsed = schema.value.safeParse({ ...draft })
   if (!parsed.success) return
   const body = parsed.data
-  const fingerprint = JSON.stringify(draft)
+  const fingerprint = JSON.stringify(body)
   const key = keys.get(fingerprint) ?? createUuid()
   keys.set(fingerprint, key)
   submitting.value = true; error.value = null

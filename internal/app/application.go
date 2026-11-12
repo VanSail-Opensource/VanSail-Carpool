@@ -7,7 +7,6 @@ import (
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/affiliates"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/billing"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/catalog"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/hourlybilling"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
@@ -39,7 +38,6 @@ type Application struct {
 	telegram        *queuedTelegram
 	settings        *admin.SettingsService
 	catalog         *catalog.Service
-	billing         *billing.Service
 	hourly          *hourlybilling.Service
 	accountCleanup  *accounts.AccountCleanupService
 	statistics      *productstats.Service
@@ -48,4 +46,5 @@ type Application struct {
 	notifications   *notifications.Scanner
 	upstreams       *providerQueues
 	paymentProfiles *PaymentProfileManager
+	stars           *starsReconciler
 }

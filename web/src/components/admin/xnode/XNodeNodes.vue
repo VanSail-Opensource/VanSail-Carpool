@@ -16,9 +16,12 @@ const editing = shallowRef(false)
 const loading = shallowRef(false)
 const loaded = shallowRef(false)
 const latest = createLatestRequest()
+const enrollmentLatest = createLatestRequest()
+const enrollingId = shallowRef('')
+const enrollmentNode = shallowRef('')
 let controller: InstanceType<typeof globalThis.AbortController> | undefined
 watch(editing, open => { if (!open) { controller?.abort(); latest.invalidate(); loaded.value = false } })
-onScopeDispose(() => { controller?.abort(); latest.dispose() })
+onScopeDispose(() => { controller?.abort(); latest.dispose(); enrollmentLatest.dispose(); enrollment.value = null })
 const settingsValid = shallowRef(true)
 const error = shallowRef<string | null>(null)
 const enrollment = shallowRef<XNodeEnrollment | null>(null)
@@ -39,6 +42,7 @@ const inbounds = computed(() => {
 function closeEnrollment(value: boolean): void { if (!value) enrollment.value = null }
 async function edit(node?: XNode): Promise<void> {
   if (props.busy) return
+  enrollmentLatest.invalidate(); enrollingId.value = ''
   controller?.abort()
   controller = new globalThis.AbortController()
   const ticket = latest.begin()
@@ -62,9 +66,16 @@ async function save(): Promise<void> {
 }
 function retryLoad(): void { const node = props.nodes.find(item => item.id === draft.id); if (node) void edit(node) }
 async function enroll(node: XNode): Promise<void> {
+  if (props.busy || enrollingId.value || node.removingAt) return
+  const ticket = enrollmentLatest.begin()
+  enrollingId.value = node.id
   error.value = null
-  try { enrollment.value = await xnodeApi.enroll(node.id) }
-  catch (caught) { error.value = localizedError(caught, 'xnode.saveFailed') }
+  try {
+    const value = await xnodeApi.enroll(node.id)
+    if (enrollmentLatest.isCurrent(ticket)) { enrollment.value = value; enrollmentNode.value = node.name }
+  }
+  catch (caught) { if (enrollmentLatest.isCurrent(ticket)) error.value = localizedError(caught, 'xnode.saveFailed') }
+  finally { if (enrollmentLatest.isCurrent(ticket)) enrollingId.value = '' }
 }
 </script>
 
@@ -77,7 +88,7 @@ async function enroll(node: XNode): Promise<void> {
     <div v-for="node in nodes" :key="node.id" class="xnode-row">
       <div><strong>{{ node.name }}</strong><div v-if="node.countryCode" class="text-xs text-muted">{{ node.countryCode }}</div></div>
       <UBadge :color="node.removingAt ? 'warning' : status(node.id)?.connected && status(node.id)?.ready && !status(node.id)?.stale ? 'success' : 'neutral'" variant="subtle">{{ t(node.removingAt ? 'nodeRemoval.pending' : status(node.id)?.connected && status(node.id)?.ready && !status(node.id)?.stale ? 'xnode.online' : 'xnode.offline') }}</UBadge>
-      <div class="flex gap-2"><UButton variant="ghost" color="neutral" icon="i-ph-terminal-window" :disabled="!!node.removingAt" :aria-label="t('nodeAdmin.command')" @click="commanding = node" /><UButton variant="ghost" color="neutral" icon="i-ph-pencil-simple-bold" :disabled="!!node.removingAt" :aria-label="t('common.edit')" @click="edit(node)" /><UButton variant="ghost" color="neutral" icon="i-ph-key-bold" :disabled="!!node.removingAt" :aria-label="t('xnode.enroll')" @click="enroll(node)" /><UButton variant="ghost" color="error" icon="i-ph-trash" :disabled="!!node.removingAt" :aria-label="t('nodeRemoval.remove')" @click="removing = node" /></div>
+      <div class="flex gap-2"><UButton variant="ghost" color="neutral" icon="i-ph-terminal-window" :disabled="!!node.removingAt" :aria-label="t('nodeAdmin.command')" @click="commanding = node" /><UButton variant="ghost" color="neutral" icon="i-ph-pencil-simple-bold" :disabled="!!node.removingAt" :aria-label="t('common.edit')" @click="edit(node)" /><UButton variant="ghost" color="neutral" icon="i-ph-key-bold" :loading="enrollingId === node.id" :disabled="!!node.removingAt || !!enrollingId || busy" :aria-label="t('xnode.enroll')" @click="enroll(node)" /><UButton variant="ghost" color="error" icon="i-ph-trash" :disabled="!!node.removingAt" :aria-label="t('nodeRemoval.remove')" @click="removing = node" /></div>
     </div>
     <XNodeRemovalDialog :node="removing" @close="removing = null" @removed="emit('refresh')" />
     <UModal v-model:open="editing" :title="t(draft.id ? 'xnode.editNode' : 'xnode.addNode')" :ui="{ content: 'max-w-4xl' }">
@@ -103,7 +114,7 @@ async function enroll(node: XNode): Promise<void> {
     </UModal>
     <UModal :open="!!commanding" :title="t('nodeAdmin.command')" @update:open="!$event && (commanding = null)"><template #body><XNodeCommands v-if="commanding" :key="commanding.id" :node-id="commanding.id" :endpoints="endpoints" /></template></UModal>
     <UModal :open="!!enrollment" :title="t('xnode.enroll')" :description="t('xnode.enrollmentHint')" @update:open="closeEnrollment">
-      <template #body><div v-if="enrollment" class="grid gap-4"><UFormField :label="t('xnode.masterUrl')"><UInput :model-value="enrollment.masterUrl" readonly class="w-full" /></UFormField><UFormField :label="t('xnode.enrollmentToken')"><UInput :model-value="enrollment.token" readonly class="w-full font-mono" /></UFormField></div></template>
+      <template #body><div v-if="enrollment" class="grid gap-4"><p>{{ enrollmentNode }}</p><UFormField :label="t('xnode.masterUrl')"><UInput :model-value="enrollment.masterUrl" readonly class="w-full" /></UFormField><UFormField :label="t('xnode.enrollmentToken')"><UInput :model-value="enrollment.token" readonly class="w-full font-mono" /></UFormField></div></template>
     </UModal>
   </div>
 </template>

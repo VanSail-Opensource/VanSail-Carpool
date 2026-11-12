@@ -84,6 +84,8 @@ waits for the scheduler and provider workers to finish before returning.
 - `maintenance_operation.go` registers the durable admin maintenance command with bounded execution, receipt completion, retries, lease-aware recovery, and structured failure diagnostics.
 - `maintenance_runner.go` shares the full backup-gated database and migration-snapshot cleanup flow between the scheduler and manual command worker.
 - `payment_refund_adapter.go` reconciles ambiguous Telegram Stars refunds from authoritative transaction history.
+- `payment_refund_adapter_test.go` checks exact charge, amount, owner, direction and later-page proof before a local Stars refund is accepted.
+- `stars_test_helpers_test.go` supplies a queued Telegram history endpoint for refund and reconciliation regressions.
 - `application_lifecycle.go` starts and stops provider queues, the scheduler, HTTP serving, and database resources in dependency order.
 - Startup upload reconciliation receives an independent ten-minute context so a large verified candidate is not truncated by the ordinary bootstrap deadline.
 - `provider_queues.go` configures, starts, and shuts down the independent X-Node and Emby admission queues.
@@ -98,7 +100,7 @@ waits for the scheduler and provider workers to finish before returning.
 - The scheduler delegates the daily backup-gated cleanup order to
   `internal/maintenance`; the durable local-date lease prevents overlapping
   runs across process instances.
-- `telegram_scheduler.go` configures Telegram delivery and reconciles Telegram Stars transactions.
+- `telegram_scheduler.go` configures Telegram delivery; Stars history advances through durable page jobs.
 - `telegram_queue_adapter.go` queues bot identity, membership, invite approval, decline, revocation, setup, and message operations.
 - `telegram_queue_payments.go` queues Telegram Stars invoice, query, history, and refund operations.
 - `telegram_command_registration.go` installs localized private-chat, configured-group, and PM-topic admin command menus.
@@ -237,3 +239,11 @@ the existing paid period on release. `xnode_admin_entitlements_test.go` covers
 native-only owners, incorrect historical links, edits, refunds and stale empty
 snapshots. `xnode_admin_bans_test.go` covers owner isolation, retained usage,
 repeated restrictions and refusal of old restoration commands.
+
+`stars_reconciliation.go` registers one durable page job per bot/cursor generation. Startup and five-minute admission resume exhausted work; each job reads at most 100 chronological transactions through the existing Telegram queue. A one-record hash overlap detects shifted offsets and rewinds safely; caught-up polls read only the boundary. `stars_reconciliation_events.go` applies verified credits/refunds and records unmatched outgoing proof in immutable administrator audits before advancing. Refund proof binds charge, invoice, whole Stars amount and owner.
+
+`stars_reconciliation_test.go` covers history beyond 100 records, restart/partial-page recovery, tail-only polling and shifted boundaries. `stars_reconciliation_events_test.go` covers exact-charge refunds, durable unmatched-proof review and retryable storage failures. `stars_reconciliation_test_helpers_test.go` supplies stateful cursor and billing fixtures; PostgreSQL cursor atomicity is tested separately in the database module.
+
+`stars_reconciliation_integration_test.go` runs the real billing validator and PostgreSQL settlement/refund/cursor APIs against queued Telegram history. A matching refund beyond the immediate 1,000-record search resolves a durable pending-review receipt, retains one reversal, and leaves subsequent polling at the history boundary.
+
+The pagination contract follows [Telegram Bot API](https://core.telegram.org/bots/api#getstartransactions) and its [official implementation](https://github.com/tdlib/telegram-bot-api/blob/114fe93d27f8a06554f04b375ad03b90aa98d61b/telegram-bot-api/Client.cpp), whose TDLib [StarManager](https://github.com/tdlib/td/blob/025086e3134b638b44dae8aa0df1609c83c3a309/td/telegram/StarManager.cpp) requests ascending order for bots. Refund IDs match their original charge; outgoing and incoming records therefore remain distinct in cursor hashes.

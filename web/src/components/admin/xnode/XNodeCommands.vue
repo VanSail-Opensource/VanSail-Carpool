@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
+import { computed, onScopeDispose, shallowRef } from 'vue'
 import { xnodeApi, type XNodeEndpoint, type XNodeCommand } from '@/api/xnode'
 import { useDurableCommand } from '@/composables/useDurableCommand'
 import OperationStatusNotice from '@/components/common/OperationStatusNotice.vue'
 import { localizedError, useI18n } from '@/i18n'
+import { createLatestRequest } from '@/utils/latestRequest'
 import XNodeMetricDetails from './XNodeMetricDetails.vue'
 
 const props = defineProps<{ nodeId: string; endpoints: XNodeEndpoint[] }>()
@@ -15,6 +16,8 @@ const force = shallowRef(false)
 const peerEndpointId = shallowRef('')
 const result = shallowRef<Record<string, unknown> | null>(null)
 const resultError = shallowRef<string | null>(null)
+const results = createLatestRequest()
+onScopeDispose(results.dispose)
 const options = computed(() => ['runtime.reload', 'geodata.refresh', 'ddns.run', 'update.check', 'update.install', 'update.rollback', 'speedtest'].map(value => ({ value, label: t(`nodeAdmin.commands.${value}`) })))
 const peers = computed(() => props.endpoints.filter(item => item.enabled && item.nodeId !== props.nodeId).map(item => ({ value: item.id, label: item.name })))
 const command = useDurableCommand({ errorKey: 'xnode.saveFailed', onTerminal: async receipt => { if (receipt.status === 'succeeded') await loadResult(receipt.id) } })
@@ -22,14 +25,17 @@ const { receipt, error, checking, busy, blocksMutations, refresh } = command
 const message = computed(() => receipt.value?.errorCode ? localizedError({ code: receipt.value.errorCode }, 'xnode.saveFailed') : null)
 const invalid = computed(() => name.value === 'ddns.run' && !jobId.value.trim() || name.value === 'speedtest' && !peerEndpointId.value)
 async function loadResult(id: string) {
+  const ticket = results.begin()
   resultError.value = null
-  try { result.value = (await xnodeApi.commandResult(id)).result }
-  catch (caught) { resultError.value = localizedError(caught, 'xnode.loadFailed') }
+  try { const response = await xnodeApi.commandResult(id); if (results.isCurrent(ticket)) result.value = response.result }
+  catch (caught) { if (results.isCurrent(ticket)) resultError.value = localizedError(caught, 'xnode.loadFailed') }
 }
 async function run() {
+  if (invalid.value || busy.value || blocksMutations.value) return
+  const nodeId = props.nodeId
   const body: XNodeCommand = { name: name.value, ...(name.value === 'runtime.reload' && force.value ? { force: true } : {}), ...(name.value === 'ddns.run' ? { jobId: jobId.value.trim() } : {}), ...(name.value === 'update.install' && version.value ? { version: version.value } : {}), ...(name.value === 'speedtest' ? { peerEndpointId: peerEndpointId.value } : {}) }
-  result.value = null
-  if (!invalid.value) await command.execute(`${props.nodeId}:${name.value}`, JSON.stringify(body), key => xnodeApi.command(props.nodeId, body, key))
+  results.invalidate(); result.value = null; resultError.value = null
+  await command.execute(`${nodeId}:${name.value}`, JSON.stringify([nodeId, body]), key => xnodeApi.command(nodeId, body, key))
 }
 </script>
 
