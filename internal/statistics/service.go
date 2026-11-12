@@ -46,9 +46,9 @@ func (s *Service) Refresh(ctx context.Context, now time.Time) error {
 	s.refreshMu.Lock()
 	defer s.refreshMu.Unlock()
 	now = normalizedNow(now)
-	if err := s.loadLastGood(ctx); err != nil {
-		return err
-	}
+	// Persisted partitions are an optional recovery cache. A missing or corrupt
+	// cache must not prevent fresh authoritative reads from repairing it.
+	_ = s.loadLastGood(ctx)
 	remote, remoteErr := s.refreshRemote(ctx, now)
 	if remoteErr == nil {
 		remoteErr = s.saveRemote(ctx, remote, now)

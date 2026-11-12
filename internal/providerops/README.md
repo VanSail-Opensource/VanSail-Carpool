@@ -23,3 +23,7 @@ handles remain short-lived service data and are never stored in these records.
 `admin_kinds.go` defines supported administrator command kinds. Retired mutation kinds are no longer dispatched.
 
 `command_kinds.go` defines subscription, Emby, retry, and refund command identifiers.
+
+`validation_test.go` verifies exact nested numeric result preservation and the
+single bounded JSON-object contract. Canonical durable results never round
+integer counters or decimal evidence through floating-point conversion.

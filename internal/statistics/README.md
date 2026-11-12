@@ -17,3 +17,14 @@ The aggregate service keeps remote and database partitions independently timesta
 Statistics now performs read-only digest, traffic and node refreshes. Legacy node-image collection and scheduled host mutation workers are retired.
 
 Exact native usage statistics and its hosted regression: `service_test.go`, `usage_projection.go`.
+
+Persisted partitions hydrate independently: a corrupt or unreadable partition does
+not discard another valid last-good partition. Cache failures do not block the next
+authoritative refresh. Delayed initial cache values or errors cannot replace state
+already published by another refresh. `partition_recovery_test.go` covers corrupt
+cache repair, preserved database history through a failed recompute, and delayed
+initial reads racing a successful refresh.
+
+`usage_projection_bounds_test.go` verifies that non-finite or unrepresentable
+derived percentages preserve the last-good remote partition. Representable
+overage remains visible; there is no new 100-percent policy cap.
