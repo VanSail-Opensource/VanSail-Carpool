@@ -16,10 +16,12 @@ func TestIPLookupExpiredWorkerCannotPublishOrRefundAfterTakeover(t *testing.T) {
 			t.Parallel()
 			ctx := context.Background()
 			store, service, user, _, now := ipLookupFixture(t, 0)
-			op := submitIP(t, service, user, "lease-fence", false)
+			baseline := submitIP(t, service, user, "lease-baseline", false)
+			finishIP(t, store, baseline.ID, false)
+			op := submitIP(t, service, user, "lease-fence", true)
 			old := iplookup.WithRunLease(ctx, "old-execution")
 			current := iplookup.WithRunLease(ctx, "new-execution")
-			if claimed, err := store.ClaimIPLookupLease(ctx, op.ID, "old-execution", now); err != nil || !claimed {
+			if claimed, err := store.ClaimIPLookupLease(ctx, op.ID, "old-execution", time.Now().UTC()); err != nil || !claimed {
 				t.Fatalf("initial claim: %v %v", claimed, err)
 			}
 			r, _, err := store.IPLookupRun(ctx, op.ID)
