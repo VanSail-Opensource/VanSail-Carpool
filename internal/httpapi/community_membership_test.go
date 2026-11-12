@@ -39,7 +39,6 @@ func (r *communityHTTPRepository) UpdateMembership(_ context.Context, _ string, 
 	r.user.GroupJoined, r.user.ChannelJoined = group, channel
 	return r.user, nil
 }
-func (r *communityHTTPRepository) ReserveUsername(context.Context, string, string) error { return nil }
 func (r *communityHTTPRepository) CurrentAgreementContract(context.Context) (int, []string, error) {
 	return 1, nil, nil
 }

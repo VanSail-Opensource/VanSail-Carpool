@@ -15,8 +15,11 @@ Payment-method discovery, exact decimal arithmetic, checkout creation, provider 
   These are the only create/cancel application entry points. Retired synchronous
   methods were removed; provider mutations always follow durable intent and an
   attempt marker. An ambiguous response stays pending review for reconciliation.
-- `operation_worker.go` performs each provider mutation once after its durable attempt marker.
-- `operation_worker_reconcile.go` resolves interrupted attempts from stored payment state or leaves them pending review.
+- `operation_worker.go` performs local order, owner and request reads before its durable provider attempt marker. Transient preflight failures retain the same unattempted intent; definite absence and invalid immutable input remain explicit failures.
+- `operation_worker_admission.go` binds targets to the operation owner, claims provider attempts and places exhausted local-read failures under durable review without issuing a provider request.
+- `operation_worker_reconcile.go` resolves interrupted attempts from stored payment state or leaves them pending review. Terminal item recovery preserves the exact recorded provider reference, error and result, including member-safe rejection details.
+- `operation_worker_preflight_test.go` covers order, owner and credential read recovery before an attempt, plus exhausted admission visibility.
+- `operation_worker_recovery_test.go` covers interrupted terminal receipt writes, cancellation preflight and settlement arriving before a queued cancellation executes.
 - `operation_worker_errors.go` extracts bounded provider rejection copy for member-safe failed operation receipts.
 - `payment_callback_operations.go` lets authoritative paid callbacks resolve matching checkout operations.
 - `payment_announcement.go` delivers immutable successful-payment snapshots to
@@ -65,5 +68,6 @@ the selected account's three-part ID when profiles are configured. The request
 fingerprint retains the original normalized method selection, so a retry after
 default-account changes returns the original operation. Provider-specific
 credentials fail closed for explicit account lookup errors; historical unscoped
-BEPusdt callback capabilities use the original provider-named account.
+BEPusdt callback capabilities use the original provider-named account. Empty
+historical plaintext credentials fail closed instead of authorizing an empty-key HMAC.
 `payment_profile_selection_test.go` verifies durable selection and retry behavior.

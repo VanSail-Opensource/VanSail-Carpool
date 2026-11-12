@@ -38,7 +38,7 @@ describe('native editor submit snapshots', () => {
     await run()
 
     expect(api.saveSnippet).toHaveBeenCalledWith({ id: 'snippet', name: 'Original', kind: 'outbound', revision: 4, document: [{ tag: 'original' }] })
-    expect(wrapper.get('form').exists()).toBe(true)
+    expect(wrapper.find('form').exists()).toBe(true)
     finish(true)
     await flushPromises()
     expect(wrapper.find('form').exists()).toBe(false)

@@ -75,7 +75,7 @@ func TestAdminCancelAndBackup(t *testing.T) {
 		t.Fatalf("CancelEntitlement() = (%+v, %v), ID %q", purchase, err, repository.cancelledID)
 	}
 	run, err := service.RunBackup(context.Background(), "admin")
-	if err != nil || run.ID != "backup-1" {
+	if err != nil || run.ID != "backup-1" || backup.actor != "admin" || len(repository.audits) != 0 {
 		t.Fatalf("RunBackup() = (%+v, %v)", run, err)
 	}
 
@@ -94,7 +94,8 @@ func TestAdminCancelAndBackup(t *testing.T) {
 	if _, err := service.CancelEntitlement(context.Background(), "admin", "purchase", "reason"); err == nil {
 		t.Fatal("CancelEntitlement() ignored audit failure")
 	}
-	if _, err := service.RunBackup(context.Background(), "admin"); err == nil {
-		t.Fatal("RunBackup() ignored audit failure")
+	backup.err = testError
+	if _, err := service.RunBackup(context.Background(), "admin"); !errors.Is(err, testError) {
+		t.Fatal("RunBackup() ignored atomic admission failure", err)
 	}
 }

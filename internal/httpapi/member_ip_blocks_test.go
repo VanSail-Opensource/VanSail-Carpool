@@ -45,7 +45,7 @@ func (r *ipBlockHTTPRepository) BeginConnectionIPUnblock(_ context.Context, _, o
 func TestAdminIPUnblockUsesAdministratorAsActor(t *testing.T) {
 	t.Parallel()
 	repository := &ipBlockHTTPRepository{ownerID: "owner"}
-	server := &Server{deps: Dependencies{ConnectionDrops: connections.NewDropService(repository, nil, nil)}}
+	server := &Server{deps: Dependencies{ConnectionDrops: connections.NewDropService(repository, nil)}}
 	response := httptest.NewRecorder()
 	server.adminUnblockIP(response, ipBlockRequest("admin", "owner"))
 	if response.Code != http.StatusAccepted || repository.actorID != "admin" {

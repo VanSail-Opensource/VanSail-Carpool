@@ -421,7 +421,7 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `squad_stock_retention_test.go` covers held reservations after stock-limit reductions, new-member rejection, and seat release after expiry or cancellation.
 - `automatic_renewal_plan.go`, `automatic_renewal_coupon.go`, `automatic_renewal_state.go`, and `automatic_renewal_commit.go` — automatic-renewal current pricing, attached-coupon policy, owner state/failure records, and atomic one-successor debits.
 - `billing_purchase_helpers.go` — distinct-member stock checks that retain existing seats, purchase fingerprints, catalog row loaders, and balance debit helpers.
-- `billing_ledger.go` — balances, audited adjustments, deductions, and ledger reads.
+- `billing_ledger.go` — balance and ledger reads, shared ledger helpers, and setup/fixture adjustments; production administrator mutations use actor-bound audited methods.
 - `ledger_page.go` — stable cursor-based ledger pagination.
 - `billing_purchases.go` — purchase reads, cancellation, squad hydration, and
   active/queued selection.
@@ -510,7 +510,7 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `admin_operation_resolution.go` atomically resolves review-required operations, stores replay fingerprints, and appends the audit event.
 - `admin_workflow_types.go` defines shared aggregate and administrator workflow persistence records.
 - `connection_scans.go` and `connection_scan_lifecycle.go` persist metadata-only provider scan progress.
-- `connection_ip_blocks.go` atomically creates an encrypted active block, its provider operation, and immediate/scheduled jobs; `connection_ip_blocks_mutations.go` owns owner reads and unblock transitions; `connection_ip_block_completion.go` and `connection_ip_block_expiry.go` atomically close linked receipts with sensitive-row transitions.
+- `connection_ip_blocks.go` loads retained encrypted block targets; `connection_ip_blocks_mutations.go` owns owner reads and unblock transitions; `connection_ip_block_completion.go` and `connection_ip_block_expiry.go` atomically close linked receipts with sensitive-row transitions. Retired block admission exists only in a historical test fixture.
 - `connection_ip_blocks_test.go` and `connection_ip_block_expiry_test.go` cover replay, target uniqueness, owner isolation, ciphertext-only durability, job atomicity, manual cancellation, and expiry races.
 - `maintenance_runs.go` acquires the configured local-day maintenance lease, supports forced same-day history rows, and records backup-gated cleanup completion.
 - `administration_records.go` — audit events, administrator user lists, and backup
@@ -919,6 +919,7 @@ Provider requests remain outside every transaction.
 - `admin_entitlement_refund_retry_generated.go` wraps the transactional methods in `admin_entitlement_refund.go`.
 - `admin_mutation_begin_retry_generated.go` wraps the transactional methods in `admin_mutation_begin.go`.
 - `admin_operation_resolution_retry_generated.go` wraps the transactional methods in `admin_operation_resolution.go`.
+- `admin_settings_retry_generated.go` wraps the transactional methods in `admin_settings.go`.
 - `admin_user_provider_commands_retry_generated.go` wraps the transactional methods in `admin_user_provider_commands.go`.
 - `administration_records_retry_generated.go` wraps the transactional methods in `administration_records.go`.
 - `affiliate_config_retry_generated.go` wraps the transactional methods in `affiliate_config.go`.
@@ -926,6 +927,7 @@ Provider requests remain outside every transaction.
 - `api_token_writes_retry_generated.go` wraps the transactional methods in `api_token_writes.go`.
 - `automatic_renewal_plan_retry_generated.go` wraps the transactional methods in `automatic_renewal_plan.go`.
 - `automatic_renewal_state_retry_generated.go` wraps the transactional methods in `automatic_renewal_state.go`.
+- `backup_run_admission_retry_generated.go` wraps the transactional methods in `backup_run_admission.go`.
 - `billing_bounds_retry_generated.go` wraps the transactional methods in `billing_bounds.go`.
 - `billing_courtesy_retry_generated.go` wraps the transactional methods in `billing_courtesy.go`.
 - `billing_ledger_retry_generated.go` wraps the transactional methods in `billing_ledger.go`.
@@ -942,7 +944,6 @@ Provider requests remain outside every transaction.
 - `connection_ip_block_completion_retry_generated.go` wraps the transactional methods in `connection_ip_block_completion.go`.
 - `connection_ip_block_expiry_retry_generated.go` wraps the transactional methods in `connection_ip_block_expiry.go`.
 - `connection_ip_blocks_mutations_retry_generated.go` wraps the transactional methods in `connection_ip_blocks_mutations.go`.
-- `connection_ip_blocks_retry_generated.go` wraps the transactional methods in `connection_ip_blocks.go`.
 - `connection_scan_lifecycle_retry_generated.go` wraps the transactional methods in `connection_scan_lifecycle.go`.
 - `connection_scans_retry_generated.go` wraps the transactional methods in `connection_scans.go`.
 - `coupon_purchase_retry_generated.go` wraps the transactional methods in `coupon_purchase.go`.
@@ -1658,3 +1659,10 @@ broad indexed candidate scan.
 - `outbox_retry_errors_test.go` verifies storage failures retain their PostgreSQL error instead of becoming permanent business conflicts.
 - `xnode_subscription.go` rotates only subscription token material under owner and captured-credential checks, preserving concurrent period and first-sync changes.
 - `xnode_subscription_test.go` verifies token replay/owner conflicts and preservation of unrelated identity state.
+
+- `backup_run_admission.go` commits the active administrator's manual backup attempt and redacted requested-phase audit before export begins.
+- `admin_settings.go` commits a validated setting and sanitized actor audit together; raw bootstrap settings storage remains separate.
+- `admin_audit_admission_test.go` verifies real PostgreSQL audit failure rolls back backup admission and setting changes without exposing stored secrets.
+- `legacy_connection_ip_block_fixture_test.go` seeds historical encrypted block rows and jobs for supported unblock/expiry recovery tests; production no longer admits retired blocks.
+- `legacy_ledger_fixture_test.go` retains unaudited deduction setup only for wallet and concurrency regression fixtures.
+`store_test.go` verifies the live agreement transition is idempotent and never rewinds completed signup. The unused username-reservation alias has been removed.

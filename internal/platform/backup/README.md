@@ -2,11 +2,16 @@
 
 `Service.Run` creates a permission-restricted pg_dump custom archive, validates
 its archive structure, publishes it atomically and commits backup metadata.
-The existing maintenance queue owns invocation and retry; handlers only enqueue
-work. The database URL is protected process input and is never logged.
+Scheduled maintenance invokes `Run`. The manual administrator endpoint invokes
+`RunForActor`, which requires the attempt and actor audit to commit together
+before export starts. Failed exports remain attributed. The database URL is
+protected process input and is never logged.
 
 - `service.go` owns deletion, path containment and service dependencies.
 - `service_part2.go` owns publication, verified completion and managed-file pruning.
+- `manual.go` separates scheduled runs from mandatory audited manual admission;
+  `manual_test.go` verifies audit failure prevents export and failed exports retain
+  the actor-bound attempt.
 - `postgres.go` runs installed PostgreSQL client tools with bounded contexts.
 - `publication.go` syncs the renamed archive's parent directory before completed
   metadata is allowed. A directory-sync failure preserves the visible archive

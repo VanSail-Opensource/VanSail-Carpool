@@ -58,14 +58,10 @@ func (s *Service) CancelEntitlement(ctx context.Context, actorID, purchaseID, re
 
 // RunBackup executes a verified online backup and audits the request.
 func (s *Service) RunBackup(ctx context.Context, actorID string) (model.BackupRun, error) {
-	run, err := s.backups.Run(ctx)
-	if err != nil {
-		return run, err
+	if s.backups == nil {
+		return model.BackupRun{}, errors.New("backup creation is unavailable")
 	}
-	if err := s.audit(ctx, actorID, "backup.create", "backup", run.ID, nil); err != nil {
-		return model.BackupRun{}, err
-	}
-	return run, nil
+	return s.backups.RunForActor(ctx, actorID)
 }
 
 func (s *Service) audit(ctx context.Context, actorID, action, targetType, targetID string, detail any) error {

@@ -25,3 +25,8 @@ that recovered targets still use the current owner's scoped native control and
 preserve ciphertext on refusal.
 Alias evidence is limited to opening the exact node/digest; native authorization
 and offline cleanup dependencies remain unchanged.
+
+The retained-block service no longer requires the retired block-admission or scan
+repository methods, an unused signer, or the obsolete block-intent fingerprint.
+Administrator diagnostics retain their own signer and queue; listing, encrypted
+target recovery, explicit unblocking and expiry cleanup remain supported.

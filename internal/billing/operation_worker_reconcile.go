@@ -42,6 +42,16 @@ func (w *OperationWorker) complete(ctx context.Context, operation providerops.Op
 	return nil
 }
 
+func (w *OperationWorker) completeRecorded(ctx context.Context, operation providerops.Operation, item providerops.Item) error {
+	completion := providerops.Completion{Status: item.Status, ErrorCode: item.ErrorCode,
+		ProviderReference: item.ProviderReference, ResultJSON: item.ResultJSON}
+	_, err := w.repository.CompleteProviderOperation(ctx, operation.Receipt.ID, completion, w.now().UTC())
+	if err != nil {
+		return w.concurrentCompletion(ctx, operation.Receipt.ID, err)
+	}
+	return nil
+}
+
 func (w *OperationWorker) concurrentCompletion(ctx context.Context, operationID string, original error) error {
 	current, err := w.repository.ProviderOperationByID(ctx, operationID)
 	if err == nil && providerops.Terminal(providerops.Status(current.Receipt.Status)) {
@@ -51,7 +61,7 @@ func (w *OperationWorker) concurrentCompletion(ctx context.Context, operationID 
 }
 
 func (w *OperationWorker) reconcile(ctx context.Context, operation providerops.Operation, item providerops.Item) error {
-	order, err := w.repository.PaymentOrderByID(ctx, item.TargetID)
+	order, err := w.loadTarget(ctx, operation, item)
 	if err != nil {
 		return w.complete(ctx, operation, item, providerops.StatusPendingReview,
 			"PAYMENT_LOCAL_STATE_UNAVAILABLE", "")

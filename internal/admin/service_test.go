@@ -25,16 +25,23 @@ func TestAdminSettingsAreForwardedAndAudited(t *testing.T) {
 	if err := service.PutSetting(context.Background(), "admin-1", "telegram.group_chat_id", "-1001"); err != nil {
 		t.Fatalf("PutSetting(): %v", err)
 	}
-	if len(repository.audits) != 1 || repository.audits[0].action != "setting.update" || !strings.Contains(repository.audits[0].detail, `"secret":false`) {
-		t.Fatalf("setting audit = %+v", repository.audits)
+	if settingsRepository.auditCalls != 1 || settingsRepository.lastActor == nil || *settingsRepository.lastActor != "admin-1" || settingsRepository.lastAuditAt.IsZero() || len(repository.audits) != 0 {
+		t.Fatalf("atomic setting audit calls=%d actor=%v at=%v separate=%+v", settingsRepository.auditCalls, settingsRepository.lastActor, settingsRepository.lastAuditAt, repository.audits)
 	}
 
 	if err := service.PutSetting(context.Background(), "admin-1", "unknown", "value"); err == nil {
 		t.Fatal("PutSetting() accepted unknown key")
 	}
-	repository.auditErr = errors.New("audit failure")
-	if err := service.PutSetting(context.Background(), "admin-1", "telegram.channel_chat_id", "-1002"); err == nil {
-		t.Fatal("PutSetting() ignored audit failure")
+	repository.auditErr = errors.New("separate audit unavailable")
+	if err := service.PutSetting(context.Background(), "admin-1", "telegram.channel_chat_id", "-1002"); err != nil {
+		t.Fatal("atomic setting write incorrectly depends on a second audit", err)
+	}
+	settingsRepository.putErr = errors.New("atomic mutation unavailable")
+	if err := service.PutSetting(context.Background(), "admin-1", "billing.rate.txb_per_cny", "1"); err == nil {
+		t.Fatal("PutSetting() ignored atomic mutation failure")
+	}
+	if _, exists := settingsRepository.settings["billing.rate.txb_per_cny"]; exists || settingsRepository.auditCalls != 2 {
+		t.Fatal("failed atomic write changed setting or audit count")
 	}
 }
 

@@ -20,24 +20,21 @@ type SecretBox interface {
 // BlockRepository persists encrypted active blocks and owner-scoped receipts.
 type BlockRepository interface {
 	ProviderOperationForActorKey(context.Context, string, string, string, string) (model.OperationReceipt, bool, error)
-	ConnectionScanForUser(context.Context, string, string) (providerops.ConnectionScan, error)
-	BeginConnectionIPBlock(context.Context, CreateIPBlockInput, providerops.CreateInput, time.Time) (IPBlockRecord, providerops.Operation, bool, error)
 	ListConnectionIPBlocksForUser(context.Context, string) ([]IPBlockRecord, error)
 	ConnectionIPBlockForUser(context.Context, string, string) (IPBlockRecord, error)
 	BeginConnectionIPUnblock(context.Context, string, string, providerops.CreateInput, time.Time) (providerops.Operation, bool, error)
 }
 
-// DropService upgrades the legacy drop endpoint to a durable block workflow.
+// DropService lists retained blocks and queues their owner-scoped cleanup.
 type DropService struct {
 	repository BlockRepository
-	signer     *Signer
 	secrets    SecretBox
 	now        func() time.Time
 }
 
-// NewDropService creates the durable connection block command service.
-func NewDropService(repository BlockRepository, signer *Signer, secrets SecretBox) *DropService {
-	return &DropService{repository: repository, signer: signer, secrets: secrets, now: time.Now}
+// NewDropService creates the retained-block listing and cleanup service.
+func NewDropService(repository BlockRepository, secrets SecretBox) *DropService {
+	return &DropService{repository: repository, secrets: secrets, now: time.Now}
 }
 
 // List returns decrypted active blocks to their owner.
@@ -77,8 +74,6 @@ func (s *DropService) Unblock(ctx context.Context, actorID, ownerID, blockID, id
 	}, s.now().UTC())
 	return operation.Receipt, err
 }
-
-func blockFingerprint(handle string) string { return hash("connection-block:v1:" + handle) }
 
 func hash(value string) string {
 	digest := sha256.Sum256([]byte(value))

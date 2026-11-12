@@ -167,11 +167,15 @@ func (i *adminSquadImporter) ListInternalSquads(context.Context) ([]UpstreamSqua
 }
 
 type adminBackupRunner struct {
-	run model.BackupRun
-	err error
+	run   model.BackupRun
+	err   error
+	actor string
 }
 
-func (b *adminBackupRunner) Run(context.Context) (model.BackupRun, error) { return b.run, b.err }
+func (b *adminBackupRunner) RunForActor(_ context.Context, actorID string) (model.BackupRun, error) {
+	b.actor = actorID
+	return b.run, b.err
+}
 
 type adminRefunder struct {
 	calls int

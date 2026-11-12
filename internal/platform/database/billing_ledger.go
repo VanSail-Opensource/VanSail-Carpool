@@ -44,38 +44,6 @@ func (s *Store) retryAttempt_AdjustBalance(ctx context.Context, userID string, d
 	return s.LedgerEntryByID(ctx, entryID)
 }
 
-// DeductBalance appends an immutable administrator-authored debit without allowing debt.
-func (s *Store) retryAttempt_DeductBalance(ctx context.Context, userID string, amount int64, referenceID, note string, now time.Time) (model.LedgerEntry, error) {
-	if amount <= 0 {
-		return model.LedgerEntry{}, ErrInsufficientBalance
-	}
-
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return model.LedgerEntry{}, err
-	}
-	defer func() { _ = tx.Rollback() }()
-	var existingID string
-	if err := tx.QueryRowContext(ctx, `SELECT id FROM ledger_entries WHERE kind='telegram_deduct' AND reference_id=$1 LIMIT 1`, referenceID).Scan(&existingID); err == nil {
-		_ = tx.Rollback()
-		return s.LedgerEntryByID(ctx, existingID)
-	} else if !errors.Is(err, sql.ErrNoRows) {
-		return model.LedgerEntry{}, err
-	}
-	balance, err := changeBalanceTx(ctx, tx, userID, -amount, now.UTC())
-	if err != nil {
-		return model.LedgerEntry{}, fmt.Errorf("deduct balance: %w", err)
-	}
-	entryID, err := insertLedgerTx(ctx, tx, userID, -amount, balance, "telegram_deduct", referenceID, note, now.UTC())
-	if err != nil {
-		return model.LedgerEntry{}, err
-	}
-	if err := tx.Commit(); err != nil {
-		return model.LedgerEntry{}, err
-	}
-	return s.LedgerEntryByID(ctx, entryID)
-}
-
 func insertLedgerTx(ctx context.Context, tx *sql.Tx, userID string, delta, balance int64, kind, referenceID, note string, now time.Time) (string, error) {
 	id, err := ids.New()
 	if err != nil {

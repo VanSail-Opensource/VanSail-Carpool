@@ -142,3 +142,15 @@ Queued maintenance, outbox retries and payment refunds require the database
 `CreateAdminMutation` contract: the command, outbox job and actor audit commit in
 one transaction. Audit failure prevents admission, and replay adds no second job
 or audit. The service no longer appends a separate post-admission audit.
+
+Validated registry writes require `PutAdminSetting`, which stores the setting
+and actor-attributed, value-free `setting.update` audit in one transaction.
+Encryption and domain validation finish before that call. The service has no
+post-write audit fallback; blank existing secrets remain a no-op, and raw
+bootstrap/migration storage stays separate. `settings_audit_test_helpers_test.go`
+supplies the required atomic settings fixture; `service_test.go` checks actor
+forwarding, write failure and the absence of a second audit phase.
+
+Manual backup requests use `BackupRunner.RunForActor`: the backup attempt and
+its actor audit must commit before export begins. The service has no separate
+post-export audit phase; failed exports retain the admitted attempt.

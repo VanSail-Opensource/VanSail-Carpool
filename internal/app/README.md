@@ -76,7 +76,7 @@ waits for the scheduler and provider workers to finish before returning.
 - `lucky_draw_format.go` keeps raffle entry and progress details ahead of a bounded prize list; `lucky_draw_result_format.go` builds escaped mentions and paginated outcomes.
 - `lucky_draw_format_test.go` covers long announcements retaining the seat count and join command within Telegram's limit.
 - `application.go` defines the process-owned application resource container.
-- `member_workflows.go` composes member connection/reset/refund services and registers legacy drop plus block/unblock operation workers on one dispatcher.
+- `member_workflows.go` composes administrator connection diagnostics, member refunds and historical reset settlement, and registers retained IP-unblock cleanup on the shared dispatcher. No retired block/drop admission or executor is installed.
 - `outbox_composition.go` registers core jobs, user/payment/affiliate Telegram notifications, the scheduled IP-unblock backstop, and the shared provider-operation dispatcher.
 - `admin_user_outbox.go` schedules due manual temporary-ban restoration through the shared provider-operation lane.
 - `payment_operations.go` registers durable payment create and cancellation handlers on that dispatcher.

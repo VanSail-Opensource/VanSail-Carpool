@@ -40,7 +40,9 @@ func exercisePaymentOperation(t *testing.T, service *Service, queued PaymentOper
 
 type failingPaymentRepository struct {
 	*database.Store
-	beginErr, checkoutErr error
+	beginErr, checkoutErr                  error
+	orderReadErr, ownerReadErr, receiptErr error
+	claims                                 int
 }
 
 func (r *failingPaymentRepository) BeginPaymentOrderOperation(ctx context.Context, order model.PaymentOrder,
@@ -58,4 +60,48 @@ func (r *failingPaymentRepository) UpdatePaymentCheckoutDetails(ctx context.Cont
 		return model.PaymentOrder{}, r.checkoutErr
 	}
 	return r.Store.UpdatePaymentCheckoutDetails(ctx, id, trade, paymentURL, qr, address, cryptoAmount, cryptoCurrency, amount, currency, expires)
+}
+
+func (r *failingPaymentRepository) PaymentOrderByID(ctx context.Context, id string) (model.PaymentOrder, error) {
+	if r.orderReadErr != nil {
+		return model.PaymentOrder{}, r.orderReadErr
+	}
+	return r.Store.PaymentOrderByID(ctx, id)
+}
+
+func (r *failingPaymentRepository) UserByID(ctx context.Context, id string) (model.User, error) {
+	if r.ownerReadErr != nil {
+		return model.User{}, r.ownerReadErr
+	}
+	return r.Store.UserByID(ctx, id)
+}
+
+func (r *failingPaymentRepository) BeginProviderOperationItemAttempt(ctx context.Context, id, key string, now time.Time) (providerops.Item, error) {
+	r.claims++
+	return r.Store.BeginProviderOperationItemAttempt(ctx, id, key, now)
+}
+
+func (r *failingPaymentRepository) CompleteProviderOperation(ctx context.Context, id string, completion providerops.Completion, now time.Time) (providerops.Operation, error) {
+	if r.receiptErr != nil {
+		return providerops.Operation{}, r.receiptErr
+	}
+	return r.Store.CompleteProviderOperation(ctx, id, completion, now)
+}
+
+func paymentWorkerOperation(t *testing.T, store *database.Store, queued PaymentOperation) providerops.Operation {
+	t.Helper()
+	operation, err := store.ProviderOperationByID(context.Background(), queued.Operation.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return operation
+}
+
+func paymentWorkerItem(t *testing.T, store *database.Store, queued PaymentOperation) providerops.Item {
+	t.Helper()
+	items, err := store.ProviderOperationItems(context.Background(), queued.Operation.ID)
+	if err != nil || len(items) != 1 {
+		t.Fatalf("operation items = %+v, %v", items, err)
+	}
+	return items[0]
 }

@@ -59,12 +59,6 @@ func (s *Store) BeginAgreement(ctx context.Context, userID string) error {
 	return err
 }
 
-// ReserveUsername is retained only for old repository callers; names are never
-// reserved or stored. The public username endpoint has been removed.
-func (s *Store) ReserveUsername(ctx context.Context, userID, _ string) error {
-	return s.BeginAgreement(ctx, userID)
-}
-
 func stamp(value time.Time) string { return value.UTC().Format(time.RFC3339Nano) }
 
 func parseStamp(value string) (time.Time, error) { return time.Parse(time.RFC3339Nano, value) }

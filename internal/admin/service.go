@@ -47,9 +47,9 @@ type SquadImporter interface {
 	ListInternalSquads(context.Context) ([]UpstreamSquad, error)
 }
 
-// BackupRunner creates and verifies one online backup.
+// BackupRunner audits admission before creating and verifying one online backup.
 type BackupRunner interface {
-	Run(context.Context) (model.BackupRun, error)
+	RunForActor(context.Context, string) (model.BackupRun, error)
 }
 
 type backupDeleter interface {
@@ -88,8 +88,5 @@ func (s *Service) Settings(ctx context.Context) ([]model.Setting, error) {
 
 // PutSetting validates and audits one config mutation.
 func (s *Service) PutSetting(ctx context.Context, actorID, key, value string) error {
-	if err := s.settings.Put(ctx, actorID, key, value); err != nil {
-		return err
-	}
-	return s.audit(ctx, actorID, "setting.update", "setting", key, map[string]any{"secret": settingDefinitions[key].Secret})
+	return s.settings.Put(ctx, actorID, key, value)
 }

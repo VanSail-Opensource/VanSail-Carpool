@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/billing"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
@@ -54,10 +55,11 @@ var settingDefinitions = map[string]SettingDefinition{
 	"activity.group_message_reward_txb":      {Validate: validateNonnegativeTXB},
 }
 
-// SettingsRepository stores encrypted or plain values without interpreting them.
+// SettingsRepository atomically stores encrypted/plain administrative values and
+// their sanitized mutation audit, without interpreting the values.
 
 type SettingsRepository interface {
-	PutSetting(context.Context, string, string, bool, *string) error
+	PutAdminSetting(context.Context, string, string, bool, string, time.Time) error
 	GetSetting(context.Context, string) (database.Setting, error)
 	ListSettings(context.Context) ([]database.Setting, error)
 }
@@ -158,10 +160,7 @@ func (s *SettingsService) put(ctx context.Context, actorID, key, value string) e
 			return err
 		}
 	}
-	if err := s.repository.PutSetting(ctx, key, stored, definition.Secret, &actorID); err != nil {
-		return err
-	}
-	return nil
+	return s.repository.PutAdminSetting(ctx, key, stored, definition.Secret, actorID, time.Now().UTC())
 }
 
 func (s *SettingsService) validateActivityRewardRange(ctx context.Context, key, value string) error {

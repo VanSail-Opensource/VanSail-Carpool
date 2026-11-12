@@ -215,12 +215,14 @@ func TestSettingValidators(t *testing.T) {
 }
 
 type adminSettingsRepository struct {
-	settings  map[string]database.Setting
-	putErr    error
-	getErr    error
-	listErr   error
-	putCalls  int
-	lastActor *string
+	settings    map[string]database.Setting
+	putErr      error
+	getErr      error
+	listErr     error
+	putCalls    int
+	lastActor   *string
+	auditCalls  int
+	lastAuditAt time.Time
 }
 
 func newAdminSettingsRepository() *adminSettingsRepository {

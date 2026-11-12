@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func (s *Service) Run(ctx context.Context) (model.BackupRun, error) {
+func (s *Service) run(ctx context.Context, start func(string, time.Time) (model.BackupRun, error)) (model.BackupRun, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	now := s.now().UTC()
@@ -21,7 +21,7 @@ func (s *Service) Run(ctx context.Context) (model.BackupRun, error) {
 	name := "tx-carpool-" + now.Format("20060102T150405.000000000Z") + ".dump"
 	finalPath := filepath.Join(s.directory, name)
 	temporaryPath := filepath.Join(s.directory, "."+name+".tmp")
-	run, err := s.repository.StartBackupRun(ctx, finalPath, now)
+	run, err := start(finalPath, now)
 	if err != nil {
 		return model.BackupRun{}, err
 	}

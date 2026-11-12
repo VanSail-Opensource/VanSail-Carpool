@@ -129,5 +129,12 @@ func (s *Service) providerCredential(ctx context.Context, provider, profileID st
 	if provider == "ezpay" {
 		key = "billing.ezpay.key"
 	}
-	return s.settings.Plaintext(ctx, key)
+	credential, err := s.settings.Plaintext(ctx, key)
+	if err != nil {
+		return "", err
+	}
+	if credential == "" {
+		return "", fmt.Errorf("credential for payment provider %q is unavailable", provider)
+	}
+	return credential, nil
 }

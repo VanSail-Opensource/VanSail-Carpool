@@ -14,7 +14,6 @@ type accountsRepository struct {
 	replaceSessionErr    error
 	sessionLookupErr     error
 	userByIDErr          error
-	reserveErr           error
 	completeErr          error
 	userByTelegramErr    error
 	upsertAdmin          bool
@@ -24,7 +23,6 @@ type accountsRepository struct {
 	lookupSessionHash    []byte
 	groupJoined          bool
 	channelJoined        bool
-	reservedUsername     string
 	completedUserID      string
 	recoveryUser         model.User
 	recoveryStarted      bool
@@ -60,10 +58,6 @@ func (r *accountsRepository) UpdateMembership(_ context.Context, _ string, group
 }
 func (r *accountsRepository) HasActiveCombo(context.Context, string, time.Time) (bool, error) {
 	return r.activeCombo, r.activeComboErr
-}
-func (r *accountsRepository) ReserveUsername(_ context.Context, _ string, username string) error {
-	r.reservedUsername = username
-	return r.reserveErr
 }
 func (r *accountsRepository) CurrentAgreementContract(context.Context) (int, []string, error) {
 	return r.agreementRevision, append([]string(nil), r.requiredAgreementIDs...), nil
