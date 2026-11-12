@@ -44,6 +44,11 @@ func (h *maintenanceOperationHandler) HandleProviderOperation(ctx context.Contex
 	if err != nil {
 		return err
 	}
+	if providerops.Terminal(item.Status) {
+		return h.complete(ctx, operation, item, providerops.Completion{
+			Status: item.Status, ResultJSON: item.ResultJSON, ErrorCode: item.ErrorCode,
+		})
+	}
 	runCtx, cancel := context.WithTimeout(ctx, maintenance.RunTimeout)
 	defer cancel()
 	result, runErr := runMaintenanceTask(runCtx, h.maintenance, h.now().UTC(), true)

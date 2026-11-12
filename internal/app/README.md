@@ -247,3 +247,7 @@ repeated restrictions and refusal of old restoration commands.
 `stars_reconciliation_integration_test.go` runs the real billing validator and PostgreSQL settlement/refund/cursor APIs against queued Telegram history. A matching refund beyond the immediate 1,000-record search resolves a durable pending-review receipt, retains one reversal, and leaves subsequent polling at the history boundary.
 
 The pagination contract follows [Telegram Bot API](https://core.telegram.org/bots/api#getstartransactions) and its [official implementation](https://github.com/tdlib/telegram-bot-api/blob/114fe93d27f8a06554f04b375ad03b90aa98d61b/telegram-bot-api/Client.cpp), whose TDLib [StarManager](https://github.com/tdlib/td/blob/025086e3134b638b44dae8aa0df1609c83c3a309/td/telegram/StarManager.cpp) requests ascending order for bots. Refund IDs match their original charge; outgoing and incoming records therefore remain distinct in cursor hashes.
+
+`maintenance_operation_recovery_test.go` verifies that a completed maintenance item
+recovers its exact receipt outcome after an interrupted final commit without
+starting another backup or retention pass.

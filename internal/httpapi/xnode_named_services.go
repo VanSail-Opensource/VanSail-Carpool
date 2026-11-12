@@ -38,7 +38,11 @@ func (s *Server) xnodeRotateServiceSubscription(w http.ResponseWriter, r *http.R
 		return
 	}
 	access, err := s.deps.XNode.ServiceAccess(r.Context(), identity)
-	if err != nil || access == nil {
+	if err != nil {
+		s.xnodeError(w, r, err)
+		return
+	}
+	if access == nil {
 		s.xnodeError(w, r, xnode.ErrNotFound)
 		return
 	}

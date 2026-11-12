@@ -366,3 +366,7 @@ retryable server error when persistence is temporarily unavailable.
 checkout-capability return handlers without exposing storage diagnostics.
 `xnode_error_log_test.go` verifies native subscription failures redact bearer paths
 through the shared request-path helper, including metadata and browser landing URLs.
+
+`xnode_named_service_errors_test.go` verifies that standalone credential read
+failures remain service errors, valid probes remain absent, and failed reads never
+rotate or expose subscription credentials.
