@@ -57,6 +57,9 @@ func (m *Master) Version(id string) string {
 	defer m.mu.RUnlock()
 	return m.live[id].hello.Version
 }
+
+// Sync publishes the current target or returns an error while a prerequisite is
+// pending. Runtime activation remains a separate WaitApplied barrier.
 func (m *Master) Sync(ctx context.Context, id string) error {
 	m.mu.RLock()
 	peer := m.peers[id]

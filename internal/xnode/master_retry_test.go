@@ -3,6 +3,7 @@ package xnode
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"testing"
@@ -50,7 +51,7 @@ func TestCommandAndSupersededFailuresCannotCreateResyncStorm(t *testing.T) {
 	}
 	// No socket/AdvanceXNodeRevision implementation: any retry here would panic.
 	for range 1000 {
-		if err = master.syncNode(ctx, peer, true); err != nil {
+		if err = master.syncNode(ctx, peer, true); !errors.Is(err, ErrUnavailable) {
 			t.Fatal("unchanged failed target did not back off", err)
 		}
 	}
