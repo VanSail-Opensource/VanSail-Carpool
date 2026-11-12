@@ -44,7 +44,7 @@ func (s *Store) retryAttempt_BeginEarlyActivation(ctx context.Context, input pro
 	if _, err := tx.ExecContext(ctx, `UPDATE purchases SET status='cancelled',valid_until=$1,auto_renew_enabled=0,updated_at=$2 WHERE id=$3 AND status='active'`, stamp(now), stamp(now), currentID); err != nil {
 		return providerops.Operation{}, err
 	}
-	if err := shiftRefundQueueTx(ctx, tx, input.OwnerUserID, queued.ValidFrom, now.Sub(queued.ValidFrom), now); err != nil {
+	if err := shiftRefundQueueTx(ctx, tx, input.OwnerUserID, queued.ValidFrom, now, now); err != nil {
 		return providerops.Operation{}, err
 	}
 	if _, err := tx.ExecContext(ctx, `UPDATE purchases SET status='activating',traffic_reset_phase='pending',updated_at=$1 WHERE id=$2 AND status='queued'`, stamp(now), queuedID); err != nil {

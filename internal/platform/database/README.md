@@ -1584,3 +1584,20 @@ comparison rather than lexical ordering of differently precise timestamp strings
 Hourly funding scans exclude already-recorded enrollment/boundary events before
 the page limit. `notification_hourly_test.go` includes more live enrollments than
 one page and proves that successive scans reach every eligible enrollment once.
+
+## Member refund command scope and queue rebasing
+
+`member_operation_begin.go` accepts only the owner's exact single purchase item
+for a member refund. `member_refund_commit.go` rechecks the refund kind, actor,
+owner, item key/type/target, processing status and durable attempt marker before
+any wallet change, and requires the exact item completion to affect one row.
+Storage read failures retain their original error rather than becoming business
+ineligibility. `member_refund_scope_test.go` covers malformed commands and final
+proof, unchanged financial state on refusal, and injected SQL read failures.
+
+`member_queue_rebase.go` makes refund and early-activation queue shifts use exact
+seconds/nanoseconds instead
+of a saturated `time.Duration`. Queue selection compares actual timestamps;
+unrepresentable resulting dates fail the enclosing transaction.
+`member_queue_rebase_test.go` exercises both transitions with dates in year 2500,
+preserved nanosecond offsets, term durations, prices and expected wallet amounts.

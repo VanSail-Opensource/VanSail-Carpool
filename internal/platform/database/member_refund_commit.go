@@ -18,12 +18,29 @@ func (s *Store) retryAttempt_FinalizeMemberRefund(ctx context.Context, operation
 		return purchaseops.RefundResult{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	operation, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=$1`, operationID))
-	if err != nil || operation.Receipt.Status != "processing" || operation.OwnerUserID == "" {
+	operation, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=$1 FOR UPDATE`, operationID))
+	if err != nil {
+		return purchaseops.RefundResult{}, err
+	}
+	if operation.Receipt.Kind != purchaseops.OperationRefundKind || operation.Receipt.Status != "processing" ||
+		operation.OwnerUserID == "" || operation.ActorUserID != operation.OwnerUserID {
+		return purchaseops.RefundResult{}, ErrConflict
+	}
+	var exactAttempt bool
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*)=1 AND COUNT(*) FILTER (
+		WHERE item_key='purchase' AND target_type='purchase' AND target_id=$2
+		AND status='processing' AND attempt_started_at IS NOT NULL)=1
+		FROM provider_operation_items WHERE operation_id=$1`, operationID, purchaseID).Scan(&exactAttempt); err != nil {
+		return purchaseops.RefundResult{}, err
+	}
+	if !exactAttempt {
 		return purchaseops.RefundResult{}, ErrConflict
 	}
 	facts, err := memberPurchaseFactsTx(ctx, tx, purchaseID, operation.OwnerUserID)
-	if err != nil || !memberOperationEligible(facts, now) {
+	if err != nil {
+		return purchaseops.RefundResult{}, err
+	}
+	if !memberOperationEligible(facts, now) {
 		return purchaseops.RefundResult{}, purchaseops.ErrIneligible
 	}
 	balance, err := changeBalanceTx(ctx, tx, operation.OwnerUserID, facts.Purchase.PriceTXBMinor, now)
@@ -39,7 +56,9 @@ func (s *Store) retryAttempt_FinalizeMemberRefund(ctx context.Context, operation
 	if err != nil {
 		return purchaseops.RefundResult{}, err
 	}
-	if affected, rowsErr := result.RowsAffected(); rowsErr != nil || affected != 1 {
+	if affected, rowsErr := result.RowsAffected(); rowsErr != nil {
+		return purchaseops.RefundResult{}, rowsErr
+	} else if affected != 1 {
 		return purchaseops.RefundResult{}, purchaseops.ErrIneligible
 	}
 	successorID, err := activateRefundSuccessorTx(ctx, tx, operation.OwnerUserID, now)
@@ -50,16 +69,25 @@ func (s *Store) retryAttempt_FinalizeMemberRefund(ctx context.Context, operation
 	if err != nil {
 		return purchaseops.RefundResult{}, err
 	}
-	if _, err = tx.ExecContext(ctx, `UPDATE provider_operation_items SET status='succeeded',result_json=$1,completed_at=$2,updated_at=$3
-		WHERE operation_id=$4 AND item_key='purchase' AND status='processing'`, string(resultJSON), stamp(now), stamp(now), operationID); err != nil {
+	result, err = tx.ExecContext(ctx, `UPDATE provider_operation_items SET status='succeeded',result_json=$1,completed_at=$2,updated_at=$3
+		WHERE operation_id=$4 AND item_key='purchase' AND target_type='purchase' AND target_id=$5
+		AND status='processing' AND attempt_started_at IS NOT NULL`, string(resultJSON), stamp(now), stamp(now), operationID, purchaseID)
+	if err != nil {
 		return purchaseops.RefundResult{}, err
+	}
+	if affected, rowsErr := result.RowsAffected(); rowsErr != nil {
+		return purchaseops.RefundResult{}, rowsErr
+	} else if affected != 1 {
+		return purchaseops.RefundResult{}, ErrConflict
 	}
 	result, err = tx.ExecContext(ctx, `UPDATE provider_operations SET status='succeeded',result_json=$1,completed_at=$2,updated_at=$3
 		WHERE id=$4 AND status='processing'`, string(resultJSON), stamp(now), stamp(now), operationID)
 	if err != nil {
 		return purchaseops.RefundResult{}, err
 	}
-	if affected, rowsErr := result.RowsAffected(); rowsErr != nil || affected != 1 {
+	if affected, rowsErr := result.RowsAffected(); rowsErr != nil {
+		return purchaseops.RefundResult{}, rowsErr
+	} else if affected != 1 {
 		return purchaseops.RefundResult{}, ErrConflict
 	}
 	if err := s.insertMemberRefundCompletedNoticeTx(ctx, tx, operationID, operation.OwnerUserID,
@@ -79,7 +107,7 @@ func (s *Store) retryAttempt_FinalizeMemberRefund(ctx context.Context, operation
 func activateRefundSuccessorTx(ctx context.Context, tx *sql.Tx, userID string, now time.Time) (string, error) {
 	var id, fromRaw string
 	err := tx.QueryRowContext(ctx, `SELECT id,valid_from FROM purchases WHERE user_id=$1 AND status='queued'
-		AND auto_renew_source_purchase_id IS NULL ORDER BY valid_from,created_at LIMIT 1`, userID).Scan(&id, &fromRaw)
+		AND auto_renew_source_purchase_id IS NULL ORDER BY vansail_timestamp(valid_from),created_at,id LIMIT 1`, userID).Scan(&id, &fromRaw)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", nil
 	}
@@ -90,7 +118,7 @@ func activateRefundSuccessorTx(ctx context.Context, tx *sql.Tx, userID string, n
 	if err != nil {
 		return "", err
 	}
-	if err := shiftRefundQueueTx(ctx, tx, userID, from, now.Sub(from), now); err != nil {
+	if err := shiftRefundQueueTx(ctx, tx, userID, from, now, now); err != nil {
 		return "", err
 	}
 	result, err := tx.ExecContext(ctx, `UPDATE purchases SET status='activating',traffic_reset_phase='pending',updated_at=$1
@@ -105,45 +133,4 @@ func activateRefundSuccessorTx(ctx context.Context, tx *sql.Tx, userID string, n
 		return "", err
 	}
 	return id, insertOutboxTx(ctx, tx, "xnode_apply_entitlement", `{"purchaseId":"`+id+`"}`, now, now)
-}
-
-func shiftRefundQueueTx(ctx context.Context, tx *sql.Tx, userID string, firstFrom time.Time, shift time.Duration, now time.Time) error {
-	rows, err := tx.QueryContext(ctx, `SELECT id,valid_from,valid_until FROM purchases
-  WHERE user_id=$1 AND status='queued' AND valid_from>=$2 ORDER BY valid_from,created_at,id`, userID, stamp(firstFrom))
-	if err != nil {
-		return err
-	}
-	type queuedTerm struct{ id, from, until string }
-	terms := make([]queuedTerm, 0)
-	for rows.Next() {
-		var term queuedTerm
-		if err := rows.Scan(&term.id, &term.from, &term.until); err != nil {
-			_ = rows.Close()
-			return err
-		}
-		terms = append(terms, term)
-	}
-	if err := rows.Close(); err != nil {
-		return err
-	}
-	for index, term := range terms {
-		from, err := parseStamp(term.from)
-		if err != nil {
-			return err
-		}
-		until, err := parseStamp(term.until)
-		if err != nil || !until.After(from) {
-			return ErrConflict
-		}
-		if _, err = tx.ExecContext(ctx, `UPDATE purchases SET valid_from=$1,valid_until=$2,updated_at=$3 WHERE id=$4 AND status='queued'`,
-			stamp(from.Add(shift)), stamp(until.Add(shift)), stamp(now), term.id); err != nil {
-			return err
-		}
-		if index > 0 {
-			if err := retirePurchaseContinuityTx(ctx, tx, term.id, now); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
 }

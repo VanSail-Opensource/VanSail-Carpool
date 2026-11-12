@@ -72,7 +72,7 @@ func auditComboControlTx(ctx context.Context, tx *sql.Tx, userID, action, purcha
 
 func queuedControlPurchaseTx(ctx context.Context, tx *sql.Tx, userID, queuedID string) (model.Purchase, error) {
 	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.user_id=$1 AND purchases.status='queued'
- ORDER BY purchases.valid_from,purchases.created_at,purchases.id LIMIT 1`, userID))
+ ORDER BY vansail_timestamp(purchases.valid_from),purchases.created_at,purchases.id LIMIT 1`, userID))
 	if errors.Is(err, ErrNotFound) {
 		return model.Purchase{}, purchaseops.ErrIneligible
 	}
