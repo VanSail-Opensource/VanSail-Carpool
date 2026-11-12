@@ -127,3 +127,8 @@ principal/owner credential hashes, under serializable lifecycle/material locks.
 Purge and material rotation clear prior proof; token-only changes preserve it.
 Fresh authenticated membership restores readiness, including forced publication
 when the native digest is unchanged. No financial or credential data is migrated.
+
+`first_sync_upgrade_test.go` upgrades a populated schema48 snapshot through49,
+checks member-proof invalidation and retained service proof, fingerprints all other
+native/financial fields and sequences, and verifies repeated migration preserves
+newly confirmed readiness.

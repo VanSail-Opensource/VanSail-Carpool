@@ -11,10 +11,6 @@ import (
 // DeleteXNodeNode is compatibility cleanup for an unused disabled node. Enrolled
 // or historical nodes must use the durable removal operation and its barriers.
 func (s *Store) retryAttempt_DeleteXNodeNode(ctx context.Context, id string) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

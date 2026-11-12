@@ -1,7 +1,7 @@
 //go:build ignore
 
-// Generates complete-operation retries only for Store methods with one SQL
-// transaction and no SQL calls outside it. Network work has no place in Store.
+// Regenerates explicitly opted-in retryAttempt_ Store adapters. The reviewed
+// attempt must contain one SQL transaction and no SQL calls outside it.
 package main
 
 import (
@@ -42,14 +42,9 @@ func main() {
 		}
 		var wrappers []string
 		used := map[string]bool{}
-		type edit struct {
-			start, end int
-			value      string
-		}
-		var edits []edit
 		for _, decl := range file.Decls {
 			fn, ok := decl.(*ast.FuncDecl)
-			if !ok || fn.Recv == nil || fn.Body == nil || fn.Type.Results == nil {
+			if !ok || fn.Recv == nil || fn.Body == nil || fn.Type.Results == nil || !strings.HasPrefix(fn.Name.Name, "retryAttempt_") {
 				continue
 			}
 			body := string(raw[fs.Position(fn.Body.Pos()).Offset:fs.Position(fn.Body.End()).Offset])
@@ -101,14 +96,6 @@ func main() {
 				rewind = "if retryRandom!=nil { retryRandom.position=0 }\n"
 			}
 			wrappers = append(wrappers, fmt.Sprintf("%s{\n %s for retryIndex:=0;;retryIndex++ {\n %s %s := s.%s(%s)\n if !s.retryTransaction(ctx,%s,retryIndex) { return %s }\n }\n}\n", signature, setup, rewind, strings.Join(returns, ","), attemptName, strings.Join(params, ","), errorName, strings.Join(returns, ",")))
-			if fn.Name.Name != attemptName {
-				edits = append(edits, edit{fs.Position(fn.Name.Pos()).Offset, fs.Position(fn.Name.End()).Offset, attemptName})
-			}
-			lock := "s.writeMu.Lock()\n\tdefer s.writeMu.Unlock()"
-			if i := strings.Index(body, lock); i >= 0 {
-				position := fs.Position(fn.Body.Pos()).Offset + i
-				edits = append(edits, edit{position, position + len(lock), "if !IsPostgres(s.db) { s.writeMu.Lock(); defer s.writeMu.Unlock() }"})
-			}
 		}
 		if len(wrappers) == 0 {
 			continue
@@ -129,13 +116,6 @@ func main() {
 		formatted, err := format.Source(generated.Bytes())
 		check(err)
 		check(os.WriteFile(strings.TrimSuffix(path, ".go")+"_retry_generated.go", formatted, 0o644))
-		sort.Slice(edits, func(i, j int) bool { return edits[i].start > edits[j].start })
-		for _, e := range edits {
-			raw = append(append(append([]byte{}, raw[:e.start]...), []byte(e.value)...), raw[e.end:]...)
-		}
-		formatted, err = format.Source(raw)
-		check(err)
-		check(os.WriteFile(path, formatted, 0o644))
 	}
 	documentWrappers()
 }
@@ -154,7 +134,7 @@ func documentWrappers() {
 	text := prefix
 	files, err := filepath.Glob("internal/platform/database/*_retry_generated.go")
 	check(err)
-	text += marker + "\n\nGenerated adapters repeat complete rolled-back PostgreSQL operations for SQLSTATE\n40001/40P01, with bounded context-aware backoff.\nThe generator excludes methods that access SQL outside their transaction or own\nmutable in-memory batches. Provider requests remain outside every transaction.\n\n"
+	text += marker + "\n\nGenerated adapters repeat complete rolled-back PostgreSQL operations for SQLSTATE\n40001/40P01, with bounded context-aware backoff.\nOnly explicitly opted-in retryAttempt_ methods are regenerated. The generator\nexcludes methods that access SQL outside their transaction or own mutable batches.\nProvider requests remain outside every transaction.\n\n"
 	for _, file := range files {
 		name := filepath.Base(file)
 		original := strings.TrimSuffix(name, "_retry_generated.go") + ".go"

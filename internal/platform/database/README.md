@@ -896,8 +896,9 @@ Access-group deletion: `xnode_group_usage.go` derives distinct current/queued pa
 
 Generated adapters repeat complete rolled-back PostgreSQL operations for SQLSTATE
 40001/40P01, with bounded context-aware backoff.
-The generator excludes methods that access SQL outside their transaction or own
-mutable in-memory batches. Provider requests remain outside every transaction.
+Only explicitly opted-in retryAttempt_ methods are regenerated. The generator
+excludes methods that access SQL outside their transaction or own mutable batches.
+Provider requests remain outside every transaction.
 
 - `account_block_retry_generated.go` wraps the transactional methods in `account_block.go`.
 - `account_purge_resume_retry_generated.go` wraps the transactional methods in `account_purge_resume.go`.
@@ -1628,3 +1629,8 @@ and generation-bound historical deployment evidence. The bounded user list uses
 the same projection in its balance query; legacy proxy links never imply native
 readiness. `admin_user_synchronization_test.go` covers list/detail consistency,
 pending proof, cleared credentials, inactive owners and retained recovery reasons.
+
+`pricing_member_catalog.go` applies current public pricing decisions to the member
+catalog using the bounded owner pricing-read context; it preserves the catalog
+unchanged when dynamic pricing is disabled. Checkout settlement rechecks its own
+eligibility and immutable price evidence.
