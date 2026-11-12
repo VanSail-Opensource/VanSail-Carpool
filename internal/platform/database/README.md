@@ -26,6 +26,22 @@ parsed expiration instants. Whole-second and fractional RFC3339Nano values must
 not accept an expired bearer or reject one that is still live. Authentication
 records account activity only after the exact expiry check succeeds.
 
+Coupon wallet reads expire grants and return usable grants in one retryable
+transaction. `coupon_grant_listing.go` and `coupon_grant_listing_retry_generated.go`
+compare full parsed timestamps, so listing a still-valid fractional-second
+coupon cannot permanently expire it; `coupon_expiry_boundary_test.go` covers
+the whole-second and nanosecond boundaries and concurrent expiry extensions.
+Grant and definition row locks pin each expiry decision. Active administrator
+coupon lists use the same exact comparison.
+
+`purchase_expiry.go` checks the paid term and queued successor boundaries after
+locking the member's purchase lifecycle. `purchase_expiry_boundary_test.go`
+covers live fractional terms, future successors and due whole-second terms.
+`retention_sessions.go` uses exact expiry to prune sessions and browser handoffs;
+the schema's unique Mini App session index makes the former duplicate-session
+cleanup unnecessary. `retention_session_boundary_test.go` protects live bearers
+and independent browser/Mini App sessions during housekeeping.
+
 `outbox_deletion.go` protects unfinished financial commands, explicit cleanup
 lanes, live retry targets, legacy paid Emby setup and restriction expiry jobs.
 Eligible deletion and its redacted actor audit commit together; failed expiry
@@ -971,6 +987,7 @@ Provider requests remain outside every transaction.
 - `connection_ip_blocks_mutations_retry_generated.go` wraps the transactional methods in `connection_ip_blocks_mutations.go`.
 - `connection_scan_lifecycle_retry_generated.go` wraps the transactional methods in `connection_scan_lifecycle.go`.
 - `connection_scans_retry_generated.go` wraps the transactional methods in `connection_scans.go`.
+- `coupon_grant_listing_retry_generated.go` wraps the transactional methods in `coupon_grant_listing.go`.
 - `coupon_purchase_retry_generated.go` wraps the transactional methods in `coupon_purchase.go`.
 - `coupons_part2_retry_generated.go` wraps the transactional methods in `coupons_part2.go`.
 - `coupons_part3_retry_generated.go` wraps the transactional methods in `coupons_part3.go`.

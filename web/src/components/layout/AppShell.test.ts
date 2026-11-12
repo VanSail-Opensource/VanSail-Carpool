@@ -11,6 +11,7 @@ import { desktopNavigationItems } from './navigation'
 
 const api = vi.hoisted(() => ({ getCommunityAccess: vi.fn().mockResolvedValue({ activeCombo: true }), getBalance: vi.fn().mockResolvedValue({ balance: { minor: '0' } }) }))
 vi.mock('@/api/client', () => ({ api }))
+vi.mock('@/api/ipLookup', () => ({ ipLookupApi: { state: vi.fn().mockResolvedValue({ enabled: false }) } }))
 
 function session(role: Session['user']['role'] = 'user'): Session {
   return {
@@ -50,6 +51,7 @@ describe('AppShell accessibility', () => {
         { path: '/catalog', component: { template: '<div />' } },
         { path: '/balance', component: { template: '<div />' } },
         { path: '/activity', component: { template: '<div />' } },
+        { path: '/connections', component: { template: '<div />' } },
         { path: '/emby', component: { template: '<div />' } },
         { path: '/settings/admin-access', component: { template: '<div />' } },
       ],

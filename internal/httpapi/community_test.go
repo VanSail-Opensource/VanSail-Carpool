@@ -1,10 +1,8 @@
 package httpapi
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 
@@ -81,53 +79,6 @@ func TestRequireIdempotencyKey(t *testing.T) {
 			}
 			if response.Code != test.wantStatus {
 				t.Fatalf("status = %d, want %d", response.Code, test.wantStatus)
-			}
-		})
-	}
-}
-
-func TestBoundedMultipartFile(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name      string
-		fieldName string
-		content   string
-		maxBytes  int64
-		want      string
-		wantErr   bool
-	}{
-		{name: "one bounded file", fieldName: "file", content: "code\nTXQ-ABC\n", maxBytes: 64, want: "code\nTXQ-ABC\n"},
-		{name: "wrong field", fieldName: "upload", content: "code\nTXQ-ABC\n", maxBytes: 64, wantErr: true},
-		{name: "file too large", fieldName: "file", content: strings.Repeat("x", 65), maxBytes: 64, wantErr: true},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
-			var body bytes.Buffer
-			writer := multipart.NewWriter(&body)
-			part, err := writer.CreateFormFile(test.fieldName, "results.csv")
-			if err != nil {
-				t.Fatalf("CreateFormFile(): %v", err)
-			}
-			if _, err := part.Write([]byte(test.content)); err != nil {
-				t.Fatalf("write multipart file: %v", err)
-			}
-			if err := writer.Close(); err != nil {
-				t.Fatalf("close multipart writer: %v", err)
-			}
-			request := httptest.NewRequest(http.MethodPost, "/", &body)
-			request.Header.Set("Content-Type", writer.FormDataContentType())
-			response := httptest.NewRecorder()
-			got, err := boundedMultipartFile(response, request, "file", test.maxBytes)
-			if test.wantErr && err == nil {
-				t.Fatal("boundedMultipartFile() unexpectedly succeeded")
-			}
-			if !test.wantErr && err != nil {
-				t.Fatalf("boundedMultipartFile(): %v", err)
-			}
-			if string(got) != test.want {
-				t.Fatalf("boundedMultipartFile() = %q, want %q", string(got), test.want)
 			}
 		})
 	}

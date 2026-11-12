@@ -26,24 +26,38 @@ type revokeOperationRepository interface {
 
 type revokeTarget struct {
 	PreviousHash string `json:"previousHash"`
+	Generation   int64  `json:"generation"`
+}
+
+type memberSubscriptionRevoker interface {
+	memberDashboardReader
+	RevokeSubscriptionForMember(context.Context, model.User) (string, error)
 }
 
 // QueueSubscriptionRevoke records one credential rotation before provider mutation.
 func (s *Service) QueueSubscriptionRevoke(ctx context.Context, user model.User, key string) (model.OperationReceipt, error) {
 	repository, ok := s.repository.(revokeOperationRepository)
-	if !ok || user.ProxyUserID == nil {
+	if !ok || user.ID == "" || user.AccountGeneration < 0 {
 		return model.OperationReceipt{}, errors.New("durable subscription revocation is unavailable")
+	}
+	key = strings.TrimSpace(key)
+	if key == "" || len(key) > 128 {
+		return model.OperationReceipt{}, errors.New("invalid subscription revocation key")
 	}
 	fingerprint := revokeFingerprint(user.ID)
 	if receipt, found, err := repository.ProviderOperationForActorKey(ctx, user.ID, providerops.KindSubscriptionRevoke,
 		strings.TrimSpace(key), fingerprint); found || err != nil {
 		return receipt, err
 	}
-	current, err := s.provider.Dashboard(ctx, *user.ProxyUserID)
+	provider, ok := s.provider.(memberSubscriptionRevoker)
+	if !ok {
+		return model.OperationReceipt{}, errors.New("member subscription revocation is unavailable")
+	}
+	current, err := provider.DashboardForMember(ctx, user)
 	if err != nil || strings.TrimSpace(current.SubscriptionURL) == "" {
 		return model.OperationReceipt{}, errors.New("load current subscription credential")
 	}
-	target, err := json.Marshal(revokeTarget{PreviousHash: subscriptionHash(current.SubscriptionURL)})
+	target, err := json.Marshal(revokeTarget{PreviousHash: subscriptionHash(current.SubscriptionURL), Generation: user.AccountGeneration})
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}

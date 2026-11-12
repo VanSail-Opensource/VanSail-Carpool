@@ -26,13 +26,13 @@ when it completes, without navigation or a document reload.
 ## Coverage and boundaries
 
 Member preload covers Home and its default node-usage range, balance,
-Emby, IP blocks, reset automation, community membership, and localized
+Emby, IP blocks, community access/membership, and localized
 onboarding content. The browser console loads each section on demand and never
 runs the member preload. Filters, pagination, details and administrator resources
 are cached on use with their exact resource keys and a browser-scoped identity.
-Explore PAYG reads start on entry. Combo code, catalog and coupon wallet reads
-start only when Combo is selected; Home gets entitlement labels in its dashboard
-response and node metadata from its usage summary rather than fetching catalog.
+Explore PAYG reads start on entry and hourly reads start when that mode is
+selected. Home gets entitlement labels in its dashboard response and node
+metadata from its usage summary rather than fetching catalog.
 
 Preloading does not execute purchases, create payments, start connection scan jobs,
 download backups, or enumerate every database row/account. Their existing action

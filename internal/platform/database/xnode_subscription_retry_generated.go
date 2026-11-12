@@ -14,3 +14,12 @@ func (s *Store) RotateXNodeSubscription(ctx context.Context, expected xnode.Iden
 		}
 	}
 }
+
+func (s *Store) RotateXNodeMemberSubscription(ctx context.Context, expected xnode.Identity, generation int64, hash []byte, cipher string) (xnode.Identity, error) {
+	for retryIndex := 0; ; retryIndex++ {
+		r0, r1 := s.retryAttempt_RotateXNodeMemberSubscription(ctx, expected, generation, hash, cipher)
+		if !s.retryTransaction(ctx, r1, retryIndex) {
+			return r0, r1
+		}
+	}
+}

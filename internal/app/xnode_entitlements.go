@@ -17,6 +17,13 @@ func (a proxyProvider) ApplyEntitlement(ctx context.Context, id string, limit in
 func (a proxyProvider) RemoveEntitlement(ctx context.Context, id string) error {
 	return a.native.CloseForReplacement(ctx, id)
 }
+
+// SyncMemberEntitlement shares owner-scoped desired-state reconciliation with
+// administrative changes. A stale legacy link cannot select another identity.
+func (a proxyProvider) SyncMemberEntitlement(ctx context.Context, user model.User, desired *model.Purchase) error {
+	return a.SyncAdminUserEntitlement(ctx, user, desired)
+}
+
 func (a proxyProvider) ResetTraffic(ctx context.Context, id string) error {
 	return a.native.ResetTraffic(ctx, id)
 }

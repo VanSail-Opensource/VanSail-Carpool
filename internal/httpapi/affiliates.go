@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -42,10 +41,8 @@ func (s *Server) adminAffiliates(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) adminUpdateAffiliates(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 64<<10)
-	decoder := json.NewDecoder(r.Body)
-	decoder.DisallowUnknownFields()
 	var input affiliates.ConfigInput
-	if err := decoder.Decode(&input); err != nil {
+	if err := decodeJSON(w, r, &input); err != nil {
 		s.writeError(w, r, http.StatusBadRequest, "INVALID_AFFILIATE_CONFIG", "Affiliate settings are invalid.")
 		return
 	}

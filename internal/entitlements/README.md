@@ -6,6 +6,11 @@ The durable entitlement worker translates outbox jobs and desired purchase state
 
 - `worker.go` defines dependencies and implements shared-outbox dispatch, retry,
   expiration, entitlement synchronization, and post-success notification release.
+- `worker_sync.go` reconciles user desired state. Native adapters resolve the
+  stable panel owner before provisioning or closure, including absent or stale
+  historical proxy links; generic compatibility fixtures keep their existing
+  identity-verification path. Notifications are released only after successful
+  synchronization.
 - `identity.go` reconciles the reserved username through the X-Node queue when
   paid access exists, creates queued users disabled, and routes confirmed name
   conflicts to the transactional refund and username restart.

@@ -1,5 +1,12 @@
 # X-Node control plane
 
+Member subscription rotation resolves the authenticated owner's native identity
+and commits through `RotateXNodeMemberSubscription`, which locks the exact
+account generation and compares the original token and credential material.
+`member_subscription_rotation.go` never uses a mutable legacy proxy pointer;
+`member_subscription_rotation_test.go` covers missing/stale links, lifecycle changes, and foreign/service
+identity rejection. Administrative standalone rotation remains separate.
+
 `credentials.go` supports administrator-authored VLESS reverse portals without a
 separate panel surface: an inbound document may carry `"reverseTag": "<tag>"`.
 The native validator requires that marker on a `vless` inbound, with a valid

@@ -9,7 +9,7 @@ import (
 
 func revokeItem(ctx context.Context, repository revokeOperationRepository, operationID string) (providerops.Item, error) {
 	items, err := repository.ProviderOperationItems(ctx, operationID)
-	if err != nil || len(items) != 1 || items[0].TargetType != "user" {
+	if err != nil || len(items) != 1 || items[0].Key != "subscription" || items[0].TargetType != "user" || items[0].TargetID == "" {
 		if err == nil {
 			err = errors.New("subscription revoke operation has an invalid target")
 		}

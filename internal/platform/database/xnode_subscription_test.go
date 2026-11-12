@@ -68,3 +68,40 @@ func TestSubscriptionRotationRejectsReplacedMaterialAndForeignOwner(t *testing.T
 		t.Fatal("replacement credentials were restored from stale input", after, err)
 	}
 }
+
+func TestMemberSubscriptionRotationRejectsStaleAccountGeneration(t *testing.T) {
+	s, identity, _ := xnodeTrafficFixture(t)
+	ctx := context.Background()
+	expected, err := s.XNodeIdentity(ctx, identity.ProxyUserID)
+	if err != nil || expected.UserID == "" || expected.ServiceName != "" {
+		t.Fatal("fixture is not a direct member identity", expected, err)
+	}
+	var generation int64
+	if err := s.db.QueryRowContext(ctx, `SELECT account_generation FROM users WHERE id=$1`, expected.UserID).Scan(&generation); err != nil {
+		t.Fatal(err)
+	}
+	// Lifecycle replacement may retain the same native material. The old
+	// authenticated request must still fail, even when its material CAS matches.
+	if _, err := s.db.ExecContext(ctx, `UPDATE users SET account_generation=account_generation+1 WHERE id=$1`, expected.UserID); err != nil {
+		t.Fatal(err)
+	}
+	hash := sha256.Sum256([]byte("member-rotation"))
+	if _, err := s.RotateXNodeMemberSubscription(ctx, expected, generation, hash[:], "stale-generation"); !errors.Is(err, ErrAccountUnavailable) {
+		t.Fatal("old generation rotated unchanged native material", err)
+	}
+	after, err := s.XNodeIdentity(ctx, identity.ProxyUserID)
+	if err != nil || after.SubscriptionCipher != expected.SubscriptionCipher {
+		t.Fatal("rejected member rotation changed native material", after, err)
+	}
+	current, err := s.RotateXNodeMemberSubscription(ctx, expected, generation+1, hash[:], "current-generation")
+	if err != nil || current.SubscriptionCipher != "current-generation" || current.CurrentPeriodID != expected.CurrentPeriodID || current.CredentialsCipher != expected.CredentialsCipher {
+		t.Fatal("current member rotation did not preserve native state", current, err)
+	}
+	if _, err := s.RotateXNodeMemberSubscription(ctx, expected, generation+1, hash[:], "stale-material"); !errors.Is(err, xnode.ErrConflict) {
+		t.Fatal("member rotation accepted obsolete material", err)
+	}
+	current.ServiceName = "service-identity"
+	if _, err := s.RotateXNodeMemberSubscription(ctx, current, generation+1, hash[:], "service-rotation"); !errors.Is(err, xnode.ErrInvalid) {
+		t.Fatal("member rotation accepted a service identity", err)
+	}
+}

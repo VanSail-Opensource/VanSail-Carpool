@@ -406,3 +406,14 @@ work without cloning a Vue proxy or mutating the loaded term.
 Public subscription `malformed` returns a constructed invalid metadata shape;
 the actual transport must show read recovery without exposing a usable link or
 crashing the page. Ready fixtures include current first-deployment fields.
+
+`RecoveryAudit.vue`, `recovery-audit.ts` and `recovery-audit.html` mount the actual
+App session watcher, currency control and payment sheet with constructed requests.
+`currency-slow` holds preference reads for explicit release, `currency-error`
+refuses saves until recovery, and `empty` removes payment methods. Cancellation
+receipts default to failed; `cancel-succeeded` returns success while the fetched
+order deliberately stays pending. `window.__recoveryAudit` exposes only synthetic
+read/write counts, deferred releases, owner replacement and payment completion.
+The hosted `browser-recovery-audit.mjs` checks desktop/mobile state, recovery,
+logout isolation, and the existing browser-auth fixture, retaining screenshots
+and console/network diagnostics. No production payment or authentication occurs.

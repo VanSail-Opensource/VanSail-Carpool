@@ -42,6 +42,8 @@ This package builds the live catalog, validates purchase selections against curr
 - `revoke_operations.go` stores credential-rotation intent with only a hash of the prior subscription URL.
 - `revoke_worker.go` performs one queued rotation and reconciles ambiguous provider outcomes.
 - `revoke_recovery_test.go` verifies that a terminal rotation item recovers its exact parent receipt without another provider call, transient owner lookup errors stay retryable, and missing credentials cannot prove a successful rotation.
+- `revoke_member_test.go` verifies that admission and execution use the authenticated owner without a legacy proxy pointer. New queued targets capture the account generation; historical targets without that field remain valid only for generation zero. Superseded commands terminate before credential reads or mutations, while completed items retain their original outcomes.
+- `revoke_generation_reconcile_test.go` verifies that an atomic generation rejection and generation changes during credential reads terminate the retired command without attributing a replacement account's token to it.
 - `revoke_lifecycle.go` owns the single-item receipt lifecycle and dashboard-cache invalidation.
 - `nodes.go` queries accessibility once per unique live squad, filters disabled nodes, attaches deterministic node groups to each product, and derives the authoritative quote union from that hydrated snapshot. Node assignments are never persisted.
 - `node_selection.go` normalizes combo and add-on squad selection for quote node unioning.

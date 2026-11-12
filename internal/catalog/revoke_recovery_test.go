@@ -47,7 +47,7 @@ func TestSubscriptionRevokeLookupFailureRemainsRetryable(t *testing.T) {
 	repository := &revokeRecoveryRepository{item: providerops.Item{Key: "subscription", TargetType: "user", TargetID: "owner",
 		Status: providerops.StatusQueued}, userErr: context.DeadlineExceeded}
 	service := NewService(repository, nil, 0)
-	operation := providerops.Operation{Receipt: model.OperationReceipt{ID: "operation", Kind: providerops.KindSubscriptionRevoke,
+	operation := providerops.Operation{OwnerUserID: "owner", ActorUserID: "owner", Receipt: model.OperationReceipt{ID: "operation", Kind: providerops.KindSubscriptionRevoke,
 		Status: string(providerops.StatusQueued)}}
 	if err := service.HandleProviderOperation(context.Background(), operation, revokeRecoveryJob(t)); !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("transient owner lookup became a terminal failure: %v", err)
@@ -62,14 +62,15 @@ func TestSubscriptionRevokeEmptyCredentialDoesNotProveRotation(t *testing.T) {
 		t.Run(string(status), func(t *testing.T) {
 			remoteID := "remote"
 			repository := &revokeRecoveryRepository{item: providerops.Item{Key: "subscription", TargetType: "user", TargetID: "owner",
-				Status: status}, user: model.User{ID: "owner", ProxyUserID: &remoteID}}
-			service := NewService(repository, &catalogProxy{}, 0)
-			operation := providerops.Operation{Receipt: model.OperationReceipt{ID: "operation", Kind: providerops.KindSubscriptionRevoke,
+				Status: status}, user: model.User{ID: "owner", ProxyUserID: &remoteID, AccountStatus: "active"}}
+			remote := &memberRevokeRemote{}
+			service := NewService(repository, remote, 0)
+			operation := providerops.Operation{OwnerUserID: "owner", ActorUserID: "owner", Receipt: model.OperationReceipt{ID: "operation", Kind: providerops.KindSubscriptionRevoke,
 				Status: string(status)}}
 			if err := service.HandleProviderOperation(context.Background(), operation, revokeRecoveryJob(t)); err == nil {
 				t.Fatal("an absent credential was accepted as proof of rotation")
 			}
-			if repository.completeCalls != 0 {
+			if repository.completeCalls != 0 || len(remote.dashboardUsers) != 1 || len(remote.rotationUsers) != 0 {
 				t.Fatal("missing credential wrote a terminal outcome")
 			}
 		})

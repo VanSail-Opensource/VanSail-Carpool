@@ -66,8 +66,8 @@ boundaries. Shared browser routes declare the session-scope selector explicitly.
 - `api-v1-ledger.yaml`: `/api/v1/ledger`
 - `api-v1-affiliates.yaml`: `/api/v1/affiliates`, member metrics and tier progress
 - `api-v1-affiliates-referrals.yaml`: `/api/v1/affiliates/referrals`, fixed five-row registration pages
-- `api-v1-statistics.yaml`: `/api/v1/statistics`, persisted 30-minute aggregate dashboard
-- `api-v1-statistics-nodes.yaml`: `/api/v1/statistics/nodes`, on-demand shared 10-second node snapshot
+- `api-v1-statistics.yaml`: `/api/v1/admin/statistics`, persisted 30-minute administrator aggregate dashboard
+- `api-v1-statistics-nodes.yaml`: `/api/v1/admin/statistics/nodes`, on-demand shared 10-second administrator node snapshot
 - `api-v1-payments-orders.yaml`: `/api/v1/payments/orders`, idempotent durable checkout creation
 - `api-v1-payments-orders-id.yaml`: `/api/v1/payments/orders/{id}`
 - `api-v1-payments-orders-id-cancel.yaml`: `/api/v1/payments/orders/{id}/cancel`, idempotent durable provider cancellation
@@ -259,7 +259,7 @@ A zero-hour release requires the exact active ban generation.
 - `api-v1-admin-pricing-interventions-version.yaml`: getPricingScopeVersion; administrator authorization applies.
 - `api-v1-admin-pricing-interventions.yaml`: createPricingIntervention; administrator authorization applies.
 - `api-v1-admin-pricing-products-kind-id.yaml`: getPricingProductPolicy; administrator authorization applies.
-- `api-v1-admin-pricing.yaml`: getPricingDashboard; existing signed administrator or owned member authorization applies.
+- `api-v1-admin-pricing.yaml`: getPricingDashboard; signed browser administrator or scoped API-token authorization applies.
 - `api-v1-purchases-id-pricing.yaml`: getOwnedPricingRenewalInfo; owned-member authorization applies.
 
 - `api-v1-admin-users-id-predictions.yaml`: Admin owner-specific forecasts.

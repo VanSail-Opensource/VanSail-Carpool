@@ -5,7 +5,7 @@ get:
   summary: Get the latest 30-minute aggregate statistics snapshot
   responses:
     '200':
-      description: Current member usage projection and freshness information.
+      description: Administrator aggregate usage projection and freshness information.
       content:
         application/json:
           schema: { $ref: '../openapi.yaml#/components/schemas/StatisticsSnapshot' }

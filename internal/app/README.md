@@ -213,6 +213,12 @@ PAYG jobs use the existing durable outbox and master executor. Startup and 30-se
 
 Existing bootstrap, scheduler, native entitlement and queued Telegram/PM composition: `bootstrap_settings.go`, `pm_forum_validation.go`, `pm_profile.go`, `scheduler.go`, `telegram_queue_pm.go`, `xnode_entitlements.go`.
 
+`xnode_entitlements.go` also routes queued member synchronization through the
+same native owner-scoped desired-state path as administrator changes.
+`xnode_entitlement_sync_test.go` verifies active/ended access with missing and
+incorrect legacy pointers, repeated delivery, and untouched accounting for
+another paid member.
+
 `mutation_operation_composition.go` registers the shared subscription, Emby, retry, and refund workers.
 
 `account_purge.go` registers the existing outbox purge worker and the queued Emby DELETE adapter. The scheduler resumes incomplete cleanup after restart/retry exhaustion. No upstream call bypasses upstreamqueue.

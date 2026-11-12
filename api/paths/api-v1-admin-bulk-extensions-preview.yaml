@@ -10,7 +10,7 @@ post:
         schema: { $ref: '../openapi.yaml#/components/schemas/BulkExtensionRequest' }
   responses:
     '200':
-      description: Previewed member selection, term changes and confirmation version.
+      description: Counts of matched users, active purchases and queued successors.
       content:
         application/json:
           schema: { $ref: '../openapi.yaml#/components/schemas/BulkExtensionPreview' }

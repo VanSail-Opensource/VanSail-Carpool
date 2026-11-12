@@ -20,3 +20,12 @@ endpoint editor's localization domain. Inclusive port ranges and field-specific
 range bounds are generated for administrator controls without a raw JSON editor.
 
 `workflow-policy.mjs` exports the pure `auditWorkflow(name, parsedYaml)` security check for full upstream SHAs, approved repositories, private checkout credentials and bounded job permissions. `check-workflows.mjs` reads `.github/workflows` through the existing YAML dependency and reports static failures without network access or executing jobs. `workflow-policy.regressions.mjs` supplies hostile-ref, privilege and publication-bypass regressions through Node's built-in runner in hosted Actions only. `audit:structure` includes this static gate; `test:workflows` is the separate hosted regression entry point. Extend the reviewed action/job allowlists deliberately and update `docs/actions-security.md` when changing pins.
+
+`browser-recovery-audit.mjs` is a hosted-only Chromium audit using the pinned
+Playwright dependency and a loopback Vite fixture server. It exercises the real
+App currency hydration and payment sheet plus browser access recovery at desktop
+and mobile widths, including loading, populated, empty and error states. It
+blocks unexpected API/external requests, checks console failures and document
+overflow, and writes per-state screenshots and `results.json` to
+`BROWSER_AUDIT_OUTPUT`. CI uploads these artifacts even after a failure. Run it
+only in hosted CI; the repository's local automated-suite restriction applies.

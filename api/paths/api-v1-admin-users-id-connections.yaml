@@ -7,6 +7,6 @@ post:
     - $ref: '../openapi.yaml#/components/parameters/UserID'
     - $ref: '../openapi.yaml#/components/parameters/IdempotencyKey'
   responses:
-    '202': { content: { application/json: { schema: { $ref: '../openapi.yaml#/components/schemas/ConnectionScan' } } } }
+    '202': { description: Connection scan accepted for queued processing., content: { application/json: { schema: { $ref: '../openapi.yaml#/components/schemas/ConnectionScan' } } } }
     '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
     '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }

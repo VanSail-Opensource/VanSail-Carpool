@@ -10,9 +10,10 @@ import (
 // RFC3339Nano has variable fractional precision, so lexical comparison alone
 // can expire a record just after a whole-second boundary. Use an indexed broad
 // candidate bound, then compare parsed UTC instants at full precision.
-func expiredTimestampIDsTx(ctx context.Context, tx *sql.Tx, query string, cutoff time.Time) ([]string, error) {
+func expiredTimestampIDsTx(ctx context.Context, tx *sql.Tx, query string, cutoff time.Time, args ...any) ([]string, error) {
 	upper := cutoff.UTC().Truncate(time.Second).Add(time.Second)
-	rows, err := tx.QueryContext(ctx, query, stamp(upper))
+	params := append([]any{stamp(upper)}, args...)
+	rows, err := tx.QueryContext(ctx, query, params...)
 	if err != nil {
 		return nil, err
 	}

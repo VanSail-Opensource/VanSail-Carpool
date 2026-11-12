@@ -68,7 +68,8 @@ onboarding, signed requests and the existing idempotent operation protections.
 - `request_auth.go` requires the per-session HMAC contract on authenticated browser requests.
 - `request_auth_test.go` tests signed-route enforcement and session-cookie visibility rules.
 - `auth_rate_limit.go` bounds Telegram session exchange attempts by normalized client IP.
-- `affiliates.go` exposes member referral pages and optimistic administrator tier replacement.
+- `affiliates.go` exposes member referral pages and optimistic administrator tier replacement through strict, size-limited JSON decoding.
+- `affiliates_input_test.go` rejects trailing documents, invalid text, and oversized bodies before affiliate configuration mutation.
 - `affiliate_commands.go` accepts exact positive-decimal private referral parameters.
 - `affiliate_commands_test.go` covers accepted and rejected referral parameters.
 - `auth_rate_limit_test.go` covers client-IP isolation, refill, and forwarded-address handling.
@@ -99,7 +100,7 @@ onboarding, signed requests and the existing idempotent operation protections.
 
 - `community_membership.go` maps canonical Telegram membership checks and strict one-space invite eligibility to stable Community transport errors.
 - `community_shared.go` defines shared community settings and nullable JSON request fields.
-- `community_helpers.go` contains idempotency, bounded multipart, decimal, collection, and error helpers.
+- `community_helpers.go` contains required idempotency, decimal, collection, and error helpers.
 - `activity_types.go` maps Activity domain games, draws, rewards, and history to responses.
 - `activity_member.go` serves member Activity overview, check-in, bet, draw, and configuration behavior.
 - `activity_admin.go` serves Activity settings and game administration.
@@ -156,7 +157,7 @@ onboarding, signed requests and the existing idempotent operation protections.
 ## Tests
 
 - `server_test.go` covers strict decoding, onboarding access, and SPA delivery.
-- `community_test.go` covers nullable inputs, multipart bounds, decimal parsing, reward mapping, and idempotency.
+- `community_test.go` covers nullable inputs, decimal parsing, reward mapping, and required idempotency.
 - `community_membership_test.go` covers stable onboarding, membership-check, active-combo, already-joined, and invite-provider transport errors.
 - `admin_catalog_test.go` covers strict decoding of typed squad profile writes.
 - `operations_commands_test.go` covers Telegram deduction command parsing.

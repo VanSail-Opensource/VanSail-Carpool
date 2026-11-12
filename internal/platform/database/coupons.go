@@ -72,16 +72,14 @@ func (s *Store) SaveCoupon(ctx context.Context, input coupons.CouponInput, now t
 
 func (s *Store) ListCoupons(ctx context.Context, activeOnly bool) ([]coupons.Coupon, error) {
 	query := couponSelect
-	args := make([]any, 0, 1)
+	now := time.Now().UTC()
 	if activeOnly {
-		query += fmt.Sprintf(" WHERE admin_visible=1 AND active=1 AND (expires_at IS NULL OR expires_at>$%d)", len(args)+1)
-
-		args = append(args, stamp(time.Now().UTC()))
+		query += ` WHERE admin_visible=1 AND active=1`
 	} else {
 		query += ` WHERE admin_visible=1`
 	}
 	query += ` ORDER BY created_at DESC,id DESC`
-	rows, err := s.db.QueryContext(ctx, query, args...)
+	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("list coupons: %w", err)
 	}
@@ -91,6 +89,9 @@ func (s *Store) ListCoupons(ctx context.Context, activeOnly bool) ([]coupons.Cou
 		coupon, scanErr := scanCoupon(rows)
 		if scanErr != nil {
 			return nil, scanErr
+		}
+		if activeOnly && coupon.ExpiresAt != nil && !coupon.ExpiresAt.After(now) {
+			continue
 		}
 		result = append(result, coupon)
 	}
