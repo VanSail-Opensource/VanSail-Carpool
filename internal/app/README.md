@@ -231,6 +231,12 @@ selection, legacy callbacks, missing-order authentication and failure paths.
 
 `payment_profile_test_helpers_test.go` supplies encrypted multi-account settings and durable-order lookup fixtures for callback account-isolation regressions.
 
+Payment cancellation uses the same retained order-account resolver as callback
+verification. Disabled rails block new checkout without blocking historical
+cancellation; legacy orders keep the provider-named migrated account instead of
+selecting a newer default. `payment_cancel_profiles_test.go` exercises exact
+queued signatures, disabled rails and refusal of unusable account identities.
+
 `xnode_admin_entitlements.go` resolves administrator mutations through the panel
 owner's native identity. A required entitlement may provision that identity;
 an empty stale snapshot rechecks effective paid access before exact accounting

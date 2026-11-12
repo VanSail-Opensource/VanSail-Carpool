@@ -105,12 +105,13 @@ func (w *Worker) complete(ctx context.Context, operation providerops.Operation, 
 }
 
 func (w *Worker) finishItem(ctx context.Context, operation providerops.Operation, item providerops.Item) error {
-	switch item.Status {
-	case providerops.StatusSucceeded, providerops.StatusFailed, providerops.StatusCompensated, providerops.StatusPendingReview:
-		return w.complete(ctx, operation, item, item.Status, item.ErrorCode)
-	default:
+	if !providerops.Terminal(item.Status) {
 		return nil
 	}
+	completion := providerops.Completion{Status: item.Status, ErrorCode: item.ErrorCode,
+		ProviderReference: item.ProviderReference, ResultJSON: item.ResultJSON}
+	_, err := w.repository.CompleteProviderOperation(ctx, operation.Receipt.ID, completion, w.now().UTC())
+	return err
 }
 
 func (w *Worker) loadTarget(ctx context.Context, operation providerops.Operation, item providerops.Item) (PurchaseFacts, model.User, error) {

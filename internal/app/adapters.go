@@ -152,11 +152,11 @@ func (a paymentAdapter) Cancel(ctx context.Context, order model.PaymentOrder) er
 	if order.Provider != "bepusdt" || order.ProviderTradeID == nil || *order.ProviderTradeID == "" {
 		return nil
 	}
-	_, profileID, rail, parseErr := billing.ParseMethodSelection(order.MethodID)
-	if parseErr != nil {
-		profileID, rail = "", order.ProviderRail
+	profile, _, err := a.orderPaymentProfile(ctx, "bepusdt", order)
+	if err != nil {
+		return err
 	}
-	client, err := a.bepusdtClient(ctx, profileID, rail)
+	client, err := bepusdt.NewClient(profile.Endpoint, profile.CredentialPlaintext)
 	if err != nil {
 		return err
 	}

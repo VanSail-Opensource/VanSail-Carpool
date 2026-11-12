@@ -24,14 +24,21 @@ func (a paymentAdapter) callbackPaymentProfile(ctx context.Context, provider, or
 	if err != nil {
 		return model.PaymentProfileRuntime{}, "", false, err
 	}
+	profile, profileID, err := a.orderPaymentProfile(ctx, provider, order)
+	return profile, profileID, true, err
+}
+
+// Existing orders retain their account even after a rail is disabled. New
+// checkout selection must not be reused for callbacks or cancellation.
+func (a paymentAdapter) orderPaymentProfile(ctx context.Context, provider string, order model.PaymentOrder) (model.PaymentProfileRuntime, string, error) {
 	if order.Provider != provider {
-		return model.PaymentProfileRuntime{}, "", true, database.ErrConflict
+		return model.PaymentProfileRuntime{}, "", database.ErrConflict
 	}
 	profileID := ""
 	if order.MethodID != "" {
 		methodProvider, selectedID, _, parseErr := billing.ParseMethodSelection(order.MethodID)
 		if parseErr != nil || methodProvider != provider {
-			return model.PaymentProfileRuntime{}, "", true, database.ErrConflict
+			return model.PaymentProfileRuntime{}, "", database.ErrConflict
 		}
 		profileID = selectedID
 	}
@@ -47,7 +54,7 @@ func (a paymentAdapter) callbackPaymentProfile(ctx context.Context, provider, or
 	if err == nil && profile.Provider != provider {
 		err = database.ErrConflict
 	}
-	return profile, profileID, true, err
+	return profile, profileID, err
 }
 
 func (a paymentAdapter) legacyCallbackPaymentProfile(ctx context.Context, provider string) (model.PaymentProfileRuntime, error) {

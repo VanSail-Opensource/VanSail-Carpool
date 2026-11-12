@@ -59,6 +59,9 @@ covers a blocked readiness call beside a healthy squad and unexhausted dependenc
 waits. These suites run in hosted CI, not locally.
 `generation_test.go` verifies queued and processing commands terminate after a
 known account-generation change without touching the current wallet or access.
+`terminal_recovery_test.go` verifies that an already recorded terminal item
+completes its parent receipt before decrypting input or reloading mutable owner
+state. Its reference, result and error survive interrupted receipt writes exactly.
 `legacy_test.go` covers active/accepted zero-price queued fixed-term conflicts
 and preservation of transient repository errors in disable admission.
 `capacity_test.go` confirms global owner-capacity rejection uses the same

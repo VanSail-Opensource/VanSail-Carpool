@@ -25,21 +25,24 @@ func (s *Service) HandleProviderOperation(ctx context.Context, operation provide
 	if providerops.Terminal(providerops.Status(operation.Receipt.Status)) {
 		return nil
 	}
-	target, err := s.decode(ctx, operation, job)
-	targetErr := err
-	if err != nil && !errors.Is(err, database.ErrAccountUnavailable) {
-		return wait("HOURLY_TARGET_PENDING", err)
-	}
 	items, err := s.store.ProviderOperationItems(ctx, operation.Receipt.ID)
 	if err != nil {
 		return wait("HOURLY_RECEIPT_PENDING", err)
 	}
-	if len(items) != 1 || items[0].Key != "hourly" || items[0].TargetType != "hourly_squad" || items[0].TargetID != target.GroupID {
+	if len(items) != 1 || items[0].Key != "hourly" || items[0].TargetType != "hourly_squad" || items[0].TargetID == "" {
 		return wait("HOURLY_TARGET_MISMATCH", database.ErrConflict)
 	}
 	item := items[0]
 	if providerops.Terminal(item.Status) {
 		return s.finish(ctx, operation, item, item.Status, item.ErrorCode)
+	}
+	target, err := s.decode(ctx, operation, job)
+	targetErr := err
+	if err != nil && !errors.Is(err, database.ErrAccountUnavailable) {
+		return wait("HOURLY_TARGET_PENDING", err)
+	}
+	if item.TargetID != target.GroupID {
+		return wait("HOURLY_TARGET_MISMATCH", database.ErrConflict)
 	}
 	if operation.Receipt.Status == string(providerops.StatusQueued) {
 		operation, err = s.store.BeginProviderOperationAttempt(ctx, operation.Receipt.ID, s.now().UTC())
@@ -101,6 +104,10 @@ func (s *Service) decode(ctx context.Context, op providerops.Operation, job mode
 
 func (s *Service) finish(ctx context.Context, op providerops.Operation, item providerops.Item, status providerops.Status, code string) error {
 	completion := providerops.Completion{Status: status, ErrorCode: code, ResultJSON: "{}"}
+	if providerops.Terminal(item.Status) {
+		completion = providerops.Completion{Status: item.Status, ErrorCode: item.ErrorCode,
+			ProviderReference: item.ProviderReference, ResultJSON: item.ResultJSON}
+	}
 	if item.Status == providerops.StatusProcessing {
 		if _, err := s.store.CompleteProviderOperationItem(ctx, op.Receipt.ID, item.Key, completion, s.now().UTC()); err != nil {
 			return wait("HOURLY_RECEIPT_PENDING", err)
