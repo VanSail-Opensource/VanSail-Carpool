@@ -15,6 +15,10 @@ func TestNativeAdminEditAndRefundResolvePanelOwner(t *testing.T) {
 		t.Run(map[bool]string{false: "missing legacy link", true: "another native account in legacy link"}[staleLink], func(t *testing.T) {
 			f := newNativePurchaseFixture(t)
 			ctx := context.Background()
+			actor, _, err := f.store.UpsertTelegramUser(ctx, model.TelegramProfile{ID: f.user.TelegramID + 2}, true)
+			if err != nil {
+				t.Fatal(err)
+			}
 			other, _, err := f.store.UpsertTelegramUser(ctx, model.TelegramProfile{ID: f.user.TelegramID + 1}, false)
 			if err != nil {
 				t.Fatal(err)
@@ -37,7 +41,7 @@ func TestNativeAdminEditAndRefundResolvePanelOwner(t *testing.T) {
 				t.Fatal(err)
 			}
 			workflows := admin.NewUserWorkflows(f.store, f.provider)
-			_, err = workflows.EditEntitlement(ctx, f.user.ID, f.user.ID, f.purchase.ID, "edit-native", admin.EntitlementEdit{
+			_, err = workflows.EditEntitlement(ctx, actor.ID, f.user.ID, f.purchase.ID, "edit-native", admin.EntitlementEdit{
 				Version: f.purchase.UpdatedAt, Reason: "native allowance correction", ComboID: f.purchase.ComboID,
 				ValidFrom: f.purchase.ValidFrom, ValidUntil: f.purchase.ValidUntil.Add(time.Hour), Status: "active",
 				TrafficLimitBytes: 2000, ResetStrategy: f.purchase.ResetStrategy,
@@ -61,7 +65,7 @@ func TestNativeAdminEditAndRefundResolvePanelOwner(t *testing.T) {
 			if err != nil || period.Status != "open" || period.UsedBytes != 7 {
 				t.Fatalf("empty stale snapshot revoked paid access = %+v, %v", period, err)
 			}
-			receipt, err := workflows.RefundEntitlement(ctx, f.user.ID, f.user.ID, f.purchase.ID, "refund-native", "administrator refund", f.purchase.PriceTXBMinor)
+			receipt, err := workflows.RefundEntitlement(ctx, actor.ID, f.user.ID, f.purchase.ID, "refund-native", "administrator refund", f.purchase.PriceTXBMinor)
 			if err != nil {
 				t.Fatal(err)
 			}

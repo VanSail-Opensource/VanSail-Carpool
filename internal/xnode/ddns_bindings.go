@@ -52,23 +52,34 @@ func (s *Service) loadDDNSBindings(ctx context.Context, node string) (map[string
 // SaveNodeAs attributes future automatic node operations to the administrator
 // who configured them; there is no invented system member or financial owner.
 func (s *Service) SaveNodeAs(ctx context.Context, node Node, settings NodeSettings, actor string) (Node, error) {
-	user, err := s.repo.UserByID(ctx, actor)
-	if err != nil {
-		return node, err
-	}
-	if user.Role != "admin" {
+	if actor == "" {
 		return node, ErrInvalid
 	}
 	settings.ddnsActor = actor
-	return s.SaveNode(ctx, node, settings)
+	return s.saveNode(ctx, node, settings, actor)
 }
 
-func (s *Service) persistNodeDDNS(ctx context.Context, node Node, bindings map[string]DDNSHostBinding) error {
+func (s *Service) persistNodeDDNS(ctx context.Context, node Node, bindings map[string]DDNSHostBinding, actor string) (Node, error) {
+	if actor != "" {
+		target, ok := s.repo.(interface {
+			SaveAdminXNodeNodeDDNS(context.Context, string, Node, map[string]DDNSHostBinding) (Node, error)
+		})
+		if !ok {
+			return node, ErrUnavailable
+		}
+		return target.SaveAdminXNodeNodeDDNS(ctx, actor, node, bindings)
+	}
 	if target, ok := s.repo.(ddnsBindingWriter); ok {
-		return target.SaveXNodeNodeDDNS(ctx, node, bindings)
+		if err := target.SaveXNodeNodeDDNS(ctx, node, bindings); err != nil {
+			return node, err
+		}
+		return s.repo.XNodeNode(ctx, node.ID)
 	}
 	if len(bindings) > 0 {
-		return ErrUnavailable
+		return node, ErrUnavailable
 	}
-	return s.repo.SaveXNodeNode(ctx, node)
+	if err := s.repo.SaveXNodeNode(ctx, node); err != nil {
+		return node, err
+	}
+	return s.repo.XNodeNode(ctx, node.ID)
 }

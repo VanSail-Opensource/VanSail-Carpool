@@ -107,37 +107,3 @@ func (s *Store) retryAttempt_CreateAdminTemporaryUnban(ctx context.Context, acto
 	}
 	return op.Receipt, nil
 }
-
-func (s *Store) retryAttempt_QueueExpiredAdminTemporaryBan(ctx context.Context, userID string, now time.Time) error {
-
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = tx.Rollback() }()
-	var actorID, banID, unbanID, banStatus string
-	err = tx.QueryRowContext(ctx, `SELECT b.actor_user_id,b.ban_operation_id,COALESCE(b.unban_operation_id,''),o.status FROM admin_temporary_bans b
-		JOIN provider_operations o ON o.id=b.ban_operation_id WHERE b.user_id=$1 AND b.restored_at IS NULL AND b.expires_at<=$2`, userID, stamp(now)).Scan(&actorID, &banID, &unbanID, &banStatus)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil
-		}
-		return err
-	}
-	if unbanID != "" {
-		return tx.Commit()
-	}
-	if banStatus != string(providerops.StatusSucceeded) {
-		return ErrConflict
-	}
-	op, _, err := createProviderOperationTx(ctx, tx, providerops.CreateInput{ActorUserID: actorID, OwnerUserID: userID, Kind: providerops.KindAdminTemporaryUnban,
-		IdempotencyKey: "expiry:" + banID, RequestFingerprint: "expiry:" + banID}, now)
-	if err != nil {
-		return err
-	}
-	_, err = tx.ExecContext(ctx, `UPDATE admin_temporary_bans SET unban_operation_id=$1,unban_reason='expired',updated_at=$2 WHERE user_id=$3`, op.Receipt.ID, stamp(now), userID)
-	if err != nil {
-		return err
-	}
-	return tx.Commit()
-}

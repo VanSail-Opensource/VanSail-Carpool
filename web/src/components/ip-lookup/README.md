@@ -35,3 +35,13 @@ IDs remain associated with their exact input; late acceptance and polling errors
 cannot replace a newer address. Receipt reads resume after a visibility pause and
 are fenced by owner, input generation and read generation. `useIPLookup.test.ts`
 covers these transitions without issuing provider traffic.
+
+Partial topologies omit edges whose node metadata is absent instead of crashing
+the geometry; `bgpGraph.test.ts` covers that recovery. Same-prefix refreshes retire
+removed node/route selections and clamp the focused route page. IP timestamps
+follow the selected application locale, preserving UTC for date-only provenance.
+Progress tasks retain their status icons without spinning under reduced motion.
+Live-detail snapshots retire synchronously on logout or account replacement;
+the replacement account must supply a new snapshot or complete its own read.
+Late streams cannot restore retired details, and disposed views cannot restart
+requests. Hosted IP recovery fixtures exercise these boundaries without providers.

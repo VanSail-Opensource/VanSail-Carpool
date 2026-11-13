@@ -17,7 +17,7 @@ func TestAdminOperationReplaySurvivesExpiredTargets(t *testing.T) {
 			combo := saveTestCombo(t, store, "Original", 100, 30)
 			target := saveTestCombo(t, store, "Replacement", 200, 30)
 			user, purchase := createAdminWorkflowPurchase(t, store, 42901, combo, now)
-			actor := createTestUser(t, store, 42902)
+			actor := createTestAdmin(t, store, 42902)
 			command := func(fingerprint string) (model.OperationReceipt, error) {
 				if kind == "bulk extension" {
 					return store.CreateAdminBulkExtension(ctx, AdminBulkExtensionInput{

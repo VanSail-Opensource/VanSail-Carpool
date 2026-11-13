@@ -25,7 +25,7 @@ func (s *Server) xnodeSaveConfiguration(w http.ResponseWriter, r *http.Request) 
 	if id := chiURLParam(r, "id"); id != "" {
 		item.ID = id
 	}
-	item, err := s.deps.XNode.SaveConfiguration(r.Context(), item)
+	item, err := s.deps.XNode.SaveConfigurationAs(r.Context(), currentUser(r).ID, item)
 	if err != nil {
 		s.xnodeError(w, r, err)
 		return
@@ -33,7 +33,7 @@ func (s *Server) xnodeSaveConfiguration(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, http.StatusOK, item)
 }
 func (s *Server) xnodeDeleteConfiguration(w http.ResponseWriter, r *http.Request) {
-	if err := s.deps.XNode.DeleteConfiguration(r.Context(), chiURLParam(r, "id")); err != nil {
+	if err := s.deps.XNode.DeleteConfigurationAs(r.Context(), currentUser(r).ID, chiURLParam(r, "id")); err != nil {
 		s.xnodeError(w, r, err)
 		return
 	}
@@ -74,7 +74,7 @@ func (s *Server) xnodeSaveSnippet(w http.ResponseWriter, r *http.Request) {
 	if id := chiURLParam(r, "id"); id != "" {
 		item.ID = id
 	}
-	item, err := s.deps.XNode.SaveSnippet(r.Context(), item)
+	item, err := s.deps.XNode.SaveSnippetAs(r.Context(), currentUser(r).ID, item)
 	if err != nil {
 		s.xnodeError(w, r, err)
 		return
@@ -82,7 +82,7 @@ func (s *Server) xnodeSaveSnippet(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, item)
 }
 func (s *Server) xnodeDeleteSnippet(w http.ResponseWriter, r *http.Request) {
-	if err := s.deps.XNode.DeleteSnippet(r.Context(), chiURLParam(r, "id")); err != nil {
+	if err := s.deps.XNode.DeleteSnippetAs(r.Context(), currentUser(r).ID, chiURLParam(r, "id")); err != nil {
 		s.xnodeError(w, r, err)
 		return
 	}

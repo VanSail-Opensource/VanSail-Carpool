@@ -89,7 +89,11 @@ func (p Proxy) NativeLink() (string, error) {
 		query.Set("flow", flow)
 	}
 	if scheme == "vless" {
-		query.Set("encryption", "none")
+		encryption := text(p.Account, "encryption")
+		if encryption == "" {
+			encryption = "none"
+		}
+		query.Set("encryption", encryption)
 	}
 	if security == "tls" || security == "reality" {
 		settings := object(p.Stream, security+"Settings")

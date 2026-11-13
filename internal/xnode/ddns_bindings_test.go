@@ -47,6 +47,14 @@ func (r *ddnsBindingTestRepository) SaveXNodeNodeDDNS(_ context.Context, node No
 	return nil
 }
 
+func (r *ddnsBindingTestRepository) SaveAdminXNodeNodeDDNS(ctx context.Context, actor string, node Node, bindings map[string]DDNSHostBinding) (Node, error) {
+	if actor != "admin" || r.role != "admin" {
+		return Node{}, ErrConflict
+	}
+	err := r.SaveXNodeNodeDDNS(ctx, node, bindings)
+	return node, err
+}
+
 func TestDDNSBindingsKeepDiscoveryAndHostOwnershipSeparate(t *testing.T) {
 	vault, err := secret.NewVault(make([]byte, 32))
 	if err != nil {

@@ -12,7 +12,7 @@ import (
 func TestOutboxRetryPreservesStorageErrors(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
-	actor := createTestUser(t, s, 95006)
+	actor := createTestAdmin(t, s, 95006)
 	now := time.Now().UTC()
 	operation, _, err := s.CreateAdminMutation(ctx, adminMutationTestInput(actor.ID, "storage-error"), now)
 	if err != nil {

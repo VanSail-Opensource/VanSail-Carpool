@@ -9,6 +9,7 @@ const page = shallowRef(1)
 const pages = computed(() => Math.max(1, Math.ceil(props.routes.length / 25)))
 const visible = computed(() => props.routes.slice((page.value - 1) * 25, page.value * 25))
 watch(() => props.asn, () => { page.value = 1 })
+watch(pages, value => { page.value = Math.min(page.value, value) })
 </script>
 
 <template>

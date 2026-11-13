@@ -27,7 +27,7 @@ func sameDocument(a, b []byte) bool {
 
 // Metadata edits retain encrypted native documents and ordered bindings. They
 // still validate the current core contract and enforce optimistic revisions.
-func (s *Service) saveConfigurationMetadata(ctx context.Context, next Configuration) (Configuration, bool, error) {
+func (s *Service) saveConfigurationMetadata(ctx context.Context, next Configuration, actor string) (Configuration, bool, error) {
 	if next.ID == "" {
 		return next, false, nil
 	}
@@ -52,14 +52,11 @@ func (s *Service) saveConfigurationMetadata(ctx context.Context, next Configurat
 		return next, true, ErrInvalid
 	}
 	previous.Name = next.Name
-	if err = s.repo.SaveXNodeConfiguration(ctx, previous); err != nil {
-		return next, true, err
-	}
-	saved, err := s.repo.XNodeConfiguration(ctx, next.ID)
+	saved, err := s.persistConfiguration(ctx, actor, previous)
 	return saved, true, err
 }
 
-func (s *Service) saveSnippetMetadata(ctx context.Context, next Snippet) (Snippet, bool, error) {
+func (s *Service) saveSnippetMetadata(ctx context.Context, next Snippet, actor string) (Snippet, bool, error) {
 	if next.ID == "" {
 		return next, false, nil
 	}
@@ -81,9 +78,6 @@ func (s *Service) saveSnippetMetadata(ctx context.Context, next Snippet) (Snippe
 		return next, false, nil
 	}
 	previous.Name = next.Name
-	if err = s.repo.SaveXNodeSnippet(ctx, previous); err != nil {
-		return next, true, err
-	}
-	saved, err := s.repo.XNodeSnippet(ctx, next.ID)
+	saved, err := s.persistSnippet(ctx, actor, previous)
 	return saved, true, err
 }

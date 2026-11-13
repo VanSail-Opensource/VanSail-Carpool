@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"time"
@@ -10,6 +11,19 @@ import (
 // SaveXNodeNamedService commits encrypted terms, authorization and quota changes
 // together. Existing usage and settled periods can never be rewritten by edits.
 func (s *Store) retryAttempt_SaveXNodeNamedService(ctx context.Context, item xnode.Identity, access xnode.ServiceAccess) (xnode.Identity, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return item, err
+	}
+	defer tx.Rollback()
+	item, err = saveXNodeNamedServiceTx(ctx, tx, item, access)
+	if err != nil {
+		return item, err
+	}
+	return item, tx.Commit()
+}
+
+func saveXNodeNamedServiceTx(ctx context.Context, tx *sql.Tx, item xnode.Identity, access xnode.ServiceAccess) (xnode.Identity, error) {
 	created := item.ProxyUserID == 0
 	var err error
 	if created {
@@ -18,11 +32,6 @@ func (s *Store) retryAttempt_SaveXNodeNamedService(ctx context.Context, item xno
 			return item, err
 		}
 	}
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return item, err
-	}
-	defer tx.Rollback()
 	if created {
 		query := `SELECT nextval('xnode_service_proxy_id_seq')`
 
@@ -88,5 +97,5 @@ func (s *Store) retryAttempt_SaveXNodeNamedService(ctx context.Context, item xno
 	if err != nil {
 		return item, err
 	}
-	return item, tx.Commit()
+	return item, nil
 }

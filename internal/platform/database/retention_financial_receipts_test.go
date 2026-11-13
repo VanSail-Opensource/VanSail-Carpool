@@ -98,7 +98,7 @@ func TestBulkExtensionReplaySurvivesMaintenanceWithoutRepeatingEntitlement(t *te
 	old := now.Add(-10 * 24 * time.Hour)
 	combo := saveTestCombo(t, store, "retained-bulk-replay", 100, 30)
 	_, purchase := createAdminWorkflowPurchase(t, store, 497702, combo, old)
-	actor := createTestUser(t, store, 497703)
+	actor := createTestAdmin(t, store, 497703)
 	input := AdminBulkExtensionInput{ActorUserID: actor.ID, IdempotencyKey: "retained-bulk-extension",
 		RequestFingerprint: "retained-bulk-extension-proof", Reason: "service credit", DurationMinutes: 60,
 		Filter: AdminBulkExtensionFilter{ComboIDs: []string{combo.ID}}}

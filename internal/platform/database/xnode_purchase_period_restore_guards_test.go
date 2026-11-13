@@ -84,7 +84,7 @@ func TestPurchasePeriodRestoreHonorsPersistedBanBeforeProviderRestriction(t *tes
 		t.Fatal(err)
 	}
 	_, err := f.store.CreateAdminTemporaryBan(ctx, AdminTemporaryBanInput{ActorUserID: f.identity.UserID, UserID: f.identity.UserID,
-		IdempotencyKey: "restore-ban", RequestFingerprint: "restore-ban", DurationMinutes: 10, Reason: "fixture"}, f.now)
+		IdempotencyKey: "restore-ban", RequestFingerprint: "restore-ban-period-proof", DurationMinutes: 10, Reason: "fixture"}, f.now)
 	if err != nil {
 		t.Fatal(err)
 	}

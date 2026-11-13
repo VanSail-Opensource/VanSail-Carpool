@@ -475,3 +475,8 @@ value or expected crypto amounts with confirmed balance credit.
 Hourly recovery uses `hourly-audit.html` with policy/offer/enrollment replacement
 and retained-credit/zero-allowance states. `allowance-zero-unused` has no funded
 credit; `credit-exhausted` consumes both reported budgets.
+
+`ip-recovery-audit.html` mounts the actual BGP graph with missing endpoint metadata,
+route-page contraction and selection removal. `live` mounts live details with a
+retained paid snapshot, account replacement, logout and a delayed obsolete read.
+The fixture uses documentation addresses and constructed owners only.

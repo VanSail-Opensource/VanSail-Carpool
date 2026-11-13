@@ -41,11 +41,15 @@ func (s *Store) SaveXNodeCustomization(ctx context.Context, item xnode.Customiza
 		}
 		item.ProxyUserID = identity.ProxyUserID
 	}
+	return saveXNodeCustomization(ctx, s.db, item)
+}
+
+func saveXNodeCustomization(ctx context.Context, q xnodeSQLExecutor, item xnode.Customization) error {
 	if item.Revision == 0 {
-		_, err := s.db.ExecContext(ctx, `INSERT INTO xnode_customizations(proxy_user_id,user_id,node_id,outbounds_cipher,routing_cipher,revision,updated_at) VALUES($1,$2,$3,$4,$5,1,$6)`, item.ProxyUserID, nullText(item.UserID), item.NodeID, item.OutboundsCipher, item.RoutingCipher, stamp(time.Now().UTC()))
+		_, err := q.ExecContext(ctx, `INSERT INTO xnode_customizations(proxy_user_id,user_id,node_id,outbounds_cipher,routing_cipher,revision,updated_at) VALUES($1,$2,$3,$4,$5,1,$6)`, item.ProxyUserID, nullText(item.UserID), item.NodeID, item.OutboundsCipher, item.RoutingCipher, stamp(time.Now().UTC()))
 		return err
 	}
-	result, err := s.db.ExecContext(ctx, `UPDATE xnode_customizations SET outbounds_cipher=$1,routing_cipher=$2,revision=revision+1,updated_at=$3 WHERE proxy_user_id=$4 AND node_id=$5 AND revision=$6`, item.OutboundsCipher, item.RoutingCipher, stamp(time.Now().UTC()), item.ProxyUserID, item.NodeID, item.Revision)
+	result, err := q.ExecContext(ctx, `UPDATE xnode_customizations SET outbounds_cipher=$1,routing_cipher=$2,revision=revision+1,updated_at=$3 WHERE proxy_user_id=$4 AND node_id=$5 AND revision=$6`, item.OutboundsCipher, item.RoutingCipher, stamp(time.Now().UTC()), item.ProxyUserID, item.NodeID, item.Revision)
 	if err != nil {
 		return err
 	}

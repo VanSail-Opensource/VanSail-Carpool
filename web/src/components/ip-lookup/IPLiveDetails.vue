@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getLocale } from '@/i18n'
 import type { IPLookupReport, IPLookupLiveDetails, IPLookupQuote } from '@/api/ipLookup'
 import { formatMoney } from '@/utils/format'
 import { useLiveIPDetails } from './useLiveIPDetails'
@@ -23,7 +24,7 @@ const { details, progress, loading, errorCode } = useLiveIPDetails(() => props.r
     <InlineNotice v-if="errorCode" tone="warning">{{ $t(`ipLookupLive.errors.${errorCode}`) }}</InlineNotice>
     <IPLiveASNSection v-if="!details" :asns="[]" :rpki="report.rpki" />
     <template v-if="details">
-      <p v-if="details.cacheMatch === 'exact'" class="live-fetch-time">{{ $t('ipLookupLive.cacheExact', { date: new Date(details.fetchedAt!).toLocaleString() }) }}</p>
+      <p v-if="details.cacheMatch === 'exact'" class="live-fetch-time">{{ $t('ipLookupLive.cacheExact', { date: new Date(details.fetchedAt!).toLocaleString(getLocale()) }) }}</p>
       <IPBGPTopology v-if="details.topology" :topology="details.topology" />
       <IPLiveASNSection :asns="details.asns ?? []" :rpki="report.rpki" />
       <div class="live-ip-facts">
@@ -32,7 +33,7 @@ const { details, progress, loading, errorCode } = useLiveIPDetails(() => props.r
       </div>
       <IPTransferHistory :history="details.transfers" :loading="loading && !details.transfers" :failed="!!errorCode" />
       <IPShodanDetails v-if="details.shodan" :result="details.shodan" />
-      <p v-if="details.fetchedAt" class="live-fetch-time">{{ $t('ipLookupLive.fetchedAt', { date: new Date(details.fetchedAt).toLocaleString() }) }}</p>
+      <p v-if="details.fetchedAt" class="live-fetch-time">{{ $t('ipLookupLive.fetchedAt', { date: new Date(details.fetchedAt).toLocaleString(getLocale()) }) }}</p>
     </template>
   </section>
 </template>

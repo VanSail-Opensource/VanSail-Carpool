@@ -95,7 +95,7 @@ func TestNativeMemberRejoinPreservesActiveBanOnClearedIdentity(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			if _, err := store.CreateAdminTemporaryBan(ctx, AdminTemporaryBanInput{ActorUserID: user.ID, UserID: user.ID, IdempotencyKey: "rejoin-ban", RequestFingerprint: "rejoin-ban", DurationMinutes: 10, Reason: "fixture"}, time.Now().UTC()); err != nil {
+			if _, err := store.CreateAdminTemporaryBan(ctx, AdminTemporaryBanInput{ActorUserID: user.ID, UserID: user.ID, IdempotencyKey: "rejoin-ban", RequestFingerprint: "rejoin-ban-generation-proof", DurationMinutes: 10, Reason: "fixture"}, time.Now().UTC()); err != nil {
 				t.Fatal(err)
 			}
 			next := expected

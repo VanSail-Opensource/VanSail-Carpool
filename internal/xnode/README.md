@@ -1512,3 +1512,26 @@ accounting recovery. A stale purchase cannot close a successor before the storag
 compare, and an extension cannot replace an already-used period with fresh quota.
 
 `member_identity.go` routes all real member credential preparation through an exact-generation store adapter, including hourly/PAYG setup and compile-read wrappers. `identities.go` shares credential preparation while generic fixtures retain their existing persistence contract. Current material comparison preserves concurrent period pointers and restrictions; ordinary credential repair never lifts an administrator restriction. Purchase period admission/restoration also compares the captured generation inside its transaction.
+
+### Current administrator admission and exact write responses
+
+`admin_configuration.go`, `admin_inventory.go`, `admin_identity.go`,
+`admin_named_services.go` and `admin_customization.go` carry each authenticated
+administrator into the storage transaction that checks current role and account
+eligibility, writes desired state, and records its sanitized audit. Missing
+transactional adapters fail closed. Trusted worker and migration entry points
+retain their existing raw repository contract. Administrator responses use the
+exact committed snapshot, including the new revision and validated endpoint
+metadata; a second mutable read cannot turn a successful write into an error or
+return another administrator's update.
+
+`service_inventory.go` keeps group and endpoint validation with their shared
+persistence adapters. `customization_save.go` validates and projects the admitted
+routing document before persistence, then attaches that projection to the exact
+committed revision. Outbound DNS validation runs before acquiring the service
+mutation lock and rechecks identity, access and revision afterward.
+`customization_queue_test.go` holds a resolver request open while an independent
+snippet write completes, and verifies that unfinished validation publishes no
+routing state. `master_revocation_test.go` checks that rejected administrator
+rotation/deletion cannot disconnect a peer or delete its node. `master.go`
+normalizes an omitted diagnostic logger to a discard logger.

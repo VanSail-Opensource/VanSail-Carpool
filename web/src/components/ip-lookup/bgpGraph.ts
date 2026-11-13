@@ -59,8 +59,11 @@ function indexObservedTopology(topology: IPLookupBGPTopology) {
 
 export function graphLayout(index: ReturnType<typeof indexTopology>) {
   const nodes = index.topology.nodes.filter(node => index.distance.has(node.asn))
-  const edges = [...index.edges.values()]
-  const placed = placeNodes(nodes, edges, index.distance, index.frequency)
+  const present = new Set(nodes.map(node => node.asn))
+  // Partial provider snapshots can omit node metadata; do not invent nodes or
+  // pass a dangling edge to the geometry's endpoint lookup.
+  const edges = [...index.edges.values()].filter(edge => present.has(edge.from) && present.has(edge.to))
+  const placed = placeNodes(nodes, index.distance, index.frequency)
   const direct = edges.filter(edge => edge.relationship !== 'path' && (index.origins.has(edge.from) || index.origins.has(edge.to)))
   const upstreamsEmpty = direct.some(edge => edge.relationship === 'upstream') ? null
     : direct.some(edge => edge.relationship === 'observed') ? 'unknown' : 'none'

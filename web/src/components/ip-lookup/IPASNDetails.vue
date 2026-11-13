@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getLocale } from '@/i18n'
 import { computed, shallowRef, watch } from 'vue'
 import type { IPLookupASNDetails, IPLookupReport } from '@/api/ipLookup'
 import LiveSourceNote from './LiveSourceNote.vue'
@@ -9,7 +10,7 @@ const selected = shallowRef<number | null>(null)
 watch(() => props.asns, value => { if (!value.some(asn => asn.asn === selected.value)) selected.value = value[0]?.asn ?? null }, { immediate: true })
 const current = computed(() => props.asns.find(asn => asn.asn === selected.value))
 const rows = computed(() => current.value ? [
-  { key: 'registeredAt', value: current.value.registeredAt ? new Date(current.value.registeredAt).toLocaleDateString() : null, source: 'registration' },
+  { key: 'registeredAt', value: current.value.registeredAt ? new Date(current.value.registeredAt).toLocaleDateString(getLocale()) : null, source: 'registration' },
   { key: 'rir', value: current.value.rir || null, source: 'rir' },
   { key: 'ipv4Prefixes', value: current.value.ipv4Prefixes, source: current.value.sources.ipv4Prefixes ? 'ipv4Prefixes' : 'routing' },
   { key: 'ipv6Prefixes', value: current.value.ipv6Prefixes, source: current.value.sources.ipv6Prefixes ? 'ipv6Prefixes' : 'routing' },

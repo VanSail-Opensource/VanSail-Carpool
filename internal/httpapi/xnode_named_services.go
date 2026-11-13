@@ -23,7 +23,7 @@ func (s *Server) xnodeSaveNamedService(w http.ResponseWriter, r *http.Request) {
 		s.xnodeError(w, r, xnode.ErrInvalid)
 		return
 	}
-	item, err := s.deps.XNode.SaveNamedService(r.Context(), chiURLParam(r, "id"), input.Name, input.Access)
+	item, err := s.deps.XNode.SaveNamedServiceAs(r.Context(), currentUser(r).ID, chiURLParam(r, "id"), input.Name, input.Access)
 	if err != nil {
 		s.xnodeError(w, r, err)
 		return
@@ -46,7 +46,7 @@ func (s *Server) xnodeRotateServiceSubscription(w http.ResponseWriter, r *http.R
 		s.xnodeError(w, r, xnode.ErrNotFound)
 		return
 	}
-	url, err := s.deps.XNode.RevokeSubscription(r.Context(), chiURLParam(r, "id"))
+	url, err := s.deps.XNode.RevokeSubscriptionAs(r.Context(), currentUser(r).ID, chiURLParam(r, "id"))
 	if err != nil {
 		s.xnodeError(w, r, err)
 		return
@@ -80,9 +80,9 @@ func (s *Server) xnodeSaveServiceRouting(w http.ResponseWriter, r *http.Request)
 	var item xnode.Customization
 	var err error
 	if r.URL.Query().Get("part") == "outbounds" {
-		item, err = s.deps.XNode.SaveOwnedOutbounds(r.Context(), owner, node, input.Revision, input.Outbounds)
+		item, err = s.deps.XNode.SaveOwnedOutboundsAs(r.Context(), currentUser(r).ID, owner, node, input.Revision, input.Outbounds)
 	} else {
-		item, err = s.deps.XNode.SaveOwnedRouting(r.Context(), owner, node, input.Revision, input.Routing)
+		item, err = s.deps.XNode.SaveOwnedRoutingAs(r.Context(), currentUser(r).ID, owner, node, input.Revision, input.Routing)
 	}
 	if err != nil {
 		s.xnodeError(w, r, err)

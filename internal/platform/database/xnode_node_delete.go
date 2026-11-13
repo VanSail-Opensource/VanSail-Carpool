@@ -16,11 +16,19 @@ func (s *Store) retryAttempt_DeleteXNodeNode(ctx context.Context, id string) err
 		return err
 	}
 	defer tx.Rollback()
+	if _, err = deleteXNodeNodeTx(ctx, tx, id); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func deleteXNodeNodeTx(ctx context.Context, tx *sql.Tx, id string) (bool, error) {
+	var err error
 	// Match the queued removal lock order. The node lock also serializes a
 	// first agent bind and FK-backed dependencies with the eligibility check.
 	var version int64
 	if err = tx.QueryRowContext(ctx, `SELECT revision FROM xnode_compile_revision WHERE singleton=1 FOR UPDATE`).Scan(&version); err != nil {
-		return err
+		return false, err
 	}
 	var unused bool
 	err = tx.QueryRowContext(ctx, `SELECT enabled=0 AND COALESCE(agent_id,'')=''
@@ -28,30 +36,30 @@ func (s *Store) retryAttempt_DeleteXNodeNode(ctx context.Context, id string) err
  AND retired_at IS NULL AND removing_at IS NULL
  FROM xnode_nodes WHERE id=$1 FOR UPDATE`, id).Scan(&unused)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil
+		return false, nil
 	}
 	if err != nil {
-		return err
+		return false, err
 	}
 	if !unused {
-		return xnode.ErrConflict
+		return false, xnode.ErrConflict
 	}
 	historical, err := nodeHasHistory(ctx, tx, id)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if historical {
-		return xnode.ErrConflict
+		return false, xnode.ErrConflict
 	}
 	var endpoints bool
 	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM xnode_endpoints WHERE node_id=$1)`, id).Scan(&endpoints); err != nil {
-		return err
+		return false, err
 	}
 	if endpoints {
-		return xnode.ErrConflict
+		return false, xnode.ErrConflict
 	}
 	if _, err = tx.ExecContext(ctx, `DELETE FROM xnode_nodes WHERE id=$1`, id); err != nil {
-		return err
+		return false, err
 	}
-	return tx.Commit()
+	return true, nil
 }

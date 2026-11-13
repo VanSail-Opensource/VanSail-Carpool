@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getLocale } from '@/i18n'
 import { computed } from 'vue'
 import type { IPLookupCheck, IPLookupReport } from '@/api/ipLookup'
 import { formatMoney } from '@/utils/format'
@@ -37,7 +38,7 @@ const databaseIcon = (status: string) => status === 'success' ? 'i-ph-check-circ
       <span v-for="database in report.databases" :key="database.id" :title="$t(`ipLookup.statuses.${database.status}`)" :class="`database-${database.status}`"><UIcon :name="databaseIcon(database.status)" aria-hidden="true" />{{ providerName(database.id) }}<small>{{ $t(`ipLookup.statuses.${database.status}`) }}</small></span>
     </div>
     <footer class="report-note">
-      <time :datetime="report.checkedAt">{{ $t('ipLookup.checkedAt', { date: new Date(report.checkedAt).toLocaleString() }) }}</time>
+      <time :datetime="report.checkedAt">{{ $t('ipLookup.checkedAt', { date: new Date(report.checkedAt).toLocaleString(getLocale()) }) }}</time>
       <span v-if="check">{{ check.refunded ? $t('ipLookup.outageRefund') : check.usedQuota ? $t('ipLookup.usedQuotaCount', { count: check.quotaConsumed ?? 1 }) : formatMoney(check.charge) }}</span>
       <span v-else-if="cacheMatch !== 'none'">{{ $t('ipLookup.cachedFree') }}</span>
     </footer>

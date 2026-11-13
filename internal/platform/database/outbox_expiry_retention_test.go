@@ -16,7 +16,7 @@ func TestRestrictionExpiryJobsSurviveCleanupUntilRestoration(t *testing.T) {
 	ctx, store := context.Background(), newTestStore(t)
 	now := time.Now().UTC()
 	old := now.Add(-10 * 24 * time.Hour)
-	owner := createTestUser(t, store, 497712)
+	owner := createTestAdmin(t, store, 497712)
 	digest := strings.Repeat("e", 64)
 	block, operation, _, err := store.BeginConnectionIPBlock(ctx, connections.CreateIPBlockInput{UserID: owner.ID,
 		NodeUUID: "6aa6d759-20de-4b11-8c0a-8e0daee3a4ee", IPDigest: digest, SealedIP: "encrypted-ip", ExpiresAt: old.Add(time.Hour)},

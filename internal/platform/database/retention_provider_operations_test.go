@@ -12,7 +12,7 @@ func TestCompactAndPrunePreservesReferencedAndUnreferencedCommandReceipts(t *tes
 	t.Parallel()
 	ctx := context.Background()
 	store := newTestStore(t)
-	actor, user := createTestUser(t, store, 50_401), createTestUser(t, store, 50_402)
+	actor, user := createTestAdmin(t, store, 50_401), createTestUser(t, store, 50_402)
 	now := time.Date(2026, 8, 20, 2, 0, 0, 0, time.UTC)
 
 	unreferenced, _, err := store.CreateProviderOperation(ctx, providerops.CreateInput{

@@ -13,7 +13,7 @@ import (
 func TestAdminMutationCommitsOneAuditWithIntentAndJob(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
-	actor := createTestUser(t, s, 95001)
+	actor := createTestAdmin(t, s, 95001)
 	now := time.Now().UTC()
 	input := adminMutationTestInput(actor.ID, "atomic-maintenance")
 	operation, replayed, err := s.CreateAdminMutation(ctx, input, now)
@@ -48,7 +48,7 @@ func TestAdminMutationCommitsOneAuditWithIntentAndJob(t *testing.T) {
 func TestAdminMutationAuditFailureRollsBackQueue(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
-	actor := createTestUser(t, s, 95002)
+	actor := createTestAdmin(t, s, 95002)
 	now := time.Now().UTC()
 	if _, err := s.db.ExecContext(ctx, `CREATE FUNCTION reject_admin_queue_audit() RETURNS trigger
 		LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'audit storage unavailable'; END $$`); err != nil {
@@ -78,7 +78,7 @@ func TestAdminMutationAuditFailureRollsBackQueue(t *testing.T) {
 func TestAdminRefundQueueBindsThePaymentOwner(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
-	actor := createTestUser(t, s, 95003)
+	actor := createTestAdmin(t, s, 95003)
 	owner := createTestUser(t, s, 95004)
 	now := time.Now().UTC()
 	order := createTestPaymentOrder(t, s, owner.ID, "stars", 100, now)
@@ -108,7 +108,7 @@ func TestAdminMutationRejectsUnrelatedKindsAndTargets(t *testing.T) {
 	for _, change := range []string{"kind", "item", "target", "owner"} {
 		t.Run(change, func(t *testing.T) {
 			s := newTestStore(t)
-			actor := createTestUser(t, s, 95005)
+			actor := createTestAdmin(t, s, 95005)
 			input := adminMutationTestInput(actor.ID, change)
 			switch change {
 			case "kind":

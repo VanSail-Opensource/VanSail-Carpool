@@ -48,14 +48,20 @@ func (s *Service) OwnedCustomization(ctx context.Context, user, node string) (Cu
 	if err != nil {
 		return item, err
 	}
+	return s.projectCustomization(item, identity)
+}
+
+// Project the exact admitted revision without a second mutable database read.
+func (s *Service) projectCustomization(item Customization, identity Identity) (Customization, error) {
+	user, node := customizationOwner(item), item.NodeID
 	if item.OutboundsCipher == "" {
 		return item, nil
 	}
 	var outbounds, rules []map[string]any
-	if err = s.open("xnode.outbounds."+user+"."+node, item.OutboundsCipher, &outbounds); err != nil {
+	if err := s.open("xnode.outbounds."+user+"."+node, item.OutboundsCipher, &outbounds); err != nil {
 		return item, err
 	}
-	if err = s.open("xnode.routing."+user+"."+node, item.RoutingCipher, &rules); err != nil {
+	if err := s.open("xnode.routing."+user+"."+node, item.RoutingCipher, &rules); err != nil {
 		return item, err
 	}
 	suffix := "-" + identity.Username

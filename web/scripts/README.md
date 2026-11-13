@@ -62,3 +62,7 @@ and paid receipts, including the distinction between order value and credit.
 offer and paid enrollment replacement; no write occurs until new consent. It
 also checks retained purchased traffic with automatic purchases disabled and a
 zero starting allowance.
+
+`browser-ip-recovery.mjs` checks partial BGP geometry, same-prefix route-page and
+selection recovery, and retirement of paid live snapshots on account changes.
+Desktop/mobile checks retain screenshots and never contact IP data providers.

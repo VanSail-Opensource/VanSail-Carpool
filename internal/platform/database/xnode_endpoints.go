@@ -26,10 +26,18 @@ func (s *Store) XNodeEndpoints(ctx context.Context) ([]xnode.Endpoint, error) {
 	return out, rows.Err()
 }
 func (s *Store) SaveXNodeEndpoint(ctx context.Context, item xnode.Endpoint) error {
-	_, err := s.db.ExecContext(ctx, `INSERT INTO xnode_endpoints(id,node_id,inbound_tag,name,address,port,enabled,hidden,overrides_cipher,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT(id) DO UPDATE SET node_id=excluded.node_id,inbound_tag=excluded.inbound_tag,name=excluded.name,address=excluded.address,port=excluded.port,enabled=excluded.enabled,hidden=excluded.hidden,overrides_cipher=excluded.overrides_cipher,updated_at=excluded.updated_at`, item.ID, item.NodeID, item.InboundTag, item.Name, item.Address, item.Port, boolInt(item.Enabled), boolInt(item.Hidden), item.OverridesCipher, stamp(time.Now().UTC()), stamp(time.Now().UTC()))
+	return saveXNodeEndpoint(ctx, s.db, item)
+}
+
+func saveXNodeEndpoint(ctx context.Context, q xnodeSQLExecutor, item xnode.Endpoint) error {
+	_, err := q.ExecContext(ctx, `INSERT INTO xnode_endpoints(id,node_id,inbound_tag,name,address,port,enabled,hidden,overrides_cipher,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT(id) DO UPDATE SET node_id=excluded.node_id,inbound_tag=excluded.inbound_tag,name=excluded.name,address=excluded.address,port=excluded.port,enabled=excluded.enabled,hidden=excluded.hidden,overrides_cipher=excluded.overrides_cipher,updated_at=excluded.updated_at`, item.ID, item.NodeID, item.InboundTag, item.Name, item.Address, item.Port, boolInt(item.Enabled), boolInt(item.Hidden), item.OverridesCipher, stamp(time.Now().UTC()), stamp(time.Now().UTC()))
 	return err
 }
 func (s *Store) DeleteXNodeEndpoint(ctx context.Context, id string) error {
-	_, err := s.db.ExecContext(ctx, `DELETE FROM xnode_endpoints WHERE id=$1`, id)
+	return deleteXNodeEndpoint(ctx, s.db, id)
+}
+
+func deleteXNodeEndpoint(ctx context.Context, q xnodeSQLExecutor, id string) error {
+	_, err := q.ExecContext(ctx, `DELETE FROM xnode_endpoints WHERE id=$1`, id)
 	return err
 }

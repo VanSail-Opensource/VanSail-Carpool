@@ -48,6 +48,10 @@ func groupHasService(services []NamedService, id string, now time.Time) bool {
 }
 
 func (s *Service) DeleteGroup(ctx context.Context, id string) error {
+	return s.deleteGroup(ctx, id, "")
+}
+
+func (s *Service) deleteGroup(ctx context.Context, id, actor string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	r, ok := s.repo.(groupDeletionRepository)
@@ -70,5 +74,14 @@ func (s *Service) DeleteGroup(ctx context.Context, id string) error {
 		return err
 	}
 	// Any concurrent service or catalog change invalidates the encrypted-term read.
+	if actor != "" {
+		writer, ok := s.repo.(interface {
+			DeleteAdminXNodeGroupAtVersion(context.Context, string, string, int64, []Endpoint) error
+		})
+		if !ok {
+			return ErrUnavailable
+		}
+		return writer.DeleteAdminXNodeGroupAtVersion(ctx, actor, id, version, endpoints)
+	}
 	return r.DeleteXNodeGroupAtVersion(ctx, id, version, endpoints)
 }

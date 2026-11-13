@@ -7,7 +7,7 @@ export type PlacedNode = Node & { layer: number; x: number; y: number }
 export const nodeWidth = 168
 export const nodeHeight = 56
 
-export function placeNodes<T extends { asn: number }>(nodes: T[], _edges: Edge[], distance: Map<number, number>, frequency: Map<number, number>) {
+export function placeNodes<T extends { asn: number }>(nodes: T[], distance: Map<number, number>, frequency: Map<number, number>) {
   const furthest = Math.max(0, ...distance.values())
   const placed = nodes.map(node => ({ ...node, layer: distance.get(node.asn) ?? furthest + 1, x: 0, y: 0 }))
   const columns = new Map<number, typeof placed>()

@@ -36,6 +36,9 @@ func TestAdminBulkExtensionUsesInclusiveORDeduplicationAndQueueShift(t *testing.
 	}
 	userTwo, _ := createAdminWorkflowPurchase(t, store, 42002, comboB, now, addon.GroupID)
 	actor, _ := createAdminWorkflowPurchase(t, store, 42003, comboB, now)
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET role='admin' WHERE id=$1`, actor.ID); err != nil {
+		t.Fatal(err)
+	}
 
 	filter := AdminBulkExtensionFilter{ComboIDs: []string{comboA.ID}, AddonSquadUUIDs: []string{addon.GroupID}}
 	targets, preview, err := adminBulkTargets(ctx, store.db, filter, now)

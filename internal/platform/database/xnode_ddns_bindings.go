@@ -43,6 +43,13 @@ func (s *Store) retryAttempt_SaveXNodeNodeDDNS(ctx context.Context, node xnode.N
 		return err
 	}
 	defer tx.Rollback()
+	if err = saveXNodeNodeDDNSTx(ctx, tx, node, bindings); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func saveXNodeNodeDDNSTx(ctx context.Context, tx *sql.Tx, node xnode.Node, bindings map[string]xnode.DDNSHostBinding) error {
 	result, err := tx.ExecContext(ctx, saveXNodeNodeSQL, xnodeNodeArgs(node)...)
 	if err != nil {
 		return err
@@ -76,5 +83,5 @@ func (s *Store) retryAttempt_SaveXNodeNodeDDNS(ctx context.Context, node xnode.N
 			}
 		}
 	}
-	return tx.Commit()
+	return nil
 }

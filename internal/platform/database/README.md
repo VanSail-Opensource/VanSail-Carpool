@@ -429,7 +429,7 @@ Private draw coupons (`admin_visible=0`) can only be used through awarded wallet
 - `activity_draw_replay_security_test.go` covers cross-draw conflicts, member isolation, reserved keys, and unchanged balances/randomness on replay.
 - `activity_draw_list.go` lists member-safe instant draws and admin definitions; `activity_draw_reservations.go` reconciles active raffle loss holds when reward ranges change.
 - `activity_reward_apply.go` applies resolved balance, coupon, purchase, traffic, and squad effects and queues provider synchronization.
-- `activity_reward_combo_order_test.go` verifies that recovery leaves later custom awards untouched, including same-time settlements, zero-price awards and multiple custom prizes. An older core change cannot justify recovering a newer custom award whose overrides are missing.
+- `activity_reward_combo_test.go` and `activity_reward_cadence_test.go` verify current custom-award and core-change ordering, zero-price terms, cadence inheritance and separate recurring traffic. `CUSTOM_COMBO_RECOVERY.md` retains the historical repair boundaries; unused fixtures for retired SQLite repair execution have been removed.
 - `activity_reward_traffic.go` tracks current-term and renewal traffic separately so recurring rewards cannot preserve temporary gains or losses. Eligibility and settlement reject deductions that would exhaust either allowance. `activity_reward_traffic_test.go` covers mixed reward ordering and renewal coverage.
 - `activity_raffle_entries.go` sells deduplicated seats; `activity_raffle_settle.go` refunds expired eligibility or assigns fixed stock atomically and accepts retries after a refund reopened the raffle.
 - `activity_raffle_settle_retry_test.go` covers a recovered settlement job arriving after the raffle has reopened.
@@ -524,7 +524,7 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `admin_finance_eligibility_test.go` checks current active administrator locks for balance adjustments, deductions, cancellation, affiliate configuration and IP lookup settings, preserving member fixtures and exact replay receipts.
 - `notification_events.go` owns semantic event deduplication and atomic outbox
   release, including provider-completion timestamps; `notification_scans.go` owns 48-hour and reset-period eligibility.
-- `notification_gate_recovery_test.go` verifies damaged retained facts fail validation without panics or partial release, then remain replayable after repair.
+- `notification_gate_recovery_test.go` verifies damaged retained facts fail validation without panics or partial release. Repeated failures preserve immutable event bytes and pending status; an independent valid owner gate still releases exactly once.
 - `notification_new_events.go` and `notification_operation_events.go` snapshot scheduled charges, add-on activation, cancellations, renewal failures, and terminal member operation receipts with stable event keys.
 - `notification_new_events_test.go` and `notification_refund_events_test.go` cover queued charges, terminal-only reset/refund messages, and renewal-failure suppression of generic expiry.
 - `store_catalog_renewal_test.go` and `store_outbox_test.go` keep catalog and outbox regression coverage in focused files.
@@ -1034,6 +1034,7 @@ Provider requests remain outside every transaction.
 - `admin_mutation_begin_retry_generated.go` wraps the transactional methods in `admin_mutation_begin.go`.
 - `admin_operation_resolution_retry_generated.go` wraps the transactional methods in `admin_operation_resolution.go`.
 - `admin_settings_retry_generated.go` wraps the transactional methods in `admin_settings.go`.
+- `admin_temporary_ban_expiry_retry_generated.go` wraps the transactional methods in `admin_temporary_ban_expiry.go`.
 - `admin_user_provider_commands_retry_generated.go` wraps the transactional methods in `admin_user_provider_commands.go`.
 - `administration_records_retry_generated.go` wraps the transactional methods in `administration_records.go`.
 - `affiliate_config_retry_generated.go` wraps the transactional methods in `affiliate_config.go`.
@@ -1149,6 +1150,11 @@ Provider requests remain outside every transaction.
 - `usdt_transfers_retry_generated.go` wraps the transactional methods in `usdt_transfers.go`.
 - `user_preferences_retry_generated.go` wraps the transactional methods in `user_preferences.go`.
 - `xnode_access_repair_retry_generated.go` wraps the transactional methods in `xnode_access_repair.go`.
+- `xnode_admin_configuration_retry_generated.go` wraps the transactional methods in `xnode_admin_configuration.go`.
+- `xnode_admin_inventory_retry_generated.go` wraps the transactional methods in `xnode_admin_inventory.go`.
+- `xnode_admin_nodes_retry_generated.go` wraps the transactional methods in `xnode_admin_nodes.go`.
+- `xnode_admin_services_retry_generated.go` wraps the transactional methods in `xnode_admin_services.go`.
+- `xnode_admin_subscription_retry_generated.go` wraps the transactional methods in `xnode_admin_subscription.go`.
 - `xnode_barriers_retry_generated.go` wraps the transactional methods in `xnode_barriers.go`.
 - `xnode_configurations_retry_generated.go` wraps the transactional methods in `xnode_configurations.go`.
 - `xnode_ddns_apply_retry_generated.go` wraps the transactional methods in `xnode_ddns_apply.go`.
@@ -1224,10 +1230,10 @@ Native report state acknowledgments use GREATEST on accepted/applied revisions. 
 
 ## Native storage regression coverage
 
-- `activity_reward_cadence_test.go`, `activity_reward_combo_test.go`,
-  `activity_reward_recovery_fixture_test.go` and `historical_reward_fixture_test.go`
-  protect reward snapshots, cadence inheritance and retained historical facts.
-  `CUSTOM_COMBO_RECOVERY.md` documents the old repair boundaries.
+- `activity_reward_cadence_test.go` and `activity_reward_combo_test.go`
+  protect current reward snapshots, cadence inheritance and custom-term ordering.
+  Native populated upgrade tests preserve original accounting evidence;
+  `CUSTOM_COMBO_RECOVERY.md` documents the historical repair boundaries.
 - `admin_entitlement_validity_test.go` and `billing_purchase_addons_test.go`
   cover exact validity boundaries, pending settlement and atomic squad additions.
 - `ip_lookup_test.go` checks durable lookup settlement and report lifecycles.
@@ -1856,3 +1862,53 @@ admission, atomic rollback and stale-target refusal before predecessor mutation.
 historical term/counters across the queued boundary.
 
 `xnode_member_identity.go` and `xnode_member_identity_retry_generated.go` bind member credential preparation to the exact active owner generation and captured credential material. Returned identity state is read before commit; current period pointers, unrelated restrictions and unchanged first-sync proof are retained. `xnode_member_identity_test.go` covers old-generation refusal, cleared-principal rejoin, concurrent pointer/restriction retention and stale credential proposals. `xnode_purchase_period_generation_test.go` checks generation changes with otherwise identical purchases for first admission, replacement and retained restoration. Conditional purchase completion also receives the original generation in `purchase_sync_cas.go`.
+
+### Native administrator mutation transactions
+
+`xnode_admin.go` shares the current active, unblocked administrator row lock with
+catalog administration and preserves native conflict errors. The explicit
+adapters in `xnode_admin_configuration.go`, `xnode_admin_inventory.go`,
+`xnode_admin_nodes.go`, `xnode_admin_services.go`, and
+`xnode_admin_subscription.go` commit that authority check, the native change, and
+its sanitized audit together. Raw repository methods remain worker and fixture
+interfaces backed by the same write helpers. Configuration/snippet revisions,
+node drain and unused-node guards, subscription material comparisons, existing
+named-service quota history, and the group deletion retention audit remain
+binding. Group deletion attributes its existing audit to the actor.
+`xnode_inventory_snapshots.go` reads exact transaction results; endpoint and
+customization responses retain the validated preview fields supplied by the
+service, while persisted fields and revisions come from the transaction.
+No configuration document, credential, token, hash, or ciphertext enters these
+audit details. Existing global, automatic, routing, and subscription-template
+settings use the similarly fenced `PutAdminSetting` transaction.
+
+- `xnode_admin_test_helpers_test.go` builds raw worker-compatible inventory and
+  captures every touched relation, including trigger-maintained versions.
+- `xnode_admin_authority_test.go` rejects demoted, purging, blocked, missing, and
+  empty administrators across all fourteen exposed native mutation adapters.
+- `xnode_admin_audit_test.go` injects audit failure, verifies complete rollback,
+  retries after repair, and checks metadata-only actor attribution.
+- `xnode_admin_snapshot_test.go` checks committed revisions, retained previews,
+  and rollback when retained timestamps prevent constructing a valid response.
+- `xnode_admin_guards_test.go` preserves removal, revision, token-material, and
+  draining-node fences through the new administrator entry points.
+
+### Fresh administrator operations and restriction expiry
+
+`provider_operation_admission.go` applies the current administrator row lock to
+fresh entitlement edits/refunds/replacements/extensions, temporary bans/manual
+unbans, maintenance, payment refunds, and outbox retry commands. Immutable exact
+receipts replay before mutable admission. Member-domain operations retain their
+existing owner/lifecycle rules. `provider_operations_insert.go` shares the atomic
+receipt/items/outbox insertion after those admission checks.
+`admin_temporary_ban_expiry.go` is the private continuation of a locked,
+successfully committed ban: it validates original actor/owner/kind provenance,
+compares parsed expiry instants, and checks the beneficiary's active lifecycle.
+An original administrator's later demotion or block cannot make a bounded ban
+permanent. Public idempotency-key prefixes confer no continuation authority.
+
+- `provider_operation_admission_test.go` checks all administrator-only kinds,
+  exact replay after authority changes, retained member admission, denied
+  monetary effects, and refusal of a forged expiry-key bypass.
+- `admin_temporary_ban_expiry_admission_test.go` checks exact fractional expiry,
+  one restored continuation after actor changes, and inactive beneficiary denial.

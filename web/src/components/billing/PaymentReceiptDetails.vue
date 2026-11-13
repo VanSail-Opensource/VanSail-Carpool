@@ -56,7 +56,7 @@ const receiptFields = computed(() => {
   return [
     { key: 'id', label: t('payment.paymentId'), value: details.id, icon: 'i-ph-hash', mono: true },
     { key: 'provider', label: t('payment.provider'), value: localized(`payment.providers.${details.provider}`, details.provider), icon: 'i-ph-storefront' },
-    { key: 'channel', label: t('payment.channel'), value: paymentChannelLabel(details.providerRail, details.providerRail), icon: 'i-ph-channels' },
+    { key: 'channel', label: t('payment.channel'), value: paymentChannelLabel(details.providerRail, details.providerRail), icon: 'i-ph-arrows-left-right' },
     { key: 'paid', label: t('payment.successTime'), value: formatDateTime(details.paidAt ?? undefined), icon: 'i-ph-calendar-check' },
   ]
 })

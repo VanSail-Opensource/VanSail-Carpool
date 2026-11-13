@@ -90,7 +90,11 @@ func (s *Store) SaveXNodeNode(ctx context.Context, node xnode.Node) error {
 	return err
 }
 func (s *Store) RotateXNodeToken(ctx context.Context, id string, hash []byte) error {
-	result, err := s.db.ExecContext(ctx, `UPDATE xnode_nodes SET token_hash=$1,updated_at=$2 WHERE id=$3 AND retired_at IS NULL AND removing_at IS NULL`, hash, stamp(time.Now().UTC()), id)
+	return rotateXNodeToken(ctx, s.db, id, hash)
+}
+
+func rotateXNodeToken(ctx context.Context, q xnodeSQLExecutor, id string, hash []byte) error {
+	result, err := q.ExecContext(ctx, `UPDATE xnode_nodes SET token_hash=$1,updated_at=$2 WHERE id=$3 AND retired_at IS NULL AND removing_at IS NULL`, hash, stamp(time.Now().UTC()), id)
 	if err != nil {
 		return err
 	}

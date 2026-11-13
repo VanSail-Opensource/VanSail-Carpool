@@ -5,7 +5,7 @@ import type { IPLookupLiveDetails } from '@/api/ipLookup'
 
 const mocks = vi.hoisted(() => ({ details: vi.fn() }))
 vi.mock('@/api/ipLookup', () => ({ ipLookupApi: mocks }))
-const account = reactive({ user: { id: 'member' } })
+const account = reactive<{ user: { id: string } | null }>({ user: { id: 'member' } })
 vi.mock('@/stores/session', () => ({ useSessionStore: () => account }))
 import { useLiveIPDetails } from './useLiveIPDetails'
 
@@ -16,7 +16,43 @@ let state: ReturnType<typeof useLiveIPDetails>
 const Harness = defineComponent({ setup() { state = useLiveIPDetails(() => ip.value, () => key.value, () => snapshot.value); return () => null } })
 
 describe('live IP details ownership and request boundaries', () => {
-  beforeEach(() => { vi.resetAllMocks(); account.user.id = 'member'; snapshot.value = null })
+  beforeEach(() => { vi.resetAllMocks(); account.user = { id: 'member' }; snapshot.value = null })
+  it('retires a retained paid snapshot on owner replacement and logout', async () => {
+    ip.value = '8.8.8.8'; key.value = 'paid-report'
+    snapshot.value = { ip: ip.value, sourceIP: ip.value, fetchedAt: 'date', cacheMatch: 'none' } as IPLookupLiveDetails
+    let complete!: (value: IPLookupLiveDetails) => void
+    mocks.details.mockReturnValue(new Promise(resolve => { complete = resolve }))
+    const wrapper = mount(Harness)
+    expect(state.details.value).toEqual(snapshot.value)
+    account.user = { id: 'replacement' }
+    expect(state.details.value).toBeNull()
+    expect(mocks.details).toHaveBeenCalledOnce()
+    account.user = null
+    expect(state.details.value).toBeNull()
+    expect(state.loading.value).toBe(false)
+    complete(snapshot.value)
+    await flushPromises()
+    expect(state.details.value).toBeNull()
+    expect(mocks.details).toHaveBeenCalledOnce()
+    wrapper.unmount()
+    await state.refresh()
+    expect(mocks.details).toHaveBeenCalledOnce()
+  })
+  it('accepts a newly supplied snapshot for the replacement owner', () => {
+    ip.value = '8.8.8.8'; key.value = 'paid-report'
+    snapshot.value = { ip: ip.value, sourceIP: ip.value, fetchedAt: 'first', cacheMatch: 'none' } as IPLookupLiveDetails
+    mocks.details.mockReturnValue(new Promise(() => undefined))
+    const wrapper = mount(Harness)
+    account.user = { id: 'replacement' }
+    expect(state.details.value).toBeNull()
+    const signal = mocks.details.mock.calls[0]![1] as AbortSignal
+    snapshot.value = { ...snapshot.value, fetchedAt: 'replacement' }
+    expect(signal.aborted).toBe(true)
+    expect(state.details.value?.fetchedAt).toBe('replacement')
+    key.value = ''
+    expect(state.details.value).toBeNull()
+    wrapper.unmount()
+  })
   it('uses the completed paid snapshot without a second free fetch', async () => {
     ip.value = '8.8.8.8'; key.value = 'refreshed'
     snapshot.value = { ip: ip.value, sourceIP: ip.value, fetchedAt: 'date', cacheMatch: 'none' } as IPLookupLiveDetails
@@ -55,7 +91,7 @@ describe('live IP details ownership and request boundaries', () => {
     await flushPromises()
     expect(state.details.value).toBeNull()
     const secondSignal = mocks.details.mock.calls[1]![1] as AbortSignal
-    account.user.id = 'replacement'
+    account.user = { id: 'replacement' }
     await nextTick()
     expect(secondSignal.aborted).toBe(true)
     wrapper.unmount()

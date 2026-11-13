@@ -13,7 +13,7 @@ func TestListAdminOperationsForUserIncludesOpenBulkItemsOnly(t *testing.T) {
 	ctx := context.Background()
 	store := newTestStore(t)
 	now := time.Date(2026, 8, 18, 12, 0, 0, 0, time.UTC)
-	actor := createTestUser(t, store, 43001)
+	actor := createTestAdmin(t, store, 43001)
 	target := createTestUser(t, store, 43002)
 	other := createTestUser(t, store, 43003)
 

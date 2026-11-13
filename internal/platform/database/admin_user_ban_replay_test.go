@@ -13,7 +13,7 @@ import (
 func TestTemporaryBanCanRepeatWithIndependentExpiryAndFencedCompletion(t *testing.T) {
 	t.Parallel()
 	ctx, store, now := context.Background(), newTestStore(t), time.Now().UTC()
-	actor, user := createTestUser(t, store, 48_231), createTestUser(t, store, 48_232)
+	actor, user := createTestAdmin(t, store, 48_231), createTestUser(t, store, 48_232)
 	var previousUnban string
 	for index, key := range []string{"first-ban", "second-ban"} {
 		started := now.Add(time.Duration(index) * 10 * time.Minute)
@@ -69,7 +69,7 @@ func TestTemporaryBanCanRepeatWithIndependentExpiryAndFencedCompletion(t *testin
 func TestManualUnbanKeepsReplacementExpiryIndependentlyScheduled(t *testing.T) {
 	t.Parallel()
 	ctx, store, now := context.Background(), newTestStore(t), time.Now().UTC()
-	actor, user := createTestUser(t, store, 48_241), createTestUser(t, store, 48_242)
+	actor, user := createTestAdmin(t, store, 48_241), createTestUser(t, store, 48_242)
 	createBan := func(key string, duration int, started time.Time) string {
 		t.Helper()
 		ban, err := store.CreateAdminTemporaryBan(ctx, AdminTemporaryBanInput{ActorUserID: actor.ID, UserID: user.ID,

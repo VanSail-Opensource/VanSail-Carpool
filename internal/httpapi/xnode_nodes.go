@@ -42,7 +42,7 @@ func (s *Server) xnodeSaveNode(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, node)
 }
 func (s *Server) xnodeEnrollment(w http.ResponseWriter, r *http.Request) {
-	url, token, err := s.deps.XNode.Enrollment(r.Context(), chiURLParam(r, "id"))
+	url, token, err := s.deps.XNode.EnrollmentAs(r.Context(), currentUser(r).ID, chiURLParam(r, "id"))
 	if err != nil {
 		s.xnodeError(w, r, err)
 		return
@@ -67,7 +67,7 @@ func (s *Server) xnodeSaveGroup(w http.ResponseWriter, r *http.Request) {
 	if id := chiURLParam(r, "id"); id != "" {
 		item.ID = id
 	}
-	item, err := s.deps.XNode.SaveGroup(r.Context(), item)
+	item, err := s.deps.XNode.SaveGroupAs(r.Context(), currentUser(r).ID, item)
 	if err != nil {
 		s.xnodeError(w, r, err)
 		return
@@ -92,7 +92,7 @@ func (s *Server) xnodeSaveEndpoint(w http.ResponseWriter, r *http.Request) {
 	if id := chiURLParam(r, "id"); id != "" {
 		item.ID = id
 	}
-	item, err := s.deps.XNode.SaveEndpoint(r.Context(), item)
+	item, err := s.deps.XNode.SaveEndpointAs(r.Context(), currentUser(r).ID, item)
 	if err != nil {
 		s.xnodeError(w, r, err)
 		return
