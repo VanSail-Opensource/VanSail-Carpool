@@ -299,9 +299,9 @@ settled financial rollups are written only for the final deletion set. Hosted
 regressions cover native-retained expired chains, mixed renewal-batch chains,
 repeat compaction and exact tombstone charges. `retention_purchase_lineage_test.go`
 covers transitive predecessor retention for automatic-renewal and renewal-batch
-chains, plus exactly-once compaction of unreferenced history. Abandoned-user
-cleanup excludes every restrictive user reference, including audit actors and
-desired DIY state.
+chains, plus exactly-once compaction of unreferenced history. Generic maintenance
+never deletes accounts based on onboarding age; account erasure requires the
+verified reachability cleanup admission.
 
 `outbox_completion.go` locks the exact claim and uses PostgreSQL READ COMMITTED
 for completion/busy deferral, matching queue admission. Heartbeats and unrelated
@@ -387,8 +387,9 @@ revoke paid benefits. `xnode_access_repair_eligibility_test.go` covers unavailab
 subjects with retained complete onboarding, active blocked members and restoration.
 
 Native traffic aggregation streams indexed node/day groups with checked integer
-sums. Backup-gated native retention prunes only expired access and superseded
-acknowledged rate boundaries; native purchase/refund evidence and unsettled
+sums. Backup-gated native retention prunes only expired service access and
+superseded acknowledged rate boundaries. Exact periods, usage, cursors and
+financial references remain retained.
 
 `browser_access_links.go` returns its owner snapshot from the exchange transaction:
 the active, unblocked account is locked and a required pure local authorization
@@ -484,8 +485,6 @@ competing partial writers, stale work, revision advancement and identity changes
 ## Production files
 
 - `billing_purchase_addon_fingerprint.go`, `billing_purchase_addon_quote.go`, and `billing_purchase_addons.go` validate, price, replay-protect, debit, record, and queue active-term squad additions in one transaction.
-  repair, and atomic full refunds plus username restart on identity conflict.
-  preserved account facts, and the localized conflict receipt.
 
 - `timestamp_cursor.go` signs filter-bound timestamp/ID cursor payloads shared by administrative inventories.
 - `admin_users_page.go`, `admin_entitlements_page.go`, `admin_finance_pages.go`, and `admin_jobs_page.go` provide stable filtered pages without fixed-cap truncation.
@@ -527,8 +526,7 @@ competing partial writers, stale work, revision advancement and identity changes
 - `billing_purchase_helpers.go` — distinct-member stock checks that retain existing seats, purchase fingerprints, catalog row loaders, and balance debit helpers.
 - `billing_ledger.go` — balance and ledger reads, shared ledger helpers, and setup/fixture adjustments; production administrator mutations use actor-bound audited methods.
 - `ledger_page.go` — stable cursor-based ledger pagination.
-- `billing_purchases.go` — purchase reads, cancellation, squad hydration, and
-  active/queued selection.
+- `billing_purchases.go` — purchase reads and squad hydration.
 - `billing_purchase_summary.go` — bounded active/queued purchase projection used by the dashboard without growing the purchase-read module.
 - `billing_payments.go` — payment checkout updates, expiry, reads,
   and row scanning.
@@ -585,7 +583,6 @@ competing partial writers, stale work, revision advancement and identity changes
 - `activity_queries.go` — game, bet, check-in, draw, and result scanners.
 - `activity_extensions.go` — durable subscription-extension credits and activation
   application.
-  and participation history.
 - `emby.go` — Emby setup debit/outbox creation and account reads.
 - `emby_provisioning.go` — retryable provisioning-saga state transitions, refund,
   preferences, and account touch operations.
@@ -632,7 +629,7 @@ competing partial writers, stale work, revision advancement and identity changes
 - `payment_profiles.go` — provider-account profile masking, protected deletion, and encrypted credential persistence.
 - `retention.go` — bounded cleanup of aged operational records.
 - `retention_activity_rollups.go`, `retention_payment_rollups.go`, and
-  `retention_purchase_rollups.go` preserve compact activity, payment, purchase,
+  `retention_purchase_rollups.go` preserve compact activity, payment and purchase summaries.
 - `retention_compaction.go` coordinates all backup-gated cleanup writes in one transaction.
 - `retention_native.go` prunes aged native accounting maintenance rows without removing purchase-wide financial evidence or rollback dependencies.
 - `retention_operations.go` retains attempted/unknown commands and their encrypted
@@ -648,7 +645,7 @@ competing partial writers, stale work, revision advancement and identity changes
   compensation; `retention_emby_uncertainty_test.go` verifies that a zero-attempt
   parent cannot override an attempted or already recorded remote creation.
 - `retention_operation_compensation.go` refunds proven never-started traffic-reset and Emby-setup debits while retaining their command receipts.
-- `retention_housekeeping.go` prunes completed notification events, expired or superseded sessions, abandoned pre-username users, and old maintenance runs.
+- `retention_housekeeping.go` prunes completed notification events, expired authentication tokens, and old maintenance runs.
 - `continuity.go` retains native paid-successor projections and retires unclaimed legacy preparation jobs without deleting history.
 - `statistics.go` — catalog and activity administrator statistics.
 - `statistics_activity_cash_test.go` verifies ranged and multiplier draw outcomes match signed settled ledger cash, and monetary totals/averages cannot wrap at integer boundaries.
@@ -727,12 +724,13 @@ or adjusted to reconcile gaps left by earlier destructive releases.
 The `postgres/migrations/` directory contains the ordered native PostgreSQL history. New
 schema changes must be additive migrations; deployed migration files are immutable.
 
-Migration `015_payment_provider_profiles.sql` consolidates the temporary
-per-rail profile table into one row per provider. Migration
-`016_multiple_payment_profiles.sql` removes the provider-wide uniqueness
-constraint so additional independent accounts can be stored. Legacy settings
-remain available for decryption fallback, while new writes use the stable
-profile record and preserve masked credentials.
+Historical SQLite migrations `015_payment_provider_profiles.sql` and
+`016_multiple_payment_profiles.sql` introduced consolidated provider accounts
+and then allowed multiple independent accounts per provider. Their resulting
+profile schema is retained by the current PostgreSQL forward chain; these names
+do not refer to PostgreSQL migrations 15 and 16. Legacy settings remain available
+for the exact retained-ciphertext decryption fallback, while new writes use
+stable profile records and preserve masked credentials.
 
 `billing_courtesy_test.go` covers terminal-payment courtesy-credit atomicity,
 idempotent replay, late-provider-callback blocking, and retention-preserved payment evidence.
@@ -777,14 +775,15 @@ attached-coupon policy and a unique source-successor link.
 - `ip_lookup_live_check.go` adds live-phase progress and the referenced final snapshot to owner-scoped receipts without exposing recovery state.
 - `ip_lookup_live_cache_test.go` covers persistent matching, restart reads, nanosecond/tie ordering and absence of original paths in hosted CI.
 - `ip_lookup_live_refresh_test.go` covers exact-IP combined refresh pricing, replay-safe snapshot recovery and maintenance settlement without refund after live attempts.
-- `ip_lookup_retry_jobs.go` schedules delayed first repair jobs for partial reports/snapshots inside the freezing transaction (payload attempt counters keep chains deduplicated) and exposes guarded in-place repair writes: partial-only cache updates keep `completed_at` so newer paid refreshes keep winning, and missing rows map to silent chain termination.
+- `ip_lookup_retry_jobs.go` schedules delayed first repair jobs for partial reports/snapshots inside the freezing transaction and reads their exact repair revision; payload attempt counters keep chains deduplicated. `ip_lookup_repair_cas.go` owns partial-only revision-checked writes, retaining `completed_at` so newer paid refreshes keep winning. Missing rows terminate the repair chain.
 - `ip_lookup_retry_jobs_test.go` covers first-attempt scheduling with the default delay, no scheduling for succeeded freezes, partial-guard conflicts, unchanged completion timestamps and live section retry payloads in hosted CI.
 
-Migration 069 creates snapshots and a private JSON live checkpoint on existing
-quality reports. Legacy receipts default to no realtime phase; no backfill calls
-run. Joined checks share one refreshed snapshot. Attempted failures settle
-partial without changing the quality verdict; pre-attempt failures retain the
-existing refund path. Ledger changes and receipt settlement remain atomic.
+Historical SQLite migration 069 introduced snapshots and a private JSON live
+checkpoint on quality reports; the current PostgreSQL schema retains these
+records. Legacy receipts default to no realtime phase; no backfill calls run.
+Joined checks share one refreshed snapshot. Attempted failures settle partial
+without changing the quality verdict; pre-attempt failures retain the existing
+refund path. Ledger changes and receipt settlement remain atomic.
 
 `ip_lookup_background.go` projects shared progress, claims exclusive worker leases and renews heartbeats. `ip_lookup_replacement.go` atomically publishes the newest combined report for the canonical exact IP, detaches historical receipt references and deletes superseded payloads. Neighboring IP reports remain independent, including rows with legacy subnet cache keys. Checks record the exact quota quantity, including refunds; financial records survive cache removal.
 
@@ -814,7 +813,7 @@ IP lookup resumes and report repair read current saved settings. `ip_lookup_curr
 `xnode_periods.go` Stores accounting periods and reads exact byte aggregates.
 `xnode_traffic.go` commits actual report cursors and valid weighted usage, or an audited discard.
 `xnode_customizations.go` Stores owner/node customization revisions and encrypted inputs.
-`xnode_rates.go` Commits multiplier boundaries after accounting barriers.
+`xnode_rates.go` retains the deprecated rate-call compatibility boundary, validating node/cursor scope while writing only future 1x rates.
 `xnode_restrictions.go` Projects existing manual access restrictions.
 
 - `xnode_barriers.go`: Entry points: `UserByUsername`, `XNodePeriods`, `TrackXNodePeriodNode`, `XNodePeriodNodes`.
@@ -829,10 +828,12 @@ IP lookup resumes and report repair read current saved settings. `ip_lookup_curr
 
 ## Memory budget
 
-The authoritative database has at most four connections with a 4 MiB page cache
-per connection, no memory mapping and file-backed temporary work. Bootstrap
-places temporary files under DATA_DIR/tmp for read-only-root deployments. Proxy
-indexes live in a separate disposable cache outside this schema and its backups.
+Application connection pools and SQL deadlines come from
+`internal/platform/config/database.go`; the default pool permits eight open and
+four idle connections, with validated environment overrides. PostgreSQL server
+memory belongs to its deployment configuration. Process heap limits and protected
+scratch are configured by `internal/platform/config/memory.go`; temporary files
+use DATA_DIR/tmp for read-only-root deployments.
 
 `api_tokens.go` reads hashed credentials and bounded owned metadata. `api_token_writes.go` creates/revokes tokens with transactional audits. `api_tokens_test.go` covers hash-only storage, expiry and owner isolation.
 
@@ -844,11 +845,11 @@ indexes live in a separate disposable cache outside this schema and its backups.
 
 - `xnode_named_services.go`: Atomically saves standalone encrypted terms, authorization and quota without rewriting usage or settled periods.
 
-Firewall operational storage: `xnode_firewall_tx.go` owns atomic writes, bounded compressed participant bitmaps and the existing coalesced outbox. `xnode_firewall_members.go` tracks fleet versions; `xnode_firewall_participants.go` joins delivered pages; `xnode_firewall_events.go` commits monotonic replay cursors and master authorization. `xnode_firewall_page.go` reads version-bound snapshots without holding transactions over RPC. `xnode_firewall_sources.go` stores generation metadata only and prunes operational history. `xnode_firewall_retirement.go` retires disabled/deleted participants in bounded pages while offline active members remain pending. `xnode_firewall_purchase.go` atomically debits, appends the ledger, grants an exact-IP exemption and queues delivery. `xnode_firewall_test.go` covers replay, all-node expiry, concurrent purchase deduplication and retained proxy evidence.
+Firewall operational storage: `xnode_firewall_tx.go` owns atomic writes, bounded compressed participant bitmaps and the existing coalesced outbox. `xnode_firewall_members.go` tracks fleet versions; `xnode_firewall_participants.go` joins delivered pages; `xnode_firewall_events.go` commits monotonic replay cursors and master authorization. `xnode_firewall_page.go` reads version-bound snapshots without holding transactions over RPC. `xnode_firewall_sources.go` stores generation metadata only and prunes operational history. `xnode_firewall_retirement.go` retires disabled/deleted participants in bounded pages while offline active members remain pending. Historical member-purchased exemption grants remain retained evidence; their purchase entry point has been retired. `xnode_firewall_test.go` covers detection replay and all-participant expiry without recreating member purchases.
 
 `xnode_firewall_page.go` projects effective compact restriction prefixes after subtracting active exact-IP exemptions. It retains the underlying immutable detection/audit evidence and restores classification eligibility when the exemption ends; IP ranges are never enumerated.
 
-`xnode_zero_rate_test.go` covers raw usage on free nodes, immutable priced ranges and rejection of negative rates. Rate changes start after the latest committed cursor so late flush results cannot rewrite settled pricing.
+`xnode_zero_rate_test.go` verifies that deprecated zero or weighted rate requests cannot discount or reprice newly accepted traffic after multiplier retirement. Compatibility writes retain cursor fencing and reject negative inputs; committed historical boundaries remain unchanged.
 
 `xnode_routing_plans.go` commits encrypted managed graphs and provider operations
 atomically, preserves prior generations through deployment, and audits phase
@@ -858,8 +859,9 @@ rejection, replay, generation barriers, retained evidence and recovered attempts
 
 `usdt_review.go` provides payment-scoped matching evidence and transactional permanent
 review dismissal. `stablecoin_test.go` covers token isolation and concurrent courtesy,
-settlement, dismissal and scanner replay. Migration 085 keeps old USDT cursors and
-evidence IDs, and makes credited/dismissed transfers immutable in PostgreSQL.
+settlement, dismissal and scanner replay. The native PostgreSQL schema retains
+the USDT cursor/evidence identities established by historical SQLite migration
+085, together with immutable credited/dismissed transfer guards.
 
 `stablecoin_matching_test.go` covers exact-first matching, tolerance boundaries, overpayments and manual ambiguity rejection for both native tokens.
 
@@ -1029,7 +1031,20 @@ Provider cost metadata uses PostgreSQL forward migration 25. Cycle-based records
 
 - `pricing_provider_models_test.go`: Hosted coverage of legacy and hourly provider costs, unlimited capacity and immutable payment history.
 
-Blocked-account lifecycle: `account_block.go` consumes ordered private bot events and revokes admission; `account_purge_queries.go` resumes durable generations and permits fresh authentication only after an unblock. `account_purge.go` closes balances with compensating ledger entries after all native periods close. `account_purge_credit.go` archives forfeited prepaid quantities, and `account_purge_material.go` removes personal material while preserving financial facts. `account_fences.go` rejects stale receipts; `account_payment_review.go` archives late payments for review. `account_rejoin_payg.go` atomically rotates PAYG credentials without changing historical charges. `account_lifecycle_test.go` and `account_native_lifecycle_test.go` cover ordering, administrators, closure, late payments, final traffic, and fresh rejoining.
+Account lifecycle: `account_block.go` records ordered private bot reachability
+events and schedules or cancels cleanup probes. A first block does not revoke
+paid benefits, advance the account generation, close a wallet or authorize purge.
+`account_purge_queries.go` revalidates the current generation's evidence-based
+admission before recovery; see `account_cleanup.md` for grace and authentication
+rules. `account_purge.go` closes balances with compensating ledger entries after
+native periods close. `account_purge_credit.go` archives forfeited prepaid
+quantities, and `account_purge_material.go` removes personal material while
+preserving financial facts. `account_fences.go` rejects stale receipts;
+`account_payment_review.go` archives late payments for review.
+`account_rejoin_payg.go` rotates credentials under the exact active owner
+generation without changing historical charges. `account_lifecycle_test.go`
+and `account_native_lifecycle_test.go` cover ordered evidence, administrators,
+closure, late payments, final traffic and rejoining.
 
 Access-group deletion: `xnode_group_usage.go` derives distinct current/queued paid and funded PAYG members from the shared entitlement snapshots. `xnode_group_delete.go` serializes with pricing publication and checks the compile revision plus membership inside one transaction; `xnode_group_delete_retry_generated.go` retries serialization failures. `xnode_group_catalog.go` freezes legacy purchase fallbacks before removing live combo references. Historical prices, offers, contracts, charges, identities, and usage remain evidence; live policies, personal quote caches, preferences, and product interventions are removed or retired. Dormant unfunded PAYG tuples remain for late accounting and cannot recreate catalog products. `xnode_group_delete_test.go` covers occupied and dormant groups, exact credit expiry, stale revisions, history and pricing isolation.
 
@@ -1089,6 +1104,7 @@ Provider requests remain outside every transaction.
 - `connection_ip_block_expiry_retry_generated.go` wraps the transactional methods in `connection_ip_block_expiry.go`.
 - `connection_ip_blocks_mutations_retry_generated.go` wraps the transactional methods in `connection_ip_blocks_mutations.go`.
 - `connection_scan_lifecycle_retry_generated.go` wraps the transactional methods in `connection_scan_lifecycle.go`.
+- `connection_scan_start_retry_generated.go` wraps the transactional methods in `connection_scan_start.go`.
 - `connection_scans_retry_generated.go` wraps the transactional methods in `connection_scans.go`.
 - `coupon_grant_listing_retry_generated.go` wraps the transactional methods in `coupon_grant_listing.go`.
 - `coupon_purchase_retry_generated.go` wraps the transactional methods in `coupon_purchase.go`.
@@ -1997,3 +2013,11 @@ its audit. Accepted exact commands replay before these mutable admission checks,
 preserving prior ownership and discard evidence.
 `admin_coupon_authority_test.go` covers demoted, purging and blocked actors,
 purging beneficiaries, accepted replay and unchanged retained wallet/history.
+
+`connection_scan_start.go` records queued-to-processing external-start intent
+under the scan row lock; ordinary progress updates cannot admit a second worker
+through that API. `connection_scan_start_retry_generated.go` preserves the
+standard serializable retry policy. `connection_scan_start_test.go` synchronizes
+eight DB-backed workers after their queued reads and proves one native job,
+one retained delivery and unchanged winning evidence. `connection_scan_lookup_test.go`
+checks typed owner-scoped absence without relabeling query cancellation/outage.

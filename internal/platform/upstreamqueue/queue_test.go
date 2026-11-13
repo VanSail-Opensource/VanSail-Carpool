@@ -267,14 +267,3 @@ func startTestQueue(t *testing.T, config Config) *Queue {
 	})
 	return queue
 }
-
-func waitFor(t *testing.T, timeout time.Duration, condition func() bool) {
-	t.Helper()
-	deadline := time.Now().Add(timeout)
-	for !condition() {
-		if time.Now().After(deadline) {
-			t.Fatal("condition was not met before timeout")
-		}
-		time.Sleep(time.Millisecond)
-	}
-}

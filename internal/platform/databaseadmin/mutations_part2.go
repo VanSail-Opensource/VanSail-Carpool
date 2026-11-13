@@ -26,6 +26,9 @@ func mutationDigest(actor string, request MutationRequest) (string, error) {
 }
 
 func (s *Service) checkReview(ctx context.Context, actor string, request MutationRequest, digest string) error {
+	if err := requireMutationActor(ctx, s.db, actor); err != nil {
+		return err
+	}
 	var count int
 	err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM database_admin_reviews
 		WHERE id=$1 AND actor_user_id=$2 AND action=$3 AND table_name=$4 AND request_hash=$5 AND consumed_at IS NULL AND expires_at::timestamptz>$6::timestamptz`,

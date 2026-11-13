@@ -11,6 +11,8 @@ import (
 
 func (s *Server) writeConnectionError(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
+	case errors.Is(err, connections.ErrScanUnavailable):
+		s.writeError(w, r, http.StatusServiceUnavailable, "CONNECTION_SCAN_UNAVAILABLE", "The connection scan is temporarily unavailable. Retry the read shortly.")
 	case errors.Is(err, xnode.ErrUnavailable), errors.Is(err, xnode.ErrNotFound), errors.Is(err, xnode.ErrInvalid):
 		s.xnodeError(w, r, err)
 	case errors.Is(err, connections.ErrInvalidHandle):

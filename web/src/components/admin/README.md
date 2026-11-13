@@ -75,3 +75,13 @@ write starts. Delayed cached-refresh success or failure cannot replace confirmed
 writes or resurrect a removed provider. Reads and writes also retire on disposal.
 `AdminBillingAmountLimits.test.ts`, `AdminPaymentProfiles.test.ts` and
 `AdminSettingsPanel.test.ts` cover these ordering and retained-draft boundaries.
+
+`AdminBackupsPanel.vue` snapshots confirmed delete targets, locks repeated
+submissions and dismissal while deletion is pending, and retains failed actions
+for explicit retry. Disposing the owner workspace retires action completion and
+prevents late archive responses from triggering a browser download.
+`AdminBackupsPanel.test.ts` covers target stability, refusal recovery and retired downloads.
+
+Activity editors lock pending writes and retain confirmed server records if the
+subsequent inventory refresh fails. The workspace exposes explicit Refresh, and
+draw forecasts retire replaced requests and expose their own retry control.

@@ -1560,3 +1560,5 @@ serving readers.
 with parsed purchase chronology, including fractional starts, creation-time
 ties and stable identity ordering. Unordered provider snapshots cannot make
 native access disagree with the current home or database entitlement view.
+
+`metric_totals.go` saturates validated nonnegative connection and rate aggregates at their existing numeric field limits. Across-node addition cannot wrap negative to disable connection controls or produce infinite JSON rates. Member open-connection totals use exact decimal arithmetic, matching fleet totals. `metric_totals_test.go` covers individually valid reports whose fleet sums exceed numeric bounds, exact member totals, encodable responses and clearing the limit after fresh zero snapshots. `master_socket_test.go` waits for the telemetry snapshot itself because durable traffic acknowledgements use a separate receive lane.

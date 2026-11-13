@@ -90,8 +90,8 @@ func (m *Master) UserNodeMetrics(ctx context.Context, userID string) ([]UserNode
 				id := int(principal)
 				count += int64(snapshot.report.Users.Connections[id])
 				rate := snapshot.report.Users.Rates[id]
-				item.UploadBytesPerSecond += rate.UploadBytesPerSecond
-				item.DownloadBytesPerSecond += rate.DownloadBytesPerSecond
+				item.UploadBytesPerSecond = addMetricRate(item.UploadBytesPerSecond, rate.UploadBytesPerSecond)
+				item.DownloadBytesPerSecond = addMetricRate(item.DownloadBytesPerSecond, rate.DownloadBytesPerSecond)
 			}
 			item.Connections = strconv.FormatInt(count, 10)
 			item.CurrentUse = count > 0 || item.UploadBytesPerSecond > 0 || item.DownloadBytesPerSecond > 0

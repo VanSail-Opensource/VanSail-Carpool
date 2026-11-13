@@ -13,6 +13,7 @@ func TestHourlyIntentAbsenceRequiresPermanentAdmissionFence(t *testing.T) {
 	for _, fence := range []string{"active", "disabled", "removing", "generation", "expired"} {
 		t.Run(fence, func(t *testing.T) {
 			s, request := hourlyCreditFixture(t)
+			dayRequest := request
 			ctx := context.Background()
 			var err error
 			switch fence {
@@ -36,7 +37,7 @@ func TestHourlyIntentAbsenceRequiresPermanentAdmissionFence(t *testing.T) {
 			if !errors.Is(err, expected) {
 				t.Fatal("missing intent resolved without the required fence", err)
 			}
-			if day := readHourlyDayFixture(t, s, model.HourlyCreditRequest{OwnerID: request.OwnerID, AccountGeneration: 0, DayUTC: time.Now().UTC().Format(time.DateOnly)}); day.FreeReservedBytes != 0 {
+			if day := readHourlyDayFixture(t, s, dayRequest); day.FreeReservedBytes != 0 {
 				t.Fatal("absence lookup minted/returned credit", day)
 			}
 		})

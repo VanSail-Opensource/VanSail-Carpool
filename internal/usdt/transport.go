@@ -157,7 +157,7 @@ func (c *client) post(ctx context.Context, path string, payload, out any) error 
 	return c.request(ctx, http.MethodPost, base.String(), payload, out)
 }
 
-func (c *client) close() {
+func (c *client) closeSocket() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.ws != nil {
@@ -165,5 +165,9 @@ func (c *client) close() {
 		<-c.ws.readDone
 		c.ws = nil
 	}
+}
+
+func (c *client) close() {
+	c.closeSocket()
 	c.http.CloseIdleConnections()
 }

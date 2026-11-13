@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ type Repository interface {
 	CreateConnectionScan(context.Context, providerops.ConnectionScanInput, time.Time) (providerops.ConnectionScan, bool, error)
 	ConnectionScanForUser(context.Context, string, string) (providerops.ConnectionScan, error)
 	ConnectionScanByID(context.Context, string) (providerops.ConnectionScan, error)
+	StartConnectionScan(context.Context, string, time.Time) (providerops.ConnectionScan, error)
 	UpdateConnectionScan(context.Context, string, providerops.ConnectionScanUpdate, time.Time) (providerops.ConnectionScan, error)
 	UserByID(context.Context, string) (model.User, error)
 }
@@ -68,7 +70,13 @@ func (s *Service) PollAdmin(ctx context.Context, userID, scanID string) (Scan, e
 func (s *Service) poll(ctx context.Context, userID, scanID string, nativeOnly bool) (Scan, error) {
 	now := s.now().UTC()
 	record, err := s.repository.ConnectionScanForUser(ctx, scanID, userID)
-	if err != nil || !now.Before(record.ExpiresAt) {
+	if err != nil {
+		if errors.Is(err, ErrScanNotFound) {
+			return Scan{}, ErrScanNotFound
+		}
+		return Scan{}, errors.Join(ErrScanUnavailable, err)
+	}
+	if !now.Before(record.ExpiresAt) {
 		return Scan{}, ErrScanNotFound
 	}
 	if nativeOnly && record.RequestFingerprint != nativeScanFingerprint() {
@@ -93,7 +101,7 @@ func (s *Service) poll(ctx context.Context, userID, scanID string, nativeOnly bo
 			Status: status, ProviderJobID: record.ProviderJobID, ProgressPercent: result.ProgressPercent, ErrorCode: errorCode,
 		}, now)
 		if err != nil {
-			return Scan{}, err
+			return Scan{}, errors.Join(ErrScanUnavailable, err)
 		}
 	}
 	projection := projectMetadata(record)

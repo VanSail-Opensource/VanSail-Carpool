@@ -33,9 +33,11 @@ watch(() => props.draw, (draw) => {
 })
 
 function changePrize(index: number, patch: Partial<PrizeDraft>): void {
+  if (props.busy) return
   Object.assign(draft.prizes[index]!, patch)
 }
 function save(): void {
+  if (props.busy) return
   validationError.value = null
   if (!sumsValid.value) { validationError.value = t('adminDrawRedesign.sumError'); return }
   const body = serializeDraw(draft)
@@ -45,10 +47,10 @@ function save(): void {
 </script>
 
 <template>
-  <USlideover :open="true" :title="draw ? t('adminLuckyDraw.edit') : t('adminLuckyDraw.new')" :description="t('adminDrawRedesign.drawsHint')" :dismissible="!busy" :ui="{ content: 'max-w-3xl' }" @update:open="!$event && emit('cancel')">
+  <USlideover :open="true" :title="draw ? t('adminLuckyDraw.edit') : t('adminLuckyDraw.new')" :description="t('adminDrawRedesign.drawsHint')" :dismissible="!busy" :ui="{ content: 'max-w-3xl' }" @update:open="!$event && !busy && emit('cancel')">
     <template #body>
       <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
-      <form class="draw-editor" @submit.prevent="save">
+      <form @submit.prevent="save"><fieldset class="draw-editor" :disabled="busy">
         <div class="draw-editor__heading">
           <div>
             <h3>{{ draw ? t('adminLuckyDraw.edit') : t('adminLuckyDraw.new') }}</h3>
@@ -109,17 +111,17 @@ function save(): void {
         </section>
         <UAlert v-if="validationError" color="error" variant="soft" icon="i-ph-warning" :description="validationError" />
         <div class="draw-editor__actions">
-          <UButton color="neutral" variant="outline" :label="t('common.cancel')" @click="emit('cancel')" />
+          <UButton color="neutral" variant="outline" :label="t('common.cancel')" :disabled="busy" @click="emit('cancel')" />
           <UButton type="submit" :loading="busy" :disabled="busy || !sumsValid" :label="t('adminDrawRedesign.save')" />
         </div>
-        <AdminDrawForecast v-if="draw" :key="draw.updatedAt" :draw-id="draw.id" />
-      </form>
+        <AdminDrawForecast v-if="draw" :key="`${draw.id}:${draw.updatedAt}`" :draw-id="draw.id" />
+      </fieldset></form>
     </template>
   </USlideover>
 </template>
 
 <style scoped>
-.draw-editor { display: grid; gap: 1.2rem; padding: 0; }
+.draw-editor { display: grid; gap: 1.2rem; padding: 0; border: 0; min-width: 0; }
 .draw-editor__heading h3, .draw-editor__heading p, .draw-editor__section-heading h4, .draw-editor__section-heading p { margin: 0; }
 .draw-editor__heading p, .draw-editor__section-heading p { margin-top: 0.3rem; color: var(--text-muted); font-size: 0.8rem; }
 .draw-editor__fields { display: grid; gap: 0.8rem; grid-template-columns: minmax(0, 1fr); }

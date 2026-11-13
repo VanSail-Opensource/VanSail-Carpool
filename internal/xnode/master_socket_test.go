@@ -2,7 +2,6 @@ package xnode_test
 
 import (
 	"context"
-	"fmt"
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 	"github.com/gorilla/websocket"
 	"net/http"
@@ -125,19 +124,21 @@ func TestNodeSnapshotsReplaceCountsWithoutPersistingTelemetry(t *testing.T) {
 		if err = socket.WriteJSON(wire.New("telemetry.report", "", 0, report)); err != nil {
 			t.Fatal(err)
 		}
-		// A following durable ACK proves the serial reader processed the snapshot.
-		sequence := uint64(1)
-		if count == 0 {
-			sequence = 2
-		}
-		batch := wire.TrafficReport{ID: fmt.Sprintf("%s:%d", fixtureAgent, sequence), Traffic: wire.Traffic{}}
-		if err = socket.WriteJSON(wire.New("traffic.report", batch.ID, 0, batch)); err != nil {
-			t.Fatal(err)
-		}
-		readFrame(t, socket, "traffic.ack")
-		metrics, err := f.master.Metrics(ctx)
-		if err != nil || metrics.ActiveConnections != int64(count) {
-			t.Fatalf("authoritative count=%d,error=%v", metrics.ActiveConnections, err)
+		// Telemetry and durable traffic use independent receive lanes. Wait for
+		// the observed snapshot itself rather than an unrelated traffic ACK.
+		deadline := time.Now().Add(5 * time.Second)
+		for {
+			metrics, err := f.master.Metrics(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if metrics.ActiveConnections == int64(count) {
+				break
+			}
+			if time.Now().After(deadline) {
+				t.Fatalf("authoritative count=%d, want=%d", metrics.ActiveConnections, count)
+			}
+			time.Sleep(time.Millisecond)
 		}
 	}
 	rows, err := f.store.DB().QueryContext(ctx, `SELECT table_name,string_agg(column_name,',' ORDER BY ordinal_position) FROM information_schema.columns WHERE table_schema='public' AND table_name LIKE 'xnode_%' GROUP BY table_name`)

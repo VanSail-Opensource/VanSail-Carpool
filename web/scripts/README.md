@@ -79,3 +79,11 @@ keyboard navigation. Its existing chart fixture issues no API requests.
 through reviewed profile, amount-limit and reward saves, then resolves or rejects
 the obsolete reads. It also verifies deleted providers stay absent. All six
 mobile/desktop scenarios use constructed data in the existing Emby settings fixture.
+
+`browser-backup-recovery.mjs` checks locked pending backup/job deletion, visible
+refusal and explicit retry, refreshed empty inventories, and retirement of an
+in-flight archive download when the owning workspace unmounts.
+
+`browser-admin-activity-recovery.mjs` checks game write locking, explicit retry,
+a confirmed save followed by read failure, retirement of cached draw inventories,
+and forecast recovery in desktop/mobile browser editors.

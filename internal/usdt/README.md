@@ -174,3 +174,12 @@ The [protocol definitions](https://github.com/tronprotocol/protocol/blob/master/
 and [execution result table](https://developers.tron.network/docs/errors) govern
 these checks, including retained explicit VM failures. The hosted scanner and
 TRON fixtures cover both omitted and explicit top-level success.
+
+`monitor_subscriptions.go` owns the selected endpoint's notification connection.
+Failed scans, endpoint failover, empty watched-account sets and partial
+subscription setup close and join inactive socket readers, clearing retained
+socket references. Socket retirement preserves shared HTTP idle pools; returning
+to an endpoint reconnects through the existing bounded executor.
+`monitor_subscriptions_test.go` uses live local WebSocket fixtures to cover
+selection, reader cleanup, reconnect and partial multi-account subscription
+failure. Payment evidence still comes only from the durable history scanner.

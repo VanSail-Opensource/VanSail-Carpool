@@ -21,6 +21,14 @@ verified rescue backup, consumes the review, locks and rechecks the record,
 executes parameterized SQL, and appends a redacted audit in one transaction.
 Constraints remain authoritative; domain hooks are bypassed.
 
+`mutation_authority.go` checks current active, unblocked administrator eligibility
+before review or rescue work and holds the actor row through review admission or
+edit/audit commit. Eligibility is checked again after the rescue backup, so a
+retained review cannot authorize a demoted, blocked or purging account. Refusal
+preserves the unconsumed review and returns the existing review-conflict result.
+`mutation_authority_test.go` covers stale actors, authority changed during backup,
+missing actors and reuse of the unconsumed review after authority is restored.
+
 Extend policies before exposing another protected subsystem. Ordinary fields
 inherit native constraints; generated columns/defaults come from metadata.
 Hosted regressions cover CRUD, numeric precision, actor binding, expiry/replay,

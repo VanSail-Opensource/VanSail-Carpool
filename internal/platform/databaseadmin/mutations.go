@@ -26,6 +26,9 @@ type preparedMutation struct {
 // process restart.
 
 func (s *Service) ReviewMutation(ctx context.Context, actorUserID string, request MutationRequest) (MutationReview, error) {
+	if err := requireMutationActor(ctx, s.db, actorUserID); err != nil {
+		return MutationReview{}, err
+	}
 	request.ReviewHash = ""
 	request.Confirmation = ""
 	if err := validateAction(request.Action); err != nil {
@@ -58,6 +61,9 @@ func (s *Service) ReviewMutation(ctx context.Context, actorUserID string, reques
 		return MutationReview{}, fmt.Errorf("begin database review: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
+	if err := requireMutationActor(ctx, tx, actorUserID); err != nil {
+		return MutationReview{}, err
+	}
 	if _, err := tx.ExecContext(ctx, `DELETE FROM database_admin_reviews WHERE consumed_at IS NOT NULL OR expires_at::timestamptz<$1::timestamptz`, now.Format(time.RFC3339Nano)); err != nil {
 		return MutationReview{}, fmt.Errorf("prune database reviews: %w", err)
 	}
@@ -148,6 +154,9 @@ func (s *Service) ApplyMutation(ctx context.Context, actorUserID string, request
 		return MutationResult{}, fmt.Errorf("begin direct database edit: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
+	if err := requireMutationActor(ctx, tx, actorUserID); err != nil {
+		return MutationResult{}, err
+	}
 	if err := consumeReview(ctx, tx, actorUserID, request, digest, s.now().UTC()); err != nil {
 		return MutationResult{}, err
 	}

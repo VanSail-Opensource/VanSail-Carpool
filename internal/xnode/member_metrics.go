@@ -2,7 +2,7 @@ package xnode
 
 import (
 	"context"
-	"strconv"
+	"math/big"
 	"time"
 )
 
@@ -21,7 +21,7 @@ func (m *Master) UserMetrics(ctx context.Context, userID string) (UserMetrics, e
 	}
 	result := UserMetrics{ActivityStatus: "unavailable", Reasons: reasons, Limited: len(reasons) > 0, FetchedAt: m.service.now()}
 	var offlineExpiry, onlineExpiry time.Time
-	var totalConnections int64
+	var totalConnections big.Int
 	totalsAvailable := len(nodes) > 0
 	id := int(identity.ProxyUserID)
 	principals, err := m.service.MemberPrincipals(ctx, userID, "")
@@ -43,12 +43,12 @@ func (m *Master) UserMetrics(ctx context.Context, userID string) (UserMetrics, e
 		}
 		for _, principal := range principals {
 			id := int(principal)
-			result.Connections += int64(snapshot.report.Users.Connections[id])
+			result.Connections = addConnectionCount(result.Connections, int64(snapshot.report.Users.Connections[id]))
 			rate := snapshot.report.Users.Rates[id]
 			online := snapshot.report.Users.Connections[id] > 0 || rate.UploadBytesPerSecond > 0 || rate.DownloadBytesPerSecond > 0
 			if hasTotals {
 				count := snapshot.report.Users.TotalConnections[id]
-				totalConnections += int64(count)
+				totalConnections.Add(&totalConnections, big.NewInt(int64(count)))
 				online = count > 0
 			}
 			expires := activityExpiry(snapshot, global.Telemetry.ReportSeconds, global.Telemetry.SampleSeconds)
@@ -60,8 +60,8 @@ func (m *Master) UserMetrics(ctx context.Context, userID string) (UserMetrics, e
 					onlineExpiry = expires
 				}
 			}
-			result.UploadBytesPerSecond += rate.UploadBytesPerSecond
-			result.DownloadBytesPerSecond += rate.DownloadBytesPerSecond
+			result.UploadBytesPerSecond = addMetricRate(result.UploadBytesPerSecond, rate.UploadBytesPerSecond)
+			result.DownloadBytesPerSecond = addMetricRate(result.DownloadBytesPerSecond, rate.DownloadBytesPerSecond)
 			status := snapshot.report.Users.Status[id]
 			if status.Limited {
 				reason := status.Reason
@@ -79,7 +79,7 @@ func (m *Master) UserMetrics(ctx context.Context, userID string) (UserMetrics, e
 		result.ActivityStatus, result.ActivityExpiresAt = "offline", &offlineExpiry
 	}
 	if totalsAvailable {
-		count := strconv.FormatInt(totalConnections, 10)
+		count := totalConnections.String()
 		result.TotalConnections = &count
 	}
 	if m.globalBlocks[id] {

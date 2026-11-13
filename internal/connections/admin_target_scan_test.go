@@ -35,7 +35,7 @@ func (*targetScopedScanRepository) CreateConnectionScan(context.Context, provide
 func (r *targetScopedScanRepository) ConnectionScanForUser(_ context.Context, scanID, userID string) (providerops.ConnectionScan, error) {
 	r.lastOwnerID = userID
 	if scanID != r.scan.ID || userID != r.scan.UserID {
-		return providerops.ConnectionScan{}, errors.New("not found")
+		return providerops.ConnectionScan{}, ErrScanNotFound
 	}
 	return r.scan, nil
 }
@@ -47,4 +47,8 @@ func (*targetScopedScanRepository) UpdateConnectionScan(context.Context, string,
 }
 func (*targetScopedScanRepository) UserByID(context.Context, string) (model.User, error) {
 	return model.User{}, errors.New("unexpected")
+}
+
+func (*targetScopedScanRepository) StartConnectionScan(context.Context, string, time.Time) (providerops.ConnectionScan, error) {
+	return providerops.ConnectionScan{}, errors.New("unexpected")
 }

@@ -30,3 +30,12 @@ The retained-block service no longer requires the retired block-admission or sca
 repository methods, an unused signer, or the obsolete block-intent fingerprint.
 Administrator diagnostics retain their own signer and queue; listing, encrypted
 target recovery, explicit unblocking and expiry cleanup remain supported.
+
+Connection polling distinguishes missing/foreign/expired records from transient
+storage failures. `ErrScanUnavailable` preserves the cause for HTTP retry mapping.
+The worker reads its local owner before recording any external start intent;
+`StartConnectionScan` admits only a currently queued row in one transaction.
+A competing start returns a conflict before provider work. Already-processing
+receipts keep their existing job or ambiguous-start review behavior.
+`recovery_test.go` covers transient recovery and unattempted owner reads;
+database lookup and concurrent-worker regressions verify the persistence fence.

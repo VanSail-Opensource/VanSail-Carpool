@@ -26,7 +26,7 @@ before invoking its provider adapter.
 - `queue_part2.go` contains queue worker and lifecycle helpers.
 - `config.go` exposes read-only queue configuration accessors.
 
-`ordering.go` exposes WithKey for per-resource FIFO. The existing scheduler bounds pending work and active workers, skips occupied keys, and retains one provider-wide pacing clock. Cancellation and shutdown join active calls.
+`ordering.go` exposes WithKey for per-resource FIFO. The existing scheduler bounds pending work and active workers, skips occupied keys, and retains one provider-wide pacing clock. Caller cancellation can return before an admitted callback finishes. Keep mutable buffers and secret cleanup inside the callback until it returns. Shutdown cancels and joins active workers; its caller can stop waiting when the shutdown context expires.
 
 `ordering_test.go` checks that an occupied account does not stall another account.
 

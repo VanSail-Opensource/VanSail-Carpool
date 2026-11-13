@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connections"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
@@ -80,6 +81,10 @@ func (s *Store) ConnectionScanByID(ctx context.Context, scanID string) (provider
 
 // ConnectionScanForUser returns an owner-scoped scan without raw result data.
 func (s *Store) ConnectionScanForUser(ctx context.Context, scanID, userID string) (providerops.ConnectionScan, error) {
-	return scanConnectionScan(s.db.QueryRowContext(ctx, connectionScanSelect+
+	scan, err := scanConnectionScan(s.db.QueryRowContext(ctx, connectionScanSelect+
 		` WHERE id=$1 AND user_id=$2`, scanID, userID))
+	if errors.Is(err, ErrNotFound) {
+		return scan, errors.Join(ErrNotFound, connections.ErrScanNotFound)
+	}
+	return scan, err
 }

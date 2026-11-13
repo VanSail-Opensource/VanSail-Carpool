@@ -497,3 +497,14 @@ payment, amount-limit and activity snapshots while holding their live reads.
 `__embyConnectionAudit.releaseReads(fail)` releases those original snapshots or
 errors after a mutation, and exact write/delete counters expose accidental
 replays. The existing Emby connection cases keep their original behavior.
+
+`BackupRecoveryAudit.vue`, `backup-recovery-audit.ts` and
+`backup-recovery-audit.html` mount the actual backup/job workspace with constructed
+records and deferred reads/actions. `slow`, `empty`, `error`, `defer` and `zh`
+select states. `__backupRecoveryAudit` records exact deletion/download attempts,
+releases pending actions, and retires the workspace without real archive access.
+
+Lucky administrator fixtures add `stale-load`, `defer-save`, `read-after-save-error`
+and `forecast-error`. `__audit.releaseReads()` and `releaseSave(fail)` control
+constructed completions; `gameWrites` and `drawWrites` record reviewed targets and
+payloads without any live reward or wallet mutation.

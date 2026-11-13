@@ -42,13 +42,18 @@ func (w *Worker) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
 		}
 		return w.pendingReview(ctx, record, now)
 	}
-	record, err = w.repository.UpdateConnectionScan(ctx, record.ID, providerops.ConnectionScanUpdate{Status: providerops.StatusProcessing}, now)
+	// Local read failures have no external ambiguity and must leave the scan
+	// queued so the durable job can retry without losing its start intent.
+	user, err := w.repository.UserByID(ctx, record.UserID)
+	if err != nil {
+		return fmt.Errorf("load connection scan owner: %w", err)
+	}
+	record, err = w.repository.StartConnectionScan(ctx, record.ID, now)
 	if err != nil {
 		return err
 	}
-	user, err := w.repository.UserByID(ctx, record.UserID)
-	if err != nil {
-		return w.fail(ctx, record.ID, "CONNECTION_SCAN_FAILED", now, err)
+	if record.ProviderJobID != "" {
+		return nil
 	}
 	var providerJobID string
 	var requestErr error
