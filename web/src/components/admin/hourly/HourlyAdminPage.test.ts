@@ -1,4 +1,4 @@
-import { defineComponent, h, type FunctionalComponent } from 'vue'
+import { defineComponent, h } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { HourlyPolicySnapshot } from '@/api/hourly'
@@ -13,7 +13,7 @@ const snapshot: HourlyPolicySnapshot = {
   version: 'read-version', policy: { salesEnabled: false, dailyAllowanceBytes: '1000', reducedRateBytesPerSecond: '1000', extraGBPriceTXBMinor: '100', activationHours: 1, cooldownSeconds: 0 },
 }
 const button = defineComponent({ props: { label: { type: String, default: '' }, disabled: Boolean }, emits: ['click'], setup: (props, { emit }) => () => h('button', { disabled: props.disabled, onClick: () => emit('click') }, props.label) })
-const passthrough: FunctionalComponent = (_, { slots }) => h('div', slots.default?.())
+const passthrough = { template: '<div><slot /></div>' }
 function page() { return mount(HourlyAdminPage, { global: { stubs: { Button: button, UButton: button, SkeletonBlock: true, InlineNotice: passthrough, HourlyPolicyForm: true, HourlyOfferForm: true } } }) }
 beforeEach(() => {
   for (const mock of Object.values(api)) mock.mockReset()
