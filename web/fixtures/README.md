@@ -461,3 +461,17 @@ Add `expires`, `deferred-health`, `defer-pricing` or `pricing-error` to verify
 timed expiry, paused settlement copy, reopened-dialog response isolation and
 explicit read recovery. The fixture records writes; these price-preview checks
 must not toggle renewal or create any debit.
+
+Lucky activity `bet&progress` shows a completed group-reward threshold and a
+mutable constructed game. Refresh returns a fresh snapshot, so disabling that
+game exercises the actual eligibility transition. `__audit.bets` and `betKeys`
+record attempted mock bets, allowing hosted error/retry checks to verify intent
+identity without any wallet mutation.
+
+`payment-return-audit.html?crypto&pending`, `?crypto&failed`, `?crypto&refunded`
+and `?crypto&paid` provide constructed receipt states without conflating order
+value or expected crypto amounts with confirmed balance credit.
+
+Hourly recovery uses `hourly-audit.html` with policy/offer/enrollment replacement
+and retained-credit/zero-allowance states. `allowance-zero-unused` has no funded
+credit; `credit-exhausted` consumes both reported budgets.

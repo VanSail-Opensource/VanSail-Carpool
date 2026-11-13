@@ -12,7 +12,6 @@ const props = defineProps<{
   squad: SquadProduct
   selected: boolean
   included: boolean
-  featured: boolean
 }>()
 
 const emit = defineEmits<{
@@ -75,9 +74,6 @@ function toggle(): void {
         presentation="member"
         :show-facts="false"
       >
-        <template #namePrefix>
-          <UIcon v-if="featured" class="squad-card__featured" name="i-ph-crown" :aria-label="$t('catalog.featured')" />
-        </template>
         <template v-if="!informational || $slots.status" #nameTags>
           <slot name="status" />
           <UIcon v-if="!informational && !squad.visible" name="i-ph-lock-key" :aria-label="$t('catalog.hidden')" />

@@ -23,19 +23,18 @@ const squad: SquadProduct = {
   activationRequired: false, accessibleNodes: [node], stockRemaining: 4,
   createdAt: '2026-08-21T00:00:00Z', updatedAt: '2026-08-21T00:00:00Z',
 }
-function mountStep(featuredIds: string[] = []) {
+function mountStep() {
   return shallowMount(CatalogSquadStep, {
-    props: { squads: [squad], selectedIds: [], includedIds: [], featuredIds, orderedIds: [squad.id] },
+    props: { squads: [squad], selectedIds: [], includedIds: [], orderedIds: [squad.id] },
   })
 }
 
 describe('CatalogSquadStep', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('hands preloaded composition presentation to the selector', () => {
-    const wrapper = mountStep([squad.id])
+  it('hands the prepared catalog order to the selector', () => {
+    const wrapper = mountStep()
 
-    expect(wrapper.getComponent(SquadSelector).props('featuredIds')).toEqual([squad.id])
     expect(wrapper.getComponent(SquadSelector).props('orderedIds')).toEqual([squad.id])
   })
 

@@ -15,6 +15,7 @@ export function useDrawExperience(play: (drawId: string) => Promise<ActivityResu
   const started = shallowRef(false)
   const { reducedMotion } = useMotionPreferences()
   let watchdog: ReturnType<typeof setTimeout> | undefined
+  let disposed = false
   const requiresStart = () => style.value === 'grid' || style.value === 'wheel' || style.value === 'slot'
 
   function armWatchdog(): void {
@@ -35,24 +36,24 @@ export function useDrawExperience(play: (drawId: string) => Promise<ActivityResu
 
   async function submit(): Promise<void> {
     const current = draw.value
-    if (!current) return
+    if (disposed || !current) return
     phase.value = 'running'
     error.value = null
     try {
       const received = await play(current.id)
-      if (draw.value?.id !== current.id) return
+      if (disposed || draw.value?.id !== current.id) return
       result.value = received
       phase.value = (reducedMotion.value && !requiresStart()) || globalThis.document?.hidden || !received.prizeId
         ? 'receipt' : 'settling'
     } catch (caught) {
-      if (draw.value?.id !== current.id) return
+      if (disposed || draw.value?.id !== current.id) return
       error.value = localizedError(caught, 'errors.activityFailed')
       phase.value = 'error'
     }
   }
 
   function begin(selectedDraw: LuckyDraw, choice: DrawStyleChoice): void {
-    if (draw.value) return
+    if (disposed || draw.value) return
     draw.value = selectedDraw
     style.value = resolveDrawStyle(choice)
     started.value = false
@@ -85,6 +86,9 @@ export function useDrawExperience(play: (drawId: string) => Promise<ActivityResu
   })
   onMounted(() => globalThis.document?.addEventListener('visibilitychange', handleVisibility))
   onScopeDispose(() => {
+    disposed = true
+    draw.value = null
+    result.value = null
     if (watchdog) clearTimeout(watchdog)
     globalThis.document?.removeEventListener('visibilitychange', handleVisibility)
   })

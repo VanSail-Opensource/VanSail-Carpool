@@ -7,9 +7,15 @@ const props = defineProps<{ decision?: DeepReadonly<components['schemas']['Prici
 const { t } = useI18n()
 const expired = shallowRef(false)
 watch(() => props.decision?.validUntil, (value, _, cleanup) => {
-  const remaining = value ? Date.parse(value) - Date.now() : 0
-  expired.value = remaining <= 0
-  if (remaining > 0) { const timer = globalThis.setTimeout(() => { expired.value = true }, Math.min(remaining, 2_147_483_647)); cleanup(() => globalThis.clearTimeout(timer)) }
+  const deadline = value ? Date.parse(value) : NaN
+  let timer: ReturnType<typeof globalThis.setTimeout> | undefined
+  function update(): void {
+    const remaining = deadline - Date.now()
+    expired.value = !Number.isFinite(remaining) || remaining <= 0
+    if (!expired.value) timer = globalThis.setTimeout(update, Math.min(remaining, 2_147_483_647))
+  }
+  update()
+  cleanup(() => { if (timer !== undefined) globalThis.clearTimeout(timer) })
 }, { immediate: true })
 const state = computed(() => props.decision?.status === 'PENDING' ? 'calculating' : props.decision?.status === 'FAILED' ? 'unavailable' : expired.value || props.decision?.status === 'STALE' ? 'stale' : 'ready')
 </script>

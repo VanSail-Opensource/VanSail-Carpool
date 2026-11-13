@@ -50,3 +50,15 @@ pending cancellation isolation and visible dialog errors followed by explicit
 retry at desktop and mobile widths.
 It also checks renewal expiry, health deferral, stale reopen replies and pricing
 read recovery while preserving the server's coupon-adjusted net amount.
+
+`browser-activity-recovery.mjs` verifies that refreshed disabled games retire
+their selection, reward progress stays inside its accessible range, and an
+uncertain bet keeps its idempotency key through a visible error and explicit retry.
+
+`browser-receipt-recovery.mjs` checks desktop/mobile pending, failed, refunded
+and paid receipts, including the distinction between order value and credit.
+
+`browser-hourly-recovery.mjs` exercises desktop/mobile reviewed price, gated
+offer and paid enrollment replacement; no write occurs until new consent. It
+also checks retained purchased traffic with automatic purchases disabled and a
+zero starting allowance.

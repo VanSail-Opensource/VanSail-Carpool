@@ -441,7 +441,7 @@ Private draw coupons (`admin_visible=0`) can only be used through awarded wallet
 - `activity_raffle_queries.go` supplies routing, progress, outcome, and delivery lookups; `activity_forecast.go` prices draws from current catalog and eligible balances.
 - `activity_forecast_prices.go` derives reward expense bounds from current combo and squad prices plus eligible member balances.
 - `activation_codes.go` validates selected combo/add-on activation-code maps in the purchase transaction while keeping only bcrypt hashes in local overrides.
-- `activation_codes_test.go` covers missing, invalid, extra, and bcrypt-validated purchase codes.
+- `activation_codes_test.go` covers missing, invalid, extra, and bcrypt-validated purchase codes, including rejection of an enabled gate whose retained hash is missing.
 - `activity_draws_part2.go` continues the focused implementation from its original package module.
 - `activity_extensions_part2.go` continues the focused implementation from its original package module.
 - `activity_history_part2.go` continues the focused implementation from its original package module.
@@ -524,6 +524,7 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `admin_finance_eligibility_test.go` checks current active administrator locks for balance adjustments, deductions, cancellation, affiliate configuration and IP lookup settings, preserving member fixtures and exact replay receipts.
 - `notification_events.go` owns semantic event deduplication and atomic outbox
   release, including provider-completion timestamps; `notification_scans.go` owns 48-hour and reset-period eligibility.
+- `notification_gate_recovery_test.go` verifies damaged retained facts fail validation without panics or partial release, then remain replayable after repair.
 - `notification_new_events.go` and `notification_operation_events.go` snapshot scheduled charges, add-on activation, cancellations, renewal failures, and terminal member operation receipts with stable event keys.
 - `notification_new_events_test.go` and `notification_refund_events_test.go` cover queued charges, terminal-only reset/refund messages, and renewal-failure suppression of generic expiry.
 - `store_catalog_renewal_test.go` and `store_outbox_test.go` keep catalog and outbox regression coverage in focused files.
@@ -563,10 +564,12 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `emby_queries.go` — provisioning scans, preference hydration, folder replacement,
   and provider-error normalization.
 - `operations.go` — durable job insertion, entitlement-transition enqueueing, and
-  purchase expiry.
+  purchase expiry with an authoritative locked expiry recheck.
+- `entitlement_transition_candidates.go` parses exact candidate timestamps and orders due queued terms; `entitlement_transition_expiry_test.go` covers extended terms and fractional activation/expiry boundaries.
 - `outbox_jobs.go` — outbox claim, completion, retry, deletion, recovery, listing,
   scanning, and persisted-error sanitization.
 - `purchase_sync.go` — entitlement synchronization and traffic-reset phase state.
+- `purchase_sync_cas.go` completes a native activation only for the current owner and exact account generation, revision, status and material, with eligibility checked under account/purchase locks. `purchase_sync_cas_test.go` covers same-clock edits, late failures, owner/generation/expiry fences and unchanged successful replay evidence.
 - `emby_setup.go` owns the shared atomic setup debit, sealed state, and optional legacy outbox transaction.
   `emby_account_fence_test.go` and `emby_account_fence_race_test.go` cover lifecycle
   share locks for new legacy setup/retry work, including a committed closure race;
@@ -620,6 +623,7 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `retention_housekeeping.go` prunes completed notification events, expired or superseded sessions, abandoned pre-username users, and old maintenance runs.
 - `continuity.go` retains native paid-successor projections and retires unclaimed legacy preparation jobs without deleting history.
 - `statistics.go` — catalog and activity administrator statistics.
+- `statistics_activity_cash_test.go` verifies ranged and multiplier draw outcomes match signed settled ledger cash, and monetary totals/averages cannot wrap at integer boundaries.
 - `product_statistics.go` calculates range-free KPIs across live and compacted
   facts, immutable spending flows, and database/WAL size.
 - `product_statistics_catalog.go` calculates active combo and squad distributions from retained purchase snapshots, effective overrides and activity rewards.
@@ -1124,6 +1128,7 @@ Provider requests remain outside every transaction.
 - `provider_operations_retry_generated.go` wraps the transactional methods in `provider_operations.go`.
 - `proxy_provisioning_backlog_retry_generated.go` wraps the transactional methods in `proxy_provisioning_backlog.go`.
 - `purchase_expiry_retry_generated.go` wraps the transactional methods in `purchase_expiry.go`.
+- `purchase_sync_cas_retry_generated.go` wraps the transactional methods in `purchase_sync_cas.go`.
 - `purchase_sync_retry_generated.go` wraps the transactional methods in `purchase_sync.go`.
 - `retention_compaction_retry_generated.go` wraps the transactional methods in `retention_compaction.go`.
 - `retention_payg_retry_generated.go` wraps the transactional methods in `retention_payg.go`.
@@ -1157,6 +1162,7 @@ Provider requests remain outside every transaction.
 - `xnode_group_delete_retry_generated.go` wraps the transactional methods in `xnode_group_delete.go`.
 - `xnode_groups_retry_generated.go` wraps the transactional methods in `xnode_groups.go`.
 - `xnode_identities_retry_generated.go` wraps the transactional methods in `xnode_identities.go`.
+- `xnode_member_identity_retry_generated.go` wraps the transactional methods in `xnode_member_identity.go`.
 - `xnode_metered_probes_retry_generated.go` wraps the transactional methods in `xnode_metered_probes.go`.
 - `xnode_named_services_retry_generated.go` wraps the transactional methods in `xnode_named_services.go`.
 - `xnode_node_delete_retry_generated.go` wraps the transactional methods in `xnode_node_delete.go`.
@@ -1165,6 +1171,9 @@ Provider requests remain outside every transaction.
 - `xnode_payg_jobs_retry_generated.go` wraps the transactional methods in `xnode_payg_jobs.go`.
 - `xnode_payg_traffic_retry_generated.go` wraps the transactional methods in `xnode_payg_traffic.go`.
 - `xnode_periods_retry_generated.go` wraps the transactional methods in `xnode_periods.go`.
+- `xnode_purchase_expiry_closure_retry_generated.go` wraps the transactional methods in `xnode_purchase_expiry_closure.go`.
+- `xnode_purchase_period_activation_retry_generated.go` wraps the transactional methods in `xnode_purchase_period_activation.go`.
+- `xnode_purchase_period_restore_retry_generated.go` wraps the transactional methods in `xnode_purchase_period_restore.go`.
 - `xnode_rates_retry_generated.go` wraps the transactional methods in `xnode_rates.go`.
 - `xnode_routing_access_retry_generated.go` wraps the transactional methods in `xnode_routing_access.go`.
 - `xnode_routing_plans_retry_generated.go` wraps the transactional methods in `xnode_routing_plans.go`.
@@ -1782,6 +1791,7 @@ broad indexed candidate scan.
 - `backup_run_admission.go` commits the active administrator's manual backup attempt and redacted requested-phase audit before export begins.
 - `admin_settings.go` commits a validated setting and sanitized actor audit together; raw bootstrap settings storage remains separate.
 - `admin_audit_admission_test.go` verifies real PostgreSQL audit failure rolls back backup admission and setting changes without exposing stored secrets.
+- `admin_privileged_eligibility_test.go` verifies demoted, purging or blocked actors cannot admit backups, change administrator settings, or enqueue outbound PM/moderation/recovery commands.
 - `legacy_connection_ip_block_fixture_test.go` seeds historical encrypted block rows and jobs for supported unblock/expiry recovery tests; production no longer admits retired blocks.
 - `legacy_ledger_fixture_test.go` retains unaudited deduction setup only for wallet and concurrency regression fixtures.
 `store_test.go` verifies the live agreement transition is idempotent and never rewinds completed signup. The unused username-reservation alias has been removed.
@@ -1817,3 +1827,32 @@ bundle with `activity.settings.update` audit and an exact returned configuration
 No new settings copy or table is introduced. `settings_activity_retry_generated.go`
 retries rolled-back transactions; `settings_activity_test.go` covers audit failure,
 range refusal, and readers observing whole bundles during concurrent writes.
+
+`xnode_purchase_expiry_closure.go` serializes expiry admission with the current account generation, purchase revision and due time before fencing the captured period generation. A newer term edit retires the old expiry intent without mutating accounting. Its generated retry adapter retries only rolled-back serialization failures; native service tests exercise delayed-lock and retained-usage boundaries.
+
+`xnode_purchase_period_restore.go` restores or updates the same paid period under
+current owner, purchase revision/material, identity pointer and closure-generation
+locks. Usage, original start/reset times and confirmed retired-node drain proof
+are retained. `xnode_purchase_period_activation.go` checks that same target before
+atomically fencing a predecessor and admitting one new paid period; a retained
+period for that purchase requires reconciliation instead of another quota reset.
+Both generated retry adapters repeat only complete rolled-back transactions.
+
+`xnode_purchase_period_target.go` shares full-precision paid-window validation,
+settled-refund refusal, active-ban and pending member refund/reset gates. The
+current admin edit/bulk-extension operation can synchronize its own committed
+term. Exact paid queued lineage can preserve the predecessor's continuity
+projection without editing historical purchases. Last-squad normalization occurs
+inside the validated mutation transaction.
+
+`xnode_purchase_period_restore_test_helpers_test.go` supplies retained-period
+fixtures. `xnode_purchase_period_restore_test.go` covers preserved accounting,
+stale pointer/closure/material and lifecycle/refund refusal;
+`xnode_purchase_period_restore_guards_test.go` covers operation gates, pending
+bans and live-versus-retired barrier proof. `xnode_purchase_period_activation_test.go`
+and `xnode_purchase_period_activation_guards_test.go` cover first/replacement
+admission, atomic rollback and stale-target refusal before predecessor mutation.
+`xnode_purchase_period_continuity_test.go` checks exact paid lineage and unchanged
+historical term/counters across the queued boundary.
+
+`xnode_member_identity.go` and `xnode_member_identity_retry_generated.go` bind member credential preparation to the exact active owner generation and captured credential material. Returned identity state is read before commit; current period pointers, unrelated restrictions and unchanged first-sync proof are retained. `xnode_member_identity_test.go` covers old-generation refusal, cleared-principal rejoin, concurrent pointer/restriction retention and stale credential proposals. `xnode_purchase_period_generation_test.go` checks generation changes with otherwise identical purchases for first admission, replacement and retained restoration. Conditional purchase completion also receives the original generation in `purchase_sync_cas.go`.

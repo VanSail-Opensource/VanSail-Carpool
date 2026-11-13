@@ -6,9 +6,8 @@ compact right-aligned refresh toolbar remains. `useHourly.ts` reads live
 owner-scoped state, retains request idempotency keys across uncertain responses,
 tracks the existing durable operation receipts, and refreshes confirmed changes.
 `hourlyHours.ts` exposes `hourlyRequiredHours(offer, fallback)`: an offer's own
-`requiredHours` (`0` or absent inherits the account-wide `activationHours`) is
-read through an optional cast because the generated client type predates the
-server field. `HourlyPage.vue` passes that effective value to every card, so the
+`requiredHours` (`0` inherits the account-wide `activationHours`) uses the
+current generated contract directly; the retired compatibility cast is removed. `HourlyPage.vue` passes that effective value to every card, so the
 required-balance hint matches the squad's own eligibility hours. The helper lives
 in its own module so the hosted `HourlyPage.test.ts` module mock of `useHourly`
 does not erase it.
@@ -29,7 +28,8 @@ sub-basis-point remainder:
   lines and the "Purchased extra left" legend swatch use a local
   `--hourly-extra` derived from the theme-aware `--success` mixed with a vivid
   green, so it stays distinct from `--warning` in both themes.
-- Extra purchases enabled: capacity is `freeAllowanceBytes + extraFundedBytes`
+- Existing credit is retained whether automatic purchases are enabled or disabled:
+  capacity is `freeAllowanceBytes + extraFundedBytes`
   and usage is `freeUsedBytes + extraUsedBytes` (clamped to capacity). The legend
   always shows used traffic and exactly one secondary row: "Purchased extra
   left" (`extraFunded - extraUsed - extraReserved`, never reserved bytes as used)
@@ -37,18 +37,19 @@ sub-basis-point remainder:
   two rows are mutually exclusive. Caption and accessible `aria-valuetext` use
   `hourly.fullSpeedAllowance` and `hourly.allowanceUsedOf`.
 - Turning automatic extra purchases on (false → true) while the previous state
-  was out of allowance keeps the reduced-speed card mounted and flies a one-off
+  had exhausted both free and purchased budgets keeps the reduced-speed card mounted and flies a one-off
   decorative green rocket through it for ~1.2s (`data-hourly-boost` is on this
   card-context rocket); the graph swaps to the purchased bar only when the
   rocket finishes. It never plays on initial load or within allowance. Reduced
   motion swaps immediately and shows a static green flash instead of travel.
-- Extra purchases disabled and the free allowance exhausted
-  (`freeUsedBytes >= freeAllowanceBytes`, or a zero allowance with recorded
-  usage): the caption is omitted and `HourlyThrottleMeter.vue` replaces the whole
+- Extra purchases disabled and both observed budgets exhausted
+  (`freeUsedBytes >= freeAllowanceBytes` and `extraUsedBytes >= extraFundedBytes`,
+  including a zero budget with zero use): the caption is omitted and `HourlyThrottleMeter.vue` replaces the whole
   bar area with a depressed cool-gray card: a sagging/flattening waveform, a slow
   dim breathing pulse and a slow dashed drift, the exact rate, and one short
-  advice line (`hourly.throttledAdvice`; a 00:00 UTC purchase-unavailable
-  variant when the extra price is 0). Reduced motion freezes the sad waveform
+  advice line (`hourly.throttledAdvice`; a purchase-unavailable
+  variant when the extra price is 0). The label identifies the configured reduced
+  rate and observed budget, rather than claiming a live measured connection speed. Reduced motion freezes the sad waveform
   while keeping the same information.
 - Otherwise the ordinary free-allowance bar renders.
 
@@ -118,8 +119,11 @@ their meaning (`admin`, `light`, `zh`, `slow`, `error`, `empty`, `paused`,
 `price-rise`, `no-extra`, `pending`, `conflict`, `queue`, `failed`, `first`,
 `catalog`, `legacy`). New switches:
 
-- `out-of-allowance`: free allowance exhausted, extra disabled → throttle meter.
-- `allowance-zero`: zero daily allowance with recorded usage → throttle meter.
+- `out-of-allowance`: free allowance exhausted, with existing purchased credit.
+- `allowance-zero`: zero free allowance with recorded use and retained extra.
+- `credit-exhausted`: both free and purchased budgets exhausted → reduced-rate meter.
+- `allowance-zero-unused`: zero free allowance, no purchased credit and no recorded
+  use → reduced-rate meter immediately.
 - `extra-off`: combine with `extra` to keep automatic purchases off while the
   synthetic account still carries existing purchased credit.
 - `offer-hours`: per-offer required hours (24, 72, inherit 168) with matching
@@ -132,8 +136,15 @@ their meaning (`admin`, `light`, `zh`, `slow`, `error`, `empty`, `paused`,
 
 Use `extra` together with `out-of-allowance` to inspect the purchased-usage bar
 with `extraEnabled` true, and `zh`/`light` for locale and theme parity. The
-`out-of-allowance` fixture keeps existing purchased credit while the preference
-is off, so turning the switch on there (confirming the dialog) keeps the
-reduced-speed card, flies the rocket through it (`[data-hourly-boost]`) and then
-swaps to the purchased bar with its green sine wave lines. Add `reduced-motion` to
+`out-of-allowance` fixture keeps existing purchased credit visible while the
+preference is off. `credit-exhausted` shows the reduced-rate meter; enabling
+automatic purchases there (after explicit confirmation) triggers the decorative
+rocket and returns to the budget bar without inventing a funded block. Add `reduced-motion` to
 see the immediate swap and static flash/lines instead.
+
+Open activation-code, extra-price and disable dialogs retain the reviewed policy
+version, offer revision or enrollment identity. A conflicting refresh closes the
+dialog and asks the member to review current terms. `HourlyPage.test.ts` covers
+those replacement races; server revision and policy checks still authorize writes.
+`HourlyAllowanceGraph.test.ts` covers usable purchased/reserved credit with
+automatic purchases disabled and zero free budget before any observed traffic.

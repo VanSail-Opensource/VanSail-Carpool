@@ -14,7 +14,7 @@ separate. Action quotes and permission decisions still await the backend.
 - `useSquadAddition.ts` owns active-term optional-squad filtering, time-adjusted quote freshness, activation-code handoff, balance recovery, and idempotent commit feedback.
 
 - `useActivity.ts` loads games, draws, and check-in actions.
-- `useActivity.test.ts` checks that ambiguous draw failures reuse the same idempotency key and confirmed draws release it.
+- `useActivity.test.ts` checks that ambiguous draw failures reuse the same idempotency key and confirmed draws release it. Disposed views retire pending activity replies, feedback and follow-up refreshes, and clear retained account results.
 - `useAffiliateCentre.ts` loads member metrics and fixed five-row referral pages.
 - `useAffiliateCentre.test.ts` covers obsolete page replies and retrying a failed
   page; only current requests update referral data or loading state.

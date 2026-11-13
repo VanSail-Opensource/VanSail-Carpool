@@ -38,16 +38,16 @@ func frameErrorCause(err error) string {
 			return item.code
 		}
 	}
-	var coded interface{ Code() int }
+	var coded interface{ SQLState() string }
 	if errors.As(err, &coded) {
-		switch coded.Code() & 255 {
-		case 5, 6:
+		switch coded.SQLState() {
+		case "40001", "40P01", "55P03":
 			return "storage_busy"
-		case 8:
+		case "25006":
 			return "storage_readonly"
-		case 10, 11, 13:
+		case "58030", "53100":
 			return "storage_io"
-		case 19:
+		case "23000", "23502", "23503", "23505", "23514", "23P01":
 			return "storage_constraint"
 		}
 	}

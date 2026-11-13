@@ -34,7 +34,6 @@ describe('SquadSelector', () => {
         squads: [optimized, broadband, international],
         selectedIds: [broadband.id],
         includedIds: [],
-        featuredIds: [international.id],
         orderedIds: [international.id, broadband.id, optimized.id],
       },
     })
@@ -42,13 +41,12 @@ describe('SquadSelector', () => {
     const tables = wrapper.findAllComponents(SquadPricingTable)
     expect(tables.map(table => table.props('profileType'))).toEqual(['international_network', 'broadband', 'china_optimized'])
     expect(tables.map(table => table.props('squads').map((item: SquadProduct) => item.id))).toEqual([['1'], ['2'], ['3']])
-    expect(tables[0]!.props('featuredIds')).toEqual([international.id])
   })
 
   it('does not render an empty table or an unconfigured legacy profile', () => {
     const unconfigured = squad('4', null)
     const wrapper = shallowMount(SquadSelector, {
-      props: { squads: [international, unconfigured], selectedIds: [], includedIds: [], featuredIds: [], orderedIds: [international.id, unconfigured.id] },
+      props: { squads: [international, unconfigured], selectedIds: [], includedIds: [], orderedIds: [international.id, unconfigured.id] },
     })
 
     expect(wrapper.findAllComponents(SquadPricingTable)).toHaveLength(1)
@@ -57,7 +55,7 @@ describe('SquadSelector', () => {
 
   it('omits combo-included squads from the optional squad step', () => {
     const wrapper = shallowMount(SquadSelector, {
-      props: { squads: [international, broadband], selectedIds: [], includedIds: [international.id], featuredIds: [], orderedIds: [international.id, broadband.id] },
+      props: { squads: [international, broadband], selectedIds: [], includedIds: [international.id], orderedIds: [international.id, broadband.id] },
     })
 
     const tables = wrapper.findAllComponents(SquadPricingTable)
@@ -67,7 +65,7 @@ describe('SquadSelector', () => {
 
   it('forwards table selection events', async () => {
     const wrapper = shallowMount(SquadSelector, {
-      props: { squads: [international], selectedIds: [], includedIds: [], featuredIds: [], orderedIds: [international.id] },
+      props: { squads: [international], selectedIds: [], includedIds: [], orderedIds: [international.id] },
     })
     const table = wrapper.getComponent(SquadPricingTable)
 

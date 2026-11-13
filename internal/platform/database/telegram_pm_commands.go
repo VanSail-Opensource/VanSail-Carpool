@@ -136,12 +136,5 @@ func (s *Store) retryAttempt_QueuePMRelay(ctx context.Context, input model.PMRel
 }
 
 func requirePMAdminTx(ctx context.Context, tx *sql.Tx, actorID string) error {
-	var authorized bool
-	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE id=$1 AND role='admin')`, actorID).Scan(&authorized); err != nil {
-		return err
-	}
-	if !authorized {
-		return ErrConflict
-	}
-	return nil
+	return catalogAdminActorTx(ctx, tx, actorID)
 }

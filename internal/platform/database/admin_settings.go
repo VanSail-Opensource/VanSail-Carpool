@@ -28,7 +28,7 @@ func (s *Store) retryAttempt_PutAdminSetting(ctx context.Context, key, value str
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
-	if err := lockProviderOperationAccountsTx(ctx, tx, actorID, actorID); err != nil {
+	if err := catalogAdminActorTx(ctx, tx, actorID); err != nil {
 		return err
 	}
 	if _, err := tx.ExecContext(ctx, `INSERT INTO settings(key,value,encrypted,updated_at,updated_by)

@@ -44,6 +44,15 @@ func (s *Service) EnsureIdentity(ctx context.Context, user model.User) (Identity
 }
 
 func (s *Service) ensureIdentity(ctx context.Context, user model.User) (Identity, error) {
+	if _, ok := s.memberIdentityRepository(); ok {
+		return s.ensureMemberIdentity(ctx, user)
+	}
+	return s.ensureIdentityWithPersistence(ctx, user, func(_, next Identity) (Identity, error) {
+		return s.repo.SaveXNodeIdentity(ctx, next)
+	})
+}
+
+func (s *Service) ensureIdentityWithPersistence(ctx context.Context, user model.User, persist func(Identity, Identity) (Identity, error)) (Identity, error) {
 	existing, err := s.repo.XNodeIdentityByUser(ctx, user.ID)
 	if err == nil && existing.SubscriptionCipher != "" && len(existing.SubscriptionHash) == sha256.Size && existing.CredentialsCipher != "" {
 		return existing, nil
@@ -51,10 +60,10 @@ func (s *Service) ensureIdentity(ctx context.Context, user model.User) (Identity
 	if err != nil && !isMissing(err) {
 		return Identity{}, err
 	}
-	identity := existing
 	if isMissing(err) {
-		identity = Identity{UserID: user.ID}
+		existing = Identity{UserID: user.ID}
 	}
+	identity := existing
 	if identity.UserID != user.ID || identity.ServiceName != "" {
 		return Identity{}, ErrConflict
 	}
@@ -76,7 +85,7 @@ func (s *Service) ensureIdentity(ctx context.Context, user model.User) (Identity
 			return identity, err
 		}
 	}
-	return s.repo.SaveXNodeIdentity(ctx, identity)
+	return persist(existing, identity)
 }
 func (s *Service) newSubscription(identity *Identity) error {
 	token, err := ids.Token(32)

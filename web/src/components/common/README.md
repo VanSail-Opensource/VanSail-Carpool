@@ -30,3 +30,6 @@ Catalog descriptions use escaped Vue text and a native multiline field. Squad me
 
 Short-window `MetricLineChart.vue` axes include seconds so ten-second rate
 samples have distinct labels; day histories retain UTC calendar labels.
+
+`LivePrice.test.ts` covers invalid expiry, replacement validity and rescheduling
+beyond the browser timer limit; ready indicators expire at the actual deadline.

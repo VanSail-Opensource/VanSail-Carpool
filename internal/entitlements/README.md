@@ -27,3 +27,14 @@ The unused standalone `Worker.Drain` and its generic claim/completion dependency
 were removed. Domain workers run exclusively through the shared outbox executor,
 which owns claiming, fencing, retry scheduling and unrelated job kinds. Retired
 continuity jobs remain bounded upgrade acknowledgements without provider effects.
+
+Native purchase activation enters `worker_native_activation.go`. Each delivery
+refreshes its owned purchase, uses `ApplyMemberPurchase` without historical
+account-wide quiesce/reset phases, and completes through the storage revision
+compare. Local preflight or completion-storage failures do not become provider
+failure receipts. Attempted failures can mark only the exact current term;
+completed activation evidence remains unchanged on replay.
+`worker_native_activation_test.go` covers refreshed targets, storage recovery,
+conditional failure completion, and refusal of unsafe fallback adapters.
+
+Native activation retains the original owner generation across provider work and both success/failure completion; a revived account cannot inherit an old job outcome.

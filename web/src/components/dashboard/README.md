@@ -132,3 +132,6 @@ pricing requests on close or purchase change, and expires the visible preview.
 Prepared prices describe a future preview; current settlement admission remains
 server-owned. Retired per-node Home chart and checkout-block locale keys were
 removed after verifying no source references remain.
+
+`SubscriptionPanel.test.ts` covers replacement of a subscription credential:
+old asynchronous copy feedback and open revoke consent are retired together.

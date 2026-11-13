@@ -23,7 +23,7 @@ const reason = computed(() => {
 </script>
 
 <template>
-  <SquadPricingCard :squad="item.squad" :selected="false" :included="false" :featured="false" informational class="hourly-squad">
+  <SquadPricingCard :squad="item.squad" :selected="false" :included="false" informational class="hourly-squad">
     <template #status><StatusBadge v-if="item.enrollment && item.enrollment.status !== 'active'" tone="neutral" :label="t(`hourly.status.${item.enrollment.status}`)" /></template>
     <template #price>
       <span class="hourly-squad__price"><strong>{{ formatMemberMoney(item.offer.hourlyPrice) }}</strong><small>{{ t('hourly.perHour') }}</small></span>

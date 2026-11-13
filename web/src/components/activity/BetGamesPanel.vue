@@ -22,14 +22,16 @@ const stake = shallowRef('')
 const selected = computed(() => props.games.find((game) => game.id === selectedId.value))
 const stakeMinor = computed(() => displayInputToTXBMinor(stake.value))
 const canBet = computed(() => {
-  if (!selected.value || !stakeMinor.value) return false
-  const amount = BigInt(stakeMinor.value)
-  return amount >= BigInt(selected.value.minimumStakeMinor)
-    && amount <= BigInt(selected.value.maximumStakeMinor)
+  if (props.busy || !selected.value?.enabled || !stakeMinor.value) return false
+  try {
+    const amount = BigInt(stakeMinor.value)
+    return amount >= BigInt(selected.value.minimumStakeMinor)
+      && amount <= BigInt(selected.value.maximumStakeMinor)
+  } catch { return false }
 })
 
 watch(() => props.games, (games) => {
-  if (!selectedId.value || !games.some((game) => game.id === selectedId.value)) {
+  if (!selectedId.value || !games.some((game) => game.id === selectedId.value && game.enabled)) {
     selectedId.value = games.find((game) => game.enabled)?.id ?? null
   }
 }, { immediate: true })
@@ -57,7 +59,7 @@ function submit(): void {
 }
 
 function selectGame(id: string): void {
-  if (selectedId.value === id) return
+  if (props.busy || selectedId.value === id || !props.games.some(game => game.id === id && game.enabled)) return
   selectedId.value = id
   selectionHaptic()
 }

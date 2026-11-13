@@ -51,3 +51,36 @@ func TestPurchaseActivationCodesAreHashedAndValidated(t *testing.T) {
 		t.Fatalf("stored activation value is not a bcrypt hash: %q", hash)
 	}
 }
+
+func TestRequiredActivationGateCannotLoseItsRetainedHash(t *testing.T) {
+	t.Parallel()
+	ctx, store := context.Background(), newTestStore(t)
+	user := createTestUser(t, store, 26_501)
+	squad := saveTestSquad(t, store, "damaged-activation", 100, true)
+	if _, err := store.SaveSquadProduct(ctx, SquadProductInput{GroupID: squad.GroupID,
+		Name: squad.Name, PriceTXBMinor: 100, Visible: true, UpstreamPresent: true,
+		ActivationRequired: true, ActivationCode: "retained-code"}); err != nil {
+		t.Fatal(err)
+	}
+	combo := saveTestCombo(t, store, "Damaged activation gate", 100, 30, squad.GroupID)
+	now := time.Date(2026, 11, 13, 15, 0, 0, 0, time.UTC)
+	if _, err := store.AdjustBalance(ctx, user.ID, 1000, "damaged-gate-seed", "seed", now); err != nil {
+		t.Fatal(err)
+	}
+	for _, hash := range []any{nil, ""} {
+		if _, err := store.DB().ExecContext(ctx, `UPDATE squad_product_overrides SET activation_code_hash=$1 WHERE group_id=$2`, hash, squad.GroupID); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := store.CreatePurchase(ctx, PurchaseInput{UserID: user.ID, ComboID: combo.ID,
+			IdempotencyKey: "damaged-gate-purchase"}, now); !errors.Is(err, ErrConflict) {
+			t.Fatalf("required gate with missing hash allowed purchase: %v", err)
+		}
+	}
+	var purchases int
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM purchases WHERE user_id=$1`, user.ID).Scan(&purchases); err != nil || purchases != 0 {
+		t.Fatalf("rejected gate left purchase: %d, %v", purchases, err)
+	}
+	if balance := adminWorkflowBalance(t, store, user.ID); balance != 1000 {
+		t.Fatalf("rejected gate charged wallet: %d", balance)
+	}
+}

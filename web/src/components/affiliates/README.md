@@ -11,3 +11,5 @@
 - Referral rows, changed summary values, and tier-completion feedback own their local reduced-motion-safe transitions.
 - Failed page refreshes keep the previous rows and show their error; a later
   page response cannot replace a more recent selection.
+
+Invite-link replacement retires pending copy feedback as well as the copied label.

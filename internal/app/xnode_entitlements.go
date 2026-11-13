@@ -14,6 +14,13 @@ import (
 func (a proxyProvider) ApplyEntitlement(ctx context.Context, id string, limit int64, strategy string, groups []string, until time.Time) error {
 	return a.native.ApplyPurchase(ctx, id, limit, strategy, until)
 }
+
+// ApplyMemberPurchase binds activation to its retained purchase and native owner;
+// it never resets whichever account happens to be in a historical proxy link.
+func (a proxyProvider) ApplyMemberPurchase(ctx context.Context, user model.User, purchase model.Purchase) error {
+	return a.native.ApplyMemberPurchase(ctx, user, purchase)
+}
+
 func (a proxyProvider) RemoveEntitlement(ctx context.Context, id string) error {
 	return a.native.CloseForReplacement(ctx, id)
 }

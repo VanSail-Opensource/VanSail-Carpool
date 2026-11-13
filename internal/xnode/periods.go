@@ -11,7 +11,7 @@ import (
 // predecessor immediately and retains unfinished journals for later settlement.
 func (s *Service) ApplyPurchase(ctx context.Context, id string, limit int64, strategy string, expires time.Time) error {
 	s.mu.Lock()
-	target, err := s.applyPurchaseLocked(ctx, id, limit, strategy, expires)
+	target, err := s.applyPurchaseLocked(ctx, id, limit, strategy, expires, nil, -1)
 	s.mu.Unlock()
 	if err != nil || target == nil {
 		return err
@@ -20,7 +20,7 @@ func (s *Service) ApplyPurchase(ctx context.Context, id string, limit int64, str
 	return err
 }
 
-func (s *Service) applyPurchaseLocked(ctx context.Context, id string, limit int64, strategy string, expires time.Time) (*identityClosure, error) {
+func (s *Service) applyPurchaseLocked(ctx context.Context, id string, limit int64, strategy string, expires time.Time, expected *model.Purchase, generation int64) (*identityClosure, error) {
 	identity, err := s.Identity(ctx, id)
 	if err != nil {
 		return nil, err
@@ -29,6 +29,9 @@ func (s *Service) applyPurchaseLocked(ctx context.Context, id string, limit int6
 	if err != nil {
 		return nil, err
 	}
+	if expected != nil && (purchase == nil || !sameMemberPurchaseTarget(*purchase, *expected)) {
+		return nil, ErrConflict
+	}
 	if purchase == nil {
 		target, err := s.captureIdentityClosureLocked(ctx, identity, "", false)
 		return &target, err
@@ -36,12 +39,27 @@ func (s *Service) applyPurchaseLocked(ctx context.Context, id string, limit int6
 	if limit != purchase.TrafficLimitBytes || strategy != purchase.ResetStrategy || !expires.Equal(purchase.ValidUntil) {
 		return nil, ErrConflict
 	}
+	var period Period
 	if identity.CurrentPeriodID != "" {
-		period, err := s.repo.XNodePeriod(ctx, identity.CurrentPeriodID)
+		period, err = s.repo.XNodePeriod(ctx, identity.CurrentPeriodID)
 		if err != nil {
 			return nil, err
 		}
-		if period.PurchaseID == purchase.ID && period.Status == "open" {
+		if period.PurchaseID == purchase.ID {
+			if repository, ok := s.repo.(interface {
+				RestoreXNodePurchasePeriod(context.Context, Identity, Period, model.Purchase, int64, time.Time) error
+			}); ok {
+				generation, err = s.purchasePeriodGeneration(ctx, identity, generation)
+				if err != nil {
+					return nil, err
+				}
+				return nil, repository.RestoreXNodePurchasePeriod(ctx, identity, period, *purchase, generation, s.now().UTC())
+			}
+			// Generic fixtures can retain an already-open period; reopening is
+			// allowed only through the authoritative atomic storage adapter.
+			if period.Status != "open" {
+				return nil, ErrAccessAccountingPending
+			}
 			if err := s.normalizePurchaseSquads(ctx, identity, *purchase); err != nil {
 				return nil, err
 			}
@@ -49,6 +67,11 @@ func (s *Service) applyPurchaseLocked(ctx context.Context, id string, limit int6
 			period.Strategy = strategy
 			return nil, s.repo.SaveXNodePeriod(ctx, period)
 		}
+	}
+	if repository, ok := s.repo.(purchasePeriodAdmissionRepository); ok {
+		return nil, s.admitPurchasePeriod(ctx, repository, identity, period, *purchase, generation)
+	}
+	if period.ID != "" {
 		if err = s.closePeriod(ctx, period, true); err != nil {
 			return nil, err
 		}

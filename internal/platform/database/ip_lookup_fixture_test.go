@@ -10,6 +10,9 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
+// Keep the privileged settings actor outside the member fixture ID range.
+const ipLookupAdminTelegramID int64 = 9_600_000_001
+
 func ipLookupFixture(t *testing.T, quota int) (*Store, *iplookup.Service, string, string, time.Time) {
 	t.Helper()
 	ctx := context.Background()
@@ -24,7 +27,7 @@ func ipLookupFixture(t *testing.T, quota int) (*Store, *iplookup.Service, string
 	for i := range c.Providers {
 		c.Providers[i].Enabled = c.Providers[i].ID == "ipapi"
 	}
-	if err := store.SaveIPLookupSettings(ctx, createTestAdmin(t, store, 96002).ID, c, map[string]string{"ipapi": "test-vault-value"}, map[string]*int{combo.ID: &quota}); err != nil {
+	if err := store.SaveIPLookupSettings(ctx, createTestAdmin(t, store, ipLookupAdminTelegramID).ID, c, map[string]string{"ipapi": "test-vault-value"}, map[string]*int{combo.ID: &quota}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := store.AdjustBalance(ctx, user.ID, 10000, "ip-seed:"+user.ID, "seed", now); err != nil {

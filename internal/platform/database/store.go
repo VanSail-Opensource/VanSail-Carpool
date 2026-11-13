@@ -168,18 +168,6 @@ func (s *Store) UserBySession(ctx context.Context, tokenHash []byte, now time.Ti
 	return user, err
 }
 
-// DeleteExpiredSessions removes stale session rows.
-
-func (s *Store) DeleteExpiredSessions(ctx context.Context, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
-
-	if _, err := s.db.ExecContext(ctx, `DELETE FROM sessions WHERE expires_at<=$1`, stamp(now)); err != nil {
-		return fmt.Errorf("delete expired sessions: %w", err)
-	}
-	return nil
-}
-
 // UpdateMembership persists canonical Telegram membership results without
 // changing onboarding. Community access is independent from account setup.
 

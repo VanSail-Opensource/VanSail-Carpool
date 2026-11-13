@@ -284,3 +284,13 @@ refusal and first-sync proof recovery with the original requested links.
 
 `payment_profile_revision_test.go` checks that delayed discovery and deletion
 cannot disable, replace, or erase a newer saved account revision.
+
+`purchase_expiry.go` passes one captured UTC instant through purchase-specific native expiry admission and lifecycle expiry. Native admission rechecks the purchase inside the database transaction, so a delayed job cannot close an intervening extension.
+
+`xnode_entitlements.go` binds queued activation to a native owner and an exact
+purchase snapshot. `xnode_purchase_activation_test.go` exercises the real worker,
+native service and PostgreSQL store with missing/foreign legacy pointers,
+repeated activation, first provisioning and a retained purged identity. Existing
+period usage and another owner's state remain unchanged.
+
+`xnode_identity_generation_test.go` exercises real public native identity provisioning with an old captured user after revival, then verifies current-generation dormant credential preparation succeeds.

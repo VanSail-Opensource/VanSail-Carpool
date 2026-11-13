@@ -22,7 +22,7 @@ document.cookie = `txc_admin_request_key=${'A'.repeat(43)}; path=/; SameSite=Str
 const fixture = hourlyFixture(params)
 const calls: { path: string; method: string; body: unknown; key: string | null }[] = []
 const haptics: string[] = []
-window.Telegram = { WebApp: { version: '9.0', HapticFeedback: { impactOccurred: value => haptics.push(value), notificationOccurred: value => haptics.push(value), selectionChanged: () => haptics.push('selection') } } } as unknown as typeof window.Telegram
+window.Telegram = { WebApp: { version: '9.0', HapticFeedback: { impactOccurred: (value: string) => haptics.push(value), notificationOccurred: (value: string) => haptics.push(value), selectionChanged: () => haptics.push('selection') } } } as unknown as typeof window.Telegram
 if (!admin) installHapticClickFeedback()
 const audit = { calls, haptics, recover: false, fixture }
 Object.assign(window, { __hourlyAudit: audit })

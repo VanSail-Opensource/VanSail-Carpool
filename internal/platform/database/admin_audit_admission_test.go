@@ -12,7 +12,7 @@ import (
 func TestManualBackupAdmissionCommitsActorBeforeExport(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
-	actor := createTestUser(t, s, 95101)
+	actor := createTestAdmin(t, s, 95101)
 	now := time.Now().UTC()
 	run, err := s.StartAuditedBackupRun(ctx, "/managed/tx-carpool.dump", actor.ID, now)
 	if err != nil || run.ID == "" || run.Status != "running" {
@@ -34,7 +34,7 @@ func TestManualBackupAdmissionCommitsActorBeforeExport(t *testing.T) {
 func TestManualBackupAuditFailurePreventsAdmission(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
-	actor := createTestUser(t, s, 95102)
+	actor := createTestAdmin(t, s, 95102)
 	restore := rejectPrivilegedAuditWrites(t, s)
 	run, err := s.StartAuditedBackupRun(ctx, "/managed/tx-carpool.dump", actor.ID, time.Now())
 	if err == nil || run.ID != "" {
@@ -53,7 +53,7 @@ func TestManualBackupAuditFailurePreventsAdmission(t *testing.T) {
 func TestAdminSettingAndAuditCommitTogether(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
-	actor := createTestUser(t, s, 95103)
+	actor := createTestAdmin(t, s, 95103)
 	now := time.Now().UTC()
 	const key = "provider_api_secret"
 	const first = "encrypted-before"

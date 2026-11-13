@@ -2,7 +2,7 @@
 import { createApp } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import ui from '@nuxt/ui/vue-plugin'
-import { featuresApi } from '@/api/features'
+import { featuresApi, type ActivityOverview } from '@/api/features'
 import { setLocale, t } from '@/i18n'
 import { setExperience } from '@/utils/experience'
 import LuckyAudit from './LuckyAudit.vue'
@@ -13,7 +13,7 @@ setExperience('miniapp')
 setLocale(auditParams.has('zh') ? 'zh-CN' : 'en')
 const feedback = installInteractionFeedback()
 const prizes = Array.from({ length: 20 }, (_, index) => ({ id: `prize-${index + 1}`, name: index === 19 ? 'Annual bonus · 500 TXB' : index % 3 === 0 ? `${index + 1} days added` : `${(index + 1) * 5} TXB` }))
-const state = { delay: 1200, failNext: false, loadFailure: auditParams.has('error'), selectedId: 'prize-20', rewardKind: 'txb_delta', betOutcome: auditParams.has('loss') ? 'loss' : 'win' }
+const state = { delay: 1200, reads: 0, bets: 0, betKeys: [] as string[], failNext: false, loadFailure: auditParams.has('error'), selectedId: 'prize-20', rewardKind: 'txb_delta', betOutcome: auditParams.has('loss') ? 'loss' : 'win' }
 const drawPrizes = prizes.map((prize) => ({ ...prize }))
 const overview = {
   balance: { currency: 'TXB', minor: '10000', display: '100.00 TXB' },
@@ -23,14 +23,16 @@ const overview = {
     { id: 'draw-1', name: 'Weekend rewards', description: 'One draw, one recorded result.', feeTxbMinor: '100', enabled: true, prizes },
     { id: 'draw-2', name: 'Midnight bonus', description: 'A second draw to audit parallel button states.', feeTxbMinor: '250', enabled: true, prizes: drawPrizes },
   ], recentResults: [],
-  groupMessageReward: { enabled: false, localDate: '2026-09-25', messageCount: 0, threshold: 0, rewardMinor: '0', rewarded: false },
-}
+  groupMessageReward: { enabled: auditParams.has('progress'), localDate: '2026-09-25', messageCount: 12, threshold: 5, rewardMinor: '100', rewarded: true },
+} satisfies ActivityOverview
 featuresApi.getActivity = async () => {
+  state.reads++
   if (auditParams.has('slow')) await new Promise((resolve) => setTimeout(resolve, 800))
   if (state.loadFailure) throw new Error('Constructed activity read failure')
-  return auditParams.has('empty') ? { ...overview, draws: [] } as never : overview as never
+  return structuredClone(auditParams.has('empty') ? { ...overview, draws: [] } : overview)
 }
-featuresApi.placeBet = async () => {
+featuresApi.placeBet = async (_gameId, _minor, key) => {
+  state.bets++; state.betKeys.push(key)
   await new Promise(resolve => setTimeout(resolve, state.delay))
   if (state.failNext) { state.failNext = false; throw new Error('Constructed network failure') }
   return { id: `bet-${Date.now()}`, kind: 'bet', outcome: state.betOutcome, message: '', reward: { kind: 'none' }, balanceAfter: overview.balance, createdAt: new Date().toISOString() } as never

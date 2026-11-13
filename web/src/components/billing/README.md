@@ -21,3 +21,9 @@ authentication is needed; it never imports browser-admin initialization into the
 Provider and channel changes use semantic selection feedback with a 140ms Motion check reveal and an opacity-only reduced-motion path; navigation is soft, order confirmation is rigid, retries are light, and order cancellation is heavy.
 
 `PaymentCryptoChannelPicker.vue` keeps a currency available when any of its networks is available, even if its first listed network is disabled.
+
+`PaymentReceiptDetails.test.ts` verifies that only a server-paid receipt claims
+credited balance. Pending and terminal receipts identify the order value, and
+crypto amounts use a neutral label rather than implying settlement.
+`CryptoPaymentInstructions.vue` resets address/amount copy feedback when the
+order or payment target changes.

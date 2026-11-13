@@ -16,7 +16,7 @@ describe('member squad profile cards', () => {
       squad: { ...squad, features: [
         { icon: 'route', title: 'Low latency', detail: 'Regional transit' },
         { icon: 'shield', title: 'Private routing' },
-      ] }, selected: false, included: false, featured: false, informational,
+      ] }, selected: false, included: false, informational,
     } })
     const items = wrapper.findAll('.squad-features li')
     expect(items).toHaveLength(2)
@@ -27,21 +27,21 @@ describe('member squad profile cards', () => {
   })
 
   it('omits the feature section when none are configured', () => {
-    const wrapper = mount(SquadPricingCard, { props: { squad, selected: false, included: false, featured: false } })
+    const wrapper = mount(SquadPricingCard, { props: { squad, selected: false, included: false } })
     expect(wrapper.find('.squad-features').exists()).toBe(false)
   })
 
   it.each([false, true])('does not render the legacy description in member cards (PAYG=%s)', informational => {
     const wrapper = mount(SquadPricingCard, { props: {
       squad: { ...squad, description: '[Network details](https://example.com/network)' },
-      selected: false, included: false, featured: false, informational,
+      selected: false, included: false, informational,
     } })
     expect(wrapper.text()).not.toContain('Network details')
     expect(wrapper.find('a[href="https://example.com/network"]').exists()).toBe(false)
   })
 
   it('hides combo squad prices but allows the separate PAYG price slot', () => {
-    const props = { squad, selected: false, included: false, featured: false }
+    const props = { squad, selected: false, included: false }
     const combo = mount(SquadPricingCard, { props })
     expect(combo.text()).not.toContain('1.25 TXB')
     const payg = mount(SquadPricingCard, { props: { ...props, informational: true }, slots: { price: 'PAYG rate' } })
@@ -50,7 +50,7 @@ describe('member squad profile cards', () => {
   it.each([false, true])('keeps carrier facts without exposing node names (PAYG=%s)', informational => {
     const wrapper = mount(SquadPricingCard, { props: {
       squad: { ...squad, profile: { type: 'international_network', portMbps: 1000, countryCode: 'JP', upstreamCarriers: ['KDDI', 'NTT'] } },
-      selected: false, included: false, featured: false, informational,
+      selected: false, included: false, informational,
     } })
     expect(wrapper.text()).toContain('Pacific routes')
     expect(wrapper.text()).toContain('KDDI, NTT')
@@ -65,13 +65,13 @@ describe('member squad profile cards', () => {
     { profile: { type: 'broadband', portMbps: 500, isp: 'Harbor ISP', dynamic: false, location: 'Osaka' }, facts: ['Harbor ISP', 'Osaka', '500 Mbps'] },
   ] as const)('retains configured profile facts without accessible nodes', ({ profile, facts }) => {
     const wrapper = mount(SquadPricingCard, { props: {
-      squad: { ...squad, profile, accessibleNodes: [] }, selected: false, included: false, featured: false,
+      squad: { ...squad, profile, accessibleNodes: [] }, selected: false, included: false,
     } })
     for (const fact of facts) expect(wrapper.text()).toContain(fact)
   })
 
   it('renders an unconfigured PAYG squad without inventing profile facts', () => {
-    const wrapper = mount(SquadPricingCard, { props: { squad, selected: false, included: false, featured: false, informational: true } })
+    const wrapper = mount(SquadPricingCard, { props: { squad, selected: false, included: false, informational: true } })
     expect(wrapper.text()).toContain('Pacific routes')
     expect(wrapper.find('.squad-profile-facts').exists()).toBe(false)
     expect(wrapper.text()).not.toContain('Internal Tokyo server')

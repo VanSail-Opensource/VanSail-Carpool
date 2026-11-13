@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { watch } from 'vue'
 import { AnimatePresence, motion } from 'motion-v'
 
 import type { AffiliateOverview } from '@/api/features'
@@ -6,9 +7,10 @@ import { useClipboard } from '@/composables/useClipboard'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { formatMemberMoney } from '@/utils/displayCurrency'
 
-defineProps<{ overview: AffiliateOverview }>()
+const props = defineProps<{ overview: AffiliateOverview }>()
 const clipboard = useClipboard()
 const { reducedMotion } = useMotionPreferences()
+watch(() => props.overview.inviteLink, clipboard.reset, { flush: 'sync' })
 </script>
 
 <template>

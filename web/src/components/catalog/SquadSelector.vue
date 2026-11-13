@@ -10,7 +10,6 @@ const props = defineProps<{
   squads: readonly SquadProduct[]
   selectedIds: readonly string[]
   includedIds: readonly string[]
-  featuredIds: readonly string[]
   orderedIds: readonly string[]
   hiddenIds?: readonly string[]
 }>()
@@ -49,7 +48,6 @@ function squadsFor(type: SquadType): readonly SquadProduct[] {
           :squads="squadsFor(type)"
           :selected-ids="selectedIds"
           :included-ids="includedIds"
-          :featured-ids="featuredIds"
           @toggle="emit('toggle', $event)"
         />
       </template>

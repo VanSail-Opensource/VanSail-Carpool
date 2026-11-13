@@ -28,7 +28,7 @@ const { reducedMotion } = useMotionPreferences()
           <div><span>{{ $t('activity.groupRewardCount') }}</span><strong>{{ reward.messageCount }} / {{ reward.threshold }}</strong></div>
           <div><span>{{ $t('activity.groupRewardAmount') }}</span><strong>{{ amount }}</strong></div>
         </div>
-        <div class="progress-track" role="progressbar" :aria-label="$t('activity.groupRewardProgressLabel')" :aria-valuenow="reward.messageCount" :aria-valuemin="0" :aria-valuemax="reward.threshold"><motion.span :initial="false" :animate="{ width: `${progress}%` }" :transition="{ duration: reducedMotion ? 0.08 : motionDurations.data, ease: 'easeOut' }" /></div>
+        <div class="progress-track" role="progressbar" :aria-label="$t('activity.groupRewardProgressLabel')" :aria-valuenow="Math.min(reward.messageCount, reward.threshold)" :aria-valuemin="0" :aria-valuemax="reward.threshold"><motion.span :initial="false" :animate="{ width: `${progress}%` }" :transition="{ duration: reducedMotion ? 0.08 : motionDurations.data, ease: 'easeOut' }" /></div>
         <AnimatePresence mode="wait" :initial="false">
           <motion.p
             :key="statusLabel"

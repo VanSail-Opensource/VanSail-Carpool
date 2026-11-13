@@ -30,9 +30,11 @@ and coupon components below remain in those supported flows.
   saved order through the allowlisted icon map.
 - `catalogSquadPresentation.ts` orders candidates within type groups and
   preserves included/stock-held eligibility. `catalogSquadPresentation.test.ts`
-  covers grouping, exclusions, composition fallback and tied leaders.
+  covers stable catalog order, profile grouping, included/full placement and
+  stock held by the current member.
 - `useCatalogSquadPresentation.ts` derives member ordering from current catalog
-  data without requesting administrator-only composition statistics.
+  data without requesting administrator-only composition statistics. The retired
+  composition/share ranking and its never-populated featured badge are removed.
 - `CatalogCouponStep.vue` selects an eligible wallet grant, redeems a new code
   and confirms permitted grant discards in the add-squad flow. Redemption and
   commit retry identities remain in their owning composables.

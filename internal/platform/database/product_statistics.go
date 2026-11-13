@@ -104,7 +104,14 @@ func aggregateAverageMinor(ctx context.Context, db *sql.DB, query string) (int64
 	if err := db.QueryRowContext(ctx, query).Scan(&total, &count); err != nil || count == 0 {
 		return 0, err
 	}
-	return (total + count/2) / count, nil
+	if total < 0 || count < 0 {
+		return 0, ErrConflict
+	}
+	average := total / count
+	if total%count >= count-count/2 {
+		average++
+	}
+	return average, nil
 }
 
 func integerQuery(ctx context.Context, db *sql.DB, query string, args ...any) (int64, error) {

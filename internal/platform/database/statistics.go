@@ -46,7 +46,7 @@ func (s *Store) ComboStatistics(ctx context.Context, comboID string, from, to ti
 	if err != nil {
 		return model.AdminStatistics{}, err
 	}
-	return aggregateStatistics(comboID, from, to, bucket, location, events, distribution), nil
+	return aggregateStatistics(comboID, from, to, bucket, location, events, distribution)
 }
 
 // SquadStatistics reports included-versus-addon selection usage for one live
@@ -78,7 +78,7 @@ func (s *Store) SquadStatistics(ctx context.Context, squadUUID string, from, to 
 	if err != nil {
 		return model.AdminStatistics{}, err
 	}
-	return aggregateStatistics(squadUUID, from, to, bucket, location, events, distribution), nil
+	return aggregateStatistics(squadUUID, from, to, bucket, location, events, distribution)
 }
 
 func (s *Store) catalogSquadDistribution(ctx context.Context, comboID, squadUUID string, from, to time.Time) ([]model.StatisticSlice, error) {
@@ -140,7 +140,10 @@ func (s *Store) ActivityGameStatistics(ctx context.Context, gameID string, from,
 	if err != nil {
 		return model.AdminStatistics{}, err
 	}
-	stats := aggregateStatistics(gameID, from, to, bucket, location, events, nil)
+	stats, err := aggregateStatistics(gameID, from, to, bucket, location, events, nil)
+	if err != nil {
+		return model.AdminStatistics{}, err
+	}
 	stats.Distribution = []model.StatisticSlice{{ID: "win", Label: "win", Count: stats.Wins}, {ID: "loss", Label: "loss", Count: stats.Losses}}
 	return stats, nil
 }

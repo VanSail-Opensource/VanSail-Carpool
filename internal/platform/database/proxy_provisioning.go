@@ -41,11 +41,6 @@ func (s *Store) LinkProvisionedProxyUser(ctx context.Context, userID, username, 
 	return nil
 }
 
-type conflictedPurchase struct {
-	id, name string
-	charged  int64
-}
-
 // ResolveProvisioningConflict leaves paid access and accepted agreements intact.
 // A Telegram identity mismatch requires provider review, never a new username.
 func (s *Store) ResolveProvisioningConflict(ctx context.Context, userID, username string, now time.Time) error {

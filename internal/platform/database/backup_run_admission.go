@@ -28,7 +28,7 @@ func (s *Store) retryAttempt_StartAuditedBackupRun(ctx context.Context, path, ac
 		return model.BackupRun{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	if err := lockProviderOperationAccountsTx(ctx, tx, actorID, actorID); err != nil {
+	if err := catalogAdminActorTx(ctx, tx, actorID); err != nil {
 		return model.BackupRun{}, err
 	}
 	if _, err := tx.ExecContext(ctx, "INSERT INTO backup_runs(id,path,status,created_at) VALUES($1,$2,'running',$3)",

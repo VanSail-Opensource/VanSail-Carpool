@@ -9,7 +9,7 @@ const routerMock = vi.hoisted(() => ({ push: vi.fn() }))
 
 vi.mock('@/composables/useSquadAddition', () => squadAdditionMock)
 vi.mock('@/components/catalog/useCatalogSquadPresentation', () => ({
-  useCatalogSquadPresentation: () => ({ featuredIds: shallowRef([]), orderedIds: shallowRef([]) }),
+  useCatalogSquadPresentation: () => ({ orderedIds: shallowRef([]) }),
 }))
 vi.mock('vue-router', async (importOriginal) => ({
   ...await importOriginal<typeof import('vue-router')>(),

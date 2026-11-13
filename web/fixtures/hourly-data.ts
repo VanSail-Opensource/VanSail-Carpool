@@ -42,22 +42,23 @@ export function hourlyFixture(params: URLSearchParams): { view: HourlyAccountVie
   const enrollmentStatus: HourlyEnrollment['status'] = params.has('suspended') ? 'funding_suspended' : params.has('capacity-preparing') ? 'preparing' : 'active'
   const enrollment = (groupId: string): HourlyEnrollment => ({ id: `enrollment-${groupId}`, groupId, status: enrollmentStatus, activatedAt: now, paidThrough: boundary, disabledAt: null, cooldownUntil: null, createdAt: now, updatedAt: now })
   const first = params.has('first')
-  // `out-of-allowance` exhausts the free allowance so the reduced-speed state
-  // shows. `allowance-zero` covers a zero allowance that already has traffic.
+  // `out-of-allowance` exhausts the free allowance while retaining funded extra.
+  // `credit-exhausted` consumes both budgets; zero-unused has no starting budget.
   // Purchased credit stays funded while the preference is off, so re-enabling
   // automatic purchases settles into the green purchased segments.
-  const exhausted = params.has('out-of-allowance') || params.has('allowance-zero')
-  const zeroAllowance = params.has('allowance-zero')
+  const exhausted = params.has('out-of-allowance') || params.has('allowance-zero') || params.has('credit-exhausted')
+  const zeroUnused = params.has('allowance-zero-unused')
+  const zeroAllowance = params.has('allowance-zero') || zeroUnused
   const freeAllowance = zeroAllowance ? '0' : '10000000000'
-  const freeUsed = first ? '0' : exhausted ? (zeroAllowance ? '2500000000' : freeAllowance) : '2500000000'
+  if (zeroAllowance) policy.policy.dailyAllowanceBytes = '0'
+  const freeUsed = first || zeroUnused ? '0' : exhausted ? (zeroAllowance ? '2500000000' : freeAllowance) : '2500000000'
   // Existing purchased credit remains after the preference is turned off, so
-  // the reduced-speed fixture still has a purchased segment to settle into
-  // when automatic purchases are re-enabled during the audit.
-  const extraFunded = first ? '0' : '2000000000'
-  const extraUsed = first ? '0' : '1000000000'
+  // the graph still shows purchased capacity when automatic purchases are off.
+  const extraFunded = first || zeroUnused ? '0' : '2000000000'
+  const extraUsed = first || zeroUnused ? '0' : params.has('credit-exhausted') ? extraFunded : '1000000000'
   const view: HourlyAccountView = {
     policy, balance: hourlyMoney('100000'), legacyBlocked: params.has('legacy'), extraPreference: { extraEnabled, acceptedExtraPriceTXBMinor: params.has('price-rise') ? '100' : '125', updatedAt: now },
-    usage: { dayUTC: now.slice(0, 10), freeAllowanceBytes: first ? '10000000000' : freeAllowance, freeUsedBytes: freeUsed, freeReservedBytes: first || exhausted ? '0' : '8192', extraFundedBytes: extraFunded, extraUsedBytes: extraUsed, extraReservedBytes: first || exhausted ? '0' : '32768', extraExpiresAt: midnight, reducedRateBytesPerSecond: '1250000', accountingPending: params.has('pending') },
+    usage: { dayUTC: now.slice(0, 10), freeAllowanceBytes: first ? '10000000000' : freeAllowance, freeUsedBytes: freeUsed, freeReservedBytes: first || exhausted || zeroUnused ? '0' : '8192', extraFundedBytes: extraFunded, extraUsedBytes: extraUsed, extraReservedBytes: first || exhausted || zeroUnused ? '0' : '32768', extraExpiresAt: midnight, reducedRateBytesPerSecond: '1250000', accountingPending: params.has('pending') },
     squads: squads.map((squad, index) => ({ squad, offer: offers[index]!, enrollment: !first && index === 0 && (params.has('active') || params.has('suspended') || params.has('capacity-preparing')) ? enrollment(squad.groupId) : null, ready: !params.has('incompatible') && !capacity, reasonCode: params.has('incompatible') ? 'agent_incompatible' : capacity ? 'capacity' : '', cooldownUntil: null, requiredBalance: hourlyMoney(String((index + 1) * 5 * effectiveHours(index))) })),
   }
   if (params.has('cooldown') && view.squads[0]) {

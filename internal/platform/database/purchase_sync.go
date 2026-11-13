@@ -17,6 +17,13 @@ func (s *Store) retryAttempt_MarkPurchaseSyncResult(ctx context.Context, purchas
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
+	if _, err := s.markPurchaseSyncResultTx(ctx, tx, purchaseID, success, now); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func (s *Store) markPurchaseSyncResultTx(ctx context.Context, tx *sql.Tx, purchaseID string, success bool, now time.Time) (bool, error) {
 	status := "failed"
 	predicate := "status='activating'"
 	if success {
@@ -25,22 +32,22 @@ func (s *Store) retryAttempt_MarkPurchaseSyncResult(ctx context.Context, purchas
 	}
 	result, err := tx.ExecContext(ctx, `UPDATE purchases SET status=$1,updated_at=$2 WHERE id=$3 AND `+predicate, status, stamp(now), purchaseID)
 	if err != nil {
-		return err
+		return false, err
 	}
 	affected, err := result.RowsAffected()
 	if err != nil {
-		return err
+		return false, err
 	}
 	if success && affected == 1 {
 		if _, err := tx.ExecContext(ctx, `INSERT   INTO ip_lookup_allowances(purchase_id,total)
 			SELECT purchases.id,COALESCE(combos.ip_lookup_quota,0) FROM purchases JOIN combos ON combos.id=purchases.combo_id WHERE purchases.id=$1 ON CONFLICT DO NOTHING `, purchaseID); err != nil {
-			return err
+			return false, err
 		}
 		if err := s.insertActivationNotificationTx(ctx, tx, purchaseID, now); err != nil {
-			return err
+			return false, err
 		}
 	}
-	return tx.Commit()
+	return affected == 1, nil
 }
 
 // PurchaseTrafficResetPhase returns the durable phase of a new-term reset.

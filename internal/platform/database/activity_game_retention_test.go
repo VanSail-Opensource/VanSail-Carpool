@@ -19,6 +19,12 @@ func TestGameRemovalTombstoneSurvivesMaintenanceActorPurgeAndRawEdits(t *testing
 	if _, err := f.store.CompactAndPrune(ctx, f.now.Add(-7*24*time.Hour), f.now.Add(-24*time.Hour), f.now); err != nil {
 		t.Fatal(err)
 	}
+	// Current administrators are protected from account cleanup. Retention
+	// must also survive removal of a former administrator who authored it.
+	if _, err := f.store.DB().ExecContext(ctx, `UPDATE users SET role='user' WHERE id=$1`, f.actor.ID); err != nil {
+		t.Fatal(err)
+	}
+	f.actor.Role = "user"
 	admitTestAccountCleanup(t, f.store, f.actor, f.now)
 	if err := f.store.CompleteAccountPurge(ctx, f.actor.ID, 1, f.now.Add(time.Second)); err != nil {
 		t.Fatal(err)
@@ -55,7 +61,7 @@ func TestGameRemovalTombstoneSurvivesMaintenanceActorPurgeAndRawEdits(t *testing
 
 func TestGameRemovalFailureDoesNotPublishPartialTombstoneOrDisable(t *testing.T) {
 	f, ctx := newGameRemovalFixture(t), context.Background()
-	// A failed audit FK must roll back the definition update as well.
+	// An ineligible audit actor must not change the definition or evidence.
 	if err := f.store.DeleteActivityGame(ctx, "missing-actor", f.game.ID, f.now); err == nil {
 		t.Fatal("removal accepted a missing audit actor")
 	}

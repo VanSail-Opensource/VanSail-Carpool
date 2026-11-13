@@ -56,6 +56,9 @@ func NewWorker(repository Repository, provider ProxyClient, identity ...Identity
 func (w *Worker) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
 	jobErr := w.process(ctx, job)
 	if jobErr != nil && job.Attempts >= 10 && job.Kind == "xnode_apply_entitlement" {
+		if _, native := w.provider.(memberPurchaseActivator); native {
+			return w.markNativeActivationFailure(ctx, jobErr)
+		}
 		purchaseID, targetErr := outbox.TargetID(job, "purchaseId")
 		if targetErr != nil {
 			return errors.Join(jobErr, targetErr)
@@ -89,6 +92,9 @@ func (w *Worker) process(ctx context.Context, job model.OutboxJob) error {
 		user, err := w.repository.UserForPurchase(ctx, purchase.ID)
 		if err != nil {
 			return err
+		}
+		if native, ok := w.provider.(memberPurchaseActivator); ok {
+			return w.applyNativePurchase(ctx, native, user, purchase.ID)
 		}
 		user, err = w.ensureIdentity(ctx, user)
 		if errors.Is(err, accounts.ErrProxyIdentityConflict) {

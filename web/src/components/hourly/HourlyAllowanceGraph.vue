@@ -24,13 +24,13 @@ const freeUsed = computed(() => safe(props.usage?.freeUsedBytes))
 const extraFunded = computed(() => safe(props.usage?.extraFundedBytes))
 const extraUsed = computed(() => safe(props.usage?.extraUsedBytes))
 const extraReserved = computed(() => safe(props.usage?.extraReservedBytes))
-// Purchased extra traffic joins the bar only while automatic purchases are
-// enabled; reserved bytes stay out of used and out of the legend remainder.
-const total = computed(() => freeAllowance.value + (props.extraEnabled ? extraFunded.value : 0n))
+// Disabling future purchases does not revoke already funded extra traffic.
+// Reserved bytes stay out of used and out of the legend remainder.
+const total = computed(() => freeAllowance.value + extraFunded.value)
 const freeUsedShown = computed(() => (freeUsed.value > freeAllowance.value ? freeAllowance.value : freeUsed.value))
 const extraUsedShown = computed(() => (extraUsed.value > extraFunded.value ? extraFunded.value : extraUsed.value))
-const extraRemaining = computed(() => (props.extraEnabled ? extraFunded.value - extraUsedShown.value : 0n))
-const used = computed(() => freeUsedShown.value + (props.extraEnabled ? extraUsedShown.value : 0n))
+const extraRemaining = computed(() => extraFunded.value - extraUsedShown.value)
+const used = computed(() => freeUsedShown.value + extraUsedShown.value)
 const extraLeft = computed(() => {
   const value = extraFunded.value - extraUsed.value - extraReserved.value
   return value > 0n ? value : 0n
@@ -41,10 +41,11 @@ const usedBytes = computed(() => used.value.toString())
 const totalBytes = computed(() => total.value.toString())
 const remainingBytes = computed(() => remaining.value.toString())
 const extraLeftBytes = computed(() => extraLeft.value.toString())
-const captionKey = computed(() => (props.extraEnabled ? 'hourly.fullSpeedAllowance' : 'hourly.dailyAllowance'))
+const captionKey = computed(() => (extraFunded.value > 0n ? 'hourly.fullSpeedAllowance' : 'hourly.dailyAllowance'))
 const throttleRate = computed(() => props.usage?.reducedRateBytesPerSecond ?? props.policy.reducedRateBytesPerSecond)
-const outOfAllowance = computed(() => freeAllowance.value === 0n ? freeUsed.value > 0n : freeUsed.value >= freeAllowance.value)
-const throttled = computed(() => !props.extraEnabled && outOfAllowance.value)
+const outOfAllowance = computed(() => freeUsed.value >= freeAllowance.value)
+const exhausted = computed(() => outOfAllowance.value && extraUsed.value >= extraFunded.value)
+const throttled = computed(() => !props.extraEnabled && exhausted.value)
 
 // Exact BigInt basis-point widths; the trailing free-remaining segment absorbs
 // the sub-basis-point rounding remainder through flex growth.
@@ -84,7 +85,7 @@ const waves = [
 // exhausted.
 const boosting = shallowRef(false)
 let boostTimer: ReturnType<typeof globalThis.setTimeout> | undefined
-const graphState = computed(() => ({ enabled: props.extraEnabled, out: outOfAllowance.value }))
+const graphState = computed(() => ({ enabled: props.extraEnabled, out: exhausted.value }))
 // Reduced motion swaps to the bar immediately with a static green flash.
 const showThrottle = computed(() => throttled.value || (boosting.value && !reducedMotion.value))
 watch(graphState, (next, previous) => {
@@ -123,14 +124,14 @@ onScopeDispose(() => globalThis.clearTimeout(boostTimer))
     <div v-else class="hourly-allowance__meter">
       <div class="hourly-allowance__bar" role="progressbar" :aria-valuemin="0" :aria-valuemax="100" :aria-valuenow="percentage" :aria-valuetext="progressLabel()" :aria-label="t('hourly.allowanceChart')">
         <span v-if="freeUsedShown > 0n" class="hourly-allowance__segment hourly-allowance__segment--free-used" :style="{ width: segmentWidth(freeUsedShown) }" />
-        <span v-if="extraEnabled && extraUsedShown > 0n" class="hourly-allowance__segment hourly-allowance__segment--extra-used" :style="{ width: segmentWidth(extraUsedShown) }" data-hourly-extra>
+        <span v-if="extraUsedShown > 0n" class="hourly-allowance__segment hourly-allowance__segment--extra-used" :style="{ width: segmentWidth(extraUsedShown) }" data-hourly-extra>
           <span class="hourly-allowance__wave" aria-hidden="true">
             <svg viewBox="0 0 120 16" preserveAspectRatio="none" focusable="false">
               <path v-for="(wave, index) in waves" :key="index" :d="wave.path" :stroke-width="wave.strokeWidth" :opacity="wave.opacity" />
             </svg>
           </span>
         </span>
-        <span v-if="extraEnabled && extraRemaining > 0n" class="hourly-allowance__segment hourly-allowance__segment--extra-left" :style="{ width: segmentWidth(extraRemaining) }" />
+        <span v-if="extraRemaining > 0n" class="hourly-allowance__segment hourly-allowance__segment--extra-left" :style="{ width: segmentWidth(extraRemaining) }" />
         <span class="hourly-allowance__segment hourly-allowance__segment--free-left" />
       </div>
       <dl class="hourly-allowance__legend">

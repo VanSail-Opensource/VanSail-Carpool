@@ -13,7 +13,6 @@ const props = defineProps<{
   squads: readonly SquadProduct[]
   selectedIds: readonly string[]
   includedIds: readonly string[]
-  featuredIds: readonly string[]
 }>()
 
 const emit = defineEmits<{
@@ -36,7 +35,6 @@ const { reducedMotion } = useMotionPreferences()
             :squad="squad"
             :selected="props.selectedIds.includes(squad.id)"
             :included="props.includedIds.includes(squad.id)"
-            :featured="props.featuredIds.includes(squad.id)"
             @toggle="emit('toggle', $event)"
           />
         </motion.div>

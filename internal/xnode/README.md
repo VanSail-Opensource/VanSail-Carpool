@@ -1490,3 +1490,25 @@ authority changes between owner and epoch reads, and the retry bound.
 `account_statistics_test.go` verifies subscription-token changes during statistics
 reads discard the result, and that a closed predecessor period does not supply
 the currently effective purchase's traffic limit.
+
+Purchase expiry uses `purchase_expiry.go` to admit each captured purchase period through a transaction that rechecks its owner, revision and exact due boundary. A stale job cannot close an administratively extended allowance. Generic refund, reset and replacement closure keep their existing rules. `purchase_expiry_test.go` covers unchanged-timestamp extensions, changed revisions, exact-boundary replay and an extension committed while expiry waits on the purchase lock.
+
+`frame_diagnostics.go` maps PostgreSQL SQLSTATE values to bounded diagnostic
+categories for busy, read-only, I/O and constraint failures. Retired SQLite
+numeric-code classification is removed. `frame_diagnostics_test.go` checks real
+PostgreSQL errors, wrapped causes and redaction of database error details.
+
+`member_purchase_activation.go` binds paid activation to the exact owner,
+account generation, purchase ID, revision and entitlement material. Provisioning
+uses the native owner, including retained identities whose credentials were
+cleared during an earlier account generation. `member_purchase_activation_test.go`
+checks same-looking successors, same-clock edits, missing desired state and
+owner isolation before any period change.
+
+`periods.go` restores the same purchase's retained accounting through the atomic
+store adapter. `purchase_period_admission.go` commits first/replacement admission
+with its captured predecessor fence; external journal barriers stay in existing
+accounting recovery. A stale purchase cannot close a successor before the storage
+compare, and an extension cannot replace an already-used period with fresh quota.
+
+`member_identity.go` routes all real member credential preparation through an exact-generation store adapter, including hourly/PAYG setup and compile-read wrappers. `identities.go` shares credential preparation while generic fixtures retain their existing persistence contract. Current material comparison preserves concurrent period pointers and restrictions; ordinary credential repair never lifts an administrator restriction. Purchase period admission/restoration also compares the captured generation inside its transaction.
