@@ -27,7 +27,8 @@ Audited administrative operations for catalog data, settings, balances, refunds,
 - `user_profiles.go` builds the user aggregate from identity, balance, active and queued entitlements, Emby, payments, refunds, and open operations.
 - `user_command_types.go` defines the complete entitlement, combo replacement, and minute-normalized bulk-extension command inputs.
 - `user_command_validation.go` normalizes IDs and squads and fingerprints idempotent administrator commands.
-- `user_entitlement_commands.go` validates manual grants, full edits, and exactly-once refunds.
+- `user_entitlement_commands.go` validates full edits and exactly-once refunds;
+  `user_entitlement_create.go` owns audited manual grants and their replay.
 - `user_combo_replacement.go` recovers accepted no-charge replacement intents before current catalog validation.
 - `user_bulk_commands.go` validates minute-precise inclusive-OR bulk previews and durable extension jobs.
 - `user_operation_resolution.go` validates requests to repair supported parent receipts from retained terminal item evidence. The repository requires a current eligible administrator, an explicit exact-state command kind, and matching completed outcomes; unfinished items, native commands, and financial settlement flows require their domain reconciliation. No item, hold, notification gate, or financial fact is changed. New resolution audits retain the exact receipt for immutable key replay; older replays conflict if their receipt has since changed.
@@ -185,3 +186,13 @@ Generic `activity.*` writes cannot publish a partial policy or race cross-key
 validation in another service instance. `settings_activity_test.go` covers exact
 money, snapshot-only reads, invalid ranges/thresholds, transient failures and the
 required atomic adapter.
+
+Manual grant retries load the original zero-charge creation snapshot from retained
+audit evidence before consulting the current combo or squad provider. The
+existing request fingerprint is unchanged: an omitted squad selection reuses the
+original effective squads. Changed intent conflicts; missing evidence fails
+closed. Fresh commands require current active/unblocked administrator authority
+and an active owner within the same database transaction as purchase, audit,
+sync job and notification. `user_entitlement_create_replay_test.go` covers
+retired catalog/provider unavailability, changed inputs and transient replay
+reads; `user_entitlement_commands_test.go` retains fresh validation coverage.

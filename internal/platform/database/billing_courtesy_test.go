@@ -15,7 +15,7 @@ func TestCourtesyCreditPreservesTerminalPaymentState(t *testing.T) {
 	ctx := context.Background()
 	store := newTestStore(t)
 	member := createTestUser(t, store, 10_007)
-	admin := createTestUser(t, store, 10_008)
+	admin := createTestAdmin(t, store, 10_008)
 	now := time.Date(2026, time.August, 11, 10, 0, 0, 0, time.UTC)
 	expired := createTestPaymentOrder(t, store, member.ID, "ezpay", 2_500, now)
 	if err := store.ExpirePaymentOrder(ctx, expired.ID, "ezpay", now); err != nil {
@@ -78,7 +78,7 @@ func TestCompactAndPrunePreservesCourtesyCreditEvidence(t *testing.T) {
 	ctx := context.Background()
 	store := newTestStore(t)
 	member := createTestUser(t, store, 10_009)
-	admin := createTestUser(t, store, 10_010)
+	admin := createTestAdmin(t, store, 10_010)
 	creditedAt := time.Date(2026, time.August, 1, 10, 0, 0, 0, time.UTC)
 	order := createTestPaymentOrder(t, store, member.ID, "ezpay", 2_500, creditedAt)
 	if err := store.ExpirePaymentOrder(ctx, order.ID, "ezpay", creditedAt); err != nil {

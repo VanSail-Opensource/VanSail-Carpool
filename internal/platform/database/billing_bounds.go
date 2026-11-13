@@ -34,6 +34,9 @@ func (s *Store) retryAttempt_UpdateAddTXBBounds(ctx context.Context, minimumMino
 		return model.AddTXBBounds{}, fmt.Errorf("begin Add TXB bounds update: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
+	if err = catalogAdminActorTx(ctx, tx, actorID); err != nil {
+		return model.AddTXBBounds{}, err
+	}
 	result, err := tx.ExecContext(ctx, `UPDATE txb_limits SET minimum_txb_minor=$1,maximum_txb_minor=$2,
 		updated_by=$3,updated_at=$4 WHERE singleton=1`, minimumMinor, maximumMinor, nullIfEmpty(actorID), stamp(now))
 	if err != nil {

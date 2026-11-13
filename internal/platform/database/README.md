@@ -481,6 +481,13 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `settings.go` — encrypted-or-plain application setting records.
 - `onboarding.go` — versioned onboarding content, agreement contracts, and
   onboarding completion.
+- `onboarding_admin.go` commits draft/publication revision checks, current active
+  administrator authorization and sanitized audit evidence in one transaction.
+  Responses are decoded before commit; stale drafts and unreadable retained
+  content cannot commit a write that reports failure. Publishing an unchanged
+  draft retains its revision and audit count. `onboarding_admin_test.go` covers
+  lost authority and audit rollback; `onboarding_revision_test.go` covers
+  competing editors, stale publication and response-decoding rollback.
 - `catalog.go` — combo inputs and transactional combo writes. Combo updates bind
   each field once, including the active flag, on PostgreSQL.
 - `catalog_queries.go` — combo reads, scans, and normalized squad UUID lists.
@@ -489,6 +496,10 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `admin_actor_eligibility_test.go` verifies that catalog, Emby and pricing mutations recheck current role, active lifecycle, and unblocked status inside the transaction, leaving no mutation or success audit for demoted, purging, or blocked actors.
 - `billing.go` — purchase normalization, quotes, creation, pricing, and debit helpers.
 - `billing_bounds.go` persists the singleton inclusive Add TXB range and atomically audits administrator updates.
+- `billing_admin_authority_test.go` verifies current active/unblocked administrator
+  checks for billing limits and fresh courtesy credits. Lost authority leaves
+  limits, balances, ledger, notifications and audit unchanged; existing courtesy
+  receipts still replay without a second credit.
 - `billing_renewal.go` — renewal quotes, contiguous batch creation, and idempotent replay.
 - `payg_catalog.go` resolves an owned renewal's own combo row (`active=0` allowed, missing row fails closed) with precedence full override > purchase base snapshot > live bundle; `RenewalCombo` exposes that same owned selection to catalog hydration, and admin combo replacement resets the snapshot so the replacement's live bundle becomes the owned baseline.
 - `renewal_addons.go` resolves owned optional-squad identities at current sparse-override prices, including hidden listings and zero-price defaults, and can exclude upstream-unavailable add-ons from either renewal path.
@@ -1074,6 +1085,7 @@ Provider requests remain outside every transaction.
 - `emby_provisioning_retry_generated.go` wraps the transactional methods in `emby_provisioning.go`.
 - `emby_setup_retry_generated.go` wraps the transactional methods in `emby_setup.go`.
 - `host_pricing_retry_generated.go` wraps the transactional methods in `host_pricing.go`.
+- `hourly_admin_operation_retry_generated.go` wraps the transactional methods in `hourly_admin_operation.go`.
 - `ip_lookup_cache_retry_generated.go` wraps the transactional methods in `ip_lookup_cache.go`.
 - `ip_lookup_commands_retry_generated.go` wraps the transactional methods in `ip_lookup_commands.go`.
 - `ip_lookup_completion_retry_generated.go` wraps the transactional methods in `ip_lookup_completion.go`.
@@ -1092,6 +1104,7 @@ Provider requests remain outside every transaction.
 - `notification_admin_finance_retry_generated.go` wraps the transactional methods in `notification_admin_finance.go`.
 - `notification_events_retry_generated.go` wraps the transactional methods in `notification_events.go`.
 - `notification_scans_retry_generated.go` wraps the transactional methods in `notification_scans.go`.
+- `onboarding_admin_retry_generated.go` wraps the transactional methods in `onboarding_admin.go`.
 - `onboarding_retry_generated.go` wraps the transactional methods in `onboarding.go`.
 - `operations_retry_generated.go` wraps the transactional methods in `operations.go`.
 - `outbox_completion_retry_generated.go` wraps the transactional methods in `outbox_completion.go`.
@@ -1912,3 +1925,27 @@ permanent. Public idempotency-key prefixes confer no continuation authority.
   monetary effects, and refusal of a forged expiry-key bypass.
 - `admin_temporary_ban_expiry_admission_test.go` checks exact fractional expiry,
   one restored continuation after actor changes, and inactive beneficiary denial.
+
+`hourly_admin_operation.go` admits only the trusted administrator branch of the
+shared hourly disable operation kind. Exact idempotent replay precedes current
+active/unblocked administrator and owner locks; fresh receipt, items and job
+commit together. `hourly_admin_operation_retry_generated.go` retries only the
+complete rolled-back transaction. `hourly_admin_operation_test.go` verifies
+demoted, purging and blocked actors cannot create work, retained receipts still
+replay, and the separate member lane remains available.
+
+`admin_entitlement_create_helpers.go` keeps grant validation, owner serialization
+and immutable creation audit together. `admin_entitlement_replay.go` recovers
+the original zero-charge result from that audit and the namespaced purchase key,
+without changing old fingerprints or consulting mutable catalog fields. Fresh
+manual grants lock current administrator and active owner authority, retain the
+combo during insertion, and return the purchase snapshot read before commit.
+`admin_entitlement_admission_test.go` verifies rejected fresh actor/owner states,
+original replay after catalog/term changes, unchanged audit evidence and no
+duplicate work. Accepted retries precede current authority checks.
+
+`admin_command_replay_race_test.go` covers concurrent manual grants and
+administrator hourly stops: all matching requests recover one original result,
+purchase/audit or receipt, and queued job. Insert conflicts consult exact
+committed evidence only after rollback, so a stale serializable snapshot cannot
+turn accepted intent into a false conflict; changed fingerprints still fail.

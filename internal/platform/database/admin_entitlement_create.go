@@ -60,25 +60,37 @@ func (s *Store) createAdminEntitlementAttempt(ctx context.Context, input AdminEn
 		return model.Purchase{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
+	if replay, found, err := adminEntitlementGrantReplayTx(ctx, tx, input.ActorUserID, input.UserID, input.IdempotencyKey); found || err != nil {
+		if err != nil {
+			return model.Purchase{}, err
+		}
+		if replay.RequestFingerprint != input.RequestFingerprint {
+			return model.Purchase{}, ErrConflict
+		}
+		return replay.Purchase, nil
+	}
+	if err := catalogAdminActorTx(ctx, tx, input.ActorUserID); err != nil {
+		return model.Purchase{}, err
+	}
+	if err := lockProviderOperationAccountsTx(ctx, tx, input.ActorUserID, input.UserID); err != nil {
+		return model.Purchase{}, err
+	}
 	if err := lockPurchaseOwnerTx(ctx, tx, input.UserID); err != nil {
 		return model.Purchase{}, err
 	}
-	idempotencyKey := adminGrantKeyPrefix + input.ActorUserID + ":" + input.IdempotencyKey
-	var existingID, existingFingerprint string
-	loadErr := tx.QueryRowContext(ctx, `SELECT id,request_fingerprint FROM purchases WHERE user_id=$1 AND idempotency_key=$2`,
-		input.UserID, idempotencyKey).Scan(&existingID, &existingFingerprint)
-	if loadErr == nil {
-		if existingFingerprint != input.RequestFingerprint {
-			return model.Purchase{}, ErrConflict
-		}
-		if err := tx.Rollback(); err != nil {
+	// Recheck after owner serialization before mutable catalog/overlap admission.
+	// A serializable snapshot may still predate a concurrent commit; insertion
+	// conflicts below recover that accepted result from a fresh transaction.
+	if replay, found, err := adminEntitlementGrantReplayTx(ctx, tx, input.ActorUserID, input.UserID, input.IdempotencyKey); found || err != nil {
+		if err != nil {
 			return model.Purchase{}, err
 		}
-		return s.PurchaseByID(ctx, existingID)
+		if replay.RequestFingerprint != input.RequestFingerprint {
+			return model.Purchase{}, ErrConflict
+		}
+		return replay.Purchase, nil
 	}
-	if !errors.Is(loadErr, sql.ErrNoRows) {
-		return model.Purchase{}, fmt.Errorf("load manual entitlement idempotency key: %w", loadErr)
-	}
+	idempotencyKey := adminGrantKeyPrefix + input.ActorUserID + ":" + input.IdempotencyKey
 	// Replays return above, so an accepted grant stays immutable even if the
 	// owner later starts hourly access. New grants cannot double-cover an owner
 	// who already holds a preparing or active hourly enrollment.
@@ -86,7 +98,7 @@ func (s *Store) createAdminEntitlementAttempt(ctx context.Context, input AdminEn
 		return model.Purchase{}, err
 	}
 	var comboName string
-	if err := tx.QueryRowContext(ctx, `SELECT name FROM combos WHERE id=$1 AND active=1`, input.ComboID).Scan(&comboName); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT name FROM combos WHERE id=$1 AND active=1 FOR SHARE`, input.ComboID).Scan(&comboName); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return model.Purchase{}, ErrNotFound
 		}
@@ -128,7 +140,14 @@ func (s *Store) createAdminEntitlementAttempt(ctx context.Context, input AdminEn
 		idempotencyKey, input.RequestFingerprint, stamp(now), termSeconds, input.TrafficLimitBytes,
 		input.ResetStrategy, string(encodedSquads))
 	if err != nil {
-		return model.Purchase{}, fmt.Errorf("insert manual entitlement: %w", err)
+		err = fmt.Errorf("insert manual entitlement: %w", err)
+		if !isUniqueViolation(err) {
+			return model.Purchase{}, err
+		}
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return model.Purchase{}, errors.Join(err, rollbackErr)
+		}
+		return s.replayManualGrantInsertConflict(ctx, input, err)
 	}
 	if err := insertManualEntitlementAudit(ctx, tx, input.ActorUserID, purchaseID, input, comboName, status, now); err != nil {
 		return model.Purchase{}, err
@@ -146,51 +165,15 @@ func (s *Store) createAdminEntitlementAttempt(ctx context.Context, input AdminEn
 		jobpayload.UserEventAdminUpdate, userSyncGate(input.UserID), facts, now); err != nil {
 		return model.Purchase{}, err
 	}
+	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=$1`, purchaseID))
+	if err != nil {
+		return model.Purchase{}, err
+	}
+	if purchase.SquadUUIDs, err = purchaseSquadsFrom(ctx, tx, purchaseID); err != nil {
+		return model.Purchase{}, err
+	}
 	if err := tx.Commit(); err != nil {
 		return model.Purchase{}, err
 	}
-	return s.PurchaseByID(ctx, purchaseID)
-}
-
-func validAdminEntitlementCreate(input AdminEntitlementCreateInput) bool {
-	if input.ActorUserID == "" || input.UserID == "" || input.ComboID == "" || input.IdempotencyKey == "" ||
-		len(input.IdempotencyKey) > 128 || input.TrafficLimitBytes <= 0 ||
-		(input.ResetStrategy != "DAY" && input.ResetStrategy != "WEEK" && input.ResetStrategy != "MONTH_ROLLING") ||
-		input.ValidUntil.Sub(input.ValidFrom) < time.Second || len(input.Reason) < 3 || len(input.Reason) > 500 {
-		return false
-	}
-	return true
-}
-
-// lockPurchaseOwnerTx serializes grants with member checkout and other grants,
-// then requires a durable owner.
-func lockPurchaseOwnerTx(ctx context.Context, tx *sql.Tx, userID string) error {
-	var accountGeneration int64
-	if err := tx.QueryRowContext(ctx, `SELECT account_generation FROM users WHERE id=$1 FOR NO KEY UPDATE`, userID).
-		Scan(&accountGeneration); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return ErrNotFound
-		}
-		return err
-	}
-	return nil
-}
-
-func insertManualEntitlementAudit(ctx context.Context, tx *sql.Tx, actorID, purchaseID string,
-	input AdminEntitlementCreateInput, comboName, status string, now time.Time) error {
-	auditID, err := ids.New()
-	if err != nil {
-		return err
-	}
-	detail, err := json.Marshal(map[string]any{
-		"reason": input.Reason, "txbMovementMinor": 0,
-		"after": map[string]any{"comboId": input.ComboID, "comboName": comboName,
-			"validFrom": input.ValidFrom, "validUntil": input.ValidUntil, "status": status,
-			"trafficLimitBytes": input.TrafficLimitBytes, "resetStrategy": input.ResetStrategy,
-			"squadUuids": input.SquadUUIDs},
-	})
-	if err != nil {
-		return fmt.Errorf("encode manual entitlement audit: %w", err)
-	}
-	return insertAuditTx(ctx, tx, auditID, &actorID, "entitlement.create", "purchase", purchaseID, string(detail), now)
+	return purchase, nil
 }

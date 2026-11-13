@@ -5,12 +5,14 @@ import { useI18n } from '@/i18n'
 import { formatDateTime } from '@/utils/format'
 
 const open = defineModel<boolean>('open', { required: true })
-defineProps<{ quote: EarlyActivationQuote | null; busy: boolean }>()
+const props = defineProps<{ quote: EarlyActivationQuote | null; busy: boolean }>()
 const emit = defineEmits<{ confirm: [confirmation: string] }>()
 const { t } = useI18n()
 const confirmation = shallowRef('')
 const confirmed = computed(() => confirmation.value.trim() === t('settings.combo.confirmation'))
-watch(open, () => { confirmation.value = '' })
+watch(() => [open.value, props.quote?.currentPurchaseId, props.quote?.queuedPurchaseId, props.quote?.eligible,
+  props.quote?.currentValidUntil, props.quote?.newValidFrom, props.quote?.newValidUntil], () => { confirmation.value = '' }, { flush: 'sync' })
+function confirm(): void { if (open.value && !props.busy && props.quote?.eligible && confirmed.value) emit('confirm', confirmation.value.trim()) }
 </script>
 
 <template>
@@ -26,7 +28,7 @@ watch(open, () => { confirmation.value = '' })
     </template>
     <template #footer>
       <UButton color="neutral" variant="outline" :label="$t('common.cancel')" :disabled="busy" @click="open = false" />
-      <UButton color="error" :label="$t('settings.combo.activate')" :disabled="!confirmed || busy || !quote?.eligible" :loading="busy" @click="emit('confirm', confirmation.trim())" />
+      <UButton color="error" :label="$t('settings.combo.activate')" :disabled="!confirmed || busy || !quote?.eligible" :loading="busy" @click="confirm" />
     </template>
   </UModal>
 </template>

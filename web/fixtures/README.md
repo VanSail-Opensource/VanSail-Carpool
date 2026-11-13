@@ -480,3 +480,9 @@ credit; `credit-exhausted` consumes both reported budgets.
 route-page contraction and selection removal. `live` mounts live details with a
 retained paid snapshot, account replacement, logout and a delayed obsolete read.
 The fixture uses documentation addresses and constructed owners only.
+
+Browser auth `link&defer-link` holds administrator entrance creation across owner
+replacement/logout; `link&link-refresh-error` rejects expiry refresh until explicit
+recovery. Settings `__controlsAudit` exposes constructed owner replacement and
+tag-save recovery, with exact activation target and tag-write counts. These
+component fixtures seed typed sessions without full-session preload requests.

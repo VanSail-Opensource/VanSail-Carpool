@@ -39,6 +39,9 @@ func (s *Store) retryAttempt_CourtesyCreditPayment(ctx context.Context, actorID,
 	} else if !errors.Is(loadErr, ErrNotFound) {
 		return model.CourtesyCredit{}, loadErr
 	}
+	if err = catalogAdminActorTx(ctx, tx, actorID); err != nil {
+		return model.CourtesyCredit{}, err
+	}
 	order, err := paymentOrderTx(ctx, tx, orderID)
 	if err != nil {
 		return model.CourtesyCredit{}, err

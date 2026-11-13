@@ -57,61 +57,6 @@ func (s *Store) PublishedOnboarding(ctx context.Context, locale string) (onboard
 		AgreementRevision: agreements.PublishedRevision, Welcome: messages, Agreements: agreementItems}, nil
 }
 
-func (s *Store) SaveOnboardingDraft(ctx context.Context, kind string, content onboarding.Content, expectedRevision int, actorID string, now time.Time) (onboarding.Bundle, error) {
-	if err := onboarding.Validate(kind, content); err != nil {
-		return onboarding.Bundle{}, err
-	}
-	encoded, err := json.Marshal(content)
-	if err != nil {
-		return onboarding.Bundle{}, err
-	}
-	result, err := s.db.ExecContext(ctx, `UPDATE onboarding_content SET draft_json=$1,draft_revision=draft_revision+1,updated_at=$2,updated_by=$3 WHERE kind=$4 AND draft_revision=$5`, string(encoded), stamp(now), actorID, kind, expectedRevision)
-	if err != nil {
-		return onboarding.Bundle{}, err
-	}
-	if affected, _ := result.RowsAffected(); affected != 1 {
-		return onboarding.Bundle{}, ErrConflict
-	}
-	return s.OnboardingBundle(ctx, kind)
-}
-
-func (s *Store) retryAttempt_PublishOnboarding(ctx context.Context, kind string, expectedDraftRevision int, actorID string, now time.Time) (onboarding.Bundle, error) {
-
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return onboarding.Bundle{}, err
-	}
-	defer func() { _ = tx.Rollback() }()
-	bundle, err := scanOnboardingBundle(tx.QueryRowContext(ctx, `SELECT kind,draft_json,published_json,draft_revision,published_revision FROM onboarding_content WHERE kind=$1`, kind))
-	if err != nil {
-		return onboarding.Bundle{}, err
-	}
-	if bundle.DraftRevision != expectedDraftRevision {
-		return onboarding.Bundle{}, ErrConflict
-	}
-	if err := onboarding.Validate(kind, bundle.Draft); err != nil {
-		return onboarding.Bundle{}, err
-	}
-	draftJSON, err := json.Marshal(bundle.Draft)
-	if err != nil {
-		return onboarding.Bundle{}, err
-	}
-	publishedJSON, err := json.Marshal(bundle.Published)
-	if err != nil {
-		return onboarding.Bundle{}, err
-	}
-	changed := !slices.Equal(draftJSON, publishedJSON)
-	if changed {
-		if _, err := tx.ExecContext(ctx, `UPDATE onboarding_content SET published_json=draft_json,published_revision=published_revision+1,published_at=$1,updated_by=$2 WHERE kind=$3 AND draft_revision=$4`, stamp(now), actorID, kind, expectedDraftRevision); err != nil {
-			return onboarding.Bundle{}, err
-		}
-	}
-	if err := tx.Commit(); err != nil {
-		return onboarding.Bundle{}, err
-	}
-	return s.OnboardingBundle(ctx, kind)
-}
-
 func (s *Store) CurrentAgreementContract(ctx context.Context) (int, []string, error) {
 	bundle, err := s.OnboardingBundle(ctx, onboarding.KindAgreements)
 	if err != nil {

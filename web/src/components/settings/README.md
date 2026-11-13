@@ -28,7 +28,8 @@ the preferences store before the displayed value changes.
 The page uses the account-scoped preferences store, typed HTTP clients and queued
 Telegram APIs. Optional entrances require current server-confirmed eligibility.
 
-`useSettings.test.ts` covers immediate reset persistence and failed-save state retention.
+`useSettings.test.ts` covers prior-owner reads, failed-save state retention and
+disposal. Tag reads cannot supersede a pending save and strand its busy state.
 
 `useComboControls.ts` refreshes temporarily blocked eligibility every five seconds while visible, stops after errors/disposal and retains receipt-driven reconciliation. The settings header also offers refresh; purchase/activation constraints and the last-enabled-squad guard remain authoritative.
 
@@ -36,3 +37,14 @@ Telegram APIs. Optional entrances require current server-confirmed eligibility.
 `SettingsPAYGControls.test.ts` covers balance transitions, failed refreshes, and preservation of the displayed choices.
 
 `SettingsNavigationRow.vue` supplies flat full-width DIY/admin entrances with localized labels, existing icons and router-only navigation. Admin visibility and one-use console access remain owned by the session and AdminAccessPanel.
+
+Administrator links retire synchronously on owner, privilege or destination
+changes. Link creation and clipboard feedback are generation-scoped; expired or
+invalid links cannot be copied after refresh failure. `AdminAccessPanel.test.ts`
+checks delayed owners, expiry recovery and obsolete copy completion.
+
+Subscription controls and queued receipts also retire on account changes. A
+failed or pending eligibility refresh blocks changes until a current read
+succeeds. Early activation requires matching current/queued purchase IDs and
+fresh typed confirmation when the target, eligibility or period changes.
+`useComboControls.test.ts` and `EarlyActivationDialog.test.ts` cover those guards.

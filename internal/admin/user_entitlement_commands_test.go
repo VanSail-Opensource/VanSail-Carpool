@@ -18,6 +18,12 @@ type adminGrantRepositoryStub struct {
 	comboErr   error
 	activeOnly bool
 	created    *database.AdminEntitlementCreateInput
+	replay     database.AdminEntitlementGrantReplay
+	replayErr  error
+}
+
+func (r *adminGrantRepositoryStub) AdminEntitlementGrantByKey(context.Context, string, string, string) (database.AdminEntitlementGrantReplay, bool, error) {
+	return r.replay, r.replay.Purchase.ID != "", r.replayErr
 }
 
 func (r *adminGrantRepositoryStub) ComboByID(_ context.Context, _ string, activeOnly bool) (model.Combo, error) {

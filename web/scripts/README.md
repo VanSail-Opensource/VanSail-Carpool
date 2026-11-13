@@ -66,3 +66,7 @@ zero starting allowance.
 `browser-ip-recovery.mjs` checks partial BGP geometry, same-prefix route-page and
 selection recovery, and retirement of paid live snapshots on account changes.
 Desktop/mobile checks retain screenshots and never contact IP data providers.
+
+`browser-settings-recovery.mjs` verifies owner-bound administrator links, expired
+link creation failures, queued activation reconsent and retained tag drafts after
+save failures. Only constructed accounts, links and preference writes are used.
