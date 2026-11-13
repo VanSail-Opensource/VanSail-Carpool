@@ -6,6 +6,8 @@ import (
 	"errors"
 	"testing"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func TestBrowserAccessLinkAtomicConsumptionAndExpiry(t *testing.T) {
@@ -22,8 +24,8 @@ func TestBrowserAccessLinkAtomicConsumptionAndExpiry(t *testing.T) {
 		go func(value string) {
 			<-start
 			hash := sha256.Sum256([]byte(value))
-			id, destination, err := store.ExchangeBrowserAccessLink(ctx, link[:], hash[:], now, now.Add(30*24*time.Hour))
-			if err == nil && (id != user.ID || destination != "/admin/users") {
+			owner, destination, err := store.ExchangeBrowserAccessLink(ctx, link[:], hash[:], now, now.Add(30*24*time.Hour), allowBrowserTestUser)
+			if err == nil && (owner.ID != user.ID || destination != "/admin/users") {
 				outcomes <- errors.New("wrong link owner/destination")
 				return
 			}
@@ -51,10 +53,12 @@ func TestBrowserAccessLinkAtomicConsumptionAndExpiry(t *testing.T) {
 	if err := store.CreateBrowserAccessLink(ctx, expired[:], user.ID, "/admin/settings", now.Add(-time.Second)); err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := store.ExchangeBrowserAccessLink(ctx, expired[:], session[:], now, now.Add(30*24*time.Hour)); !errors.Is(err, ErrNotFound) {
+	if _, _, err := store.ExchangeBrowserAccessLink(ctx, expired[:], session[:], now, now.Add(30*24*time.Hour), allowBrowserTestUser); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("expired exchange=%v", err)
 	}
 	if _, _, err := store.BrowserSession(ctx, session[:], now); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("expired link created session=%v", err)
 	}
 }
+
+func allowBrowserTestUser(model.User, string) bool { return true }

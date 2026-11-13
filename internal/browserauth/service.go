@@ -130,14 +130,14 @@ func (s *Service) Exchange(ctx context.Context, linkToken string) (model.User, s
 	expires := now.Add(SessionTTL)
 	linkHash := sha256.Sum256([]byte(linkToken))
 	hash := sha256.Sum256([]byte(token))
-	id, returnTo, err := s.store.ExchangeBrowserAccessLink(ctx, linkHash[:], hash[:], now, expires)
-	if err != nil {
+	user, returnTo, err := s.store.ExchangeBrowserAccessLink(ctx, linkHash[:], hash[:], now, expires, func(user model.User, destination string) bool {
+		return s.IsAdmin(user) && ValidDestination(destination)
+	})
+	if errors.Is(err, database.ErrNotFound) {
 		return model.User{}, "", time.Time{}, "", ErrUnauthorized
 	}
-	user, err := s.store.UserByID(ctx, id)
-	if err != nil || !s.IsAdmin(user) || !ValidDestination(returnTo) {
-		revokeErr := s.store.DeleteBrowserSession(ctx, hash[:])
-		return model.User{}, "", time.Time{}, "", errors.Join(ErrUnauthorized, revokeErr)
+	if err != nil {
+		return model.User{}, "", time.Time{}, "", fmt.Errorf("exchange browser access: %w", err)
 	}
 	return user, token, expires, returnTo, nil
 }

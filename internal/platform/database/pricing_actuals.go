@@ -36,7 +36,7 @@ func (s *Store) pricingActual(ctx context.Context, kind, id, metric string, from
 		}
 		financial = true
 		args = []any{parts[1], pricingStamp(from), pricingStamp(until)}
-		query = `SELECT COALESCE(-SUM(l.delta_txb_minor),0)` + pricingComboReceiptJoins + ` WHERE ` + pricingComboReceiptScope + ` AND l.created_at>=$1 AND l.created_at<$2`
+		query = `SELECT COALESCE(-SUM(l.delta_txb_minor),0)` + pricingComboReceiptJoins + ` WHERE ` + pricingComboReceiptScope + ` AND l.created_at>=$2 AND l.created_at<$3`
 		if parts[0] == "payg" {
 			query = `SELECT COALESCE(SUM(c.blocks*c.unit_price_minor),0) FROM xnode_payg_charges c JOIN xnode_payg_accounts a ON a.proxy_user_id=c.proxy_user_id JOIN ledger_entries l ON l.id=c.ledger_id WHERE a.group_id=$1 AND l.created_at>=$2 AND l.created_at<$3`
 		}

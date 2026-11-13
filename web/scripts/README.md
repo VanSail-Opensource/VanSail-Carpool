@@ -25,7 +25,13 @@ range bounds are generated for administrator controls without a raw JSON editor.
 Playwright dependency and a loopback Vite fixture server. It exercises the real
 App currency hydration and payment sheet plus browser access recovery at desktop
 and mobile widths, including loading, populated, empty and error states. It
+distinguishes invalid one-use links from temporary exchange failures and verifies
+an explicit retry succeeds without returning the token to the URL. It
 blocks unexpected API/external requests, checks console failures and document
 overflow, and writes per-state screenshots and `results.json` to
 `BROWSER_AUDIT_OUTPUT`. CI uploads these artifacts even after a failure. Run it
 only in hosted CI; the repository's local automated-suite restriction applies.
+
+`browser-member-recovery.mjs` adds desktop/mobile checks for intro retry,
+agreement revision consent, delayed owner changes, community loading/errors and
+retired invite links using the real onboarding and community components.

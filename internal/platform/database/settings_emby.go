@@ -65,6 +65,9 @@ func (s *Store) retryAttempt_SaveEmbyConnection(ctx context.Context, expected st
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
+	if err = catalogAdminActorTx(ctx, tx, actorID); err != nil {
+		return err
+	}
 	if _, err = tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock(hashtextextended('settings:emby.connection',0))`); err != nil {
 		return err
 	}
@@ -78,12 +81,16 @@ func (s *Store) retryAttempt_SaveEmbyConnection(ctx context.Context, expected st
 	if next.BaseURL.Value == "" || next.Token.Value == "" || !next.BaseURL.Encrypted || !next.Token.Encrypted {
 		return ErrConflict
 	}
+	now := time.Now().UTC()
 	_, err = tx.ExecContext(ctx, `INSERT INTO settings(key,value,encrypted,updated_at,updated_by)
 		VALUES($1,$2,1,$5,$6),($3,$4,1,$5,$6) ON CONFLICT(key) DO UPDATE
 		SET value=excluded.value,encrypted=1,updated_at=excluded.updated_at,updated_by=excluded.updated_by`,
-		EmbyURLSetting, next.BaseURL.Value, EmbyTokenSetting, next.Token.Value, stamp(time.Now().UTC()), actorID)
+		EmbyURLSetting, next.BaseURL.Value, EmbyTokenSetting, next.Token.Value, stamp(now), actorID)
 	if err != nil {
 		return fmt.Errorf("save Emby connection: %w", err)
+	}
+	if err := catalogAdminAuditTx(ctx, tx, actorID, "emby.connection.update", "setting", "emby.connection", map[string]bool{"secret": true}, now); err != nil {
+		return err
 	}
 	return tx.Commit()
 }

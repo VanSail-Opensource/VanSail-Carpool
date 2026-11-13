@@ -31,7 +31,8 @@ func (w *pricingExportLimit) Write(p []byte) (int, error) {
 
 // StreamPricingExport holds one bounded read-only snapshot, writes directly to
 // the caller with backpressure and creates no permanent or temporary archive.
-func (s *Store) retryAttempt_StreamPricingExport(ctx context.Context, writer io.Writer, scope PricingExportScope) error {
+// It cannot retry after publishing bytes to an irreversible output stream.
+func (s *Store) StreamPricingExport(ctx context.Context, writer io.Writer, scope PricingExportScope) error {
 	if err := scope.Validate(); err != nil {
 		return err
 	}

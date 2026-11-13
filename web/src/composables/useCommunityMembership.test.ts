@@ -1,8 +1,10 @@
 import { flushPromises, mount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import { defineComponent, h } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { CommunityMembership } from '@/api/types'
+import type { CommunityMembership, JoinInvite } from '@/api/types'
+import { useSessionStore } from '@/stores/session'
 
 const mocks = vi.hoisted(() => ({
   checkCommunityMembership: vi.fn(),
@@ -10,12 +12,11 @@ const mocks = vi.hoisted(() => ({
   getTelegramWebApp: vi.fn(),
   notifyHaptic: vi.fn(),
   openExternalLink: vi.fn(),
-  updateSession: vi.fn(),
-  session: null as unknown,
 }))
 
-vi.mock('@/api/client', () => ({ api: mocks }))
-vi.mock('@/stores/session', () => ({ useSessionStore: () => ({ session: mocks.session, updateSession: mocks.updateSession }) }))
+vi.mock('@/api/client', async () => ({ api: mocks, ApiError: (await import('@/api/http')).ApiError }))
+vi.mock('@/api/cache/restore', () => ({ restoreRef: () => false }))
+vi.mock('@/api/cache/preload', () => ({ preloadSession: vi.fn(), stopSessionPreload: vi.fn() }))
 vi.mock('@/utils/telegram', () => ({
   getTelegramWebApp: mocks.getTelegramWebApp,
   notifyHaptic: mocks.notifyHaptic,
@@ -36,15 +37,24 @@ function member(activeCombo = true): CommunityMembership {
 }
 
 function mountCommunity() {
+  const pinia = createPinia()
+  const session = useSessionStore(pinia)
+  session.session = { authenticated: true, user: member().user }
+  const updateSession = vi.spyOn(session, 'updateSession')
   let community!: ReturnType<typeof useCommunityMembership>
-  const wrapper = mount(defineComponent({ setup() { community = useCommunityMembership(); return () => h('div') } }))
-  return { community, wrapper }
+  const wrapper = mount(defineComponent({ setup() { community = useCommunityMembership(); return () => h('div') } }), { global: { plugins: [pinia] } })
+  return { community, wrapper, session, updateSession }
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>(accept => { resolve = accept })
+  return { promise, resolve }
 }
 
 describe('useCommunityMembership', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    mocks.session = null
+    vi.resetAllMocks()
   })
   afterEach(() => vi.clearAllMocks())
 
@@ -80,5 +90,55 @@ describe('useCommunityMembership', () => {
     expect(community.error.value).toBeTruthy()
     expect(mocks.notifyHaptic).toHaveBeenCalledWith('error')
     wrapper.unmount()
+  })
+
+  it('keeps the newest membership response when activation overlaps the initial read', async () => {
+    const initial = deferred<CommunityMembership>()
+    const refresh = deferred<CommunityMembership>()
+    mocks.checkCommunityMembership.mockReturnValueOnce(initial.promise).mockReturnValueOnce(refresh.promise)
+    const { community, wrapper, updateSession } = mountCommunity()
+    const loading = community.load()
+    const current = { ...member(), channelJoined: true }
+    refresh.resolve(current)
+    await loading
+    initial.resolve(member(false))
+    await flushPromises()
+
+    expect(community.membership.value).toEqual(current)
+    expect(community.loading.value).toBe(false)
+    expect(community.refreshing.value).toBe(false)
+    expect(updateSession).toHaveBeenCalledOnce()
+    wrapper.unmount()
+  })
+
+  it('cannot restore a cleared owner from a delayed membership response', async () => {
+    const pending = deferred<CommunityMembership>()
+    mocks.checkCommunityMembership.mockReturnValueOnce(pending.promise)
+    const { community, wrapper, session, updateSession } = mountCommunity()
+    session.clear()
+    pending.resolve(member())
+    await flushPromises()
+
+    expect(session.user).toBeNull()
+    expect(community.membership.value).toBeNull()
+    expect(updateSession).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it.each(['owner cleared', 'unmounted'] as const)('does not open a retired invite after %s', async reason => {
+    const pending = deferred<JoinInvite>()
+    mocks.checkCommunityMembership.mockResolvedValue(member())
+    mocks.createCommunityInvite.mockReturnValueOnce(pending.promise)
+    const { community, wrapper, session } = mountCommunity()
+    await flushPromises()
+    const joining = community.join('group')
+    if (reason === 'owner cleared') session.clear()
+    else wrapper.unmount()
+    pending.resolve({ url: 'https://t.me/+previous-owner', expiresAt: '2026-08-31T12:30:00Z' })
+    await joining
+
+    expect(mocks.openExternalLink).not.toHaveBeenCalled()
+    expect(mocks.notifyHaptic).not.toHaveBeenCalled()
+    if (reason === 'owner cleared') wrapper.unmount()
   })
 })

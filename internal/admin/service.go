@@ -10,10 +10,10 @@ import (
 
 // CatalogRepository is the domain-safe database surface available to admins.
 type CatalogRepository interface {
-	SaveCombo(context.Context, database.ComboInput) (model.Combo, error)
-	DeleteCombo(context.Context, string) error
+	SaveAdminCombo(context.Context, string, database.ComboInput) (model.Combo, error)
+	DeleteAdminCombo(context.Context, string, string) error
 	ListCombos(context.Context, bool) ([]model.Combo, error)
-	SaveSquadProduct(context.Context, database.SquadProductInput) (model.SquadProduct, error)
+	SaveAdminSquadProduct(context.Context, string, database.SquadProductInput) (model.SquadProduct, error)
 	SquadProductByID(context.Context, string) (model.SquadProduct, error)
 	SquadProductByGroupID(context.Context, string) (model.SquadProduct, error)
 	ListSquadProducts(context.Context, bool) ([]model.SquadProduct, error)

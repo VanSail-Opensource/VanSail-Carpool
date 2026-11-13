@@ -42,6 +42,9 @@ onboarding, signed requests and the existing idempotent operation protections.
 - `browser_auth_test.go` covers signed identity restoration, cookie flags,
   stable renewal, cross-origin exchange rejection, logout, and member redirects
   in hosted CI; local automated suites remain prohibited.
+- `browser_auth_recovery_test.go` verifies that transient exchange failures return
+  a retryable response without cookies, preserve the handoff for retry, and still
+  enforce single use after successful authentication.
 - `browser_auth_scope_test.go` covers Mini App rejection from browser admin
   routes, signed-request replay, expired-cookie clearing, role revocation,
   removed login routes, and existing streamed-backup origin/device safeguards.

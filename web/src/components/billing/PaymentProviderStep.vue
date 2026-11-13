@@ -28,7 +28,8 @@ function choose(value: string): void {
 </script>
 
 <template>
-  <fieldset class="provider-picker">
+  <p v-if="!options.length" role="status" class="field-hint">{{ t('payment.noMethods') }}</p>
+  <fieldset v-else class="provider-picker">
     <legend>{{ t('payment.chooseProvider') }}</legend>
     <UButton
       v-for="item in options"
@@ -59,7 +60,7 @@ function choose(value: string): void {
     </UButton>
   </fieldset>
   <UButton
-    v-if="selectedValue !== 'coupon'"
+    v-if="options.length && selectedValue !== 'coupon'"
     block
     :disabled="!canContinue"
     :label="t('payment.continueToChannel')"

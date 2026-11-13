@@ -53,27 +53,8 @@ type adminCatalogRepository struct {
 	auditErr          error
 }
 
-func (r *adminCatalogRepository) SaveCombo(_ context.Context, input database.ComboInput) (model.Combo, error) {
-	r.comboInput = input
-	return r.savedCombo, r.saveComboErr
-}
-func (r *adminCatalogRepository) DeleteCombo(_ context.Context, id string) error {
-	r.deletedComboID = id
-	return r.deleteComboErr
-}
 func (r *adminCatalogRepository) ListCombos(context.Context, bool) ([]model.Combo, error) {
 	return nil, nil
-}
-func (r *adminCatalogRepository) SaveSquadProduct(_ context.Context, input database.SquadProductInput) (model.SquadProduct, error) {
-	r.squadInput = input
-	r.savedSquadInputs = append(r.savedSquadInputs, input)
-	if r.saveSquadErr != nil {
-		return model.SquadProduct{}, r.saveSquadErr
-	}
-	if r.savedSquad.ID != "" {
-		return r.savedSquad, nil
-	}
-	return model.SquadProduct{ID: input.GroupID, Name: input.Name}, nil
 }
 func (r *adminCatalogRepository) SquadProductByID(_ context.Context, id string) (model.SquadProduct, error) {
 	if r.squadLookupErr != nil {

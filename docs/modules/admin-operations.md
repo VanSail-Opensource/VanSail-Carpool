@@ -98,6 +98,10 @@ the exposed mutable configuration, and preserves IDs, charged/gross/core price
 facts, ledger history, and creation time. Refund credit, cancellation, audit,
 provider receipt, and outbox insertion commit together. No-charge replacement
 changes the active combo and add-on override without appending a TXB ledger row.
+Once any cancellation or refund lane has recorded credit for a purchase, fresh
+entitlement edits cannot reopen or rewrite it. Its accepted command keys remain
+replayable. Grant separate zero-charge access when a member needs a replacement
+term, preserving the settled purchase and refund evidence.
 
 `POST /api/v1/admin/users/{userId}/entitlements` creates a zero-charge manual
 fixed-term grant. It requires an `Idempotency-Key` and a reason of 3-500 bytes,
@@ -151,5 +155,25 @@ its duration remains unchanged. The preview and job use the same target query.
 The shared provider-operation worker records operation and item intent before
 calling the queued X-Node adapter. A completed target is never replayed. An
 interrupted attempt or uncertain network result becomes `pending_review`; mixed
-bulk results become `partial` and require audited resolution rather than a
-blind provider retry.
+bulk results become `partial`. Transient local reads before a provider attempt
+remain retryable and do not fabricate provider failure.
+
+### Repairing an operation receipt
+
+The generic administrator resolution endpoint repairs a parent receipt only
+when completed, retained item outcomes already establish the requested result.
+It supports the administrator entitlement edit, credited-refund synchronization,
+combo replacement, bulk extension, and retained legacy outage synchronization
+kinds. Every target must have a recorded attempt and completion; all outcomes
+must match `succeeded`, `failed`, or `compensated`, or fully completed mixed
+outcomes must substantiate `partial`.
+
+Unfinished or ambiguous items require the owning domain's reconciliation.
+Payment/member/hourly settlement, Emby provisioning, temporary restrictions and
+native X-Node command receipts cannot be force-completed through this endpoint.
+Receipt repair never changes item evidence, moves money, releases notification
+gates or holds, or dispatches a provider request. A repaired success clears the
+parent's obsolete error code. The actor, request key and exact returned receipt
+are committed with an immutable audit; replay returns that resolution's snapshot.
+Historical resolutions without a snapshot can replay only while the original
+receipt is unchanged.

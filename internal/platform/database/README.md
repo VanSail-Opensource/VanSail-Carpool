@@ -42,6 +42,26 @@ the schema's unique Mini App session index makes the former duplicate-session
 cleanup unnecessary. `retention_session_boundary_test.go` protects live bearers
 and independent browser/Mini App sessions during housekeeping.
 
+Pricing receipt windows bind the product identifier separately from both time
+bounds in `pricing_actuals.go` and `pricing_product_forecasts.go`.
+`pricing_product_receipts_test.go` checks product/window isolation and durable
+forecast computation from actual ledger receipts. `pricing_calibration.go` and
+`pricing_calibration_retry_generated.go` bind cutoff/day/kind parameters correctly
+and publish all selected probability buckets in one retryable transaction;
+`pricing_calibration_test.go` covers mature observations, censored offers, replay,
+both purchase and renewal inputs, and rollback after a publication failure.
+
+Pricing coupon preparation and settlement skip retired unauthorized draw-code
+copies without blocking legitimate discounts. `pricing_coupon_boundaries_test.go`
+checks exact expiry in both prepared and fresh reads, and
+`activity_draw_coupon_security_test.go` covers valid public grants alongside a
+historical private-code copy. Export streaming never retries after bytes have
+been published, and JSON pseudonymization preserves exact integer tokens.
+Invalid JSON or invalid identity shapes abort pseudonymized exports with a
+content-free `ErrPricingExportRedaction`; both singular and plural identity
+fields are covered. `pricing_export_failure_test.go` covers output failure,
+large retained values and safe failure on corrupted source JSON.
+
 `outbox_deletion.go` protects unfinished financial commands, explicit cleanup
 lanes, live retry targets, legacy paid Emby setup and restriction expiry jobs.
 Eligible deletion and its redacted actor audit commit together; failed expiry
@@ -364,6 +384,12 @@ Native traffic aggregation streams indexed node/day groups with checked integer
 sums. Backup-gated native retention prunes only expired access and superseded
 acknowledged rate boundaries; native purchase/refund evidence and unsettled
 
+`browser_access_links.go` returns its owner snapshot from the exchange transaction:
+the active, unblocked account is locked and a required pure local authorization
+predicate verifies current administrator eligibility and the return destination
+before consumption commits. Storage/read failures preserve the one-use link for
+retry; exact timestamp expiry checks remain inside the transaction.
+
 `browser_sessions.go` persists separate browser-device sessions, daily stable-token
 renewal, and single-device revocation. `browser_access_links.go` consumes hashed
 five-minute handoff references and creates their session in one transaction.
@@ -453,6 +479,8 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
   each field once, including the active flag, on PostgreSQL.
 - `catalog_queries.go` — combo reads, scans, and normalized squad UUID lists.
 - `catalog_squads.go` — sparse local merchandising and normalized profile overrides for upstream squads.
+- `catalog_admin.go` authorizes the current administrator and pairs combo saves/hides and squad override writes/removals with their audit in one transaction. Shared catalog helpers return the exact written row before commit and retain omitted activation/feature data. `catalog_admin_test.go` covers audit rollback (including dependent outbox jobs), actor authorization, exact returned snapshots, and sparse non-default availability retention. Raw catalog methods remain available to internal setup and historical fixtures.
+- `admin_actor_eligibility_test.go` verifies that catalog, Emby and pricing mutations recheck current role, active lifecycle, and unblocked status inside the transaction, leaving no mutation or success audit for demoted, purging, or blocked actors.
 - `billing.go` — purchase normalization, quotes, creation, pricing, and debit helpers.
 - `billing_bounds.go` persists the singleton inclusive Add TXB range and atomically audits administrator updates.
 - `billing_renewal.go` — renewal quotes, contiguous batch creation, and idempotent replay.
@@ -544,12 +572,15 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `provider_operation_notification_completion.go` releases pending user messages
   only for a real successful provider-worker item.
 - `admin_entitlement_edit.go`, `admin_entitlement_refund.go`, and `admin_combo_replacement.go` atomically persist audited administrator mutations with their provider operations.
+  Fresh edits reject terms with retained refund or cancellation credits, including
+  member refunds referenced through their durable operation items. A later grant
+  uses a new purchase ID; accepted edit keys remain replayable after settlement.
 - `admin_coupon_grants.go` records idempotent, audited purchase-coupon wallet grants and historical discards.
 - `admin_bulk_query.go`, `admin_bulk_shift.go`, and `admin_bulk_extension.go` preview inclusive-OR active targets, deduplicate users, shift active and queued terms to the minute, and create one durable bulk job.
 - `automatic_renewal_plan.go` and `automatic_renewal_commit.go` preserve explicit administrator entitlement overrides and edited term lengths when creating a successor.
 - `community_membership_test.go` covers legacy mapping, membership-fact persistence, and strict active-window boundaries.
 - `admin_user_operations.go` and `admin_user_refunds.go` supply the aggregate profile's open-operation and refund projections.
-- `admin_operation_resolution.go` atomically resolves review-required operations, stores replay fingerprints, and appends the audit event.
+- `admin_operation_resolution.go` repairs only supported administrator parent receipts from matching, completed item outcomes and rechecks current actor eligibility. `admin_operation_resolution_evidence.go` keeps native commands, financial settlement, unfinished attempts and ambiguous evidence outside generic repair; it never changes items, holds or notification gates. `admin_operation_resolution_replay.go` pins each new resolution's exact public receipt in its immutable audit using the replay ID, while historical records without snapshots conflict after a changed outcome. `admin_operation_resolution_test.go`, `admin_operation_resolution_replay_test.go`, and `admin_operation_resolution_test_helpers_test.go` cover domain refusal, contradictory/unfinished evidence, actor eligibility, result preservation, audit rollback, and immutable replay.
 - `admin_workflow_types.go` defines shared aggregate and administrator workflow persistence records.
 - `connection_scans.go` and `connection_scan_lifecycle.go` persist metadata-only provider scan progress.
 - `connection_ip_blocks.go` loads retained encrypted block targets; `connection_ip_blocks_mutations.go` owns owner reads and unblock transitions; `connection_ip_block_completion.go` and `connection_ip_block_expiry.go` atomically close linked receipts with sensitive-row transitions. Retired block admission exists only in a historical test fixture.
@@ -636,6 +667,9 @@ or adjusted to reconcile gaps left by earlier destructive releases.
 - `notification_events_test.go` covers provider-gate deduplication, reminder
   eligibility, and traffic reset-period rearming.
 - `admin_entitlement_workflows_test.go` covers optimistic edits, immutable pricing, exactly-once credits, and zero-TXB replacements.
+- `admin_entitlement_refund_history_test.go` exercises all four refund/cancellation
+  lanes and prevents an edit from reopening settled history for a second credit,
+  while preserving accepted command replays and partial refund amounts.
 - `admin_user_commands_test.go` covers purchase-coupon replays, bounded exact refunds, overlapping temporary bans, and restoration scheduling.
 - `admin_user_search_test.go` covers AND/OR profile facets, normalized cursor fingerprints, and success-only affiliate history.
 - `admin_bulk_workflows_test.go` covers inclusive-OR matching, active-user deduplication, and equal minute-precise queued-term shifts.
@@ -901,7 +935,13 @@ Immutable analytical inputs, forecast vintages and measured calibration: `pricin
 
 Versioned pricing preparation, queued kernels, applicability and publication: `pricing_addon_basis.go`, `pricing_addon_prepare.go`, `pricing_cache.go`, `pricing_catalog.go`, `pricing_change_notice.go`, `pricing_commands.go`, `pricing_compute_kernels.go`, `pricing_contract_snapshot.go`, `pricing_contracts.go`, `pricing_coupon_inputs.go`, `pricing_evaluation.go`, `pricing_fixed_renewal.go`, `pricing_funding_outcome.go`, `pricing_incident_notice.go`, `pricing_incidents.go`, `pricing_offer_inputs.go`, `pricing_offers.go`, `pricing_optimization_inputs.go`, `pricing_override_activate.go`, `pricing_override_validation.go`, `pricing_payg_schedule.go`, `pricing_publication_freeze.go`, `pricing_receipts.go`, `pricing_resolve.go`, `pricing_revenue_batch.go`, `pricing_scope_version.go`, `pricing_summary.go`, `pricing_time.go`, `pricing_user_offers.go`, `pricing_validation_gate.go`, `pricing_views.go`.
 
-Bounded, scoped analytical exports and redaction: `pricing_export_redaction.go`, `pricing_export_relations.go`, `pricing_export_rows.go`, `pricing_export_scope.go`.
+Bounded, scoped analytical exports and redaction: `pricing_export.go`, `pricing_export_redaction.go`, `pricing_export_relations.go`, `pricing_export_rows.go`, `pricing_export_scope.go`.
+
+`pricing_incidents.go` serializes recorders on the node row before reading retained
+transitions, ignores events at or before a newer retained transition, and closes
+legacy duplicate open incidents on recovery. Deleted-node telemetry is a no-op.
+`pricing_incidents_test.go` covers independent recorder locking, one alert per
+transition, duplicate cleanup, exact ordering, and removed nodes.
 
 Renewal contracts, numerical snapshots, coupon economics and settlement: `pricing_renewal_budget.go`, `pricing_renewal_candidates.go`, `pricing_cost_evidence.go`, `pricing_renewal_reads.go`, `pricing_renewal_schedule.go`, `pricing_renewal_settlement.go`, `pricing_renewal_snapshot.go`.
 
@@ -981,7 +1021,9 @@ Provider requests remain outside every transaction.
 - `billing_renewal_retry_generated.go` wraps the transactional methods in `billing_renewal.go`.
 - `billing_retry_generated.go` wraps the transactional methods in `billing.go`.
 - `browser_access_links_retry_generated.go` wraps the transactional methods in `browser_access_links.go`.
+- `catalog_admin_retry_generated.go` wraps the transactional methods in `catalog_admin.go`.
 - `catalog_retry_generated.go` wraps the transactional methods in `catalog.go`.
+- `catalog_squads_retry_generated.go` wraps the transactional methods in `catalog_squads.go`.
 - `connection_ip_block_completion_retry_generated.go` wraps the transactional methods in `connection_ip_block_completion.go`.
 - `connection_ip_block_expiry_retry_generated.go` wraps the transactional methods in `connection_ip_block_expiry.go`.
 - `connection_ip_blocks_mutations_retry_generated.go` wraps the transactional methods in `connection_ip_blocks_mutations.go`.
@@ -1026,12 +1068,13 @@ Provider requests remain outside every transaction.
 - `payment_profile_revision_retry_generated.go` wraps the transactional methods in `payment_profile_revision.go`.
 - `payment_profiles_retry_generated.go` wraps the transactional methods in `payment_profiles.go`.
 - `payment_refund_resolution_retry_generated.go` wraps the transactional methods in `payment_refund_resolution.go`.
+- `pricing_calibration_retry_generated.go` wraps the transactional methods in `pricing_calibration.go`.
 - `pricing_compute_retry_generated.go` wraps the transactional methods in `pricing_compute.go`.
 - `pricing_costs_retry_generated.go` wraps the transactional methods in `pricing_costs.go`.
-- `pricing_export_retry_generated.go` wraps the transactional methods in `pricing_export.go`.
 - `pricing_feature_snapshot_retry_generated.go` wraps the transactional methods in `pricing_feature_snapshot.go`.
 - `pricing_forecast_storage_retry_generated.go` wraps the transactional methods in `pricing_forecast_storage.go`.
 - `pricing_health_retry_generated.go` wraps the transactional methods in `pricing_health.go`.
+- `pricing_incidents_retry_generated.go` wraps the transactional methods in `pricing_incidents.go`.
 - `pricing_offer_coupons_retry_generated.go` wraps the transactional methods in `pricing_offer_coupons.go`.
 - `pricing_optimization_retry_generated.go` wraps the transactional methods in `pricing_optimization.go`.
 - `pricing_optimization_snapshot_retry_generated.go` wraps the transactional methods in `pricing_optimization_snapshot.go`.
@@ -1301,7 +1344,7 @@ publication/cancellation and wallet changes. The cancellation claim precedes
 refunds, and completed draws never enter the retirement path. All external
 announcement cleanup remains in the existing outbox queue.
 
-`settings_emby.go` stores the existing encrypted Emby URL/token rows atomically under an advisory lock and compares an opaque pair version. Readers use one SQL snapshot. `settings_emby_retry_generated.go` retries only rolled-back transactions; `settings_emby_test.go` covers competing setup, stale writes and concurrent snapshot consistency. No new persistence or provider calls are introduced.
+`settings_emby.go` stores the existing encrypted Emby URL/token rows atomically under an advisory lock and compares an opaque pair version. A current active administrator lock and sanitized `emby.connection.update` audit share that transaction; audit failure preserves the previous pair. Readers use one SQL snapshot. `settings_emby_retry_generated.go` retries only rolled-back transactions; `settings_emby_test.go` covers competing setup, stale writes, concurrent snapshot consistency, actor authorization and audit rollback. No new persistence or provider calls are introduced.
 
 `xnode_update_expectation.go` locks the existing provider operation to store its first immutable update intent before any attempt. Retries retain the original target; legacy in-flight mutations cannot acquire invented intent, and terminal receipts are unchanged. `xnode_update_expectation_retry_generated.go` retries only rolled-back transactions. `xnode_update_expectation_test.go` covers target changes, reload/recovery, terminal immutability and legacy attempt fences. No schema or new table is introduced.
 

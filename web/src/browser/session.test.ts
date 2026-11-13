@@ -166,7 +166,7 @@ describe('isolated browser sessions', () => {
     mocks.exchange.mockResolvedValue({ ...admin, returnTo: '/admin/users/user-1' })
     const browser = useBrowserSession()
     expect(await browser.exchange('one-use-token')).toBe('/admin/users/user-1')
-    expect(mocks.exchange).toHaveBeenCalledExactlyOnceWith('one-use-token')
+    expect(mocks.exchange).toHaveBeenCalledExactlyOnceWith('one-use-token', undefined)
     expect(browser.isAdmin).toBe(true)
     expect(mocks.authTelegram).not.toHaveBeenCalled()
   })

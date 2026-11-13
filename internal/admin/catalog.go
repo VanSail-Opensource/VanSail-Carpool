@@ -28,22 +28,12 @@ func (s *Service) SaveCombo(ctx context.Context, actorID string, input database.
 			return model.Combo{}, database.ErrNotFound
 		}
 	}
-	combo, err := s.repository.SaveCombo(ctx, input)
-	if err != nil {
-		return model.Combo{}, err
-	}
-	if err := s.audit(ctx, actorID, "combo.save", "combo", combo.ID, map[string]any{"name": combo.Name}); err != nil {
-		return model.Combo{}, err
-	}
-	return combo, nil
+	return s.repository.SaveAdminCombo(ctx, actorID, input)
 }
 
 // DeleteCombo hides the selected combo.
 func (s *Service) DeleteCombo(ctx context.Context, actorID, comboID string) error {
-	if err := s.repository.DeleteCombo(ctx, comboID); err != nil {
-		return err
-	}
-	return s.audit(ctx, actorID, "combo.hide", "combo", comboID, nil)
+	return s.repository.DeleteAdminCombo(ctx, actorID, comboID)
 }
 
 // SaveSquadProduct validates local merchandising data.
@@ -75,15 +65,12 @@ func (s *Service) SaveSquadProduct(ctx context.Context, actorID string, input da
 	input.ID = input.GroupID
 	input.Name = upstreamName
 	input.UpstreamPresent = true
-	product, err := s.repository.SaveSquadProduct(ctx, input)
+	product, err := s.repository.SaveAdminSquadProduct(ctx, actorID, input)
 	if err != nil {
 		return model.SquadProduct{}, err
 	}
 	product.Name = upstreamName
 	product.UpstreamPresent = true
-	if err := s.audit(ctx, actorID, "squad_product.save", "squad_product", product.ID, map[string]any{"name": upstreamName}); err != nil {
-		return model.SquadProduct{}, err
-	}
 	return product, nil
 }
 

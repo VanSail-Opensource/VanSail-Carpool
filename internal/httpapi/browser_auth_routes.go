@@ -76,5 +76,5 @@ func (s *Server) browserSessionFailure(w http.ResponseWriter, r *http.Request, e
 		s.browserFailure(w, r, http.StatusUnauthorized, "UNAUTHENTICATED")
 		return
 	}
-	s.browserFailure(w, r, http.StatusServiceUnavailable, "BROWSER_SESSION_UNAVAILABLE")
+	s.writeError(w, r, http.StatusServiceUnavailable, "BROWSER_SESSION_UNAVAILABLE", "Browser access is temporarily unavailable. Please retry.")
 }

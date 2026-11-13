@@ -84,9 +84,9 @@ func TestBrowserHandoffUsesExactExpiry(t *testing.T) {
 			if err := store.CreateBrowserAccessLink(ctx, link, user.ID, "/", expires); err != nil {
 				t.Fatal(err)
 			}
-			owner, _, err := store.ExchangeBrowserAccessLink(ctx, link, session, at, at.Add(time.Hour))
+			owner, _, err := store.ExchangeBrowserAccessLink(ctx, link, session, at, at.Add(time.Hour), allowBrowserTestUser)
 			if live {
-				if err != nil || owner != user.ID {
+				if err != nil || owner.ID != user.ID {
 					t.Fatal("live fractional handoff rejected", owner, err)
 				}
 			} else if !errors.Is(err, ErrNotFound) {

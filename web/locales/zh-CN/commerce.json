@@ -103,6 +103,7 @@
     "amount": "金额",
     "provider": "支付方",
     "chooseProvider": "选择支付方",
+    "noMethods": "暂时没有可用的支付方式，请稍后再试。",
     "chooseChannel": "选择支付渠道",
     "continueToChannel": "选择渠道",
     "backToProvider": "更换支付方",

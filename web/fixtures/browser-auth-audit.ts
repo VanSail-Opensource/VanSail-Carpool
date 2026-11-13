@@ -54,6 +54,7 @@ browserAccessApi.createLink = async () => {
 browserAccessApi.exchange = async token => {
   state.exchanges++
   await pause()
+  if (params.has('unavailable') && state.exchanges === 1) throw new ApiError(503, { code: 'BROWSER_SESSION_UNAVAILABLE', message: '' })
   if (params.has('invalid') || state.usedTokens.includes(token)) throw new ApiError(401, { code: 'BROWSER_LINK_INVALID', message: '' })
   state.usedTokens.push(token)
   return { ...admin, returnTo: '/audit-complete' }

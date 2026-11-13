@@ -9,7 +9,8 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
-// ResolveOperation records an audited administrator decision for an ambiguous result.
+// ResolveOperation requests audited receipt repair from matching terminal item
+// evidence. Financial and provider state still require their domain workflows.
 func (s *UserWorkflows) ResolveOperation(ctx context.Context, actorID, operationID, key,
 	resolution, reason string) (model.OperationReceipt, error) {
 	resolution = strings.TrimSpace(resolution)

@@ -2,9 +2,14 @@ package database
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
+	"io"
 	"strings"
 )
+
+// ErrPricingExportRedaction refuses retained JSON that cannot be safely
+// pseudonymized. The error deliberately contains no source value.
+var ErrPricingExportRedaction = errors.New("pricing export JSON cannot be safely pseudonymized")
 
 func pricingPseudonymScope(value string, key []byte) string {
 	parts := strings.SplitN(value, ":", 2)
@@ -14,39 +19,79 @@ func pricingPseudonymScope(value string, key []byte) string {
 	return pseudonym(key, value)
 }
 
-func redactPricingJSON(raw string, key []byte) string {
+func redactPricingJSON(raw string, key []byte) (string, error) {
 	var value any
-	if json.Unmarshal([]byte(raw), &value) != nil {
-		return raw
+	decoder := json.NewDecoder(strings.NewReader(raw))
+	decoder.UseNumber()
+	if decoder.Decode(&value) != nil {
+		return "", ErrPricingExportRedaction
 	}
-	var visit func(any)
-	visit = func(value any) {
+	if decoder.Decode(new(any)) != io.EOF {
+		return "", ErrPricingExportRedaction
+	}
+	var visit func(any) error
+	visit = func(value any) error {
 		switch item := value.(type) {
 		case map[string]any:
 			for name, child := range item {
 				switch name {
-				case "userId", "user_id", "actorId", "actor_id", "updatedBy", "createdBy", "approvedBy", "acknowledgedBy":
-					if text, ok := child.(string); ok && text != "" {
+				case "userId", "user_id", "actorId", "actor_id", "ownerId", "owner_id", "updatedBy", "createdBy", "approvedBy", "acknowledgedBy":
+					if child == nil {
+						continue
+					}
+					text, ok := child.(string)
+					if !ok {
+						return ErrPricingExportRedaction
+					}
+					if text != "" {
 						item[name] = pseudonym(key, text)
+					}
+				case "userIds", "user_ids", "actorIds", "actor_ids", "ownerIds", "owner_ids":
+					if child == nil {
+						continue
+					}
+					values, ok := child.([]any)
+					if !ok {
+						return ErrPricingExportRedaction
+					}
+					for i, value := range values {
+						text, ok := value.(string)
+						if !ok {
+							return ErrPricingExportRedaction
+						}
+						if text != "" {
+							values[i] = pseudonym(key, text)
+						}
 					}
 				case "scopeId", "scope_id":
 					if item["scopeType"] == "user_product" || item["scope_type"] == "user_product" {
-						item[name] = pricingPseudonymScope(fmt.Sprint(child), key)
+						text, ok := child.(string)
+						if !ok {
+							return ErrPricingExportRedaction
+						}
+						item[name] = pricingPseudonymScope(text, key)
 					}
 				default:
-					visit(child)
+					if err := visit(child); err != nil {
+						return err
+					}
 				}
 			}
 		case []any:
 			for _, child := range item {
-				visit(child)
+				if err := visit(child); err != nil {
+					return err
+				}
 			}
 		}
+		return nil
 	}
-	visit(value)
+	if err := visit(value); err != nil {
+		return "", err
+	}
 	encoded, err := json.Marshal(value)
 	if err != nil {
-		return raw
+		return "", ErrPricingExportRedaction
 	}
-	return string(encoded)
+	return string(encoded), nil
 }

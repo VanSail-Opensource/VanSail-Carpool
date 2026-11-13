@@ -27,6 +27,7 @@
     "backToEntrance": "返回入口",
     "loadFailed": "无法加载入口，请重试。",
     "signingIn": "正在登录",
+    "signInUnavailable": "暂时无法登录，请重试。",
     "loadingWorkspace": "正在加载管理界面。",
     "loadingWorkspaceSlow": "仍在加载管理界面。",
     "startupFailed": "无法加载管理界面。",

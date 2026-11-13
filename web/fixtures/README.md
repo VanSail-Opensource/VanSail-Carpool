@@ -153,6 +153,9 @@ combine with `diy`, `populated`, `split`, `long-names` and `zh` for phone layout
 `intro`, `legacy`, `slow`, `empty`, `error`, `save-error`, `nickname` and `zh`
 exercise username-free onboarding and recovery. `window.__onboardingAudit` records
 only constructed transitions; no production authentication or messages run.
+`advance-error` refuses the first intro transition, then permits explicit retry.
+`defer-advance` holds the transition for owner-clearing checks; the trace exposes
+release and owner controls plus a mutable agreement revision and locale switch.
 
 X-Node `controls` mounts Nuxt UI switches, checkboxes, text inputs and a portalled
 form under the shared admin sizing classes. Inspect both themes and widths;
@@ -172,6 +175,7 @@ excluded from production builds.
 mount the real browser entrance, Mini App link panel, and browser exchange view.
 `link`, `exchange`, `slow`, `empty`, `error`, `expired`, `invalid`, and `zh`
 exercise link-only administrator access without production requests.
+`exchange&unavailable` returns one retryable 503 before successful exchange.
 `window.__browserAuthAudit` records mock issuance, exchange, and clipboard actions.
 
 `PMAdminAudit.vue`, `pm-admin-audit.ts` and `pm-admin-audit.html` mount the real
@@ -202,6 +206,9 @@ different popularity shares for Add squads geometry, sorting and checkout audits
 control and dialog are absent while server-quoted refunds remain available.
 `CommunityAudit.vue`, `community-audit.ts` and `community-audit.html` exercise the
 full-width community layout with `locked`, `joined`, `slow` and `error` states.
+`defer-membership` and `defer-invite` hold owner-bound replies; volatile
+`window.__communityAudit` controls clear the owner and release the reply, and
+record attempted external opens without navigating to Telegram.
 
 - `LuckyAudit.vue` mounts the member Activity page in Nuxt UI without authentication.
 - `lucky-audit.ts` supplies a local Activity overview and controllable draw response through `window.__audit`.
@@ -417,3 +424,6 @@ read/write counts, deferred releases, owner replacement and payment completion.
 The hosted `browser-recovery-audit.mjs` checks desktop/mobile state, recovery,
 logout isolation, and the existing browser-auth fixture, retaining screenshots
 and console/network diagnostics. No production payment or authentication occurs.
+It verifies actual currency-menu bounds after errors and closes the explained
+empty-payment state. `browser-member-recovery.mjs` adds onboarding and community
+lifecycle checks to the same browser run.

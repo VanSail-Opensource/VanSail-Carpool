@@ -79,9 +79,20 @@ export const useBrowserSession = defineStore('browser-session', () => {
     await bootstrap(true)
   }
 
-  async function exchange(token: string): Promise<string> {
-    config.value ??= await browserAccessApi.config()
-    const next = await browserAccessApi.exchange(token)
+  async function exchange(token: string, signal?: AbortSignal): Promise<string> {
+    supersedePendingIdentity()
+    const revision = identityRevision
+    const assertCurrent = (): void => {
+      if (signal?.aborted || revision !== identityRevision) throw new DOMException('BROWSER_EXCHANGE_SUPERSEDED', 'AbortError')
+    }
+    assertCurrent()
+    if (!config.value) {
+      const nextConfig = await browserAccessApi.config(signal)
+      assertCurrent()
+      config.value = nextConfig
+    }
+    const next = await browserAccessApi.exchange(token, signal)
+    assertCurrent()
     supersedePendingIdentity()
     apply(next)
     return next.kind === 'admin' ? next.returnTo ?? '/admin/settings' : '/'

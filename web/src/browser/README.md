@@ -26,12 +26,15 @@ the Telegram SDK or load member shell/theme assets.
 - `navigation.ts` groups every admin section, including IP Lookup and USDT.
 - `BrowserPreferences.vue` provides independent locale and appearance controls.
 - `BrowserLanding.vue` explains services, directs administrators to Mini App access links, and forwards members.
-- `BrowserAccess.vue` removes the token fragment before one-use exchange.
+- `BrowserAccess.vue` removes the token fragment before one-use exchange. Temporary service/network failures retain the token only in component memory for an explicit retry; invalid links, success and disposal erase it. `BrowserAccess.test.ts` verifies retry classification, exclusive submission and disposal without exposing the token in page content or storage.
 - `BrowserLoading.vue` and `loading.css` provide the centered identity, one localized pending/slow status, and conditional recovery. Initial bootstrap failures retain the requested URL for a forced bootstrap retry; access-link failures keep their separate entrance action. Readiness immediately releases the destination with a noninteractive 160ms cover fade. Reduced motion is static and readable.
 - `session.ts` restores identity, hydrates the neutral session projection,
   renews cookies, and revokes only the current browser device. Successful logout
   and access exchange invalidate earlier identity reads so late bootstrap or
   renewal replies cannot resurrect the old session or overwrite the new one.
+  Exchanges also reject superseded identities and aborted entrance scopes before
+  dispatch and before applying a reply; `sessionExchange.test.ts` covers logout,
+  newer exchanges and disposal while configuration or exchange is pending.
   A verified same-administrator response resumes suspended metric and certificate
   observers; logout and disposal remain final for those mounted observers.
 - `session.test.ts` covers bootstrap deduplication, browser/member separation,

@@ -2,6 +2,8 @@ package httpapi
 
 import (
 	"net/http"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
 func (s *Server) pricingRenewalInfo(w http.ResponseWriter, r *http.Request) {
@@ -13,8 +15,12 @@ func (s *Server) pricingRenewalInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	purchase, err := s.deps.Store.PurchaseByID(r.Context(), id)
-	if err != nil || purchase.UserID != user.ID {
+	if err != nil {
 		s.pricingError(w, r, err)
+		return
+	}
+	if purchase.UserID != user.ID {
+		s.pricingError(w, r, database.ErrNotFound)
 		return
 	}
 	p, err := s.deps.Store.PricingPolicy(r.Context(), "combo", purchase.ComboID)

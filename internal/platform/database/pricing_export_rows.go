@@ -33,7 +33,7 @@ func pseudonym(key []byte, value string) string {
 	return "user_" + hex.EncodeToString(h.Sum(nil))[:24]
 }
 
-func pricingRedactRecord(columns []string, values []any, key []byte) {
+func pricingRedactRecord(columns []string, values []any, key []byte) error {
 	entityType := ""
 	scopeType := ""
 	for i, c := range columns {
@@ -58,7 +58,11 @@ func pricingRedactRecord(columns []string, values []any, key []byte) {
 			}
 		}
 		if strings.HasSuffix(c, "_json") {
-			values[i] = redactPricingJSON(fmt.Sprint(values[i]), key)
+			redacted, err := redactPricingJSON(fmt.Sprint(values[i]), key)
+			if err != nil {
+				return err
+			}
+			values[i] = redacted
 		}
 		if c == "user_id" || c == "actor_id" || c == "updated_by" || c == "created_by" || c == "approved_by" || c == "acknowledged_by" || c == "id" && len(columns) == 3 && columns[1] == "created_at" {
 			values[i] = pseudonym(key, fmt.Sprint(values[i]))
@@ -73,6 +77,7 @@ func pricingRedactRecord(columns []string, values []any, key []byte) {
 			}
 		}
 	}
+	return nil
 }
 
 func streamPricingDataset(ctx context.Context, tx *sql.Tx, z *zip.Writer, d pricing.Dataset, scope PricingExportScope, key []byte) (pricingExportFile, error) {
@@ -139,7 +144,9 @@ func streamPricingDataset(ctx context.Context, tx *sql.Tx, z *zip.Writer, d pric
 			}
 		}
 		if scope.Pseudonymize {
-			pricingRedactRecord(meta.Columns, values, key)
+			if err := pricingRedactRecord(meta.Columns, values, key); err != nil {
+				return meta, fmt.Errorf("redact export %s: %w", d.Name, err)
+			}
 		}
 		if scope.Format == "csv" {
 			record := make([]string, len(values))

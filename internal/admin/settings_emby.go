@@ -123,12 +123,7 @@ func (s *Service) EmbyConnection(ctx context.Context) (EmbyConnectionView, error
 }
 
 func (s *Service) SaveEmbyConnection(ctx context.Context, actor string, input EmbyConnectionWrite) (EmbyConnectionView, error) {
-	view, err := s.settings.SaveEmbyConnection(ctx, actor, input)
-	if err != nil {
-		return view, err
-	}
-	err = s.audit(ctx, actor, "emby.connection.update", "setting", "emby.connection", map[string]any{"secret": true})
-	return view, err
+	return s.settings.SaveEmbyConnection(ctx, actor, input)
 }
 
 func validateEmbyCredentials(baseURL, token string) error {

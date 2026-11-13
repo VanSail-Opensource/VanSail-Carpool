@@ -3,9 +3,11 @@ package admin
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
@@ -81,11 +83,20 @@ func (w *UserOperationWorker) processItem(ctx context.Context, operation provide
 			ResultJSON: `{"reason":"provider outcome was not durably recorded"}`,
 		}, w.now().UTC())
 	}
-	started, err := w.repository.BeginProviderOperationItemAttempt(ctx, operation.Receipt.ID, item.Key, w.now().UTC())
+	// Local storage has not attempted a provider mutation. Keep the item queued
+	// on a transient read failure so a retry can still make its first call.
+	user, desired, loadErr := w.loadExactState(ctx, item.TargetID)
+	if loadErr != nil && !errors.Is(loadErr, database.ErrNotFound) {
+		return providerops.Item{}, loadErr
+	}
+	_, err := w.repository.BeginProviderOperationItemAttempt(ctx, operation.Receipt.ID, item.Key, w.now().UTC())
 	if err != nil {
 		return providerops.Item{}, err
 	}
-	completion := w.applyExactState(ctx, started.TargetID)
+	completion := providerops.Completion{Status: providerops.StatusFailed, ErrorCode: "LOCAL_STATE_UNAVAILABLE"}
+	if loadErr == nil {
+		completion = w.applyExactState(ctx, user, desired)
+	}
 	if completion.Status == providerops.StatusSucceeded {
 		if repository, ok := w.repository.(notificationItemCompleter); ok {
 			return repository.CompleteProviderOperationItemAndReleaseNotifications(ctx, operation.Receipt.ID,
@@ -95,17 +106,24 @@ func (w *UserOperationWorker) processItem(ctx context.Context, operation provide
 	return w.repository.CompleteProviderOperationItem(ctx, operation.Receipt.ID, item.Key, completion, w.now().UTC())
 }
 
-func (w *UserOperationWorker) applyExactState(ctx context.Context, userID string) providerops.Completion {
+func (w *UserOperationWorker) loadExactState(ctx context.Context, userID string) (model.User, *model.Purchase, error) {
 	now := w.now().UTC()
 	user, err := w.repository.UserByID(ctx, userID)
 	if err != nil {
-		return providerops.Completion{Status: providerops.StatusFailed, ErrorCode: "LOCAL_STATE_UNAVAILABLE"}
+		return model.User{}, nil, err
+	}
+	if user.ID != userID {
+		return model.User{}, nil, database.ErrNotFound
 	}
 	desired, err := w.repository.DesiredEntitlement(ctx, userID, now)
 	if err != nil {
-		return providerops.Completion{Status: providerops.StatusFailed, ErrorCode: "LOCAL_STATE_UNAVAILABLE"}
+		return model.User{}, nil, err
 	}
-	err = w.remote.SyncAdminUserEntitlement(ctx, user, desired)
+	return user, desired, nil
+}
+
+func (w *UserOperationWorker) applyExactState(ctx context.Context, user model.User, desired *model.Purchase) providerops.Completion {
+	err := w.remote.SyncAdminUserEntitlement(ctx, user, desired)
 	if err != nil {
 		return providerops.Completion{Status: providerops.StatusPendingReview, ErrorCode: "UPSTREAM_OUTCOME_AMBIGUOUS",
 			ResultJSON: `{"reason":"exact provider state must be reconciled before resolution"}`}

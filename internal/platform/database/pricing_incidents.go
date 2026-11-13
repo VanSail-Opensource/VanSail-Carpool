@@ -19,28 +19,56 @@ func (s *Store) PricingMaintenance(ctx context.Context, node string, now time.Ti
 }
 
 // RecordPricingHealth retains incident transitions, never machine samples or live rates.
-func (s *Store) RecordPricingHealth(ctx context.Context, h pricing.Health) error {
-	var id, state string
-	err := s.db.QueryRowContext(ctx, `SELECT id,state FROM pricing_operational_incidents WHERE scope_type='node' AND scope_id=$1 AND ended_at IS NULL ORDER BY started_at DESC LIMIT 1`, h.NodeID).Scan(&id, &state)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return err
-	}
-	if state == h.State || id == "" && h.State == "HEALTHY" {
-		return nil
-	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
-	tx, err := s.db.BeginTx(ctx, nil)
+func (s *Store) retryAttempt_RecordPricingHealth(ctx context.Context, h pricing.Health) error {
+	// Every recorder locks the same durable node before reading incidents. Read
+	// committed gives a waiter a fresh incident snapshot after acquiring the lock.
+	// The lock also excludes node deletion without retaining live metric samples.
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-	if id != "" {
-		if _, err = tx.ExecContext(ctx, `UPDATE pricing_operational_incidents SET ended_at=$1 WHERE id=$2 AND ended_at IS NULL`, pricingStamp(h.At), id); err != nil {
+	var nodeID string
+	if err := tx.QueryRowContext(ctx, `SELECT id FROM xnode_nodes WHERE id=$1 FOR UPDATE`, h.NodeID).Scan(&nodeID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil // Stale telemetry for a removed node cannot create history.
+		}
+		return err
+	}
+	var started, ended sql.NullString
+	if err := tx.QueryRowContext(ctx, `SELECT MAX(started_at),MAX(ended_at) FROM pricing_operational_incidents
+		WHERE scope_type='node' AND scope_id=$1`, nodeID).Scan(&started, &ended); err != nil {
+		return err
+	}
+	for _, latest := range []sql.NullString{started, ended} {
+		if !latest.Valid {
+			continue
+		}
+		at, err := parseStamp(latest.String)
+		if err != nil {
 			return err
 		}
+		if !h.At.After(at) {
+			return nil // Delayed samples cannot reverse a retained newer transition.
+		}
 	}
-	if h.State != "HEALTHY" {
+	var id, state string
+	err = tx.QueryRowContext(ctx, `SELECT id,state FROM pricing_operational_incidents WHERE scope_type='node'
+		AND scope_id=$1 AND ended_at IS NULL ORDER BY started_at DESC,id DESC LIMIT 1`, nodeID).Scan(&id, &state)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return err
+	}
+	keep := ""
+	if state == h.State {
+		keep = id
+	}
+	// Heal duplicate open rows left by older concurrent recorders as well as the
+	// usual previous state, so a recovered node cannot retain an orphan censor.
+	if _, err = tx.ExecContext(ctx, `UPDATE pricing_operational_incidents SET ended_at=$1 WHERE scope_type='node'
+		AND scope_id=$2 AND ended_at IS NULL AND id<>$3`, pricingStamp(h.At), nodeID, keep); err != nil {
+		return err
+	}
+	if h.State != "HEALTHY" && keep == "" {
 		id, err = ids.New()
 		if err != nil {
 			return err

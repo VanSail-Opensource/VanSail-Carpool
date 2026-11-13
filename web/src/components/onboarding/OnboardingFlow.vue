@@ -42,7 +42,7 @@ const stepDirection = computed(() => step.value === 'agreement' ? 1 : -1)
 </script>
 
 <template>
-  <IntroSequence v-if="step === 'intro' && content" :messages="content.welcome" @complete="finishIntro" />
+  <IntroSequence v-if="step === 'intro' && content" :messages="content.welcome" :busy="loading" :error="error" @complete="finishIntro" />
   <main v-else class="onboarding-shell">
     <UProgress
       class="onboarding-shell__track"

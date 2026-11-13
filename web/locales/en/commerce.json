@@ -107,6 +107,7 @@
     "creditEstimate": "≈ {amount} credited",
     "provider": "Provider",
     "chooseProvider": "Choose a payment provider",
+    "noMethods": "No payment methods are available right now. Please try again later.",
     "chooseChannel": "Choose a payment channel",
     "continueToChannel": "Choose channel",
     "backToProvider": "Change provider",

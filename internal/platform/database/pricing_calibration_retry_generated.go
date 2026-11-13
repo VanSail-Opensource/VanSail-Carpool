@@ -3,12 +3,12 @@ package database
 
 import (
 	context "context"
-	io "io"
+	time "time"
 )
 
-func (s *Store) StreamPricingExport(ctx context.Context, writer io.Writer, scope PricingExportScope) error {
+func (s *Store) SummarizePricingCalibration(ctx context.Context, now time.Time) error {
 	for retryIndex := 0; ; retryIndex++ {
-		r0 := s.retryAttempt_StreamPricingExport(ctx, writer, scope)
+		r0 := s.retryAttempt_SummarizePricingCalibration(ctx, now)
 		if !s.retryTransaction(ctx, r0, retryIndex) {
 			return r0
 		}

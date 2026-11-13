@@ -8,12 +8,14 @@ Audited administrative operations for catalog data, settings, balances, refunds,
 
 - `service.go` defines admin-facing dependency contracts, service construction, backup deletion, and settings forwarding.
 - `catalog.go` manages combos, typed squad profiles, and upstream squad imports; X-Node remains authoritative for node accessibility, while administrator projections initialize required node arrays without storing assignments.
+- Catalog saves and hides use required `SaveAdminCombo`, `DeleteAdminCombo`, and `SaveAdminSquadProduct` repository transactions. They authorize the current administrator and commit the mutation, dependent jobs, and immutable audit together; the service does not append a second audit after committing.
   The compatibility import endpoint reads and audits the live list; the retired
   identity-mirroring refresh/mark-missing repository contracts are removed.
 - `finance.go` validates reference-bound balance adjustments and deductions,
   terminal-payment courtesy credits, atomic entitlement cancellations, and backup requests.
   Payment refunds and outbox retries use the durable mutation queue.
 - `settings.go` defines editable settings, encrypted storage access, masked payment profiles, safe listing, and readiness checks.
+- `settings_emby.go` uses the existing versioned connection-pair transaction for both encrypted values and the redacted administrator audit. `settings_emby_test.go` covers retargeting with a fresh token, stale drafts, and propagation of the atomic audit result without a second write.
 - `payment_profiles.go` validates, encrypts, resolves, and resolves provider-account profiles. Retained order references protect account identity and credentials from retargeting or deletion.
 - `payment_profile_channels.go` discovers BEPUSDT currency/network rails through the queued readiness probe and disables profiles whose probe fails.
 - `payment_profile_readiness.go` maps enabled provider profiles to stable readiness diagnostics.
@@ -28,7 +30,7 @@ Audited administrative operations for catalog data, settings, balances, refunds,
 - `user_entitlement_commands.go` validates manual grants, full edits, and exactly-once refunds.
 - `user_combo_replacement.go` recovers accepted no-charge replacement intents before current catalog validation.
 - `user_bulk_commands.go` validates minute-precise inclusive-OR bulk previews and durable extension jobs.
-- `user_operation_resolution.go` validates idempotent audited resolutions for ambiguous provider outcomes without dispatching another provider call.
+- `user_operation_resolution.go` validates requests to repair supported parent receipts from retained terminal item evidence. The repository requires a current eligible administrator, an explicit exact-state command kind, and matching completed outcomes; unfinished items, native commands, and financial settlement flows require their domain reconciliation. No item, hold, notification gate, or financial fact is changed. New resolution audits retain the exact receipt for immutable key replay; older replays conflict if their receipt has since changed.
 - `user_operation_worker.go` applies exact local entitlement state through the
   shared provider-operation dispatcher and releases user messages only after a
   real successful provider item.
@@ -41,6 +43,7 @@ Audited administrative operations for catalog data, settings, balances, refunds,
 - `refund_worker_recovery_test.go` covers transient order reads and exact terminal item recovery after receipt persistence fails.
 - `refund_worker_outcomes_test.go` covers Stars proof, definitive rejection, ambiguous outcomes, and local persistence recovery.
 - `service_test_helpers_test.go` contains shared admin service test doubles.
+- `catalog_test_helpers_test.go` supplies atomic catalog mutation fixtures, including audit failure rollback semantics.
 - `settings_test.go` covers secret handling, safe listing, readiness, and validators.
 - `payment_profiles_test.go` covers provider profile validation, encryption, masking, and readiness behavior.
 - `zero_coverage_test.go` covers backup deletion, balance deductions, stable-ID payment-profile lookups and runtimes, legacy EZPay validation, and activity reward boundaries.
@@ -75,6 +78,17 @@ operations even when their reasons are identical.
 `xnode_settings.go` Registers encrypted fleet configuration with typed validation.
 
 `user_provider_commands.go` validates manual temporary restrictions; `user_provider_worker.go` executes queued changes. `user_account_commands_test.go` covers coupon, refund and restriction command validation.
+
+Refunded or cancelled purchase history remains immutable after a recorded credit
+from any cancellation/refund lane. Fresh entitlement edits cannot reactivate or
+rewrite that purchase; an accepted edit key still replays. A new zero-charge
+manual grant supplies separate access without reopening settled refund evidence.
+
+Administrator entitlement workers read the owner and desired entitlement before
+claiming an item attempt. Transient local reads remain retryable, as do owner
+read failures in restriction workers; they cannot become definitive provider
+failures. `user_worker_preflight_test.go` verifies recovery with one subsequent
+mutation and no premature receipt completion.
 
 `settings_emby.go` owns the write-only Emby connection interface, fresh-token retarget validation, encrypted pair updates, redacted auditing and validated runtime snapshots. Generic writes reject both connection keys. `settings_emby_test.go` covers retargeting, stale drafts, token rotation and unavailable atomic storage. Extend the dedicated interface when adding coupled Emby credentials.
 
