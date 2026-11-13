@@ -12,7 +12,6 @@ export function memberResources(session: Session, locale: string): PreloadResour
   return [
     ...['dashboard', 'balance', 'activity',
       'affiliates', 'emby/account',
-      'subscription/ip-blocks',
       'community/membership/check'].map(path => ({ path: `/api/v1/${path}` })),
     { path: '/api/v1/affiliates/referrals', options: { query: { page: 1 } } },
     { path: '/api/v1/dashboard/node-usage', options: { query: { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) } } },

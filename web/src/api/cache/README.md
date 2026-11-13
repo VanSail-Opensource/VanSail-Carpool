@@ -26,7 +26,7 @@ when it completes, without navigation or a document reload.
 ## Coverage and boundaries
 
 Member preload covers Home and its default node-usage range, balance,
-Emby, IP blocks, community access/membership, and localized
+Emby, community access/membership, and localized
 onboarding content. The browser console loads each section on demand and never
 runs the member preload. Filters, pagination, details and administrator resources
 are cached on use with their exact resource keys and a browser-scoped identity.

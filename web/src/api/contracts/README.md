@@ -16,7 +16,7 @@ compatibility data while accepting future optional fields. The backend's typed
 preview response and `endpoint_preview_test.go` enforce its six safe metadata
 fields and exclude credentials or native configuration output.
 
-- `responseSchemas.json` contains generated response shapes from OpenAPI. `responses.ts` lazily builds Zod validators for cached and refreshed reads, accepts new optional fields, and rejects malformed required data before it reaches Vue state. `responses.test.ts` covers additive changes and malformed successful responses.
+- `responseSchemas.json` contains generated response shapes from OpenAPI. `responses.ts` lazily builds Zod validators for optional rendering snapshots, accepts new optional fields, and rejects malformed cached data before restoration. Live responses remain authoritative during rolling deploys. `responses.test.ts` covers additive changes and malformed snapshot shapes.
 
 Retired node traffic multiplier response properties remain constant 1. The
 generated shapes and `responses.test.ts` reject obsolete nonconstant values in
@@ -34,3 +34,5 @@ Endpoint methods live in `../features.ts`; generated core schemas live in
 - `activity.ts` defines `GroupBoostStatus` (verified state, nullable personal count and boost link); effective reward values come from the server.
 
 `community.ts` contains coupon definitions, wallet grants, and redemption contracts.
+
+Generated request contracts preserve required boolean moderation edits and a required bulk-extension duration. Affiliate discriminator mappings use the wire values `none`, `coupon`, `txb`, and `subscription_extension`. `../openapiContract.test.ts` checks these generated types during typecheck; `../openapiInputBoundaries.test.ts` retains their runtime input constraints.

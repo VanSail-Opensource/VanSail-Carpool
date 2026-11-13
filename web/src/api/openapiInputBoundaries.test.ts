@@ -71,6 +71,32 @@ function accepts(document: unknown, value: unknown): boolean {
 }
 
 describe('OpenAPI input and recovery boundaries', () => {
+  it('requires a boolean moderation edit while allowing both fields together', () => {
+    const contract = schema('schemas-26.yaml', 'PMModerationUpdate')
+    for (const value of [{ blocked: false }, { muted: false }, { blocked: true, muted: true }]) {
+      expect(accepts(contract, value)).toBe(true)
+    }
+    for (const value of [{}, { blocked: 'true' }, { muted: null }, { blocked: true, unexpected: true }, 'blocked']) {
+      expect(accepts(contract, value)).toBe(false)
+    }
+  })
+
+  it('keeps bulk duration alternatives exclusive and bounded', () => {
+    for (const name of ['BulkExtensionRequest', 'BulkExtensionCreateRequest']) {
+      const { oneOf, ...base } = schema('schemas-18.yaml', name) as Document
+      const alternatives = oneOf as JSONSchema[]
+      const acceptsBulk = (value: unknown): boolean => accepts(base, value) &&
+        alternatives.filter(branch => accepts(branch, value)).length === 1
+      const targets = { comboIds: [], addonSquadUuids: [], ...(name.endsWith('CreateRequest') ? { reason: 'Operator review' } : {}) }
+
+      expect(acceptsBulk({ ...targets, durationMinutes: 60 })).toBe(true)
+      expect(acceptsBulk({ ...targets, days: 1 })).toBe(true)
+      for (const duration of [{}, { durationMinutes: 60, days: 1 }, { durationMinutes: 0 }, { durationMinutes: 5_256_001 }, { days: 3651 }, { durationMinutes: '60' }]) {
+        expect(acceptsBulk({ ...targets, ...duration })).toBe(false)
+      }
+    }
+  })
+
   it('accepts signed and capability-only BEP callbacks under JSON Schema union semantics', () => {
     const contract = requestSchema('api-v1-webhooks-bepusdt-capability.yaml')
     const alternatives = (contract.anyOf ?? contract.oneOf) as JSONSchema[]

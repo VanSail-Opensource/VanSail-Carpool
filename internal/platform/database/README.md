@@ -1113,6 +1113,7 @@ Provider requests remain outside every transaction.
 - `coupons_part3_retry_generated.go` wraps the transactional methods in `coupons_part3.go`.
 - `coupons_retry_generated.go` wraps the transactional methods in `coupons.go`.
 - `destructive_retry_generated.go` wraps the transactional methods in `destructive.go`.
+- `emby_identity_restore_retry_generated.go` wraps the transactional methods in `emby_identity_restore.go`.
 - `emby_operations_retry_generated.go` wraps the transactional methods in `emby_operations.go`.
 - `emby_provisioning_part2_retry_generated.go` wraps the transactional methods in `emby_provisioning_part2.go`.
 - `emby_provisioning_retry_generated.go` wraps the transactional methods in `emby_provisioning.go`.
@@ -2081,3 +2082,11 @@ accepted password retains the debit and can recover without a second account.
 `emby_retry_preflight_test.go` verifies that temporary account reads and deadlines
 leave reviewed retries queued with zero attempts, permit later recovery, and keep
 typed missing-account rejection distinct from storage unavailability.
+
+`emby_identity_restore.go` reconciles a proven server-restored remote ID through
+an active-owner and exact provisioning-snapshot transaction. Unique remote IDs
+prevent cross-owner adoption; the old/new ID audit commits with the replacement.
+`emby_identity_restore_test.go` covers stale state, candidate/owner isolation,
+audit rollback, replay and replacement setup attempts;
+`emby_identity_restore_http_test.go` exercises missing-old-ID and exact-name
+recovery through the production HTTP client without creating another account.

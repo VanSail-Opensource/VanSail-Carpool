@@ -119,6 +119,11 @@ func redactedRequestPath(path string) string {
 func spaHandler(content fs.FS) http.Handler {
 	files := http.FileServer(http.FS(content))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api" || strings.HasPrefix(r.URL.Path, "/api/") {
+			w.Header().Set("Cache-Control", "no-store")
+			http.NotFound(w, r)
+			return
+		}
 		path := strings.TrimPrefix(r.URL.Path, "/")
 		if path == "" {
 			path = "index.html"

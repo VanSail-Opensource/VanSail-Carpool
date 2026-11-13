@@ -96,5 +96,6 @@ changed draft before Apply, retires invalidated/disposed reviews, and keeps one
 pending mutation bound to its selected table. Successful server rows and rescue
 backup IDs are retained. `useAdminDatabase.ts` retires metadata reads when a
 mutation begins and stops restoring pre-mutation row snapshots. Dedicated hosted
-regressions cover metadata ordering, exact reviewed values, single-flight Apply,
-confirmation, disposal and successful updates followed by read failure.
+regressions in `useAdminDatabase.test.ts` and `useAdminDatabaseMutation.test.ts`
+cover metadata ordering, exact reviewed values, single-flight Apply, confirmation,
+disposal and successful updates followed by read failure.

@@ -72,8 +72,14 @@ BulkExtensionRequest:
   additionalProperties: false
   required: [comboIds, addonSquadUuids]
   oneOf:
-    - required: [durationMinutes]
-    - required: [days]
+    - type: object
+      required: [durationMinutes]
+      properties:
+        durationMinutes: { type: integer }
+    - type: object
+      required: [days]
+      properties:
+        days: { type: integer }
   properties:
     comboIds:
       type: array
@@ -100,8 +106,14 @@ BulkExtensionCreateRequest:
   additionalProperties: false
   required: [comboIds, addonSquadUuids, reason]
   oneOf:
-    - required: [durationMinutes]
-    - required: [days]
+    - type: object
+      required: [durationMinutes]
+      properties:
+        durationMinutes: { type: integer }
+    - type: object
+      required: [days]
+      properties:
+        days: { type: integer }
   properties:
     comboIds:
       type: array

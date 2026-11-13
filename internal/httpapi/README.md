@@ -389,3 +389,8 @@ a role or lifecycle change after that check cannot authorize a later commit.
 `connection_read_errors_test.go` exercises the owner-scoped administrator scan
 poll handler. Missing or foreign scans remain 404; transient storage reads return
 503 `CONNECTION_SCAN_UNAVAILABLE` with a retry message and no private diagnostics.
+
+`spaHandler` reserves `/api` and `/api/` for routed API handlers. Unknown API
+paths return a noncacheable 404 before embedded files or HTML fallbacks are read.
+`static_assets_test.go` covers unknown methods/paths, accidental API assets,
+registered handlers and neighboring browser routes.

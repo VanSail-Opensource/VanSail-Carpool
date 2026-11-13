@@ -39,6 +39,10 @@ func failAndRefundEmbySetupTx(ctx context.Context, tx *sql.Tx, accountID, reason
 	if err := lockPurchaseOwnerTx(ctx, tx, record.UserID); err != nil {
 		return domain.Account{}, err
 	}
+	// Match setup and purge: wallet before the mutable Emby account.
+	if _, err := balanceTx(ctx, tx, record.UserID); err != nil {
+		return domain.Account{}, err
+	}
 	record, err = scanEmbyProvisioning(tx.QueryRowContext(ctx, embyAccountSelect+` WHERE id=$1 FOR UPDATE`, accountID))
 	if err != nil {
 		return domain.Account{}, err
@@ -54,7 +58,7 @@ func failAndRefundEmbySetupTx(ctx context.Context, tx *sql.Tx, accountID, reason
 		err = hydrateEmbyPreferences(ctx, tx, &record)
 		return record.Account, err
 	}
-	if expected != nil && !sameEmbyRefundSnapshot(record, *expected) {
+	if expected != nil && !sameEmbyProvisioningSnapshot(record, *expected) {
 		return domain.Account{}, ErrConflict
 	}
 	balance, err := adjustBalanceTx(ctx, tx, record.UserID, record.SetupPriceTXBMinor, now)
@@ -80,7 +84,7 @@ func failAndRefundEmbySetupTx(ctx context.Context, tx *sql.Tx, accountID, reason
 	return record.Account, nil
 }
 
-func sameEmbyRefundSnapshot(current, expected domain.ProvisioningRecord) bool {
+func sameEmbyProvisioningSnapshot(current, expected domain.ProvisioningRecord) bool {
 	return current.ID == expected.ID && current.UserID == expected.UserID &&
 		current.SetupAttempt == expected.SetupAttempt && current.SetupPriceTXBMinor == expected.SetupPriceTXBMinor &&
 		current.Status == expected.Status && current.UpdatedAt.Equal(expected.UpdatedAt) &&

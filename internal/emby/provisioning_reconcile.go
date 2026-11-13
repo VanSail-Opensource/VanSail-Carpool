@@ -23,7 +23,7 @@ func (s *Service) resolveOrCreate(ctx context.Context, record *ProvisioningRecor
 				return RemoteUser{}, findErr
 			}
 			if exists {
-				return user, nil
+				return s.restoreRemoteIdentity(ctx, *record, user)
 			}
 		}
 		return RemoteUser{}, &remoteAbsenceProof{record: *record, cause: ErrRemoteAccountMissing}

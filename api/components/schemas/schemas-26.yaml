@@ -20,7 +20,16 @@ PMConversation:
 PMModerationUpdate:
   type: object
   additionalProperties: false
-  anyOf: [{ required: [blocked] }, { required: [muted] }]
+  allOf:
+    - anyOf:
+        - type: object
+          required: [blocked]
+          properties:
+            blocked: { type: boolean }
+        - type: object
+          required: [muted]
+          properties:
+            muted: { type: boolean }
   properties:
     blocked: { type: boolean }
     muted: { type: boolean }

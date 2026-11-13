@@ -34,7 +34,13 @@ AffiliateReward:
     - { $ref: '#/AffiliateCouponReward' }
     - { $ref: '#/AffiliateTXBReward' }
     - { $ref: '#/AffiliateExtensionReward' }
-  discriminator: { propertyName: kind }
+  discriminator:
+    propertyName: kind
+    mapping:
+      none: '#/AffiliateNoReward'
+      coupon: '#/AffiliateCouponReward'
+      txb: '#/AffiliateTXBReward'
+      subscription_extension: '#/AffiliateExtensionReward'
 AffiliateTier:
   type: object
   additionalProperties: false

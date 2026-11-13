@@ -42,3 +42,8 @@ Reviewed provisioning retries read the durable account before marking a provider
 attempt. Temporary storage failures remain retryable; only typed missing-account
 evidence completes a rejected retry. Retained terminal items still win without
 consulting mutable account state.
+
+`provisioning_identity.go` completes the existing restore path only after the
+old remote ID is absent and the retained exact username resolves to a replacement.
+The production persistence adapter binds that observation to the current owner,
+account, setup attempt, revision and identity, and preserves an audit of both IDs.

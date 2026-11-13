@@ -56,7 +56,7 @@ func TestPreviouslyCreatedSetupRequiresAbsenceProofBeforeRefund(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			repository := &serviceRepository{record: ProvisioningRecord{
-				Account:            Account{ID: "account", UserID: "user", BaseUsername: "ada", CandidateUsername: "ada",
+				Account: Account{ID: "account", UserID: "user", BaseUsername: "ada", CandidateUsername: "ada",
 					RemoteUserID: test.remoteID, Status: StatusQueued},
 				PasswordCiphertext: "sealed", PasswordContext: passwordContext("user"), CreateAttempted: true,
 			}}
