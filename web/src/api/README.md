@@ -92,6 +92,9 @@ receipt authentication and error recovery, and required response descriptions.
 Its bounded schema helper evaluates `allOf`, `anyOf`, and `oneOf` branches
 independently against the original input so Zod's object-intersection merging
 cannot suppress an `additionalProperties: false` rejection.
+`xnodeInputBoundaries.test.ts` verifies exact editable node fields, redirect-only
+DNS, plural DDNS bindings and bounded DDNS timing values, including rejection of
+retired multiplier, resolver and active-IP telemetry inputs.
 
 - `pricingReads.ts`: Bounds concurrent optional analytical dataset reads to three, with abortable admission; commerce requests keep their independent transport.
 

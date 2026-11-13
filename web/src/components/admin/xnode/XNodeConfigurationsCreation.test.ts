@@ -1,5 +1,6 @@
+/* eslint-disable vue/one-component-per-file */
 import { mount, flushPromises } from '@vue/test-utils'
-import { nextTick } from 'vue'
+import { defineComponent, h, nextTick } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '@/api/http'
 import type { XNodeConfiguration, XNodeSnippet } from '@/api/xnode'
@@ -9,8 +10,8 @@ const api = vi.hoisted(() => ({ saveConfiguration: vi.fn(), configurations: vi.f
 vi.mock('@/api/xnode', () => ({ xnodeApi: api }))
 vi.mock('@/i18n', () => ({ useI18n: () => ({ t: (key: string) => key }) }))
 const Modal = { props: { open: Boolean }, template: '<section v-if="open"><slot name="body" /></section>' }
-const Button = { props: { label: String, disabled: Boolean, type: String }, emits: ['click'], template: '<button :type="type ?? \'button\'" :disabled="disabled" @click="$emit(\'click\')">{{ label }}</button>' }
-const Input = { props: { modelValue: String, disabled: Boolean }, emits: ['update:modelValue'], template: '<input :value="modelValue" :disabled="disabled" @input="$emit(\'update:modelValue\', $event.target.value)" />' }
+const Button = defineComponent({ props: { label: { type: String, default: '' }, disabled: Boolean, type: { type: String, default: 'button' } }, emits: ['click'], setup: (props, { emit }) => () => h('button', { type: props.type, disabled: props.disabled, onClick: () => emit('click') }, props.label) })
+const Input = defineComponent({ props: { modelValue: { type: String, default: '' }, disabled: Boolean }, emits: ['update:modelValue'], setup: (props, { emit }) => () => h('input', { value: props.modelValue, disabled: props.disabled, onInput: (event: Event) => emit('update:modelValue', (event.target as HTMLInputElement).value) }) })
 const Field = { template: '<div><slot /></div>' }
 const Json = { props: { modelValue: [Object, Array], disabled: Boolean }, emits: ['update:modelValue', 'valid'], template: '<div />' }
 const base = { Modal, Button, Input, FormField: Field, Select: true, SelectMenu: true, Alert: true, Progress: true }

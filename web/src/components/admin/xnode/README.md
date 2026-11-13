@@ -26,6 +26,9 @@ conflict; existing edits never bypass optimistic revisions. Name uniqueness
 already prevents identical-name duplicates; stable IDs also prevent a renamed
 uncertain retry from targeting another resource. Hosted helper/editor/browser
 cases exercise unavailable recovery reads, changed drafts and matching recovery.
+`catalogCreation.test.ts` checks exact-content, ordering, refusal and revision
+boundaries; `XNodeConfigurationsCreation.test.ts` verifies retained creation IDs
+and distinct subsequent editors through the real component.
 
 `XNodeAccessGroups.vue` retains access-group/resource ownership and composes
 `XNodeEndpointForm.vue` for endpoint drafts.
@@ -33,6 +36,8 @@ Group and endpoint creation editors retain a private ID across failed retries,
 without changing their new-resource display or endpoint preview input. Each new
 editor starts another identity; existing edits keep their saved ID. Hosted
 coverage models a committed write followed by response loss and a renamed retry.
+`XNodeAccessGroupsCreation.test.ts` covers group creation retry identity and
+preserved existing IDs; `XNodeEndpointForm.test.ts` covers the endpoint equivalent.
 The endpoint form derives metadata and the expanded inbound list through
 read-only `/endpoints/preview`, resets the inbound
 after a node change, and preserves saved tags through slow/failed discovery.

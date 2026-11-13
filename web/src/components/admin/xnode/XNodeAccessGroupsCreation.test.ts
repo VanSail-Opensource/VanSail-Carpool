@@ -1,5 +1,6 @@
+/* eslint-disable vue/one-component-per-file */
 import { flushPromises, mount } from '@vue/test-utils'
-import { nextTick } from 'vue'
+import { defineComponent, h, nextTick } from 'vue'
 import { beforeEach, expect, it, vi } from 'vitest'
 import type { XNodeGroup } from '@/api/xnode'
 import XNodeAccessGroups from './XNodeAccessGroups.vue'
@@ -9,8 +10,8 @@ vi.mock('@/api/xnode', () => ({ xnodeApi: api }))
 vi.mock('@/i18n', async importOriginal => ({ ...await importOriginal<typeof import('@/i18n')>(), useI18n: () => ({ t: (key: string) => key }) }))
 
 const Modal = { name: 'ModalStub', props: { open: Boolean }, template: '<section v-if="open"><slot name="body" /></section>' }
-const Button = { name: 'ButtonStub', props: { label: String, icon: String, disabled: Boolean, type: String }, emits: ['click'], template: '<button :type="type || \'button\'" :disabled="disabled" @click="$emit(\'click\')">{{ label }}</button>' }
-const Input = { name: 'InputStub', props: { modelValue: String }, emits: ['update:modelValue'], template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />' }
+const Button = defineComponent({ name: 'ButtonStub', props: { label: { type: String, default: '' }, icon: { type: String, default: '' }, disabled: Boolean, type: { type: String, default: 'button' } }, emits: ['click'], setup: (props, { emit }) => () => h('button', { type: props.type, disabled: props.disabled, onClick: () => emit('click') }, props.label) })
+const Input = defineComponent({ name: 'InputStub', props: { modelValue: { type: String, default: '' } }, emits: ['update:modelValue'], setup: (props, { emit }) => () => h('input', { value: props.modelValue, onInput: (event: Event) => emit('update:modelValue', (event.target as HTMLInputElement).value) }) })
 const Field = { template: '<div><slot /></div>' }
 const base = { Modal, Button, Input, FormField: Field, Switch: true, Alert: true }
 const stubs = { ...base, ...Object.fromEntries(Object.entries(base).map(([key, value]) => ['U' + key, value])), XNodeAccessBindings: true, XNodeEndpointForm: true }

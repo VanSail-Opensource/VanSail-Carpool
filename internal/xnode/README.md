@@ -244,6 +244,14 @@ generation. Obsolete jobs/generations are acknowledged without mutation; durable
 cursor/operation commit precedes every successful acknowledgment. Delivery uses
 the existing control lane and single WebSocket writer, independently of traffic.
 
+`ddns_compile.go` isolates invalid historical DDNS jobs in the runtime projection
+while retaining encrypted source settings and strict new writes. It publishes
+bounded diagnostics only for accepted master compilation and preflights fresh
+manual commands. `ddns_compile_test.go` covers source preservation, diagnostic
+bounds, obsolete/manual compilation isolation and manual-command rejection.
+`ddns_compile_integration_test.go` verifies that an unusable stored job cannot
+block reconnect or authorization, while valid sibling jobs and source data remain.
+
 `ddns_operations.go` stages the existing protected firewall bank, atomically
 updates bound hosts and resumes automatic free routing in `ddns_routes.go`.
 Saved endpoint choices, credentials and accounting remain authoritative. Pending

@@ -1,6 +1,8 @@
 # HTTP API transport
 
 `xnode_node_settings_test.go` verifies that stored legacy-settings compatibility does not admit retired bandwidth, unrelated unknown settings or invalid known types through the strict node-write request decoder.
+`xnode_settings_write_test.go` rejects retired and private settings fields and
+distinguishes omitted DDNS bindings from an explicitly empty replacement.
 
 `xnode_endpoint_preview.go` exposes the browser-administrator read-only endpoint-draft preview. It returns derived inbound metadata, applicable fields, field errors and per-client compatibility with no credential-bearing render output. Endpoint lists and preview/save responses use private no-store headers. Authentication remains the existing browser-admin boundary.
 
@@ -102,6 +104,7 @@ onboarding, signed requests and the existing idempotent operation protections.
 - `emby.go` serves member and administrator Emby account projections.
 - `emby_commands.go` validates durable member setup/update and administrator retry commands.
 - `database_admin.go` exposes guarded database inspection, backup download, restore, and streamed-upload transports.
+- `database_admin_retirement_test.go` verifies rejection of the retired direct row-update route.
 
 ## Community features
 
