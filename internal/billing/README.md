@@ -17,10 +17,11 @@ Payment-method discovery, exact decimal arithmetic, checkout creation, provider 
   attempt marker. An ambiguous response stays pending review for reconciliation.
 - `operation_worker.go` performs local order, owner and request reads before its durable provider attempt marker. Transient preflight failures retain the same unattempted intent; definite absence and invalid immutable input remain explicit failures.
 - `operation_worker_admission.go` binds targets to the operation owner, claims provider attempts and places exhausted local-read failures under durable review without issuing a provider request.
-- `operation_worker_reconcile.go` resolves interrupted attempts from stored payment state or leaves them pending review. Terminal item recovery preserves the exact recorded provider reference, error and result, including member-safe rejection details.
+- `operation_worker_reconcile.go` resolves interrupted attempts from stored payment state or leaves them pending review. Terminal item recovery preserves the exact recorded provider reference, error and result. Public rejection text comes from a fixed projection; historical provider payloads stay internal.
 - `operation_worker_preflight_test.go` covers order, owner and credential read recovery before an attempt, plus exhausted admission visibility.
 - `operation_worker_recovery_test.go` covers interrupted terminal receipt writes, cancellation preflight and settlement arriving before a queued cancellation executes.
-- `operation_worker_errors.go` extracts bounded provider rejection copy for member-safe failed operation receipts.
+- `operation_worker_errors.go` classifies typed provider rejections without retaining or exposing untrusted provider messages.
+- `provider_rejection_test.go` covers reflected callback capabilities, durable rejection evidence, safe receipt projection, and replay without another provider call.
 - `payment_callback_operations.go` lets authoritative paid callbacks resolve matching checkout operations.
 - `payment_announcement.go` delivers immutable successful-payment snapshots to
   the optional standalone Telegram channel through the durable outbox.

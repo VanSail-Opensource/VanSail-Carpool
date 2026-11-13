@@ -3,6 +3,7 @@ package xnode_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strconv"
 	"testing"
 	"time"
@@ -55,5 +56,22 @@ func TestNamedServicePreservesUsageAndScopesRouting(t *testing.T) {
 	}
 	if _, err = f.service.OwnedCustomization(ctx, "native."+strconv.FormatInt(f.identity.ProxyUserID, 10), f.node.ID); err == nil {
 		t.Fatal("member accessed through service scope")
+	}
+}
+
+func TestNamedServiceRejectsReservedMeteredProbeNamespaceWithoutState(t *testing.T) {
+	f := controlFixture(t, false)
+	ctx := context.Background()
+	access := xnode.ServiceAccess{LimitBytes: 1000, Strategy: "NO_RESET", StartedAt: time.Now().UTC(), ExpiresAt: time.Now().Add(time.Hour), GroupIDs: []string{f.group.ID}}
+	var beforeIdentities, beforePeriods int
+	if err := f.store.DB().QueryRowContext(ctx, `SELECT (SELECT COUNT(*) FROM xnode_identities),(SELECT COUNT(*) FROM xnode_periods)`).Scan(&beforeIdentities, &beforePeriods); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.service.SaveNamedService(ctx, "", "member-probe-accidental-service", access); !errors.Is(err, xnode.ErrInvalid) {
+		t.Fatal("standalone access accepted a reserved probe identity", err)
+	}
+	var afterIdentities, afterPeriods int
+	if err := f.store.DB().QueryRowContext(ctx, `SELECT (SELECT COUNT(*) FROM xnode_identities),(SELECT COUNT(*) FROM xnode_periods)`).Scan(&afterIdentities, &afterPeriods); err != nil || afterIdentities != beforeIdentities || afterPeriods != beforePeriods {
+		t.Fatal("reserved name created unusable credentials or quota", afterIdentities, afterPeriods, err)
 	}
 }

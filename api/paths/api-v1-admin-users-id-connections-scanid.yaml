@@ -3,6 +3,7 @@ get:
   tags: [Admin]
   operationId: pollAdminUserConnections
   summary: Poll a connection scan scoped to its user profile
+  description: A transient retained-progress read failure returns CONNECTION_SCAN_UNAVAILABLE. Retry polling the same scan; this response does not mean it is missing or complete.
   parameters:
     - $ref: '../openapi.yaml#/components/parameters/UserID'
     - $ref: '../openapi.yaml#/components/parameters/ConnectionScanID'
@@ -11,3 +12,4 @@ get:
     '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
     '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
     '404': { $ref: '../openapi.yaml#/components/responses/NotFound' }
+    '503': { $ref: '../openapi.yaml#/components/responses/ServiceUnavailable' }

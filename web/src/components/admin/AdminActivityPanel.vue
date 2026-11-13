@@ -28,18 +28,20 @@ function requestRemoval(target: NonNullable<typeof deleting.value>): void {
       <USlideover :open="editingGameId !== undefined" :title="editingGameId ? t('adminActivityManagement.editGame') : t('adminActivityManagement.newGame')" :description="t('adminActivityManagement.gamesHint')" :dismissible="!busy" @update:open="!$event && !busy && (editingGameId = undefined)">
         <template #body>
           <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
-          <form @submit.prevent="saveGame"><fieldset class="admin-editor-form" :disabled="busy">
-            <div class="catalog-editor__heading"><h3>{{ editingGameId ? t('adminActivityManagement.editGame') : t('adminActivityManagement.newGame') }}</h3></div>
-            <UFormField name="game-name" :label="t('adminActivityManagement.name')" required><UInput v-model.trim="gameDraft.name" class="w-full" :maxlength="80" /></UFormField>
-            <UFormField name="game-icon" :label="t('adminActivityManagement.icon')"><USelect v-model="gameDraft.icon" class="w-full" :items="iconItems" /></UFormField>
-            <UFormField class="catalog-editor__wide" name="game-description" :label="t('adminActivityManagement.description')"><UTextarea v-model.trim="gameDraft.description" class="w-full" :rows="2" :maxlength="300" /></UFormField>
-            <UFormField name="win-chance" :label="t('adminActivityManagement.winChance')" required><UInput v-model.number="gameDraft.winChancePercent" class="w-full" type="number" :min="0.01" :max="99.99" :step="0.01" /></UFormField>
-            <UFormField name="return-multiplier" :label="t('adminActivityManagement.returnMultiplier')" required><UInput v-model.number="gameDraft.returnMultiplier" class="w-full" type="number" :min="1.01" :step="0.01" /></UFormField>
-            <TxbAmountField id="game-min-stake" v-model="gameDraft.minStake" :label="t('adminActivityManagement.minimumStake')" min-minor="1" required />
-            <TxbAmountField id="game-max-stake" v-model="gameDraft.maxStake" :label="t('adminActivityManagement.maximumStake')" min-minor="1" required />
-            <SwitchField id="game-enabled" v-model="gameDraft.enabled" :label="t('adminActivityManagement.available')" :help="t('adminActivityManagement.availableHint')" />
-            <div class="button-row"><UButton color="neutral" variant="outline" :label="t('common.cancel')" :disabled="busy" @click="editingGameId = undefined" /><UButton type="submit" :loading="busy" :disabled="busy" :label="busy ? t('common.saving') : t('adminActivityManagement.saveGame')" /></div>
-          </fieldset></form>
+          <form @submit.prevent="saveGame">
+            <fieldset class="admin-editor-form" :disabled="busy">
+              <div class="catalog-editor__heading"><h3>{{ editingGameId ? t('adminActivityManagement.editGame') : t('adminActivityManagement.newGame') }}</h3></div>
+              <UFormField name="game-name" :label="t('adminActivityManagement.name')" required><UInput v-model.trim="gameDraft.name" class="w-full" :maxlength="80" /></UFormField>
+              <UFormField name="game-icon" :label="t('adminActivityManagement.icon')"><USelect v-model="gameDraft.icon" class="w-full" :items="iconItems" /></UFormField>
+              <UFormField class="catalog-editor__wide" name="game-description" :label="t('adminActivityManagement.description')"><UTextarea v-model.trim="gameDraft.description" class="w-full" :rows="2" :maxlength="300" /></UFormField>
+              <UFormField name="win-chance" :label="t('adminActivityManagement.winChance')" required><UInput v-model.number="gameDraft.winChancePercent" class="w-full" type="number" :min="0.01" :max="99.99" :step="0.01" /></UFormField>
+              <UFormField name="return-multiplier" :label="t('adminActivityManagement.returnMultiplier')" required><UInput v-model.number="gameDraft.returnMultiplier" class="w-full" type="number" :min="1.01" :step="0.01" /></UFormField>
+              <TxbAmountField id="game-min-stake" v-model="gameDraft.minStake" :label="t('adminActivityManagement.minimumStake')" min-minor="1" required />
+              <TxbAmountField id="game-max-stake" v-model="gameDraft.maxStake" :label="t('adminActivityManagement.maximumStake')" min-minor="1" required />
+              <SwitchField id="game-enabled" v-model="gameDraft.enabled" :label="t('adminActivityManagement.available')" :help="t('adminActivityManagement.availableHint')" />
+              <div class="button-row"><UButton color="neutral" variant="outline" :label="t('common.cancel')" :disabled="busy" @click="editingGameId = undefined" /><UButton type="submit" :loading="busy" :disabled="busy" :label="busy ? t('common.saving') : t('adminActivityManagement.saveGame')" /></div>
+            </fieldset>
+          </form>
         </template>
       </USlideover>
       <UTable class="admin-table" :data="games" :columns="gameColumns" :loading="loading">

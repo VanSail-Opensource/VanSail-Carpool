@@ -16,7 +16,8 @@ type HTTPDoer interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
-// APIError describes a sanitized BEPusdt HTTP or application error.
+// APIError describes a BEPusdt HTTP or application error. Message and RequestID
+// are untrusted provider metadata and must not be exposed in receipts or logs.
 type APIError struct {
 	HTTPStatus int
 	StatusCode int
@@ -29,7 +30,7 @@ func (e *APIError) Error() string {
 	if e == nil {
 		return "bepusdt API error"
 	}
-	return fmt.Sprintf("bepusdt API failed (http=%d api=%d): %s", e.HTTPStatus, e.StatusCode, e.Message)
+	return fmt.Sprintf("bepusdt API failed (http=%d api=%d)", e.HTTPStatus, e.StatusCode)
 }
 
 // Client calls a BEPusdt server.

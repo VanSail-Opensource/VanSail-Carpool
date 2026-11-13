@@ -40,7 +40,7 @@ func aggregateMetricMaster(t *testing.T) *Master {
 		users := wire.UserMetrics{
 			Connections:      map[int]int{1: math.MaxInt64},
 			TotalConnections: map[int]int{1: math.MaxInt64},
-			Rates:            map[int]wire.UserRate{
+			Rates: map[int]wire.UserRate{
 				1: {UploadBytesPerSecond: math.MaxFloat64, DownloadBytesPerSecond: 100, SampleSeconds: 1},
 				2: {UploadBytesPerSecond: math.MaxFloat64, DownloadBytesPerSecond: 100, SampleSeconds: 1},
 			},

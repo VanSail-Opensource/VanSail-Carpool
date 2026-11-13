@@ -2021,3 +2021,11 @@ standard serializable retry policy. `connection_scan_start_test.go` synchronizes
 eight DB-backed workers after their queued reads and proves one native job,
 one retained delivery and unchanged winning evidence. `connection_scan_lookup_test.go`
 checks typed owner-scoped absence without relabeling query cancellation/outage.
+
+## Payment rejection receipt projection
+
+`provider_operation_queries.go` emits fixed public rejection text for failed
+payment creation. Historical `ResultJSON` payloads remain byte-for-byte internal
+evidence and are never promoted into member or administrator receipt messages.
+`provider_operation_projection_test.go` covers owner, principal, list, and replay
+projections while verifying retained result and completion timestamps.

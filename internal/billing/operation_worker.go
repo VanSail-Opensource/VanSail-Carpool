@@ -127,11 +127,11 @@ func (w *OperationWorker) create(ctx context.Context, operation providerops.Oper
 			}
 			return w.complete(ctx, operation, item, providerops.StatusFailed, code, "")
 		}
-		if message, rejected := providerCreateRejection(err); rejected {
+		if providerCreateRejection(err) {
 			if failErr := w.repository.FailPaymentOrder(ctx, order.ID); failErr != nil {
 				return failErr
 			}
-			return w.complete(ctx, operation, item, providerops.StatusFailed, "PAYMENT_CREATE_REJECTED", "", message)
+			return w.complete(ctx, operation, item, providerops.StatusFailed, "PAYMENT_CREATE_REJECTED", "")
 		}
 		return w.complete(ctx, operation, item, providerops.StatusPendingReview, "PAYMENT_CREATE_AMBIGUOUS", "")
 	}

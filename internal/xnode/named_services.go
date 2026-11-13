@@ -43,7 +43,7 @@ func (s *Service) SaveNamedService(ctx context.Context, id, name string, access 
 func (s *Service) saveNamedService(ctx context.Context, id, name string, access ServiceAccess, actor string) (NamedService, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if len(access.GroupIDs) == 0 || access.StartedAt.After(s.now()) || !access.ExpiresAt.After(s.now()) || !wire.ValidName(name) || strings.HasPrefix(name, "_") || strings.HasPrefix(name, paygPrefix) {
+	if len(access.GroupIDs) == 0 || access.StartedAt.After(s.now()) || !access.ExpiresAt.After(s.now()) || !wire.ValidName(name) || strings.HasPrefix(name, "_") || strings.HasPrefix(name, paygPrefix) || strings.HasPrefix(name, memberProbePrefix) {
 		return NamedService{}, ErrInvalid
 	}
 	var err error

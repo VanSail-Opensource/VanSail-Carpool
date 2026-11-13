@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+const maxExpirationSeconds = int64((1<<63 - 1) / time.Second)
+
 type CreateTransactionRequest struct {
 	OrderID        string
 	Amount         string
@@ -40,8 +42,12 @@ type Transaction struct {
 }
 
 // ExpiresAt converts BEPusdt's expiration_time duration (seconds) into an instant.
+// Invalid or unrepresentable durations return the zero time.
 
 func (t Transaction) ExpiresAt(createdAt time.Time) time.Time {
+	if t.ExpirationTime <= 0 || t.ExpirationTime > maxExpirationSeconds {
+		return time.Time{}
+	}
 	return createdAt.Add(time.Duration(t.ExpirationTime) * time.Second)
 }
 
@@ -68,6 +74,9 @@ func (c *Client) CreateTransaction(ctx context.Context, input CreateTransactionR
 	}
 	if input.TimeoutSeconds != 0 && input.TimeoutSeconds < 120 {
 		return nil, errors.New("bepusdt timeout must be at least 120 seconds")
+	}
+	if input.TimeoutSeconds > maxExpirationSeconds {
+		return nil, errors.New("bepusdt timeout exceeds supported duration")
 	}
 
 	values := map[string]string{
@@ -155,7 +164,7 @@ func (c *Client) CreateTransaction(ctx context.Context, input CreateTransactionR
 	if err := validatePositiveDecimal(transaction.ActualAmount); err != nil {
 		return nil, fmt.Errorf("bepusdt success response actual amount: %w", err)
 	}
-	if transaction.ExpirationTime <= 0 {
+	if transaction.ExpirationTime <= 0 || transaction.ExpirationTime > maxExpirationSeconds {
 		return nil, errors.New("bepusdt success response expiration is invalid")
 	}
 	return transaction, nil

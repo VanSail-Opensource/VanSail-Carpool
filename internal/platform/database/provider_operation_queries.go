@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -76,12 +75,10 @@ func scanProviderOperation(row rowScanner) (providerops.Operation, error) {
 		operation.Receipt.ErrorCode = &errorCode
 	}
 	if operation.Receipt.Kind == "payment_create" && errorCode == "PAYMENT_CREATE_REJECTED" {
-		var result struct {
-			ProviderMessage string `json:"providerMessage"`
-		}
-		if json.Unmarshal([]byte(operation.ResultJSON), &result) == nil && result.ProviderMessage != "" {
-			operation.Receipt.ErrorMessage = &result.ProviderMessage
-		}
+		// Historical provider messages remain internal evidence. An upstream
+		// response may echo callback capabilities or signed request payloads.
+		message := "Payment provider rejected this checkout request."
+		operation.Receipt.ErrorMessage = &message
 	}
 	if operation.Receipt.CreatedAt, err = parseStamp(created); err != nil {
 		return providerops.Operation{}, fmt.Errorf("parse provider operation creation: %w", err)
