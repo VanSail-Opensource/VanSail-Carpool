@@ -16,7 +16,7 @@ const button = defineComponent({ props: { label: { type: String, default: '' }, 
 const passthrough: FunctionalComponent = (_, { slots }) => h('div', slots.default?.())
 function page() { return mount(HourlyAdminPage, { global: { stubs: { Button: button, UButton: button, SkeletonBlock: true, InlineNotice: passthrough, HourlyPolicyForm: true, HourlyOfferForm: true } } }) }
 beforeEach(() => {
-  vi.resetAllMocks()
+  for (const mock of Object.values(api)) mock.mockReset()
   api.policy.mockResolvedValue(snapshot)
   api.offers.mockResolvedValue([])
   api.getAdminResource.mockResolvedValue({ items: [] })

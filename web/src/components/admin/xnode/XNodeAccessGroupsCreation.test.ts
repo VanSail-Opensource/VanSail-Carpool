@@ -19,7 +19,7 @@ const perform = async (action: () => Promise<unknown>): Promise<boolean> => {
   try { await action(); return true }
   catch { return false }
 }
-beforeEach(() => api.saveGroup.mockReset())
+beforeEach(() => { api.saveGroup.mockReset() })
 
 it('reuses one group identity after a committed response is lost and allocates another for a new editor', async () => {
   const rows = new Map<string, Partial<XNodeGroup>>()
