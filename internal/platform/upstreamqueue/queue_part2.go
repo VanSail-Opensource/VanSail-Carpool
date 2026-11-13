@@ -7,14 +7,37 @@ import (
 	"time"
 )
 
+type waitingCall struct {
+	call
+	stopWake func() bool
+}
+
+func takeWaiting(pending *[]waitingCall, index int) call {
+	item := (*pending)[index]
+	item.stopWake()
+	copy((*pending)[index:], (*pending)[index+1:])
+	last := len(*pending) - 1
+	(*pending)[last] = waitingCall{}
+	*pending = (*pending)[:last]
+	return item.call
+}
+
 func (q *Queue) run(lifecycle context.Context, done chan struct{}) {
 	var active sync.WaitGroup
-	pending := []call{}
+	pending := []waitingCall{}
+	wake := make(chan struct{}, 1)
+	notifyCancellation := func() {
+		select {
+		case wake <- struct{}{}:
+		default:
+		}
+	}
 	finished := make(chan string, q.workers)
 	occupied := map[string]bool{}
 	running := 0
 	defer func() {
 		for _, item := range pending {
+			item.stopWake()
 			item.reject(lifecycle.Err())
 		}
 		active.Wait()
@@ -33,8 +56,8 @@ func (q *Queue) run(lifecycle context.Context, done chan struct{}) {
 		ready := -1
 		for i := 0; i < len(pending); {
 			if err := pending[i].ctx.Err(); err != nil {
-				pending[i].reject(err)
-				pending = append(pending[:i], pending[i+1:]...)
+				item := takeWaiting(&pending, i)
+				item.reject(err)
 				continue
 			}
 			if ready < 0 && (pending[i].key == "" || !occupied[pending[i].key]) {
@@ -43,8 +66,7 @@ func (q *Queue) run(lifecycle context.Context, done chan struct{}) {
 			i++
 		}
 		if running < q.workers && ready >= 0 && !time.Now().Before(nextStart) {
-			item := pending[ready]
-			pending = append(pending[:ready], pending[ready+1:]...)
+			item := takeWaiting(&pending, ready)
 			if item.key != "" {
 				occupied[item.key] = true
 			}
@@ -77,7 +99,8 @@ func (q *Queue) run(lifecycle context.Context, done chan struct{}) {
 			running--
 			delete(occupied, key)
 		case item := <-incoming:
-			pending = append(pending, item)
+			pending = append(pending, waitingCall{call: item, stopWake: context.AfterFunc(item.ctx, notifyCancellation)})
+		case <-wake:
 		case <-paced:
 		}
 	}

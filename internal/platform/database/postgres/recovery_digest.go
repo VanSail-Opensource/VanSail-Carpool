@@ -24,12 +24,13 @@ type TableDigest struct {
 
 // Report is deterministic evidence, without plaintext rows or credentials.
 type Report struct {
-	Sequences           map[string]int64 `json:"sequences"`
-	Tables              []TableDigest    `json:"tables"`
-	Hash                string           `json:"sha256"`
-	ProcessingJobs      int64            `json:"processingJobs"`
-	ProcessingProviders int64            `json:"processingProviders"`
-	FinancialMismatches int64            `json:"financialMismatches"`
+	Sequences           map[string]int64         `json:"sequences"`
+	SequenceStates      map[string]SequenceState `json:"sequenceStates"`
+	Tables              []TableDigest            `json:"tables"`
+	Hash                string                   `json:"sha256"`
+	ProcessingJobs      int64                    `json:"processingJobs"`
+	ProcessingProviders int64                    `json:"processingProviders"`
+	FinancialMismatches int64                    `json:"financialMismatches"`
 }
 
 type queryer interface {
@@ -45,6 +46,10 @@ func inspect(ctx context.Context, q queryer, tables []TableContract) (Report, er
 	report := Report{Tables: make([]TableDigest, 0, len(tables))}
 	var err error
 	report.Sequences, err = readSequences(ctx, q)
+	if err != nil {
+		return report, err
+	}
+	report.SequenceStates, err = readSequenceStates(ctx, q, tables)
 	if err != nil {
 		return report, err
 	}

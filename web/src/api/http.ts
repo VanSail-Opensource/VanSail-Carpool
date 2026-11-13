@@ -1,6 +1,7 @@
 import type { ApiErrorBody } from './types'
 import { applyRequestSignature, requestBodyBytes } from './request-signing'
 import { cachedTransport } from './cache/transport'
+import { cacheIdentityGeneration } from './cache/session'
 import { withRequestDeadline } from './requestDeadline'
 
 export type QueryValue = string | number | boolean | readonly string[] | undefined
@@ -66,7 +67,7 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
   return fetch(url, { ...init, method, body: serialized, credentials: 'include', headers })
 }
 
-async function responseError(response: Response): Promise<ApiError> {
+async function responseError(response: Response, identityGeneration: number): Promise<ApiError> {
   const contentType = response.headers.get('content-type') ?? ''
   const payload = contentType.includes('application/json')
     ? await response.json() as unknown
@@ -75,17 +76,18 @@ async function responseError(response: Response): Promise<ApiError> {
     ? payload as ApiErrorBody
     : { code: 'HTTP_ERROR', message: String(payload || response.statusText) }
   const error = new ApiError(response.status, body)
-  if ((response.status === 401 || error.code === 'ADMIN_REQUIRED') && typeof document !== 'undefined' && document.documentElement.dataset.experience === 'browser' && typeof globalThis.dispatchEvent === 'function') {
+  const currentIdentity = identityGeneration === cacheIdentityGeneration()
+  if (currentIdentity && (response.status === 401 || error.code === 'ADMIN_REQUIRED') && typeof document !== 'undefined' && document.documentElement.dataset.experience === 'browser' && typeof globalThis.dispatchEvent === 'function') {
     globalThis.dispatchEvent(new Event('txc:browser-session-expired'))
   }
-  if ((error.code === 'ONBOARDING_REQUIRED' || error.code === 'CAPTCHA_REQUIRED') && typeof globalThis.dispatchEvent === 'function') {
+  if (currentIdentity && (error.code === 'ONBOARDING_REQUIRED' || error.code === 'CAPTCHA_REQUIRED') && typeof globalThis.dispatchEvent === 'function') {
     globalThis.dispatchEvent(new Event(onboardingRequiredEvent))
   }
   return error
 }
 
-async function responsePayload<T>(response: Response): Promise<T> {
-  if (!response.ok) throw await responseError(response)
+async function responsePayload<T>(response: Response, identityGeneration: number): Promise<T> {
+  if (!response.ok) throw await responseError(response, identityGeneration)
   if (response.status === 204) return undefined as T
 
   const contentType = response.headers.get('content-type') ?? ''
@@ -106,35 +108,39 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     return withRequestDeadline(timeoutMilliseconds, options.signal, signal => request<T>(path, { ...init, signal }))
   }
   const url = createUrl(path, options.query)
+  const identityGeneration = cacheIdentityGeneration()
 
   // Live 2xx data is authoritative. Runtime OpenAPI-shape validation belongs
   // to optional rendering snapshots, where it can safely discard stale cache.
   // Rejecting a fresh response here breaks rolling frontend/backend deploys:
   // a temporarily skewed generated contract turns an otherwise usable API
   // response into a synthetic 502 before feature code can apply fallbacks.
-  return cachedTransport(url, options, async () => responsePayload<T>(await send(path, options)))
+  return cachedTransport(url, options, async () => responsePayload<T>(await send(path, options), identityGeneration))
 }
 
 
 export async function requestBlob(path: string, options: RequestOptions = {}): Promise<Blob> {
+  const identityGeneration = cacheIdentityGeneration()
   const response = await send(path, {
     ...options,
     headers: { Accept: 'application/octet-stream', ...Object.fromEntries(new Headers(options.headers)) },
   })
-  if (!response.ok) throw await responseError(response)
+  if (!response.ok) throw await responseError(response, identityGeneration)
   return response.blob()
 }
 
 // Streaming consumers own cancellation and can pipe directly to a browser file.
 export async function requestStream(path: string, options: RequestOptions = {}): Promise<Response> {
+  const identityGeneration = cacheIdentityGeneration()
   const response = await send(path, options)
-  if (!response.ok) throw await responseError(response)
+  if (!response.ok) throw await responseError(response, identityGeneration)
   return response
 }
 
 // Streaming reads share the ordinary session, signatures and safe error handling.
 export async function requestResponse(path: string, options: RequestOptions = {}): Promise<Response> {
+  const identityGeneration = cacheIdentityGeneration()
   const response = await send(path, { ...options, cache: 'no-store' })
-  if (!response.ok) throw await responseError(response)
+  if (!response.ok) throw await responseError(response, identityGeneration)
   return response
 }

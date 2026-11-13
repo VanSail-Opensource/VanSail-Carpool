@@ -11,6 +11,9 @@ post:
     Verified sign-in cancels account-cleanup evidence. If an earlier partial
     cleanup needs administrator review, responds with 409
     `ACCOUNT_RECOVERY_PENDING` and does not issue session cookies.
+    Temporary account or session persistence failures return 503
+    `AUTH_UNAVAILABLE` with a retry delay; they do not invalidate existing cookies
+    or misrepresent verified launch data as an invalid signature.
   security: []
   requestBody:
     required: true

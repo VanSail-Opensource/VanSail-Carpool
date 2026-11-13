@@ -34,3 +34,10 @@ The scheduler alone owns the `Capacity` pending slots. Its unbuffered intake
 prevents a second hidden backlog; callers waiting for admission retain context
 cancellation. `queue_test.go` waits for admission explicitly and checks that a
 full backlog rejects another admission at the caller's deadline.
+
+Each pending caller also wakes the scheduler on cancellation. A canceled keyed
+backlog releases its capacity immediately even when the same key's predecessor
+is still active; an independent key can use an idle worker. Removing pending
+calls stops the wake callback and clears retained references.
+`cancellation_capacity_test.go` covers this case without releasing the held
+predecessor or depending on timing sleeps.

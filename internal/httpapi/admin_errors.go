@@ -13,6 +13,8 @@ import (
 func (s *Server) adminFailure(w http.ResponseWriter, r *http.Request, err error) {
 	status, code, message := http.StatusUnprocessableEntity, "ADMIN_OPERATION_FAILED", err.Error()
 	switch {
+	case errors.Is(err, backup.ErrBackupForbidden):
+		status, code, message = http.StatusForbidden, "FORBIDDEN", "Administrator access is required."
 	case errors.Is(err, database.ErrPaymentProfileInUse):
 		status, code, message = http.StatusConflict, "PAYMENT_PROFILE_IN_USE", "Retained orders need this account for callbacks. Create a replacement payment profile and disable this one."
 	case errors.Is(err, squadprofile.ErrInvalid):

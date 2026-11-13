@@ -39,6 +39,14 @@ func (r *communityHTTPRepository) UpdateMembership(_ context.Context, _ string, 
 	r.user.GroupJoined, r.user.ChannelJoined = group, channel
 	return r.user, nil
 }
+func (r *communityHTTPRepository) UpdateCommunityMembership(_ context.Context, _ string, space string, joined bool) (model.User, error) {
+	if space == "group" {
+		r.user.GroupJoined = joined
+	} else {
+		r.user.ChannelJoined = joined
+	}
+	return r.user, nil
+}
 func (r *communityHTTPRepository) CurrentAgreementContract(context.Context) (int, []string, error) {
 	return 1, nil, nil
 }

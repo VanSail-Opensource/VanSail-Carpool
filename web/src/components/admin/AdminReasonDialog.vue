@@ -36,7 +36,7 @@ const { reducedMotion } = useMotionPreferences()
           :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }"
         >
           <UFormField name="reason" :label="t('adminReason.reason')" required>
-            <UTextarea v-model.trim="reason" :rows="3" :minlength="4" :maxlength="300" :placeholder="t('adminReason.placeholder')" />
+            <UTextarea v-model.trim="reason" :disabled="busy" :rows="3" :minlength="4" :maxlength="300" :placeholder="t('adminReason.placeholder')" />
           </UFormField>
           <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
         </motion.div>

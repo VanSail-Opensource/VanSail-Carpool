@@ -41,6 +41,7 @@ function loadStatistics(query: StatisticsQuery): Promise<AdminStatistics> {
 }
 
 async function save(payload: Record<string, unknown>): Promise<void> {
+  if (editing.value === undefined || combos.busy.value || combos.loading.value) return
   const success = editing.value?.id
     ? await combos.update(editing.value.id, payload)
     : await combos.create(payload)
@@ -48,7 +49,7 @@ async function save(payload: Record<string, unknown>): Promise<void> {
 }
 
 async function remove(): Promise<void> {
-  if (!deleting.value) return
+  if (!deleting.value || combos.busy.value || combos.loading.value) return
   const success = await combos.remove(deleting.value.id)
   if (success) deleting.value = null
 }
@@ -58,16 +59,26 @@ function importSquads(): void {
 }
 
 async function saveSquad(payload: SquadProductWrite): Promise<void> {
-  if (!editingSquad.value) return
+  if (!editingSquad.value || squads.busy.value || squads.loading.value) return
   const id = editingSquad.value.id
   const success = await squads.perform(() => import('@/api/client').then(({ api }) => api.updateAdminSquadProduct(id, payload)))
   if (success) editingSquad.value = null
+}
+
+function editCombo(combo: Combo | null): void {
+  if (!combos.busy.value && !combos.loading.value) editing.value = combo
+}
+function hideCombo(combo: Combo): void {
+  if (!combos.busy.value && !combos.loading.value) deleting.value = combo
+}
+function editSquad(squad: SquadProduct): void {
+  if (!squads.busy.value && !squads.loading.value) editingSquad.value = squad
 }
 </script>
 
 <template>
   <section class="admin-panel">
-    <div class="admin-panel__heading"><div><h2>{{ t('adminCatalog.title') }}</h2><p>{{ t('adminCatalog.copy') }}</p></div><div class="row-actions"><UButton v-if="activeTab === 'combos'" icon="i-ph-plus" :label="t('adminCatalog.newCombo')" @click="editing = null" /><UButton v-else color="neutral" variant="outline" icon="i-ph-arrow-clockwise" :loading="squads.busy.value" :disabled="squads.busy.value" :label="t('adminCatalog.refreshSquads')" @click="importSquads" /></div></div>
+    <div class="admin-panel__heading"><div><h2>{{ t('adminCatalog.title') }}</h2><p>{{ t('adminCatalog.copy') }}</p></div><div class="row-actions"><UButton v-if="activeTab === 'combos'" icon="i-ph-plus" :label="t('adminCatalog.newCombo')" :disabled="combos.busy.value || combos.loading.value" @click="editCombo(null)" /><UButton v-else color="neutral" variant="outline" icon="i-ph-arrow-clockwise" :loading="squads.busy.value" :disabled="squads.busy.value" :label="t('adminCatalog.refreshSquads')" @click="importSquads" /></div></div>
     <UTabs v-model="activeTab" :items="tabs" variant="link" :content="false" class="admin-workspace-tabs" />
     <div v-show="activeTab === 'combos'">
       <AdminSectionState :loading="combos.loading.value" :error="combos.error.value" @retry="combos.load()">
@@ -76,7 +87,7 @@ async function saveSquad(payload: SquadProductWrite): Promise<void> {
           <template #terms-cell="{ row }"><div class="admin-cell"><span>{{ formatBytes(row.original.trafficLimitBytes) }}</span><small>{{ t('adminCatalog.comboSummary', { traffic: formatBytes(row.original.trafficLimitBytes), days: row.original.validityDays }) }}</small></div></template>
           <template #price-cell="{ row }">{{ formatMoney(row.original.price) }}</template>
           <template #status-cell="{ row }"><StatusBadge :tone="row.original.active ? 'success' : 'neutral'" :label="t(row.original.active ? 'adminCatalog.available' : 'adminCatalog.paused')" /></template>
-          <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton color="neutral" variant="ghost" icon="i-ph-chart-bar" :aria-label="t('adminCatalog.statisticsFor', { name: row.original.name })" @click="statisticsTarget = { kind: 'combo', id: row.original.id, title: t('adminCatalog.statisticsTitle', { name: row.original.name }) }" /><UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :aria-label="t('adminCatalog.editNamed', { name: row.original.name })" @click="editing = row.original" /><UButton color="error" variant="ghost" icon="i-ph-trash" :aria-label="t('adminCatalog.hideNamed', { name: row.original.name })" @click="deleting = row.original" /></div></template>
+          <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton color="neutral" variant="ghost" icon="i-ph-chart-bar" :aria-label="t('adminCatalog.statisticsFor', { name: row.original.name })" @click="statisticsTarget = { kind: 'combo', id: row.original.id, title: t('adminCatalog.statisticsTitle', { name: row.original.name }) }" /><UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :aria-label="t('adminCatalog.editNamed', { name: row.original.name })" :disabled="combos.busy.value || combos.loading.value" @click="editCombo(row.original)" /><UButton color="error" variant="ghost" icon="i-ph-trash" :aria-label="t('adminCatalog.hideNamed', { name: row.original.name })" :disabled="combos.busy.value || combos.loading.value" @click="hideCombo(row.original)" /></div></template>
           <template #empty>{{ t('adminCatalog.noCombos') }}</template>
         </UTable>
       </AdminSectionState>
@@ -88,14 +99,14 @@ async function saveSquad(payload: SquadProductWrite): Promise<void> {
           <template #terms-cell="{ row }"><SquadProfileSummary :profile="row.original.profile" compact /></template>
           <template #price-cell="{ row }"><div class="admin-cell"><span>{{ t(row.original.billingMode === 'payg' ? 'pricing.catalogPayg' : 'pricing.catalogCombo') }}</span><strong>{{ row.original.billingMode === 'payg' ? `${txbInputFromMinor(row.original.paygPrice?.minor ?? row.original.price.minor)} TXB/GB` : formatMoney(row.original.price) }}</strong></div></template>
           <template #status-cell="{ row }"><StatusBadge :tone="squadState(row.original) === 'normal' ? 'success' : 'neutral'" :label="t(`pricing.catalogStates.${squadState(row.original)}`)" /></template>
-          <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton color="neutral" variant="ghost" icon="i-ph-chart-bar" :aria-label="t('adminCatalog.statisticsFor', { name: row.original.name })" @click="statisticsTarget = { kind: 'squad', id: row.original.id, title: t('adminCatalog.statisticsTitle', { name: row.original.name }) }" /><UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :aria-label="t('adminCatalog.editNamed', { name: row.original.name })" @click="editingSquad = row.original" /></div></template>
+          <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton color="neutral" variant="ghost" icon="i-ph-chart-bar" :aria-label="t('adminCatalog.statisticsFor', { name: row.original.name })" @click="statisticsTarget = { kind: 'squad', id: row.original.id, title: t('adminCatalog.statisticsTitle', { name: row.original.name }) }" /><UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :aria-label="t('adminCatalog.editNamed', { name: row.original.name })" :disabled="squads.busy.value || squads.loading.value" @click="editSquad(row.original)" /></div></template>
           <template #empty>{{ t('adminCatalog.noSquads') }}</template>
         </UTable>
       </AdminSectionState>
     </div>
-    <AdminCatalogEditor v-if="editing !== undefined" :combo="editing ?? undefined" :squads="squads.items.value" :busy="combos.busy.value" :error="combos.error.value" @save="save" @cancel="editing = undefined" />
-    <AdminSquadEditor v-if="editingSquad" :squad="editingSquad" :busy="squads.busy.value" :error="squads.error.value" @save="saveSquad" @cancel="editingSquad = null" />
+    <AdminCatalogEditor v-if="editing !== undefined" :combo="editing ?? undefined" :squads="squads.items.value" :busy="combos.busy.value" :error="combos.error.value" @save="save" @cancel="!combos.busy.value && (editing = undefined)" />
+    <AdminSquadEditor v-if="editingSquad" :squad="editingSquad" :busy="squads.busy.value" :error="squads.error.value" @save="saveSquad" @cancel="!squads.busy.value && (editingSquad = null)" />
     <USlideover :open="statisticsTarget !== null" :title="statisticsTarget?.title" @update:open="!$event && (statisticsTarget = null)"><template #body><AdminStatisticsPanel v-if="statisticsTarget" :key="`${statisticsTarget.kind}:${statisticsTarget.id}`" :title="statisticsTarget.title" :load="loadStatistics" @close="statisticsTarget = null" /></template></USlideover>
-    <ConfirmDialog :open="deleting !== null" :title="t('adminCatalog.hideTitle')" :description="t('adminCatalog.hideDescription')" :confirm-label="t('adminCatalog.hideCombo')" :busy="combos.busy.value" danger @update:open="!$event && (deleting = null)" @confirm="remove" />
+    <ConfirmDialog :open="deleting !== null" :title="t('adminCatalog.hideTitle')" :description="t('adminCatalog.hideDescription')" :confirm-label="t('adminCatalog.hideCombo')" :busy="combos.busy.value" danger @update:open="!$event && !combos.busy.value && (deleting = null)" @confirm="remove" />
   </section>
 </template>

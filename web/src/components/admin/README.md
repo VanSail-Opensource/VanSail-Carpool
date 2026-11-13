@@ -36,7 +36,7 @@ forms preserve their drafts so an administrator can correct or retry the action.
 - `AdminCatalogPanel.vue` manages combos and squads.
 - `AdminCouponsPanel.vue` manages coupon definitions.
 - `AdminDatabasePanel.vue` browses protected database tables.
-- `AdminEntitlementsPanel.vue` manages entitlements.
+- `AdminEntitlementsPanel.vue` is a legacy inventory retained only by the validity audit fixture; production entitlement management lives in user profiles.
 - `AdminOnboardingPanel.vue` loads, saves, and publishes visual onboarding drafts.
 - `onboarding/` contains bilingual content indexes with focused editors and text previews.
 - `AdminPaymentProfiles.vue` lists and edits masked provider accounts, keeps BEPUSDT channels discovery-owned, deletes profiles through a protected confirmation, and contributes remaining drafts to the parent settings save.
@@ -97,3 +97,16 @@ retained success, explicit retry, exact amounts/expiry and disposed workspaces.
 
 `couponDraft.ts` converts exact coupon amounts, dates and positive use limits,
 and computes changed-field writes independently from request and editor state.
+
+Catalog combo/squad editors disable pending fields and retain the reviewed target
+until save or hide returns. The workspace blocks replacement, dismissal and
+duplicate submission during writes. `AdminCatalogPanel.test.ts` and
+`AdminSquadEditor.test.ts` cover these boundaries. Audited reason controls also
+freeze the submitted reason while their action is pending.
+
+Every staged generic settings write rechecks workspace ownership before dispatch,
+so a delayed configuration response cannot enable an integration after its
+administrator leaves. Disposal clears private drafts and suppresses aggregate
+success feedback. The Emby connection editor also retires delayed load/save
+responses and erases URL/token drafts on teardown; its dedicated test covers
+completion after disposal.

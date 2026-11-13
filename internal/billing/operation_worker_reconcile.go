@@ -81,11 +81,6 @@ func (w *OperationWorker) reconcileOrder(ctx context.Context, operation provider
 
 func (w *OperationWorker) reconcileCreate(ctx context.Context, operation providerops.Operation,
 	item providerops.Item, order model.PaymentOrder, reference string) error {
-	// Local quote reservation is transactional and idempotent; an interrupted
-	// create can safely resume without repeating an external mutation.
-	if order.Provider == "builtin_usdt" && order.Status == "creating" && order.CancelledAt == nil {
-		return w.create(ctx, operation, item)
-	}
 	if order.PaidAt != nil || order.Status == "paid" || order.Status == "refunded" || order.Status == "pending" {
 		return w.complete(ctx, operation, item, providerops.StatusSucceeded, "", reference)
 	}
@@ -94,6 +89,21 @@ func (w *OperationWorker) reconcileCreate(ctx context.Context, operation provide
 	}
 	if reference != "" || order.PaymentURL != nil || order.QRPayload != nil || order.ReceivingAddress != nil {
 		return w.complete(ctx, operation, item, providerops.StatusSucceeded, "", reference)
+	}
+	// A stopped checkout with no attempt has a definite local outcome. Once an
+	// external attempt exists, cancellation or expiry cannot prove it failed.
+	if item.Status == providerops.StatusQueued && item.AttemptStartedAt == nil {
+		if order.CancelledAt != nil || order.Status == "cancelled" {
+			return w.complete(ctx, operation, item, providerops.StatusFailed, "PAYMENT_CREATE_CANCELLED", reference)
+		}
+		if order.Status == "expired" {
+			return w.complete(ctx, operation, item, providerops.StatusFailed, "PAYMENT_CREATE_EXPIRED", reference)
+		}
+	}
+	// Local quote reservation is transactional and idempotent; an interrupted
+	// create can safely resume without repeating an external mutation.
+	if order.Provider == "builtin_usdt" && order.Status == "creating" && order.CancelledAt == nil {
+		return w.create(ctx, operation, item)
 	}
 	return w.complete(ctx, operation, item, providerops.StatusPendingReview, "PAYMENT_CREATE_OUTCOME_UNKNOWN", reference)
 }

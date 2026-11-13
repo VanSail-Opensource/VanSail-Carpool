@@ -33,6 +33,7 @@ commands. Its mutable state and quotes always bypass response snapshots.
 - `features.test.ts` verifies feature request construction.
 - `generated.ts` contains the compact generated OpenAPI contract.
 - `http.ts` provides authenticated HTTP and error handling primitives and records eligible responses through the session cache.
+- HTTP expiry and onboarding notifications are bound to the identity that began the request. A delayed rejection from a previous account still reaches its caller but cannot suspend the current account's observers; snapshot invalidation alone does not suppress current authentication failures.
 - `cache/README.md` specifies session isolation, snapshot restoration, invalidation, and member/admin preload coverage.
 - `memberOperations.ts` exposes owner-scoped refund quotes, idempotent refund requests and durable operation receipt reads.
 - `request-signing.ts` signs every protected request with Web Crypto or the audited pure-JS HMAC/SHA-256 fallback; it never sends an unsigned fallback.
@@ -49,11 +50,13 @@ commands. Its mutable state and quotes always bypass response snapshots.
 - `ipLookup.ts` provides generated typed IP Lookup clients with fresh capability/receipt reads and quote-only cached report previews. Submission explicitly selects the signed action fields and excludes preview metadata; `ipLookup.test.ts` covers this strict transport shape for hosted CI.
 
 - `ipLookupStream.ts` decodes bounded UTF-8 SSE frames through the ordinary signed request transport, supports JSON fallback and requires explicit completion.
+- Both JSON fallback and completed SSE details must identify the requested IP before entering page state or triggering completion callbacks.
 - `ipLookupStream.test.ts` covers split Unicode frames, refresh, JSON fallback, address mismatch and truncated streams in hosted CI.
 
 - `usdt.ts` ? Typed dedicated admin endpoints using the existing signed request client.
 
 `xnode.ts` exposes typed node administration and live metrics with nonpersistent secret/realtime reads.
+Node command callers must supply their retained idempotency key explicitly; the transport cannot generate a new attempt during an ambiguous retry.
 
 - `xnodeMember.ts` provides typed member metrics, routing and subscription APIs plus cookie-free public bearer metadata reads.
 

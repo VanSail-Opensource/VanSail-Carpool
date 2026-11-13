@@ -19,9 +19,6 @@ var ErrInvalidAuthentication = errors.New("invalid Telegram authentication")
 // ErrAuthenticationRateLimited bounds verified Telegram identity exchanges.
 var ErrAuthenticationRateLimited = errors.New("Telegram authentication rate limited")
 
-// ErrUsernameUnavailable means either the local database or Proxy owns the name.
-var ErrUsernameUnavailable = errors.New("username is unavailable")
-
 // Community invite eligibility errors.
 var ErrActiveComboRequired = errors.New("active combo is required")
 var ErrCommunityAlreadyJoined = errors.New("community space is already joined")
@@ -34,9 +31,6 @@ var ErrAgreementRevisionConflict = errors.New("onboarding agreement revision cha
 
 // ErrProxyIdentityConflict means the requested local identity is already linked elsewhere upstream.
 var ErrProxyIdentityConflict = errors.New("Proxy identity conflicts with the local account")
-
-// ErrUpstreamUnavailable is a temporary Proxy authentication dependency failure.
-var ErrUpstreamUnavailable = errors.New("Proxy is temporarily unavailable")
 
 // InitDataValidator authenticates raw Mini App initData and returns only trusted identity fields.
 type InitDataValidator interface {
@@ -104,6 +98,7 @@ type Repository interface {
 	UserByID(context.Context, string) (model.User, error)
 	UserByTelegramID(context.Context, int64) (model.User, error)
 	UpdateMembership(context.Context, string, bool, bool) (model.User, error)
+	UpdateCommunityMembership(context.Context, string, string, bool) (model.User, error)
 	CurrentAgreementContract(context.Context) (int, []string, error)
 	CompleteOnboardingRevision(context.Context, string, int, []string, time.Time) (model.User, error)
 }

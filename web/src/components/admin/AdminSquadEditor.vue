@@ -61,6 +61,7 @@ watch(() => props.squad, (squad) => {
 }, { immediate: true })
 
 function submit(): void {
+  if (props.busy) return
   const priceTxbMinor = moneyFromTxbInput(draft.priceTxb)
   const paygPriceTxbMinor = moneyFromTxbInput(draft.paygPrice)
   if (draft.billingMode === 'payg' && (!paygPriceTxbMinor || BigInt(paygPriceTxbMinor) <= 0n)) return
@@ -92,34 +93,37 @@ function submit(): void {
   <USlideover :open="true" :title="t('adminSquad.edit', { name: squad.name })" :description="t('adminSquad.identityHint')" :ui="{ content: 'sm:max-w-3xl' }" :dismissible="!busy" @update:open="!$event && emit('cancel')">
     <template #body>
       <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
-      <UForm :state="draft" class="admin-editor-form" @submit="submit">
-        <div class="squad-editor__section">
-          <h3>{{ t('adminSquad.profileSection') }}</h3>
-          <AdminSquadProfileEditor v-model:profile="draft.profile" :show-validation="profileAttempted" />
-        </div>
-        <AdminSquadFeaturesEditor v-model="draft.features" :busy="busy" :show-validation="profileAttempted" @update:model-value="featuresTouched = true" />
-        <div class="squad-editor__section squad-editor__billing">
-          <h3>{{ t('adminSquad.billingSection') }}</h3>
-          <UFormField name="billingMode" :label="t('payg.billingMode')" :hint="draft.billingMode === 'combo' ? t('adminSquad.hourlySeparateHint') : undefined">
-            <USelect v-model="draft.billingMode" :items="[{ label: t('adminSquad.billingModeFixedTerm'), value: 'combo' }, { label: t('payg.title'), value: 'payg' }]" />
-          </UFormField>
-          <UFormField v-if="draft.billingMode === 'payg'" :label="t('payg.adminState')"><USelect v-model="draft.paygState" :items="(['normal', 'hidden', 'unavailable'] as const).map(value => ({ value, label: t(`payg.adminStates.${value}`) }))" class="w-full" /></UFormField>
-          <InlineNotice v-if="draft.billingMode === 'payg'">{{ t('payg.adminHint') }}</InlineNotice>
-          <TxbAmountField v-if="draft.billingMode === 'payg'" id="squad-payg-price" v-model="draft.paygPrice" :label="t('payg.price')" min-minor="1" required />
-          <TxbAmountField v-else id="squad-price" v-model="draft.priceTxb" :label="t('adminSquad.price')" min-minor="0" required />
-          <UFormField v-if="draft.billingMode === 'combo'" name="squad-stock-limit" :label="t('adminSquad.stockLimit')" :hint="t('adminSquad.stockLimitHint')"><UInput v-model="draft.stockLimit" type="number" min="0" step="1" inputmode="numeric" :placeholder="t('adminSquad.stockUnlimited')" /></UFormField>
-          <SwitchField v-if="draft.billingMode === 'combo'" id="squad-visible" v-model="draft.visible" :label="t('adminSquad.visible')" :help="t('adminSquad.visibleHint')" />
-          <SwitchField v-if="draft.billingMode === 'combo'" id="squad-activation-required" v-model="draft.activationRequired" :label="t('adminSquad.activationRequired')" :help="t('adminSquad.activationRequiredHint')" />
-          <motion.div v-if="draft.billingMode === 'combo' && draft.activationRequired" layout :initial="reducedMotion ? { opacity: 0 } : { opacity: 0, y: 4 }" :animate="{ opacity: 1, y: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }"><UFormField name="squad-activation-code" :label="t('adminSquad.activationCode')" :hint="t('adminSquad.activationCodeHint')" required><UInput v-model="draft.activationCode" type="password" autocomplete="new-password" inputmode="text" /></UFormField></motion.div>
-        </div>
-        <UButton class="catalog-editor__wide" type="submit" icon="i-ph-floppy-disk" :loading="busy" :disabled="busy" :label="busy ? t('common.saving') : t('adminSquad.saveSquad')" />
-        <ProductPricingSettings class="catalog-editor__wide" :kind="squad.billingMode === 'payg' ? 'payg' : 'addon'" :product-id="squad.groupId" />
+      <UForm :state="draft" @submit="submit">
+        <fieldset class="admin-editor-form squad-editor__fields" :disabled="busy">
+          <div class="squad-editor__section">
+            <h3>{{ t('adminSquad.profileSection') }}</h3>
+            <AdminSquadProfileEditor v-model:profile="draft.profile" :show-validation="profileAttempted" />
+          </div>
+          <AdminSquadFeaturesEditor v-model="draft.features" :busy="busy" :show-validation="profileAttempted" @update:model-value="featuresTouched = true" />
+          <div class="squad-editor__section squad-editor__billing">
+            <h3>{{ t('adminSquad.billingSection') }}</h3>
+            <UFormField name="billingMode" :label="t('payg.billingMode')" :hint="draft.billingMode === 'combo' ? t('adminSquad.hourlySeparateHint') : undefined">
+              <USelect v-model="draft.billingMode" :items="[{ label: t('adminSquad.billingModeFixedTerm'), value: 'combo' }, { label: t('payg.title'), value: 'payg' }]" />
+            </UFormField>
+            <UFormField v-if="draft.billingMode === 'payg'" :label="t('payg.adminState')"><USelect v-model="draft.paygState" :items="(['normal', 'hidden', 'unavailable'] as const).map(value => ({ value, label: t(`payg.adminStates.${value}`) }))" class="w-full" /></UFormField>
+            <InlineNotice v-if="draft.billingMode === 'payg'">{{ t('payg.adminHint') }}</InlineNotice>
+            <TxbAmountField v-if="draft.billingMode === 'payg'" id="squad-payg-price" v-model="draft.paygPrice" :label="t('payg.price')" min-minor="1" required />
+            <TxbAmountField v-else id="squad-price" v-model="draft.priceTxb" :label="t('adminSquad.price')" min-minor="0" required />
+            <UFormField v-if="draft.billingMode === 'combo'" name="squad-stock-limit" :label="t('adminSquad.stockLimit')" :hint="t('adminSquad.stockLimitHint')"><UInput v-model="draft.stockLimit" type="number" min="0" step="1" inputmode="numeric" :placeholder="t('adminSquad.stockUnlimited')" /></UFormField>
+            <SwitchField v-if="draft.billingMode === 'combo'" id="squad-visible" v-model="draft.visible" :label="t('adminSquad.visible')" :help="t('adminSquad.visibleHint')" />
+            <SwitchField v-if="draft.billingMode === 'combo'" id="squad-activation-required" v-model="draft.activationRequired" :label="t('adminSquad.activationRequired')" :help="t('adminSquad.activationRequiredHint')" />
+            <motion.div v-if="draft.billingMode === 'combo' && draft.activationRequired" layout :initial="reducedMotion ? { opacity: 0 } : { opacity: 0, y: 4 }" :animate="{ opacity: 1, y: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }"><UFormField name="squad-activation-code" :label="t('adminSquad.activationCode')" :hint="t('adminSquad.activationCodeHint')" required><UInput v-model="draft.activationCode" type="password" autocomplete="new-password" inputmode="text" /></UFormField></motion.div>
+          </div>
+          <UButton class="catalog-editor__wide" type="submit" icon="i-ph-floppy-disk" :loading="busy" :disabled="busy" :label="busy ? t('common.saving') : t('adminSquad.saveSquad')" />
+          <ProductPricingSettings class="catalog-editor__wide" :kind="squad.billingMode === 'payg' ? 'payg' : 'addon'" :product-id="squad.groupId" />
+        </fieldset>
       </UForm>
     </template>
   </USlideover>
 </template>
 
 <style scoped>
+.squad-editor__fields { margin: 0; padding: 0; border: 0; min-width: 0; }
 .squad-editor__section { display: grid; gap: 1rem; min-width: 0; }
 .squad-editor__section h3 { margin: 0; color: var(--text); font-size: .95rem; font-weight: 650; }
 .squad-editor__billing { padding-top: 1rem; border-top: 1px solid var(--line); }

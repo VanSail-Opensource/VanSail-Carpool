@@ -24,4 +24,13 @@ describe('signed live stream decoding', () => {
       await expect(streamIPDetails('1.1.1.1', undefined, false, vi.fn())).rejects.toThrow()
     }
   })
+  it.each([null, {}, { ip: '8.8.8.8' }])('rejects unbound completed details before publishing them: %j', async (data) => {
+    for (const streaming of [false, true]) {
+      const payload = streaming ? `data: ${JSON.stringify({ type: 'complete', ip: '1.1.1.1', data })}\n\n` : JSON.stringify(data)
+      mocks.response.mockResolvedValue(new Response(payload, { headers: { 'Content-Type': streaming ? 'text/event-stream' : 'application/json' } }))
+      const publish = vi.fn()
+      await expect(streamIPDetails('1.1.1.1', undefined, false, publish)).rejects.toMatchObject({ code: 'IP_DETAILS_INVALID_RESPONSE' })
+      expect(publish).not.toHaveBeenCalled()
+    }
+  })
 })

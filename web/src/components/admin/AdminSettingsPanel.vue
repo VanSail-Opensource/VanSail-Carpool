@@ -94,13 +94,17 @@ function setBoolean(key: string, value: boolean): void {
   draft[key] = value ? 'true' : 'false'
 }
 async function saveSettings(): Promise<boolean> {
+  if (disposed) return false
   const values = Object.entries(draft).filter(([key, value]) => {
     const configured = items.value.some(item => item.key === key && item.configured)
     return !embyConnectionKeys.has(key) && !activitySettingKeys.has(key) && !legacyPaymentSetting(key)
       && (value !== '' || (configured && clearableSettingKeys.has(key)))
   })
   const { api } = await import('@/api/client')
-  const success = await perform(() => writeAdminSettings(values, api.updateAdminSetting))
+  const success = await perform(() => writeAdminSettings(values, (key, value) => {
+    if (disposed) throw new Error('SETTINGS_SCOPE_DISPOSED')
+    return api.updateAdminSetting(key, value)
+  }))
   if (success) {
     for (const [key, value] of values) {
       if (items.value.some(item => item.key === key && item.encrypted) && draft[key] === value) draft[key] = ''
@@ -109,7 +113,7 @@ async function saveSettings(): Promise<boolean> {
   return success
 }
 async function saveAll(): Promise<void> {
-  if (saving.value || sectionsLoading.value) return
+  if (disposed || saving.value || sectionsLoading.value) return
   savingAll.value = true
   saved.visible = false
   saved.failed = false
@@ -121,10 +125,11 @@ async function saveAll(): Promise<void> {
       billingLimitsRef.value?.save() ?? Promise.resolve(false),
       paymentProfilesRef.value?.saveAll() ?? Promise.resolve(false),
     ])
+    if (disposed) return
     saved.visible = results.every(result => result.status === 'fulfilled' && result.value === true)
     saved.failed = !saved.visible
   } finally {
-    savingAll.value = false
+    if (!disposed) savingAll.value = false
   }
 }
 async function loadActivitySettings(): Promise<void> {
@@ -159,7 +164,11 @@ async function saveActivitySettings(value: ActivitySettingsWrite): Promise<boole
   }
 }
 onMounted(() => void loadActivitySettings())
-onScopeDispose(() => { disposed = true; activityLatest.dispose() })
+onScopeDispose(() => {
+  disposed = true
+  activityLatest.dispose()
+  for (const key of Object.keys(draft)) delete draft[key]
+})
 </script>
 <template>
   <section class="admin-panel">

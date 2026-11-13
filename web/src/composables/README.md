@@ -99,3 +99,10 @@ mutation begins and stops restoring pre-mutation row snapshots. Dedicated hosted
 regressions in `useAdminDatabase.test.ts` and `useAdminDatabaseMutation.test.ts`
 cover metadata ordering, exact reviewed values, single-flight Apply, confirmation,
 disposal and successful updates followed by read failure.
+
+Administrator list mutations admit one action at a time, retire earlier reads,
+and stop follow-up refreshes after their page is disposed. A confirmed write
+remains successful if only its refresh fails. `useAdminSection.test.ts` covers
+these boundaries. Emby snapshots retain only the newest read, and disposed Emby
+and coupon views cannot publish a previous owner's result or start new writes.
+`useEmby.test.ts` and `useCouponRedemption.test.ts` cover delayed responses.

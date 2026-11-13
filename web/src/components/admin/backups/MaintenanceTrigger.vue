@@ -29,6 +29,7 @@ const statusMessage = computed(() => {
 })
 
 function showConfirmation(): void {
+  if (maintenance.blocksMutations.value) return
   confirmationOpen.value = true
 }
 
@@ -44,7 +45,7 @@ function queueMaintenance(): void {
       icon="i-ph-broom"
       color="neutral"
       variant="outline"
-      :disabled="maintenance.busy.value"
+      :disabled="maintenance.blocksMutations.value"
       :loading="maintenance.busy.value"
       :label="t('adminBackups.maintenance')"
       @click="showConfirmation"

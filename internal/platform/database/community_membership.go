@@ -6,7 +6,29 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
+
+// UpdateCommunityMembership records one observed Telegram space without
+// replacing independent evidence for the other space or changing onboarding.
+func (s *Store) UpdateCommunityMembership(ctx context.Context, userID, space string, joined bool) (model.User, error) {
+	var column string
+	switch space {
+	case "group":
+		column = "group_joined"
+	case "channel":
+		column = "channel_joined"
+	default:
+		return model.User{}, ErrConflict
+	}
+	user, err := scanUser(s.db.QueryRowContext(ctx, `UPDATE users SET `+column+`=$1,updated_at=$2 WHERE id=$3 RETURNING `+userColumns,
+		boolInt(joined), stamp(time.Now().UTC()), userID))
+	if err != nil {
+		return model.User{}, fmt.Errorf("update community membership: %w", err)
+	}
+	return user, nil
+}
 
 // HasActiveCombo retains the public compatibility name for member eligibility:
 // a current active combo or any actual PAYG purchase grants community access.

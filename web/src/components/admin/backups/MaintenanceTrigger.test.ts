@@ -83,4 +83,18 @@ describe('MaintenanceTrigger', () => {
     expect(trigger.attributes('disabled') ?? trigger.attributes('data-disabled')).toBeUndefined()
     expect(wrapper.emitted('completed')).toBeUndefined()
   })
+
+  it('keeps review-required maintenance blocked instead of offering another confirmation', async () => {
+    mocks.queue.mockResolvedValue(receipt('pending_review'))
+    const wrapper = mountTrigger()
+    await wrapper.get('.maintenance-trigger > *').trigger('click')
+    await wrapper.get('[data-test="maintenance-confirm"] [role="button"]').trigger('click')
+    await flushPromises()
+    const trigger = wrapper.get('.maintenance-trigger > *')
+    expect(trigger.attributes('disabled') ?? trigger.attributes('data-disabled')).not.toBeUndefined()
+    await trigger.trigger('click')
+    expect(wrapper.find('[data-test="maintenance-confirm"]').exists()).toBe(false)
+    expect(mocks.queue).toHaveBeenCalledOnce()
+    wrapper.unmount()
+  })
 })

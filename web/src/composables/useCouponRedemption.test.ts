@@ -1,3 +1,4 @@
+import { effectScope } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const { redeemCoupon, createUuid, notifyHaptic } = vi.hoisted(() => ({
@@ -52,4 +53,20 @@ describe('guided coupon redemption', () => {
     await expect(coupon.redeem('   ')).resolves.toBeNull()
     expect(redeemCoupon).not.toHaveBeenCalled()
   })
+  it('does not publish a redeemed grant or haptics after its owner scope is retired', async () => {
+    let finish!: (value: unknown) => void
+    redeemCoupon.mockReturnValueOnce(new Promise(resolve => { finish = resolve }))
+    createUuid.mockReturnValue('retired-coupon-key')
+    const scope = effectScope()
+    const coupon = scope.run(useCouponRedemption)!
+    const pending = coupon.redeem('north')
+    scope.stop()
+    finish({ coupon: { name: 'North' }, grant: { id: 'old-owner-grant' } })
+    expect(await pending).toBeNull()
+    expect(await coupon.redeem('new-code')).toBeNull()
+    expect(redeemCoupon).toHaveBeenCalledOnce()
+    expect(notifyHaptic).not.toHaveBeenCalled()
+    expect(coupon.message.value).toBeNull()
+  })
+
 })

@@ -9,15 +9,20 @@ export async function streamIPDetails(ip: string, signal: AbortSignal | undefine
   const response = await requestResponse('/api/v1/ip-lookup/details', {
     query: { ip, refresh }, signal, headers: { Accept: streaming ? 'text/event-stream' : 'application/json' },
   })
-  if (!(response.headers.get('content-type') ?? '').includes('text/event-stream')) return await response.json() as Details
+  const details = (value: unknown): Details => {
+    if (typeof value !== 'object' || value === null || !('ip' in value) || value.ip !== ip) throw unavailable('IP_DETAILS_INVALID_RESPONSE')
+    return value as Details
+  }
+  if (!(response.headers.get('content-type') ?? '').includes('text/event-stream')) return details(await response.json())
   const finish = (raw: string): Details | undefined => {
     const data = raw.split('\n').filter(line => line.startsWith('data:')).map(line => line.slice(5).trimStart()).join('\n')
     if (!data) return
     const event = JSON.parse(data) as LiveEvent
     if (event.ip !== ip) throw unavailable('IP_DETAILS_INVALID_RESPONSE')
     if (event.type === 'error') throw unavailable(event.errorCode)
+    const completed = event.type === 'complete' ? details(event.data) : undefined
     onEvent(event)
-    if (event.type === 'complete') return event.data
+    return completed
   }
   let buffer = ''
   const consume = (chunk: string): Details | undefined => {

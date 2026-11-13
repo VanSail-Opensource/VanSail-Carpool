@@ -81,6 +81,11 @@ func (r *failingPaymentRepository) BeginProviderOperationItemAttempt(ctx context
 	return r.Store.BeginProviderOperationItemAttempt(ctx, id, key, now)
 }
 
+func (r *failingPaymentRepository) BeginPaymentCreateAttempt(ctx context.Context, id, key string, now time.Time) (providerops.Item, model.PaymentOrder, bool, error) {
+	r.claims++
+	return r.Store.BeginPaymentCreateAttempt(ctx, id, key, now)
+}
+
 func (r *failingPaymentRepository) CompleteProviderOperation(ctx context.Context, id string, completion providerops.Completion, now time.Time) (providerops.Operation, error) {
 	if r.receiptErr != nil {
 		return providerops.Operation{}, r.receiptErr

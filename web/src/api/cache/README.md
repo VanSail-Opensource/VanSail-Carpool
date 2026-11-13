@@ -8,6 +8,7 @@ when it completes, without navigation or a document reload.
 ## Modules
 
 - `session.ts` owns experience/account/role/onboarding-scoped, in-memory JSON snapshots, isolated copies, an 8 MiB / 256-entry LRU bound, and invalidation generations.
+- Its independent identity generation fences global HTTP authentication effects across account changes. Ordinary snapshot invalidation leaves this generation unchanged, so parallel writes cannot hide valid expiry notifications.
 - `policy.ts` separates read requests from mutations and builds method/URL/query/body-specific keys. Authentication, payment capabilities, action quotes, keys, financial usage breakdowns, and operation/connection polling are never cached.
 - Explicit `cache: 'no-store'` also disables in-memory snapshots and in-flight response sharing, preserving the caller's live or sensitive response policy.
 - `transport.ts` writes successful responses immediately, shares identical unsignalled reads in flight, rejects older writes, invalidates on mutations/auth failures, and evicts forbidden or removed resources.

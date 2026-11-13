@@ -75,8 +75,10 @@ func (s *Server) authenticate(w http.ResponseWriter, r *http.Request) {
 			s.writeError(w, r, http.StatusTooManyRequests, "AUTH_RATE_LIMITED", "Too many authentication attempts. Please retry shortly.")
 			return
 		}
-		if errors.Is(err, accounts.ErrUpstreamUnavailable) {
-			s.writeError(w, r, http.StatusServiceUnavailable, "XNODE_UNAVAILABLE", "Account verification is temporarily unavailable. Please retry.")
+		if !errors.Is(err, accounts.ErrInvalidAuthentication) && !errors.Is(err, database.ErrAccountUnavailable) {
+			s.deps.Logger.Warn("Telegram Mini App authentication unavailable", "request_id", middlewareRequestID(r), "error", err)
+			w.Header().Set("Retry-After", "2")
+			s.writeError(w, r, http.StatusServiceUnavailable, "AUTH_UNAVAILABLE", "Sign-in is temporarily unavailable. Please retry.")
 			return
 		}
 		s.deps.Logger.Warn("Telegram Mini App authentication rejected", "request_id", middlewareRequestID(r), "error", err)

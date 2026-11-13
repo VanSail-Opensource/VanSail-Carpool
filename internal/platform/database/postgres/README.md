@@ -53,6 +53,14 @@ entry or settlement receipt is converted.
   precision. `recovery_digest_time_test.go` checks location/precision boundaries;
   `recovery_time_integration_test.go` fingerprints populated hourly rows through
   pgx, checks time-zone stability and detects a one-microsecond stored change.
+- `recovery_sequences.go` adds exact next-value state and options for every
+  sequence owned by the inspected application tables, plus the standalone native
+  identity sequence. The legacy `sequences` report field remains available;
+  `sequenceStates` also covers durable FIFO and pricing identities and preserves
+  uncalled values. `recovery_sequences_test.go` detects sequence-only changes
+  without changing table rows, including `is_called` and increment changes.
+  Sequences are not MVCC snapshots: recovery verification still requires stopped
+  writers as documented by the offline recovery procedure.
 
 Schema 32 replaces the live JSON checks, time/string expression indexes and paid
 access trigger functions, then drops obsolete compatibility functions without

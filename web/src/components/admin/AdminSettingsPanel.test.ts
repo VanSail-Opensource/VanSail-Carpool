@@ -1,6 +1,8 @@
 import { defineComponent, h, shallowRef, type ShallowRef } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { AdminSetting } from '@/api/types'
+import { api } from '@/api/client'
 import type { ActivitySettings } from '@/api/features'
 import AdminActivitySettings from './activity/AdminActivitySettings.vue'
 import TxbAmountField from '@/components/common/TxbAmountField.vue'
@@ -8,9 +10,10 @@ import { t } from '@/i18n'
 
 const saves = vi.hoisted(() => ({ emby: vi.fn(), activity: vi.fn(), billing: vi.fn(), profiles: vi.fn() }))
 const reads = vi.hoisted(() => ({ getActivity: vi.fn(), saveActivity: vi.fn(), restoreRef: vi.fn() }))
+const sectionState = vi.hoisted(() => ({ settings: [] as AdminSetting[], perform: vi.fn() }))
 vi.mock('@/composables/useAdminSection', () => ({ useAdminSection: () => ({
-  items: shallowRef([]), loading: shallowRef(false), busy: shallowRef(false), error: shallowRef(null),
-  load: vi.fn(), perform: vi.fn().mockResolvedValue(true),
+  items: shallowRef(sectionState.settings), loading: shallowRef(false), busy: shallowRef(false), error: shallowRef(null),
+  load: vi.fn(), perform: sectionState.perform,
 }) }))
 vi.mock('@/api/features', () => ({ featuresApi: { getAdminActivitySettings: reads.getActivity, saveAdminActivitySettings: reads.saveActivity } }))
 vi.mock('@/api/cache/restore', async original => ({ ...await original<typeof import('@/api/cache/restore')>(), restoreRef: reads.restoreRef }))
@@ -31,13 +34,37 @@ function render(actualActivity = false) {
   } } })
 }
 beforeEach(() => {
+  sectionState.settings = []
+  sectionState.perform.mockReset().mockResolvedValue(true)
   Object.values(saves).forEach(save => save.mockReset().mockResolvedValue(true))
   reads.getActivity.mockReset().mockResolvedValue(activity)
   reads.saveActivity.mockReset().mockResolvedValue(activity)
   reads.restoreRef.mockReset().mockReturnValue(false)
 })
+afterEach(() => vi.restoreAllMocks())
 
 describe('aggregate settings persistence', () => {
+  it('does not dispatch a later enable stage after the administrator workspace is disposed', async () => {
+    sectionState.settings = [
+      { key: 'captcha.turnstile.site_key', value: 'reviewed-site-key', category: 'application', encrypted: false, configured: true, updatedAt: '2026-11-13T00:00:00Z' },
+      { key: 'captcha.turnstile.enabled', value: 'true', category: 'application', encrypted: false, configured: true, updatedAt: '2026-11-13T00:00:00Z' },
+    ]
+    sectionState.perform.mockImplementation(async (task: () => Promise<void>) => {
+      try { await task(); return true } catch { return false }
+    })
+    let finish!: () => void
+    const update = vi.spyOn(api, 'updateAdminSetting').mockImplementationOnce(() => new Promise<void>(resolve => { finish = resolve }) as never)
+    const wrapper = render()
+    await flushPromises()
+    await wrapper.get('button[form="admin-runtime-settings"]').trigger('click')
+    await flushPromises()
+    expect(update).toHaveBeenCalledExactlyOnceWith('captcha.turnstile.site_key', 'reviewed-site-key')
+    wrapper.unmount()
+    finish()
+    await flushPromises()
+    expect(update).toHaveBeenCalledOnce()
+  })
+
   it.each(['activity', 'billing', 'profiles'] as const)('does not claim success after a %s section failure', async name => {
     saves[name].mockResolvedValue(false)
     const wrapper = render()

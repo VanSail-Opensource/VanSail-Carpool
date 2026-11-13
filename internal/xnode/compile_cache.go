@@ -44,6 +44,12 @@ func (m *Master) cachedConfiguration(ctx context.Context, peer *agentPeer, _ boo
 	if err != nil {
 		return wire.Config{}, err
 	}
+	// The epoch lookup itself may wait on storage across an access boundary.
+	// Neither a cached candidate nor a fresh compile may reuse that old window.
+	now = m.service.now()
+	if !next.IsZero() && !now.Before(next) {
+		return wire.Config{}, ErrConflict
+	}
 	// A full-state resend does not change the authoritative inputs. Reuse the
 	// candidate even when the agent requests a baseline after a reconnect gap.
 	if saved := peer.compiled; saved != nil && saved.version == version && saved.localVersion == localVersion && (saved.until.IsZero() || now.Before(saved.until)) {
@@ -82,11 +88,11 @@ func (m *Master) cachedConfiguration(ctx context.Context, peer *agentPeer, _ boo
 		next = refresh
 	}
 	// Never publish a candidate compiled across a concurrently committed change.
-	after, _, err := repo.XNodeCompileVersion(ctx, now)
+	after, _, err := repo.XNodeCompileVersion(ctx, m.service.now())
 	if err != nil {
 		return wire.Config{}, err
 	}
-	if after != version || m.service.localCompileRevision.Load() != localVersion {
+	if after != version || m.service.localCompileRevision.Load() != localVersion || !next.IsZero() && !m.service.now().Before(next) {
 		return wire.Config{}, ErrConflict
 	}
 	fingerprint := compiledFingerprint(config)

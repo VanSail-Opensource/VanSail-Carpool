@@ -21,14 +21,6 @@ func (w *OperationWorker) loadTarget(ctx context.Context, operation providerops.
 	return order, nil
 }
 
-func (w *OperationWorker) claim(ctx context.Context, operation providerops.Operation, item providerops.Item) (providerops.Item, error) {
-	if item.Status == providerops.StatusProcessing {
-		// Only the idempotent built-in quote path resumes a processing create.
-		return item, nil
-	}
-	return w.repository.BeginProviderOperationItemAttempt(ctx, operation.Receipt.ID, item.Key, w.now().UTC())
-}
-
 // Exhausted local reads must leave a visible, durable review outcome instead of
 // a permanently processing receipt. A provider attempt is never repeated here.
 func (w *OperationWorker) finishExhausted(ctx context.Context, operationID string, cause error) error {

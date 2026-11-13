@@ -38,7 +38,10 @@ function sync(): void {
   const app = getTelegramWebApp()
   const next = owners.length > 0 && supportsTelegramVersion('6.1') ? app?.BackButton : undefined
   if (next !== backButton) {
-    if (backButton) tryTelegramCall(() => backButton?.offClick(handleBack))
+    if (backButton) {
+      tryTelegramCall(() => backButton?.offClick(handleBack))
+      tryTelegramCall(() => backButton?.hide())
+    }
     backButton = next
     if (backButton) tryTelegramCall(() => backButton?.onClick(handleBack))
   }

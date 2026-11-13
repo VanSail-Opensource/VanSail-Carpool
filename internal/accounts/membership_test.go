@@ -25,6 +25,25 @@ func TestCheckCommunityMembershipUsesCanonicalFactsAndActiveCombo(t *testing.T) 
 	}
 }
 
+func TestSingleSpaceMembershipRefreshPreservesOtherCurrentFacts(t *testing.T) {
+	t.Parallel()
+	for _, space := range []CommunitySpace{CommunityGroup, CommunityChannel} {
+		t.Run(string(space), func(t *testing.T) {
+			t.Parallel()
+			stale := model.User{ID: "user-1", TelegramID: 42}
+			repository := &accountsRepository{user: model.User{
+				ID: stale.ID, TelegramID: stale.TelegramID, GroupJoined: true, ChannelJoined: true,
+			}}
+			telegram := &accountsTelegram{memberships: map[string]bool{"-1001": true, "-1002": true}}
+			service := newAccountsServiceForTest(repository, nil, telegram, nil, validAccountsSettings(), 1)
+			refreshed, joined, err := service.checkCommunitySpaceMembership(context.Background(), stale, space)
+			if err != nil || !joined || !refreshed.GroupJoined || !refreshed.ChannelJoined {
+				t.Fatalf("one-space refresh overwrote newer membership: user=%+v joined=%t err=%v", refreshed, joined, err)
+			}
+		})
+	}
+}
+
 func TestCreateCommunityInviteIsPerSpaceAndEntitlementGated(t *testing.T) {
 	t.Parallel()
 

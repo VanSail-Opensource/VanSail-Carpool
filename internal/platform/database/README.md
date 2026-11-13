@@ -1,5 +1,10 @@
 # Application store
 
+`UpdateCommunityMembership` atomically writes only the observed group or channel
+fact and returns that committed user snapshot. A single-space Telegram refresh
+cannot overwrite a newer fact for the other space from its stale request user.
+The SQL column comes from an exact allowlist; onboarding remains independent.
+
 Purchase queue admission compares parsed paid boundaries at nanosecond precision;
 variable-width timestamp strings and PostgreSQL's microsecond timestamps must
 not shorten an existing term. Active-term add-on settlement rechecks the squad's
@@ -561,6 +566,13 @@ competing partial writers, stale work, revision advancement and identity changes
   actor inside their transactions. Returned financial/configuration snapshots
   are read before commit so a later edit cannot change an accepted response.
 - `payment_operations.go` atomically stores checkout/cancellation intents with provider-operation receipts.
+- `payment_create_attempt.go` locks the current operation, target order and owner
+  lifecycle before recording permission to create a checkout. Canceled, expired,
+  foreign or superseded targets cannot acquire an external attempt; only the
+  existing idempotent built-in reservation may resume a processing item. Lock
+  waiting counts toward the original checkout expiry. `payment_create_attempt_test.go`
+  covers current-state rejection, preserved terminal evidence, and concurrent
+  cancellation ahead of admission.
 - `payment_operation_resolution.go` resolves checkout receipts from authoritative paid callbacks without another provider call.
 - `billing_callback_tombstones.go` keeps provider callback replays idempotent
   after terminal payment detail has been compacted.

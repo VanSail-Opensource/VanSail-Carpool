@@ -16,7 +16,9 @@ Payment-method discovery, exact decimal arithmetic, checkout creation, provider 
   methods were removed; provider mutations always follow durable intent and an
   attempt marker. An ambiguous response stays pending review for reconciliation.
 - `operation_worker.go` performs local order, owner and request reads before its durable provider attempt marker. Transient preflight failures retain the same unattempted intent; definite absence and invalid immutable input remain explicit failures.
-- `operation_worker_admission.go` binds targets to the operation owner, claims provider attempts and places exhausted local-read failures under durable review without issuing a provider request.
+- `operation_worker_admission.go` binds targets to the operation owner and places exhausted local-read failures under durable review without issuing a provider request.
+- Checkout creation uses the database's atomic current-order admission after preflight. It serializes with cancellation, rechecks the immutable expiry and current account lifecycle, and preserves concurrent terminal evidence. An external processing attempt is only reconciled; only the transactional built-in quote can resume.
+- `operation_worker_current_order_test.go` covers cancellation and expiry during preflight plus exact recovery of an item completed concurrently, with no new provider call.
 - `operation_worker_reconcile.go` resolves interrupted attempts from stored payment state or leaves them pending review. Terminal item recovery preserves the exact recorded provider reference, error and result. Public rejection text comes from a fixed projection; historical provider payloads stay internal.
 - `operation_worker_preflight_test.go` covers order, owner and credential read recovery before an attempt, plus exhausted admission visibility.
 - `operation_worker_recovery_test.go` covers interrupted terminal receipt writes, cancellation preflight and settlement arriving before a queued cancellation executes.

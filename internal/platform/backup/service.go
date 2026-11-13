@@ -26,15 +26,23 @@ type Repository interface {
 func (s *Service) Delete(ctx context.Context, backupID, actorID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+	if err := requireDeletionActor(ctx, tx, actorID); err != nil {
+		return err
+	}
 	var activeRestores int
-	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM restore_jobs WHERE status IN ('staging','ready','applying')`).Scan(&activeRestores); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM restore_jobs WHERE status IN ('staging','ready','applying')`).Scan(&activeRestores); err != nil {
 		return fmt.Errorf("check active restores: %w", err)
 	}
 	if activeRestores != 0 {
 		return ErrRestoreConflict
 	}
 	var path, status string
-	if err := s.db.QueryRowContext(ctx, `SELECT path,status FROM backup_runs WHERE id=$1`, backupID).Scan(&path, &status); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT path,status FROM backup_runs WHERE id=$1 FOR UPDATE`, backupID).Scan(&path, &status); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrBackupNotFound
 		}
@@ -56,14 +64,6 @@ func (s *Service) Delete(ctx context.Context, backupID, actorID string) error {
 			return fmt.Errorf("stage backup deletion: %w", err)
 		}
 	}
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		if fileExists {
-			_ = os.Rename(staged, resolved)
-		}
-		return err
-	}
-	defer func() { _ = tx.Rollback() }()
 	if _, err := tx.ExecContext(ctx, `DELETE FROM restore_jobs WHERE backup_run_id=$1 AND status NOT IN ('staging','ready','applying')`, backupID); err != nil {
 		if fileExists {
 			_ = os.Rename(staged, resolved)

@@ -8,6 +8,10 @@ before export starts. Failed exports remain attributed. The database URL is
 protected process input and is never logged.
 
 - `service.go` owns deletion, path containment and service dependencies.
+- `delete_actor.go` locks and checks the current eligible administrator before
+  staging a deletion; the fence remains held through metadata and audit commit.
+  `delete_actor_test.go` checks demotion, cleanup, blocked and missing actors
+  cannot alter the archive, metadata or audit history.
 - `service_part2.go` owns publication, verified completion and managed-file pruning.
 - `manual.go` separates scheduled runs from mandatory audited manual admission;
   `manual_test.go` verifies audit failure prevents export and failed exports retain

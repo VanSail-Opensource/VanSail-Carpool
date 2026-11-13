@@ -56,6 +56,14 @@ func (r *accountsRepository) UpdateMembership(_ context.Context, _ string, group
 	r.user.GroupJoined, r.user.ChannelJoined = group, channel
 	return r.user, nil
 }
+func (r *accountsRepository) UpdateCommunityMembership(_ context.Context, _ string, space string, joined bool) (model.User, error) {
+	if space == "group" {
+		r.groupJoined, r.user.GroupJoined = joined, joined
+	} else {
+		r.channelJoined, r.user.ChannelJoined = joined, joined
+	}
+	return r.user, nil
+}
 func (r *accountsRepository) HasActiveCombo(context.Context, string, time.Time) (bool, error) {
 	return r.activeCombo, r.activeComboErr
 }

@@ -19,6 +19,7 @@ type paymentWorkerRepository interface {
 	ProviderOperationItems(context.Context, string) ([]providerops.Item, error)
 	BeginProviderOperationAttempt(context.Context, string, time.Time) (providerops.Operation, error)
 	BeginProviderOperationItemAttempt(context.Context, string, string, time.Time) (providerops.Item, error)
+	BeginPaymentCreateAttempt(context.Context, string, string, time.Time) (providerops.Item, model.PaymentOrder, bool, error)
 	CompleteProviderOperationItem(context.Context, string, string, providerops.Completion, time.Time) (providerops.Item, error)
 	CompleteProviderOperation(context.Context, string, providerops.Completion, time.Time) (providerops.Operation, error)
 }
@@ -36,7 +37,7 @@ func NewOperationWorker(service *Service) (*OperationWorker, error) {
 	if !ok {
 		return nil, errors.New("payment repository does not support durable operations")
 	}
-	return &OperationWorker{service: service, repository: repository, now: time.Now}, nil
+	return &OperationWorker{service: service, repository: repository, now: service.now}, nil
 }
 
 // HandleProviderOperation executes once, or reconciles an interrupted attempt without retrying it.
@@ -115,9 +116,15 @@ func (w *OperationWorker) create(ctx context.Context, operation providerops.Oper
 		}
 		return w.complete(ctx, operation, item, providerops.StatusFailed, "PAYMENT_CONFIGURATION_INVALID", "")
 	}
-	item, err = w.claim(ctx, operation, item)
+	item, order, allowed, err := w.repository.BeginPaymentCreateAttempt(ctx, operation.Receipt.ID, item.Key, w.now().UTC())
 	if err != nil {
-		return err
+		return w.concurrentCompletion(ctx, operation.Receipt.ID, err)
+	}
+	if providerops.Terminal(item.Status) {
+		return w.completeRecorded(ctx, operation, item)
+	}
+	if !allowed {
+		return w.reconcileOrder(ctx, operation, item, order)
 	}
 	checkout, err := w.service.gateway.Create(ctx, request)
 	if err != nil {
@@ -152,7 +159,7 @@ func (w *OperationWorker) cancel(ctx context.Context, operation providerops.Oper
 	if order.PaidAt != nil || order.Status == "paid" || order.Status == "refunded" {
 		return w.reconcileCancellation(ctx, operation, item, order, paymentOrderReference(order))
 	}
-	item, err = w.claim(ctx, operation, item)
+	item, err = w.repository.BeginProviderOperationItemAttempt(ctx, operation.Receipt.ID, item.Key, w.now().UTC())
 	if err != nil {
 		return err
 	}

@@ -3,7 +3,7 @@ delete:
   tags: [Admin, Database Administration]
   operationId: deleteAdminBackup
   summary: Delete a contained backup file and metadata consistently
-  description: Refuses deletion while any restore is staging or restarting and verifies the resolved regular file remains inside the configured backup directory.
+  description: Rechecks and locks the current active, unblocked administrator before staging any file deletion. Refuses deletion while any restore is staging or restarting and verifies the resolved regular file remains inside the configured backup directory. Metadata deletion and the actor audit commit together.
   parameters:
     - $ref: '../openapi.yaml#/components/parameters/ResourceID'
   responses:

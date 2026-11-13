@@ -18,17 +18,18 @@ import (
 
 type recoveryAuthRepository struct {
 	accounts.Repository
-	err      error
-	sessions int
+	err        error
+	sessionErr error
+	sessions   int
 }
 
 func (r *recoveryAuthRepository) UpsertTelegramUser(context.Context, model.TelegramProfile, bool) (model.User, bool, error) {
-	return model.User{}, false, r.err
+	return model.User{ID: "member", TelegramID: 581621}, false, r.err
 }
 
 func (r *recoveryAuthRepository) ReplaceSession(context.Context, []byte, string, time.Time) error {
 	r.sessions++
-	return nil
+	return r.sessionErr
 }
 
 type recoveryAuthValidator struct{}
