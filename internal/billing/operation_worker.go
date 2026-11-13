@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
@@ -18,6 +19,7 @@ type paymentWorkerRepository interface {
 	ProviderOperationItems(context.Context, string) ([]providerops.Item, error)
 	BeginProviderOperationAttempt(context.Context, string, time.Time) (providerops.Operation, error)
 	BeginProviderOperationItemAttempt(context.Context, string, string, time.Time) (providerops.Item, error)
+	BeginPaymentCreateAttempt(context.Context, string, string, time.Time) (providerops.Item, model.PaymentOrder, bool, error)
 	CompleteProviderOperationItem(context.Context, string, string, providerops.Completion, time.Time) (providerops.Item, error)
 	CompleteProviderOperation(context.Context, string, providerops.Completion, time.Time) (providerops.Operation, error)
 }
@@ -35,11 +37,20 @@ func NewOperationWorker(service *Service) (*OperationWorker, error) {
 	if !ok {
 		return nil, errors.New("payment repository does not support durable operations")
 	}
-	return &OperationWorker{service: service, repository: repository, now: time.Now}, nil
+	return &OperationWorker{service: service, repository: repository, now: service.now}, nil
 }
 
 // HandleProviderOperation executes once, or reconciles an interrupted attempt without retrying it.
-func (w *OperationWorker) HandleProviderOperation(ctx context.Context, operation providerops.Operation, _ model.OutboxJob) error {
+func (w *OperationWorker) HandleProviderOperation(ctx context.Context, operation providerops.Operation, job model.OutboxJob) (err error) {
+	if providerops.Terminal(providerops.Status(operation.Receipt.Status)) {
+		return nil
+	}
+	operationID := operation.Receipt.ID
+	defer func() {
+		if err != nil && job.Attempts >= 10 {
+			err = w.finishExhausted(ctx, operationID, err)
+		}
+	}()
 	if operation.Receipt.Status == string(providerops.StatusQueued) {
 		var err error
 		operation, err = w.repository.BeginProviderOperationAttempt(ctx, operation.Receipt.ID, w.now().UTC())
@@ -59,14 +70,10 @@ func (w *OperationWorker) HandleProviderOperation(ctx context.Context, operation
 	}
 	item := items[0]
 	if providerops.Terminal(item.Status) {
-		return w.complete(ctx, operation, item, item.Status, item.ErrorCode, item.ProviderReference)
+		return w.completeRecorded(ctx, operation, item)
 	}
 	if item.Status == providerops.StatusProcessing {
 		return w.reconcile(ctx, operation, item)
-	}
-	item, err = w.repository.BeginProviderOperationItemAttempt(ctx, operation.Receipt.ID, item.Key, w.now().UTC())
-	if err != nil {
-		return err
 	}
 	switch operation.Receipt.Kind {
 	case OperationCreateKind:
@@ -79,15 +86,21 @@ func (w *OperationWorker) HandleProviderOperation(ctx context.Context, operation
 }
 
 func (w *OperationWorker) create(ctx context.Context, operation providerops.Operation, item providerops.Item) error {
-	order, err := w.repository.PaymentOrderByID(ctx, item.TargetID)
+	order, err := w.loadTarget(ctx, operation, item)
 	if err != nil {
-		return w.complete(ctx, operation, item, providerops.StatusFailed, "PAYMENT_ORDER_NOT_FOUND", "")
+		if errors.Is(err, database.ErrNotFound) {
+			return w.complete(ctx, operation, item, providerops.StatusFailed, "PAYMENT_ORDER_NOT_FOUND", "")
+		}
+		return err
 	}
 	if order.Status != "creating" || order.CancelledAt != nil {
 		return w.reconcileOrder(ctx, operation, item, order)
 	}
 	user, err := w.repository.UserByID(ctx, order.UserID)
 	if err != nil {
+		if !errors.Is(err, database.ErrNotFound) {
+			return err
+		}
 		if failErr := w.repository.FailPaymentOrder(ctx, order.ID); failErr != nil {
 			return failErr
 		}
@@ -95,10 +108,23 @@ func (w *OperationWorker) create(ctx context.Context, operation providerops.Oper
 	}
 	request, err := w.service.providerCreateRequest(ctx, user, order)
 	if err != nil {
+		if !errors.Is(err, ErrInvalidOrder) {
+			return err
+		}
 		if failErr := w.repository.FailPaymentOrder(ctx, order.ID); failErr != nil {
 			return failErr
 		}
 		return w.complete(ctx, operation, item, providerops.StatusFailed, "PAYMENT_CONFIGURATION_INVALID", "")
+	}
+	item, order, allowed, err := w.repository.BeginPaymentCreateAttempt(ctx, operation.Receipt.ID, item.Key, w.now().UTC())
+	if err != nil {
+		return w.concurrentCompletion(ctx, operation.Receipt.ID, err)
+	}
+	if providerops.Terminal(item.Status) {
+		return w.completeRecorded(ctx, operation, item)
+	}
+	if !allowed {
+		return w.reconcileOrder(ctx, operation, item, order)
 	}
 	checkout, err := w.service.gateway.Create(ctx, request)
 	if err != nil {
@@ -108,11 +134,11 @@ func (w *OperationWorker) create(ctx context.Context, operation providerops.Oper
 			}
 			return w.complete(ctx, operation, item, providerops.StatusFailed, code, "")
 		}
-		if message, rejected := providerCreateRejection(err); rejected {
+		if providerCreateRejection(err) {
 			if failErr := w.repository.FailPaymentOrder(ctx, order.ID); failErr != nil {
 				return failErr
 			}
-			return w.complete(ctx, operation, item, providerops.StatusFailed, "PAYMENT_CREATE_REJECTED", "", message)
+			return w.complete(ctx, operation, item, providerops.StatusFailed, "PAYMENT_CREATE_REJECTED", "")
 		}
 		return w.complete(ctx, operation, item, providerops.StatusPendingReview, "PAYMENT_CREATE_AMBIGUOUS", "")
 	}
@@ -123,9 +149,19 @@ func (w *OperationWorker) create(ctx context.Context, operation providerops.Oper
 }
 
 func (w *OperationWorker) cancel(ctx context.Context, operation providerops.Operation, item providerops.Item) error {
-	order, err := w.repository.PaymentOrderByID(ctx, item.TargetID)
+	order, err := w.loadTarget(ctx, operation, item)
 	if err != nil {
-		return w.complete(ctx, operation, item, providerops.StatusFailed, "PAYMENT_ORDER_NOT_FOUND", "")
+		if errors.Is(err, database.ErrNotFound) {
+			return w.complete(ctx, operation, item, providerops.StatusFailed, "PAYMENT_ORDER_NOT_FOUND", "")
+		}
+		return err
+	}
+	if order.PaidAt != nil || order.Status == "paid" || order.Status == "refunded" {
+		return w.reconcileCancellation(ctx, operation, item, order, paymentOrderReference(order))
+	}
+	item, err = w.repository.BeginProviderOperationItemAttempt(ctx, operation.Receipt.ID, item.Key, w.now().UTC())
+	if err != nil {
+		return err
 	}
 	canceller, supported := w.service.gateway.(CancellationGateway)
 	if !supported || order.Provider != "bepusdt" || order.ProviderTradeID == nil {

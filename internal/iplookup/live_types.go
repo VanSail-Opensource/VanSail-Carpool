@@ -18,6 +18,9 @@ type LiveMeta struct {
 
 // LiveDetails is response-only information for the requested address.
 type LiveDetails struct {
+	// RepairRevision is an internal compare-and-swap token for frozen repairs.
+	RepairRevision string `json:"-"`
+
 	SnapshotID string           `json:"-"`
 	SourceIP   string           `json:"sourceIP"`
 	CacheMatch string           `json:"cacheMatch"`

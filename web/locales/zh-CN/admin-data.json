@@ -60,7 +60,7 @@
   "adminBackups": {
     "maintenance": "运行维护",
     "maintenanceTitle": "立即运行维护？",
-    "maintenanceDescription": "系统会先创建并验证备份，然后清理超过七天的数据库记录和迁移快照。即使今天已经运行过，也可以再次执行。",
+    "maintenanceDescription": "系统会先创建并验证备份，再清理符合条件的过期运行记录，同时保留财务和恢复证据。即使今天已运行过，也可以再次执行。",
     "maintenanceConfirm": "运行维护",
     "maintenanceQueued": "维护任务已排队。完成后将刷新备份和任务列表。",
     "maintenanceSucceeded": "维护已完成。备份和任务列表已刷新。",
@@ -104,7 +104,7 @@
     "noJobs": "暂无同步任务",
     "noJobsHint": "计划任务和重试会显示在这里。",
     "deleteJobTitle": "删除同步任务？",
-    "deleteJobDescription": "成功任务会自动移除；等待中、失败和历史已完成任务可以手动删除，正在处理的任务受到保护。",
+    "deleteJobDescription": "仅删除已不再需要重试或恢复的任务。正在处理的任务无法删除。",
     "deleteJob": "删除任务"
   },
   "databaseRecord": {

@@ -1,59 +1,3 @@
-.invite-row {
-  width: 100%;
-  min-height: 72px;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 0.8rem;
-  padding: 0.75rem;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-control);
-  background: var(--surface);
-  text-align: left;
-  cursor: pointer;
-  transition: transform 200ms var(--ease-out), border-color 200ms var(--ease-out), background-color 200ms var(--ease-out);
-}
-
-.invite-row:hover {
-  border-color: var(--line-strong);
-  background: var(--surface-raised);
-}
-
-.invite-row:active {
-  transform: scale(0.99);
-}
-
-.invite-row__icon {
-  width: 44px;
-  height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 13px;
-  color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.invite-row__copy {
-  min-width: 0;
-}
-
-.invite-row__copy strong,
-.invite-row__copy small {
-  display: block;
-}
-
-.invite-row__copy small {
-  margin-top: 0.22rem;
-  color: var(--text-faint);
-  font-size: 0.72rem;
-}
-
-.invite-row__check,
-.field-hint--valid {
-  color: var(--accent);
-}
-
 .form-stack {
   display: flex;
   flex-direction: column;
@@ -86,11 +30,6 @@
 .input-shell:focus-within {
   border-color: var(--accent);
   background: var(--surface-raised);
-}
-
-.input-shell--valid {
-  color: var(--accent);
-  border-color: #41604c;
 }
 
 .input-shell input,

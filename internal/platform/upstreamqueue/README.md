@@ -26,7 +26,7 @@ before invoking its provider adapter.
 - `queue_part2.go` contains queue worker and lifecycle helpers.
 - `config.go` exposes read-only queue configuration accessors.
 
-`ordering.go` exposes WithKey for per-resource FIFO. The existing scheduler bounds pending work and active workers, skips occupied keys, and retains one provider-wide pacing clock. Cancellation and shutdown join active calls.
+`ordering.go` exposes WithKey for per-resource FIFO. The existing scheduler bounds pending work and active workers, skips occupied keys, and retains one provider-wide pacing clock. Caller cancellation can return before an admitted callback finishes. Keep mutable buffers and secret cleanup inside the callback until it returns. Shutdown cancels and joins active workers; its caller can stop waiting when the shutdown context expires.
 
 `ordering_test.go` checks that an occupied account does not stall another account.
 
@@ -34,3 +34,10 @@ The scheduler alone owns the `Capacity` pending slots. Its unbuffered intake
 prevents a second hidden backlog; callers waiting for admission retain context
 cancellation. `queue_test.go` waits for admission explicitly and checks that a
 full backlog rejects another admission at the caller's deadline.
+
+Each pending caller also wakes the scheduler on cancellation. A canceled keyed
+backlog releases its capacity immediately even when the same key's predecessor
+is still active; an independent key can use an idle worker. Removing pending
+calls stops the wake callback and clears retained references.
+`cancellation_capacity_test.go` covers this case without releasing the held
+predecessor or depending on timing sleeps.

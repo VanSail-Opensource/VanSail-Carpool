@@ -15,12 +15,14 @@ const open = shallowRef(false)
 const additionOpen = shallowRef(false)
 const route = useRoute()
 const router = useRouter()
+watch(() => controls.value.value?.activePurchase?.id, () => { open.value = false; additionOpen.value = false }, { flush: 'sync' })
+watch(controls.quote, next => { if (!next?.eligible) open.value = false }, { flush: 'sync' })
 watch([() => route.query.addSquads, controls.value], ([requested, value]) => {
   if (requested !== '1' || !value?.activePurchase || value.queuedPurchase || !value.mutable) return
   additionOpen.value = true
   const query = { ...route.query }
   delete query.addSquads
-  void router.replace({ query })
+  void router.replace({ query }).catch(() => undefined)
 })
 const message = computed(() => {
   const status = controls.command.receipt.value?.status

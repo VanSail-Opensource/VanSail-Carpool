@@ -58,6 +58,7 @@ func (s *scanner) scanTron(ctx context.Context, cursor Cursor, addresses []strin
 	if err != nil {
 		return Batch{}, err
 	}
+	p = bindTimePage(p, addresses)
 	if p.Address >= len(addresses) {
 		return Batch{Cursor: finishTimePage(p), CaughtUp: true}, nil
 	}
@@ -69,14 +70,20 @@ func (s *scanner) scanTron(ctx context.Context, cursor Cursor, addresses []strin
 	if err := s.client.get(ctx, "/v1/accounts/"+addresses[p.Address]+"/transactions/trc20", q, &page); err != nil {
 		return Batch{}, err
 	}
-	if !page.Success {
+	if !page.Success || page.Data == nil {
 		return Batch{}, ErrRPC
 	}
 	batch := Batch{Transfers: []Transfer{}}
 	seen := map[string]bool{}
 	for _, item := range page.Data {
-		if item.Type != "Transfer" || item.Token.Address != s.client.spec.Token || item.Token.Decimals != s.client.spec.Decimals {
+		if item.TxHash == "" || item.Type == "" || item.Token.Address == "" {
+			return Batch{}, ErrProof
+		}
+		if item.Type != "Transfer" || item.Token.Address != s.client.spec.Token {
 			continue
+		}
+		if item.Token.Decimals != s.client.spec.Decimals {
+			return Batch{}, ErrProof
 		}
 		if seen[item.TxHash] {
 			continue

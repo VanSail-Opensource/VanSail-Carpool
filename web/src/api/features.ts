@@ -102,8 +102,8 @@ export const featuresApi = {
   getDatabaseRows: (table: string, cursor?: string) => featureRequest<DatabaseRowsPage>(
     `/api/v1/admin/database/tables/${encodeURIComponent(table)}/rows`, { query: { cursor, limit: 50 } },
   ),
-  queryDatabaseRows: (table: string, body: DatabaseQueryInput) => featureRequest<DatabaseRowsPage>(
-    `/api/v1/admin/database/tables/${encodeURIComponent(table)}/query`, { method: 'POST', body },
+  queryDatabaseRows: (table: string, body: DatabaseQueryInput, signal?: AbortSignal) => featureRequest<DatabaseRowsPage>(
+    `/api/v1/admin/database/tables/${encodeURIComponent(table)}/query`, { method: 'POST', body, signal },
   ),
   getPublishedOnboarding: (locale: string) => featureRequest<PublishedOnboarding>('/api/v1/onboarding/content', { query: { locale } }),
   getAdminOnboardingBundle: (kind: 'welcome' | 'agreements') => featureRequest<OnboardingBundle>(`/api/v1/admin/onboarding/content/${kind}`),

@@ -1,6 +1,5 @@
 import type { NamedShare } from '@/api/types'
 import { getLocale } from '@/i18n'
-import { formatBytes } from '@/utils/format'
 
 export const statisticsColors = [
   '#a6d9bb', '#d8c18f', '#8fb5d8', '#e2a29e',
@@ -40,28 +39,6 @@ export function formatStatisticPercent(value: number): string {
 export function formatSignedStatistic(value: number): string {
   const normalized = Number.isFinite(value) ? value : 0
   return `${normalized > 0 ? '+' : ''}${formatStatisticNumber(normalized)}`
-}
-
-export function formatShortStatisticDate(value: string): string {
-  const date = new Date(`${value}T00:00:00.000Z`)
-  if (!Number.isFinite(date.valueOf())) return value
-  return new Intl.DateTimeFormat(getLocale(), { weekday: 'short', timeZone: 'UTC' }).format(date)
-}
-
-export function safeStatisticBytes(value: string): bigint {
-  try {
-    return /^\d+$/.test(value) ? BigInt(value) : 0n
-  } catch {
-    return 0n
-  }
-}
-
-export function sumStatisticBytes(values: readonly string[]): bigint {
-  return values.reduce((sum, value) => sum + safeStatisticBytes(value), 0n)
-}
-
-export function formatStatisticBytes(value: bigint): string {
-  return formatBytes(value.toString())
 }
 
 export function shareTotal(items: readonly NamedShare[]): number {

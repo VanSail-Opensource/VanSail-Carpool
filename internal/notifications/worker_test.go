@@ -28,8 +28,12 @@ func TestWorkerSeparatesRecipientFailuresRateLimitsAndProviderFailures(t *testin
 		failure        *telegram.APIError
 		terminal, wait bool
 	}{
-		{"blocked", &telegram.APIError{ErrorCode: 403, Description: "Forbidden: bot was blocked by the user"}, true, false},
-		{"not found", &telegram.APIError{ErrorCode: 400, Description: "Bad Request: chat not found"}, true, false},
+		{"blocked", &telegram.APIError{HTTPStatus: 403, ErrorCode: 403, Description: "Forbidden: bot was blocked by the user"}, true, false},
+		{"not found", &telegram.APIError{HTTPStatus: 400, ErrorCode: 400, Description: "Bad Request: chat not found"}, true, false},
+		{"gateway blocked body", &telegram.APIError{HTTPStatus: 503, ErrorCode: 403, Description: "Forbidden: bot was blocked by the user"}, false, false},
+		{"success not found body", &telegram.APIError{HTTPStatus: 200, ErrorCode: 400, Description: "Bad Request: chat not found"}, false, false},
+		{"throttled blocked body", &telegram.APIError{HTTPStatus: 429, ErrorCode: 403, Description: "Forbidden: bot was blocked by the user"}, false, false},
+		{"retryable blocked", &telegram.APIError{HTTPStatus: 403, ErrorCode: 403, Description: "Forbidden: bot was blocked by the user", RetryAfter: 60}, false, false},
 		{"rate limited", &telegram.APIError{ErrorCode: 429, RetryAfter: 120}, false, true},
 		{"gateway", &telegram.APIError{ErrorCode: 502}, false, false},
 		{"unknown forbidden", &telegram.APIError{ErrorCode: 403, Description: "Forbidden: unknown policy"}, false, false},

@@ -37,4 +37,15 @@ describe('workspace request lifetime', () => {
     expect(action).not.toHaveBeenCalled()
     wrapper.unmount()
   })
+  it('does not reload the inventory when a mutation completes after disposal', async () => {
+    const { state, wrapper } = mountWorkspace()
+    await flushPromises()
+    let finish!: () => void
+    const action = state.perform(() => new Promise<void>(resolve => { finish = resolve }))
+    wrapper.unmount()
+    finish()
+    expect(await action).toBe(false)
+    expect(api.nodes).toHaveBeenCalledTimes(1)
+    expect(state.metrics.value).toBeNull()
+  })
 })

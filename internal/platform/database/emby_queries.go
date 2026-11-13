@@ -140,10 +140,7 @@ func mapEmbyNotFound(err error) error {
 }
 
 func truncateEmbyError(value string) string {
-	if len(value) > 500 {
-		return value[:500]
-	}
-	return value
+	return truncateErrorText(value)
 }
 
 var _ domain.Repository = (*Store)(nil)

@@ -63,6 +63,8 @@ watch(() => operation.receipt.value, (receipt) => {
   void operation.loadRefundEligibility()
 })
 watch(() => props.purchase.id, () => {
+  dialogKind.value = null
+  emittedReceiptId = ''
   operation.reset()
   void operation.loadRefundEligibility()
 })

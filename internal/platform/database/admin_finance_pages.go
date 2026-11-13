@@ -27,16 +27,17 @@ func (s *Store) ListAdminPaymentOrdersPage(ctx context.Context, cursor, search, 
 		args = append(args, status)
 	}
 	filter := pageFilterFingerprint(search, status)
+	orderedCreated := purchaseTimestampOrderSQL("created_at")
 	if cursor != "" {
 		decoded, err := decodeTimestampCursor(cursor, filter)
 		if err != nil {
 			return nil, nil, err
 		}
-		query += fmt.Sprintf(" AND (created_at<$%d OR (created_at=$%d AND id<$%d))", len(args)+1, len(args)+2, len(args)+3)
-
-		args = append(args, decoded.Timestamp, decoded.Timestamp, decoded.ID)
+		orderedCursor := purchaseTimestampOrderSQL(fmt.Sprintf("$%d", len(args)+1))
+		query += fmt.Sprintf(" AND (%s,id)<(%s,$%d)", orderedCreated, orderedCursor, len(args)+2)
+		args = append(args, decoded.Timestamp, decoded.ID)
 	}
-	query += fmt.Sprintf(" ORDER BY created_at DESC,id DESC LIMIT $%d", len(args)+1)
+	query += fmt.Sprintf(" ORDER BY %s DESC,id DESC LIMIT $%d", orderedCreated, len(args)+1)
 
 	args = append(args, limit+1)
 	rows, err := s.db.QueryContext(ctx, query, args...)
@@ -83,16 +84,17 @@ func (s *Store) ListAdminRefundsPage(ctx context.Context, cursor, search, status
 		args = append(args, status)
 	}
 	filter := pageFilterFingerprint(search, status)
+	orderedCreated := purchaseTimestampOrderSQL("created_at")
 	if cursor != "" {
 		decoded, err := decodeTimestampCursor(cursor, filter)
 		if err != nil {
 			return nil, nil, err
 		}
-		query += fmt.Sprintf(" AND (created_at<$%d OR (created_at=$%d AND id<$%d))", len(args)+1, len(args)+2, len(args)+3)
-
-		args = append(args, decoded.Timestamp, decoded.Timestamp, decoded.ID)
+		orderedCursor := purchaseTimestampOrderSQL(fmt.Sprintf("$%d", len(args)+1))
+		query += fmt.Sprintf(" AND (%s,id)<(%s,$%d)", orderedCreated, orderedCursor, len(args)+2)
+		args = append(args, decoded.Timestamp, decoded.ID)
 	}
-	query += fmt.Sprintf(" ORDER BY created_at DESC,id DESC LIMIT $%d", len(args)+1)
+	query += fmt.Sprintf(" ORDER BY %s DESC,id DESC LIMIT $%d", orderedCreated, len(args)+1)
 
 	args = append(args, limit+1)
 	rows, err := s.db.QueryContext(ctx, query, args...)

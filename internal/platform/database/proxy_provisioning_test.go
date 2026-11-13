@@ -103,3 +103,51 @@ func TestUnlinkedPaidBacklogQueuesOneRepair(t *testing.T) {
 		t.Fatalf("repair jobs = %d, err %v", jobs, err)
 	}
 }
+
+func TestProvisioningUsesExactPaidWindowAndActiveOwner(t *testing.T) {
+	for _, test := range []struct {
+		name   string
+		until  time.Duration
+		closed bool
+		live   bool
+	}{
+		{name: "final nanosecond", until: time.Nanosecond, live: true},
+		{name: "exact expiry"},
+		{name: "closed owner", until: time.Hour, closed: true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			ctx, store := context.Background(), newTestStore(t)
+			now := time.Date(2026, 11, 1, 12, 0, 0, 0, time.UTC)
+			combo := saveTestCombo(t, store, "precise provisioning", 100, 30)
+			user, purchase := createAdminWorkflowPurchase(t, store, 55_102, combo, now.Add(-time.Hour))
+			if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET valid_until=$1 WHERE id=$2`, stamp(now.Add(test.until)), purchase.ID); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := store.DB().ExecContext(ctx, `UPDATE users SET proxy_user_id=NULL,onboarding_state='complete' WHERE id=$1`, user.ID); err != nil {
+				t.Fatal(err)
+			}
+			if test.closed {
+				// Close an already-onboarded owner; completing onboarding on a
+				// closed owner is deliberately rejected by the lifecycle trigger.
+				if _, err := store.DB().ExecContext(ctx, `UPDATE users SET account_status='purging' WHERE id=$1`, user.ID); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if live, err := store.HasProvisionablePurchase(ctx, user.ID, now); err != nil || live != test.live {
+				t.Fatal("incorrect paid admission", live, err)
+			}
+			if err := store.EnqueueUnlinkedPaidUsers(ctx, now); err != nil {
+				t.Fatal(err)
+			}
+			var jobs int
+			if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_sync_user' AND payload::jsonb->>'userId'=$1`, user.ID).Scan(&jobs); err != nil || jobs != boolInt(test.live) {
+				t.Fatal("incorrect repair admission", jobs, err)
+			}
+			err := store.LinkProvisionedProxyUser(ctx, user.ID, user.AccountName(), "", "90217", now)
+			if test.live && err != nil || !test.live && !errors.Is(err, ErrConflict) {
+				t.Fatal("incorrect identity link admission", err)
+			}
+		})
+	}
+}

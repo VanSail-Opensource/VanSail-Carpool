@@ -94,7 +94,7 @@ func (s *Server) adminRetryJob(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) adminDeleteJob(w http.ResponseWriter, r *http.Request) {
-	if err := s.deps.Store.DeleteOutboxJob(r.Context(), chiURLParam(r, "id")); err != nil {
+	if err := s.deps.Store.DeleteOutboxJob(r.Context(), chiURLParam(r, "id"), currentUser(r).ID); err != nil {
 		s.adminFailure(w, r, err)
 		return
 	}

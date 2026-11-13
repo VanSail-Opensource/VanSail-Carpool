@@ -6,7 +6,7 @@
 - `AdminEntitlementEditor.vue` validates the advanced optimistic-lock overwrite form.
 - `AdminEntitlementRefundDialog.vue` requires an exact positive TXB-minor refund amount bounded by the original net debit.
 - `AdminManualEntitlementDialog.vue` creates a zero-charge, audited fixed-term grant with explicit combo, term, bytes, cadence, optional squads and reason; 409 overlaps keep the draft visible with localized conflict copy.
-- `AdminOperationResolutionDialog.vue` records an audited resolution without retrying an ambiguous provider mutation.
+- `AdminOperationResolutionDialog.vue` requests audited parent-receipt repair from retained completed item evidence. It requires an explicit outcome and never defaults to success. `operationResolution.ts` limits the entrance to entitlement edits, credited-refund synchronization, combo replacement, bulk extension and historical outage synchronization; the server validates actual evidence. Unsupported domain workflows show reconciliation guidance. `operationResolution.test.ts` checks both permitted kinds and denied payment/member/native/Emby/restriction kinds.
 - `AdminUserEntitlements.vue` presents the fixed-term plan workspace: a primary manual-grant action plus labelled per-row edit-terms and refund actions, readable status/validity/price facts, and Motion transitions that honor reduced motion.
 - `AdminUserHourly.vue` presents the administrator hourly projection (policy, wallet, daily usage, enrollments) with a confirmed disable action.
 - `useAdminUserHourly.ts` owns the hourly projection load with abort/generation guards, the quoted policy version and idempotent disable queuing.
@@ -14,6 +14,7 @@
 - `AdminUserIPBlocks.vue` presents active member-created blocks and exposes only the administrator unblock action.
 - `AdminUserOverview.vue` presents identity, balance, synchronization, and the active combo.
 - `AdminUserPM.vue` moves PM controls, topic navigation, repair, delivery history, and read status into the selected profile.
+- `AdminUserPM.test.ts` preserves ambiguous moderation errors and replay keys, keeps queued receipt polling mounted, and permits explicit repair after a known pending-review result. Accepted moderation and terminal results request a quiet parent refresh, preserving the receipt owner while updating committed flags.
 - `AdminUserCouponActions.vue` grants or historically discards active purchase-discount wallet coupons.
 - `AdminUserSearchFilters.vue` supplies browser popover state, combo, and squad facets with AND/OR composition.
 - `AdminUserAccountContext.vue` presents successful affiliate history without duplicating member facts.
@@ -43,6 +44,11 @@ uses the courtesy ledger. Failed evidence loads disable confirmation until retry
 
 `useAdminUserMetrics.test.ts` verifies abort/generation isolation between profiles and retirement of pending responses/samples on logout.
 
+Balance adjustments carry an idempotency key for the exact member, signed amount
+and reason. Ambiguous failures retain that key for a safe retry; confirmed
+successes retire it so a subsequent intentional adjustment is distinct.
+`AdminUserBalanceAdjustment.test.ts` covers these recovery boundaries.
+
 The IP table distinguishes stale/unavailable reports from a fresh report with no recent activity. No scan action or receipt polling is needed.
 
 `AdminUserActiveIPs.vue` presents automatically refreshed, owner-scoped sampled
@@ -60,3 +66,26 @@ distinction from a complete fresh report with no recent activity. The backend
 bounds output across nodes as well as per node.
 
 `AdminIPUnblockDialog.vue` runs administrator unblock with browser controls and durable receipts.
+
+Audit recovery regressions: `AdminBulkExtensionDialog.test.ts` rejects stale filter previews and preserves ambiguous bulk-command keys. `AdminUserCouponActions.test.ts` preserves grant retry identity. `useAdminUserProfile.test.ts` verifies exact-intent keys across HTTP failures and accepted attempts. Profile and hourly actions retain retry identity after ambiguous replies; action payloads and owner transitions fence stale updates.
+
+Quiet profile refreshes retain the last-good profile on read failure, keeping PM
+receipt polling mounted. The read error remains visible and prevents ordinary
+profile mutations until a successful refresh; `useAdminUserProfile.test.ts`
+covers this recovery path.
+
+`useAdminUserHourly.test.ts` verifies uncertain keys remain bound to the member,
+enrollment and policy version, and a previous member's late response cannot
+replace the current receipt or release the current action's pending state.
+
+Administrator list and profile synchronization badges show the server's exact
+current-credential lifecycle state independently of wallet funding. Pending
+first deployment, retained failure and missing provisioning remain visible.
+`AdminSynchronization.test.ts` covers all four statuses with positive balances;
+these labels describe historical deployment evidence rather than node liveness.
+
+Pending financial and entitlement dialogs keep their reviewed amount, terms,
+reason and target locked. Native overlay close controls cannot discard pending
+grant/edit/credit/provider requests. `AdminEntitlementEditor.test.ts` and the
+pending adjustment case in `AdminUserBalanceAdjustment.test.ts` cover these
+review boundaries alongside the existing idempotent retry coverage.

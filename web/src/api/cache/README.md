@@ -8,7 +8,9 @@ when it completes, without navigation or a document reload.
 ## Modules
 
 - `session.ts` owns experience/account/role/onboarding-scoped, in-memory JSON snapshots, isolated copies, an 8 MiB / 256-entry LRU bound, and invalidation generations.
+- Its independent identity generation fences global HTTP authentication effects across account changes. Ordinary snapshot invalidation leaves this generation unchanged, so parallel writes cannot hide valid expiry notifications.
 - `policy.ts` separates read requests from mutations and builds method/URL/query/body-specific keys. Authentication, payment capabilities, action quotes, keys, financial usage breakdowns, and operation/connection polling are never cached.
+- Explicit `cache: 'no-store'` also disables in-memory snapshots and in-flight response sharing, preserving the caller's live or sensitive response policy.
 - `transport.ts` writes successful responses immediately, shares identical unsignalled reads in flight, rejects older writes, invalidates on mutations/auth failures, and evicts forbidden or removed resources.
 - `restore.ts` exposes typed snapshot-to-state helpers. They never skip the loader's normal backend request or authorize actions.
 - `restore.test.ts` covers stale nested shapes, compatible empty/additive responses, and contained projection errors. Snapshot restoration validates the current OpenAPI shape before mutating state and discards incompatible entries without blocking the live request.
@@ -25,13 +27,13 @@ when it completes, without navigation or a document reload.
 ## Coverage and boundaries
 
 Member preload covers Home and its default node-usage range, balance,
-Emby, IP blocks, reset automation, community membership, and localized
+Emby, community access/membership, and localized
 onboarding content. The browser console loads each section on demand and never
 runs the member preload. Filters, pagination, details and administrator resources
 are cached on use with their exact resource keys and a browser-scoped identity.
-Explore PAYG reads start on entry. Combo code, catalog and coupon wallet reads
-start only when Combo is selected; Home gets entitlement labels in its dashboard
-response and node metadata from its usage summary rather than fetching catalog.
+Explore PAYG reads start on entry and hourly reads start when that mode is
+selected. Home gets entitlement labels in its dashboard response and node
+metadata from its usage summary rather than fetching catalog.
 
 Preloading does not execute purchases, create payments, start connection scan jobs,
 download backups, or enumerate every database row/account. Their existing action

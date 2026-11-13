@@ -2,6 +2,10 @@
 
 ## Basic Type Parameters
 
+`constraints` in these examples is `golang.org/x/exp/constraints`, not a
+standard-library package. For ordered types alone, Go 1.21+ also provides
+`cmp.Ordered`; pin any external dependency through the consuming module.
+
 ```go
 package main
 
@@ -37,7 +41,7 @@ func main() {
 ## Type Constraints
 
 ```go
-import "constraints"
+import "golang.org/x/exp/constraints"
 
 // Built-in constraints
 type Number interface {

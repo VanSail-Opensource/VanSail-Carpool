@@ -27,21 +27,22 @@ func (s *Store) listAdminPurchasesPageAt(ctx context.Context, cursor, search, st
 	}
 	if status != "" {
 		// Raw lifecycle status remains available to settlement and advanced edits.
-		query += fmt.Sprintf(" AND (CASE\n\t\t\tWHEN purchases.status IN ('active','activating','queued') AND purchases.valid_until<=$%d THEN 'expired'\n\t\t\tWHEN purchases.status IN ('active','activating') AND purchases.valid_from>$%d THEN 'queued'\n\t\t\tELSE purchases.status END)=$%d", len(args)+1, len(args)+2, len(args)+3)
+		query += fmt.Sprintf(" AND (CASE\n\t\t\tWHEN purchases.status IN ('active','activating','queued') AND "+purchaseTimestampOrderSQL("purchases.valid_until")+"<=$%d THEN 'expired'\n\t\t\tWHEN purchases.status IN ('active','activating') AND "+purchaseTimestampOrderSQL("purchases.valid_from")+">$%d THEN 'queued'\n\t\t\tELSE purchases.status END)=$%d", len(args)+1, len(args)+2, len(args)+3)
 
-		args = append(args, stamp(now), stamp(now), status)
+		args = append(args, purchaseTimestampOrder(now), purchaseTimestampOrder(now), status)
 	}
 	filter := pageFilterFingerprint(search, status)
+	orderedCreated := purchaseTimestampOrderSQL("purchases.created_at")
 	if cursor != "" {
 		decoded, err := decodeTimestampCursor(cursor, filter)
 		if err != nil {
 			return nil, nil, err
 		}
-		query += fmt.Sprintf(" AND (purchases.created_at<$%d OR (purchases.created_at=$%d AND purchases.id<$%d))", len(args)+1, len(args)+2, len(args)+3)
-
-		args = append(args, decoded.Timestamp, decoded.Timestamp, decoded.ID)
+		orderedCursor := purchaseTimestampOrderSQL(fmt.Sprintf("$%d", len(args)+1))
+		query += fmt.Sprintf(" AND (%s,purchases.id)<(%s,$%d)", orderedCreated, orderedCursor, len(args)+2)
+		args = append(args, decoded.Timestamp, decoded.ID)
 	}
-	query += fmt.Sprintf(" ORDER BY purchases.created_at DESC,purchases.id DESC LIMIT $%d", len(args)+1)
+	query += fmt.Sprintf(" ORDER BY %s DESC,purchases.id DESC LIMIT $%d", orderedCreated, len(args)+1)
 
 	args = append(args, limit+1)
 	rows, err := s.db.QueryContext(ctx, query, args...)

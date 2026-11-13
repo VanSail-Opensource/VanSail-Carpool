@@ -42,7 +42,12 @@ full-duration early-activation quote.
 
 Schema definitions are grouped into bounded sequential shards. The root component registry references each definition by JSON Pointer.
 
-- `schemas-01.yaml`: `ID`, `Timestamp`, `DecimalInteger`, `ApiError`, `TelegramAuthRequest`, `OnboardingStep`, `User`, `AuthState`, `JoinInvite`, `CommunityMembership`, `UsernameRequest`, `AgreementRequest`, `WelcomeMessage`, `OnboardingAgreement`, `LocalizedOnboardingContent`, `PublishedOnboarding`, `OnboardingBundle`
+`LedgerKind` includes every active financial writer's category, including add-ons,
+refunds, affiliate and raffle settlements, IP lookups and Telegram deductions.
+Retired questionnaire and traffic-reset categories remain readable as immutable
+financial evidence.
+
+- `schemas-01.yaml`: `ID`, `Timestamp`, `DecimalInteger`, `ApiError`, `TelegramAuthRequest`, `OnboardingStep`, `User`, `AuthState`, `JoinInvite`, `CommunityMembership`, `AgreementRequest`, `WelcomeMessage`, `OnboardingAgreement`, `LocalizedOnboardingContent`, `PublishedOnboarding`, `OnboardingBundle`
 - `schemas-02.yaml`: `OnboardingDraftWrite`, `OnboardingPublishRequest`, `Money`, `ResetStrategy`, typed squad profiles, `SquadProduct` with live accessible nodes, `Combo`, nullable-provider `CatalogNode`, `Catalog`, `ComboWrite`, `SquadProductWrite`
 - `schemas-03.yaml`: `ProxyNode`, `PurchaseRequest`, `PurchaseQuote`, `EntitlementStatus`, `Entitlement`, `Purchase`, `SubscriptionRotation`, `TopNode`, `Statistics`, `StatisticPoint`
 - `schemas-04.yaml`: `StatisticSlice`, `AdminStatistics`, `Dashboard`, `LedgerKind`, `LedgerEntry`, `PageInfo`, `LedgerPage`, `PaymentMethodID`, `PaymentOrderMethodID`, `PaymentProvider`, `PaymentStatus`, `PaymentOrderRequest`
@@ -55,7 +60,6 @@ Schema definitions are grouped into bounded sequential shards. The root componen
 - `schemas-13.yaml`: `CourtesyCredit`
 - `schemas-14.yaml`: `DashboardNodeUsage`
 - `schemas-15.yaml`: `AutoRenewal`, `AutoRenewalUpdate`, `AutoRenewalFailure`, stable-ID `PaymentProfile`, and `PaymentProfileWrite`
-- `schemas-16.yaml`: live `RolloverWindow` and `RolloverProjection` aggregate response schemas
 - `schemas-17.yaml`: durable operation and payment-operation receipts, signed connection projections, active IP blocks, refund quotes, and billing amount limits
 - `schemas-18.yaml`: admin entitlement/combo mutations, exact refund amounts, coupon and provider-account commands, minute-normalized bulk extension requests with a legacy-days compatibility input, and aggregate user detail including active IP blocks and temporary-ban state
 - `schemas-20.yaml`: affiliate member projections, tier rewards, bot identity, and optimistic administrator writes
@@ -78,7 +82,7 @@ Schema definitions are grouped into bounded sequential shards. The root componen
 
 
 
-- `usdt.yaml` ? Typed built-in USDT administration, quota, scan and review contracts.
+- `usdt.yaml`: Typed built-in USDT administration, quota, scan and review contracts; nullable network currency switches retain legacy inheritance in OpenAPI 3.1.
 
 `xnode.yaml` defines authoritative nodes, per-node policy, global configuration, shared snippets, live metrics and enrollment. Live metrics remain nonpersistent.
 
@@ -88,7 +92,7 @@ Schema definitions are grouped into bounded sequential shards. The root componen
 
 - `xnode-services.yaml` defines native standalone identities and explicit access terms.
 
-`xnode-firewall.yaml` defines shared ban evidence, quote-bound paid exemption requests and durable grant responses.
+`xnode-firewall.yaml` defines shared ban evidence and native exemption grant data. Administrator exemption writes use durable receipts; member paid-exemption purchasing is retired.
 
 
 `xnode-routing.yaml` describes typed managed choices, matcher presets, scoped graph

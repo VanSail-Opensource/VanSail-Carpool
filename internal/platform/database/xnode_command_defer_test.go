@@ -10,7 +10,7 @@ import (
 
 func TestDefinitelyRejectedCommandRetainsFirstAttemptOnRetry(t *testing.T) {
 	s := newTestStore(t)
-	owner := createTestUser(t, s, 50123)
+	owner := createTestAdmin(t, s, 50123)
 	ctx := context.Background()
 	now := time.Now().UTC()
 	op, _, err := s.CreateProviderOperation(ctx, providerops.CreateInput{ActorUserID: owner.ID, Kind: xnode.OperationKind, IdempotencyKey: "busy-command", RequestFingerprint: "busy-command-fingerprint", SealedTarget: "sealed", Items: []providerops.ItemInput{{Key: "node", TargetType: "xnode", TargetID: "node"}}}, now)

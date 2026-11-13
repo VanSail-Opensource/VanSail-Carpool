@@ -24,7 +24,7 @@ var (
 	// ErrOptimisticConflict indicates that a row changed after it was displayed.
 	ErrOptimisticConflict = errors.New("database record changed")
 	// ErrReviewConflict indicates that a review is missing, expired, consumed,
-	// or does not cover the exact requested mutation.
+	// no longer has an eligible administrator, or does not cover the exact mutation.
 	ErrReviewConflict = errors.New("database mutation review conflicts")
 	// ErrInvalidValue indicates that a typed editor value does not match its
 	// PostgreSQL column storageFamily or nullability.

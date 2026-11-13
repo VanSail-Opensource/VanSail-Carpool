@@ -15,3 +15,5 @@
 - `user_notification.go` validates immutable, locale-aware private-chat event
   snapshots used by the durable user-notification worker.
 - `user_notification_test.go` covers canonical payload encode/decode behavior.
+
+- `stars.go` defines the bounded Stars history reconciliation job and its bot/cursor-generation payload. Numeric provider offsets remain in protected durable state.

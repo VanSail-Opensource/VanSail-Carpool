@@ -37,9 +37,13 @@ func (s *Service) NamedServices(ctx context.Context) ([]NamedService, error) {
 // SaveNamedService uses the same native quota periods as imported standalone
 // accounts. Editing access never resets recorded usage or creates a principal.
 func (s *Service) SaveNamedService(ctx context.Context, id, name string, access ServiceAccess) (NamedService, error) {
+	return s.saveNamedService(ctx, id, name, access, "")
+}
+
+func (s *Service) saveNamedService(ctx context.Context, id, name string, access ServiceAccess, actor string) (NamedService, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if len(access.GroupIDs) == 0 || access.StartedAt.After(s.now()) || !access.ExpiresAt.After(s.now()) || !wire.ValidName(name) || strings.HasPrefix(name, "_") || strings.HasPrefix(name, paygPrefix) {
+	if len(access.GroupIDs) == 0 || access.StartedAt.After(s.now()) || !access.ExpiresAt.After(s.now()) || !wire.ValidName(name) || reservedServiceName(name) {
 		return NamedService{}, ErrInvalid
 	}
 	var err error
@@ -107,12 +111,13 @@ func (s *Service) SaveNamedService(ctx context.Context, id, name string, access 
 	if err != nil {
 		return NamedService{}, err
 	}
-	writer, ok := s.repo.(interface {
-		SaveXNodeNamedService(context.Context, Identity, ServiceAccess) (Identity, error)
-	})
-	if !ok {
-		return NamedService{}, ErrUnavailable
-	}
-	identity, err = writer.SaveXNodeNamedService(ctx, identity, access)
+	identity, err = s.persistNamedService(ctx, actor, identity, access)
 	return NamedService{Identity: identity, Access: access}, err
+}
+
+// Private principals are classified case-insensitively by the scoped inventory
+// queries. A standalone account must never occupy one of those namespaces.
+func reservedServiceName(name string) bool {
+	name = strings.ToLower(name)
+	return strings.HasPrefix(name, "_") || strings.HasPrefix(name, paygPrefix) || strings.HasPrefix(name, hourlyPrincipalPrefix) || strings.HasPrefix(name, memberProbePrefix)
 }

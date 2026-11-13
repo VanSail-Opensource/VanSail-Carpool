@@ -8,6 +8,7 @@
     "title": "Subscription",
     "unavailable": "This subscription link is unavailable.",
     "unavailableHint": "The link may have expired or been replaced. Get your current link from the Mini App.",
+    "refreshFailed": "Could not refresh this subscription. The displayed details may be outdated. Retry before using a link.",
     "account": "Account",
     "usage": "Traffic used",
     "unlimited": "Unlimited",

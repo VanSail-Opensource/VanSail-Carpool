@@ -59,53 +59,22 @@ func (s *Store) retryAttempt_EnqueueDueEntitlementTransitions(ctx context.Contex
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
-	type expiredItem struct{ purchaseID, userID string }
-	rows, err := tx.QueryContext(ctx, `SELECT id,user_id FROM purchases WHERE status IN ('active','activating') AND valid_until<=$1`, stamp(now))
+	expired, unopened, queued, err := dueEntitlementTransitionsTx(ctx, tx, now)
 	if err != nil {
 		return err
 	}
-	expired := make([]expiredItem, 0)
-	for rows.Next() {
-		var item expiredItem
-		if err := rows.Scan(&item.purchaseID, &item.userID); err != nil {
-			_ = rows.Close()
-			return err
-		}
-		expired = append(expired, item)
-	}
-	if err := rows.Err(); err != nil {
-		_ = rows.Close()
-		return err
-	}
-	_ = rows.Close()
-
-	for _, item := range expired {
-		if err := insertOutboxTx(ctx, tx, "purchase_expire", `{"purchaseId":"`+item.purchaseID+`"}`, now, now); err != nil {
+	for _, purchaseID := range expired {
+		if err := insertOutboxTx(ctx, tx, "purchase_expire", `{"purchaseId":"`+purchaseID+`"}`, now, now); err != nil {
 			return err
 		}
 	}
 	// Queued terms that were never activated have no upstream traffic to settle.
-	if _, err := tx.ExecContext(ctx, `UPDATE purchases SET status='expired',updated_at=$1 WHERE status IN ('queued','failed') AND valid_until<=$2`, stamp(now), stamp(now)); err != nil {
-		return err
-	}
-	rows, err = tx.QueryContext(ctx, `SELECT id FROM purchases WHERE status='queued' AND valid_from<=$1 AND valid_until>$2`, stamp(now), stamp(now))
-	if err != nil {
-		return err
-	}
-	queued := make([]string, 0)
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			_ = rows.Close()
+	for _, purchaseID := range unopened {
+		if _, err := tx.ExecContext(ctx, `UPDATE purchases SET status='expired',updated_at=$1
+			WHERE id=$2 AND status IN ('queued','failed')`, stamp(now), purchaseID); err != nil {
 			return err
 		}
-		queued = append(queued, id)
 	}
-	if err := rows.Err(); err != nil {
-		_ = rows.Close()
-		return err
-	}
-	_ = rows.Close()
 	for _, purchaseID := range queued {
 		result, err := tx.ExecContext(ctx, `UPDATE purchases SET status='activating',updated_at=$1 WHERE id=$2 AND status='queued'
 			AND NOT EXISTS (SELECT 1 FROM purchases prior WHERE prior.user_id=purchases.user_id AND prior.status IN ('active','activating'))`, stamp(now), purchaseID)
@@ -133,14 +102,22 @@ func (s *Store) retryAttempt_ExpirePurchase(ctx context.Context, purchaseID stri
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
-	var userID, status string
-	if err := tx.QueryRowContext(ctx, `SELECT user_id,status FROM purchases WHERE id=$1`, purchaseID).Scan(&userID, &status); err != nil {
+	var userID, status, rawUntil string
+	if err := tx.QueryRowContext(ctx, `SELECT user_id,status,valid_until FROM purchases WHERE id=$1 FOR UPDATE`, purchaseID).Scan(&userID, &status, &rawUntil); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrNotFound
 		}
 		return err
 	}
 	if status == "expired" || status == "cancelled" {
+		return nil
+	}
+	until, err := parseStamp(rawUntil)
+	if err != nil {
+		return err
+	}
+	// The worker may have read this term before an administrator extended it.
+	if until.After(now) {
 		return nil
 	}
 	if _, err := tx.ExecContext(ctx, `UPDATE purchases SET status='expired',updated_at=$1 WHERE id=$2`, stamp(now), purchaseID); err != nil {

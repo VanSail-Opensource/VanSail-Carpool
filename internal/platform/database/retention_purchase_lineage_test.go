@@ -27,7 +27,9 @@ func TestCompactionProtectsTransitiveRetainedRenewalLineage(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				if _, err := s.db.ExecContext(ctx, `UPDATE purchases SET status='expired',updated_at=$1 WHERE id=$2`, stamp(old), purchase.ID); err != nil {
+				// Model legacy imported terms without a retained checkout key;
+				// keyed commerce receipts have independent permanent protection.
+				if _, err := s.db.ExecContext(ctx, `UPDATE purchases SET status='expired',idempotency_key=NULL,updated_at=$1 WHERE id=$2`, stamp(old), purchase.ID); err != nil {
 					t.Fatal(err)
 				}
 				ids = append(ids, purchase.ID)

@@ -34,7 +34,7 @@ func assertCertificateQueueCount(t *testing.T, store *Store, operations int) {
 func TestCertificateOperationInitialIntentAndLatestScope(t *testing.T) {
 	t.Parallel()
 	store, ctx := newTestStore(t), context.Background()
-	actor := createTestUser(t, store, 871001)
+	actor := createTestAdmin(t, store, 871001)
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	input := certificateOperationInput(actor.ID, "initial", "node-one", "primary")
 	op, replayed, err := store.CreateXNodeCertificateOperation(ctx, input, "primary", "issue", 9007199254740993, now)
@@ -69,8 +69,8 @@ func TestCertificateOperationReplayPrecedesUncertainStatusGuard(t *testing.T) {
 		t.Run(status, func(t *testing.T) {
 			t.Parallel()
 			store, ctx := newTestStore(t), context.Background()
-			actor := createTestUser(t, store, 871002)
-			other := createTestUser(t, store, 871003)
+			actor := createTestAdmin(t, store, 871002)
+			other := createTestAdmin(t, store, 871003)
 			now := time.Now().UTC()
 			input := certificateOperationInput(actor.ID, "first", "node", "primary")
 			op, _, err := store.CreateXNodeCertificateOperation(ctx, input, "primary", "renew", 7, now)
@@ -102,8 +102,8 @@ func TestCertificateOperationTerminalReceiptAllowsExplicitNewRequest(t *testing.
 	for _, status := range []string{"failed", "succeeded"} {
 		t.Run(status, func(t *testing.T) {
 			store, ctx := newTestStore(t), context.Background()
-			actor := createTestUser(t, store, 871004)
-			now := time.Now().UTC()
+			actor := createTestAdmin(t, store, 871004)
+			now := time.Now().UTC().Truncate(time.Second)
 			first := certificateOperationInput(actor.ID, "first", "node", "primary")
 			op, _, err := store.CreateXNodeCertificateOperation(ctx, first, "primary", "issue", 7, now)
 			if err != nil {
@@ -113,7 +113,7 @@ func TestCertificateOperationTerminalReceiptAllowsExplicitNewRequest(t *testing.
 				t.Fatal(err)
 			}
 			second := certificateOperationInput(actor.ID, "second", "node", "primary")
-			next, replayed, err := store.CreateXNodeCertificateOperation(ctx, second, "primary", "renew", 8, now.Add(time.Second))
+			next, replayed, err := store.CreateXNodeCertificateOperation(ctx, second, "primary", "renew", 8, now.Add(time.Nanosecond))
 			if err != nil || replayed || next.Receipt.ID == op.Receipt.ID {
 				t.Fatalf("new explicit request=%+v replay=%t error=%v", next, replayed, err)
 			}
@@ -133,7 +133,7 @@ func TestCertificateOperationTerminalReceiptAllowsExplicitNewRequest(t *testing.
 func TestCertificateOperationFailedReceiptRetainsSafeIntent(t *testing.T) {
 	t.Parallel()
 	store, ctx := newTestStore(t), context.Background()
-	actor := createTestUser(t, store, 871008)
+	actor := createTestAdmin(t, store, 871008)
 	now := time.Now().UTC()
 	input := certificateOperationInput(actor.ID, "preflight-failed", "node", "primary")
 	op, _, err := store.CreateXNodeCertificateOperation(ctx, input, "primary", "renew", 7, now)
@@ -154,7 +154,7 @@ func TestCertificateOperationFailedReceiptRetainsSafeIntent(t *testing.T) {
 func TestCertificateOperationRejectsUnavailableOwnerAtomically(t *testing.T) {
 	t.Parallel()
 	store, ctx := newTestStore(t), context.Background()
-	actor := createTestUser(t, store, 871009)
+	actor := createTestAdmin(t, store, 871009)
 	owner := createTestUser(t, store, 871010)
 	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET account_status='purged' WHERE id=$1`, owner.ID); err != nil {
 		t.Fatal(err)
@@ -165,4 +165,36 @@ func TestCertificateOperationRejectsUnavailableOwnerAtomically(t *testing.T) {
 		t.Fatalf("unavailable owner created a certificate operation: %v", err)
 	}
 	assertCertificateQueueCount(t, store, 0)
+}
+
+func TestNativeCommandAdmissionRechecksAdministratorAndPreservesReplay(t *testing.T) {
+	for _, certificate := range []bool{false, true} {
+		t.Run(map[bool]string{false: "command", true: "certificate"}[certificate], func(t *testing.T) {
+			store, ctx := newTestStore(t), context.Background()
+			actor := createTestAdmin(t, store, 871011)
+			now := time.Now().UTC()
+			create := func(key string) (providerops.Operation, bool, error) {
+				input := certificateOperationInput(actor.ID, key, "node", "primary")
+				if certificate {
+					return store.CreateXNodeCertificateOperation(ctx, input, "primary", "issue", 7, now)
+				}
+				return store.CreateProviderOperation(ctx, input, now)
+			}
+			accepted, replayed, err := create("accepted")
+			if err != nil || replayed {
+				t.Fatal(accepted, replayed, err)
+			}
+			if _, err = store.DB().ExecContext(ctx, `UPDATE users SET role='user' WHERE id=$1`, actor.ID); err != nil {
+				t.Fatal(err)
+			}
+			if _, _, err = create("after-demotion"); !errors.Is(err, ErrConflict) {
+				t.Fatal("stale administrator queued a native command", err)
+			}
+			replayedOperation, replayed, err := create("accepted")
+			if err != nil || !replayed || replayedOperation.Receipt.ID != accepted.Receipt.ID {
+				t.Fatal("later demotion changed committed intent", replayedOperation, replayed, err)
+			}
+			assertCertificateQueueCount(t, store, 1)
+		})
+	}
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sync/atomic"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/billing"
@@ -103,9 +104,21 @@ func (a embyAdapter) SetPassword(ctx context.Context, id string, currentPassword
 	ctx = upstreamqueue.WithKey(ctx, "user:"+id)
 	current := append([]byte(nil), currentPassword...)
 	next := append([]byte(nil), nextPassword...)
-	defer clear(current)
-	defer clear(next)
+	var claimed atomic.Bool
+	clearPasswords := func() { clear(current); clear(next) }
+	// Execute may return on cancellation while the callback is still using the
+	// buffers. Exactly one side owns cleanup: a running callback, or a caller
+	// whose queued callback has not started and must no longer use the secrets.
+	defer func() {
+		if claimed.CompareAndSwap(false, true) {
+			clearPasswords()
+		}
+	}()
 	return embyExecute(ctx, a, func(callCtx context.Context, client embyClient) error {
+		if !claimed.CompareAndSwap(false, true) {
+			return context.Canceled
+		}
+		defer clearPasswords()
 		return client.SetPassword(callCtx, id, current, next)
 	})
 }
@@ -149,7 +162,7 @@ func embySetupPrice(settings *admin.SettingsService) domain.PriceSource {
 		}
 		minor, err := billing.ParseTXBMajor(raw)
 		if err != nil || minor < 0 {
-			return 0, fmt.Errorf("invalid Emby setup price")
+			return 0, fmt.Errorf("%w: invalid configured setup price", domain.ErrInvalidSetup)
 		}
 		return minor, nil
 	})

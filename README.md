@@ -5,7 +5,7 @@ VanSail Carpool provides a premium-dark Telegram Mini App for member onboarding,
 ## What is included
 
 - Telegram member authentication with five-minute `initData` validation; independent browser admin sessions use short-lived one-use access links. Authenticated requests use replay-protected HMAC signing.
-- Resumable group/channel membership, immutable username, and agreement onboarding.
+- Resumable agreement onboarding, verified Telegram identity, and paid community membership.
 - Server-priced combos, optional X-Node internal squads, renewals, queued plan changes, and a transactional TXB ledger.
 - EZPay, BEPusdt, and Telegram Stars top-ups with signed, idempotent callback processing.
 - Authoritative X-Node WebSocket control with per-node execution queues; queued Emby access, subscription rotation, traffic statistics and durable synchronization jobs.
@@ -43,7 +43,7 @@ After Telegram authentication, the server issues an HttpOnly `txc_session` cooki
 
 ## Required environment
 
-Copy `.env.example` to a secret deployment-specific file and set these four values:
+Create a protected deployment-specific environment file and set these four application values:
 
 | Variable | Requirement |
 | --- | --- |
@@ -54,11 +54,13 @@ Copy `.env.example` to a secret deployment-specific file and set these four valu
 
 Optional runtime settings are `PORT=8080`, `DATA_DIR=/data`, `TZ=UTC`, and `LOG_LEVEL=info`. `ALLOW_INSECURE_HTTP=true` exists only for isolated local development; never enable it for a Telegram deployment.
 
+The embedded deployment supplies its own protected database credentials. For an external database or a directly launched binary, also provide the application connection through `DATABASE_URL_FILE` and run migrations separately with the migration role as described in [PostgreSQL deployment](deploy/postgres/README.md).
+
 X-Node credentials, provider credentials, provider feature flags, chat IDs, rates, and catalog data are configured in the admin dashboard. Sensitive values are encrypted with AES-256-GCM under `CONFIG_MASTER_KEY`, are masked after entry, and are write-only over the API. Losing or changing the master key makes encrypted settings unreadable.
 
 ## Build and run
 
-Prerequisites are Go 1.26.5, Node.js 26 with npm, and GNU Make. The application stack includes Vue 3.5.41, Tailwind CSS 4.3.3, and PostgreSQL 18 with pgx.
+Prerequisites are the Go version declared in [go.mod](go.mod) (currently 1.27.4), Node.js 26 with npm, and GNU Make. The application stack uses Vue 3, Tailwind CSS 4, and PostgreSQL 18 with pgx; exact frontend dependency versions are declared in `web/package.json` and locked in `web/package-lock.json`.
 
 ```sh
 make frontend-install
@@ -99,7 +101,7 @@ If a host bind mount is used instead of a named volume, make the mounted directo
 
 ## First-time setup
 
-1. Deploy the HTTPS origin with the required environment and a durable `/data` volume.
+1. Deploy the HTTPS origin with the required environment and a durable `/data` volume. Embedded PostgreSQL also requires the existing durable `/var/lib/postgresql` volume; external PostgreSQL requires its independently managed durable storage.
 2. Open the Mini App as a configured `ADMIN_TELEGRAM_ID` and use `/settings/admin-access` to obtain a short-lived, one-use browser console link. Browser administration has its own device session; member signup remains independent.
 3. Configure Telegram membership, payment profiles, required `txb_per_*` rates and catalog products. Add native X-Node configurations, nodes and access groups, then generate per-node enrollment credentials. Configure the encrypted Emby token, HTTPS URL and setup price when Emby access is offered.
 4. Review native access groups and their published nodes. Configure product prices, visibility, plain-text descriptions and ordered feature lists in the catalog.

@@ -10,3 +10,7 @@
 - `client_part2.go` contains response decoding, error classification, and domain mapping.
 
 `delete.go` implements documented DELETE /Users/{Id}; the queued adapter treats a confirmed 404 as an already completed deletion. Other failures retain cleanup for retry.
+
+`read_proof_test.go` rejects empty, null, or bodyless successful reads while
+preserving valid empty arrays and bodyless mutation responses. It also verifies
+that an incomplete restore-time user inventory cannot authorize a setup refund.

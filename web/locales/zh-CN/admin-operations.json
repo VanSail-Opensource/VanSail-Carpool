@@ -5,6 +5,7 @@
     "working": "处理中"
   },
   "adminSettings": {
+    "partialSave": "部分设置未能保存。请查看各部分的错误后重试。已成功保存的更改已经生效。",
     "amountLimits": {
       "title": "添加 TXB 限额",
       "copy": "所有支付渠道均使用此包含边界的金额范围。",
@@ -93,7 +94,7 @@
     "discoveryHint": "BEPUSDT 渠道会自动发现。保存已启用的档案时会验证当前可用的币种和网络。",
     "delete": "删除支付档案",
     "deleteTitle": "删除 {name}？",
-    "deleteDescription": "这将移除支付账户。仍有创建中或待支付订单的档案无法删除。",
+    "deleteDescription": "关联保留支付订单的档案无法删除。请创建替代档案，并停用旧档案。",
     "deleteConfirm": "删除档案",
     "deleted": "支付档案已删除。",
     "channelNames": {

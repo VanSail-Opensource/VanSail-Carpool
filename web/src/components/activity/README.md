@@ -24,3 +24,8 @@ selection and pending feedback remain short and haptic-aware.
 
 - `GroupBoostPanel.vue` presents active personal count and multiplier, or replaces the check-in and group reward blocks with localized boost guidance and a live refresh. Props own verified state; its refresh event is handled by `ActivityPage.vue` through `useActivity`.
 - `GroupBoostPanel.test.ts` covers required, unavailable, boosted and refreshing states plus link and refresh actions.
+
+`BetGamesPanel.test.ts` verifies disabled selections are retired and pending
+actions cannot submit another bet. Selection and submission both require a
+currently enabled game. Reward progress accessibility values are bounded by the
+threshold even after message counts exceed it.

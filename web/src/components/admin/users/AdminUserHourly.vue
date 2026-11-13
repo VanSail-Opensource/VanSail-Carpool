@@ -46,8 +46,7 @@ function askDisable(squad: AdminHourlySquad): void {
 async function confirmDisable(): Promise<void> {
   const squad = selected.value
   if (!squad) return
-  await hourly.disable(squad)
-  selected.value = null
+  if (await hourly.disable(squad)) selected.value = null
 }
 </script>
 

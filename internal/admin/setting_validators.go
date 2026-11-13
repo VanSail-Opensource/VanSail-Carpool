@@ -64,14 +64,6 @@ func validateHTTPSURL(value string) error {
 	return nil
 }
 
-func validateHTTPOrHTTPSURL(value string) error {
-	parsed, err := url.Parse(value)
-	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" || parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" {
-		return errors.New("must be an absolute HTTP or HTTPS URL without credentials, query, or fragment")
-	}
-	return nil
-}
-
 func validateBoolean(value string) error {
 	if value != "true" && value != "false" {
 		return errors.New("must be true or false")
@@ -84,12 +76,6 @@ func validateAck(value string) error {
 		return errors.New("must be ok or success")
 	}
 	return nil
-}
-
-// Kept for compatibility with callers validating one legacy selection. New
-// configuration uses the ordered billing.ezpay.methods list.
-func validateEZPayType(value string) error {
-	return billing.ValidateEZPayMethods(value)
 }
 
 var webhookSecretPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{1,256}$`)

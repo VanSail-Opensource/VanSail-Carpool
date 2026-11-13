@@ -9,12 +9,11 @@ import (
 )
 
 func TestMemberDrawPreviewIncludesPrizesAndOmitsPrivateFields(t *testing.T) {
-	empty := int64(0)
 	draw := activity.LuckyDraw{LuckyDrawInput: activity.LuckyDrawInput{
 		ID: "draw-1", Name: "Autumn draw", Enabled: true,
 		Prizes: []activity.PrizeInput{
-			{ID: "available", Name: "50 TXB", Weight: 5},
-			{ID: "bonus", Name: "Bonus", Weight: 1, StockRemaining: &empty},
+			{ID: "available", Name: "50 TXB", ProbabilityBPS: 8_000},
+			{ID: "bonus", Name: "Bonus", ProbabilityBPS: 2_000},
 		},
 	}}
 	got := mapLuckyDraw(draw)
@@ -25,7 +24,7 @@ func TestMemberDrawPreviewIncludesPrizesAndOmitsPrivateFields(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(string(encoded), "weight") || strings.Contains(string(encoded), "stockRemaining") {
+	if strings.Contains(string(encoded), "probabilityBps") || strings.Contains(string(encoded), "stock") {
 		t.Fatalf("private prize data leaked: %s", encoded)
 	}
 }

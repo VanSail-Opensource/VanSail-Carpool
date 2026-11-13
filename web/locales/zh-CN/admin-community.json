@@ -5,7 +5,7 @@
     "new": "新建优惠券",
     "loadFailed": "无法加载优惠券。",
     "saveFailed": "无法保存优惠券。",
-    "deactivateConfirm": "停用优惠券 {code}？现有购买授权将不再符合条件。",
+    "deactivateConfirm": "停用优惠券 {code}？新的使用将被阻止，已关联到套餐的持续折扣仍会保留。",
     "deactivateFailed": "无法停用优惠券。",
     "edit": "编辑优惠券",
     "definition": "优惠券定义",
@@ -16,7 +16,7 @@
     "recurring": "持续购买折扣",
     "balanceAdd": "增加余额",
     "balanceMultiply": "余额倍增",
-    "financialHint": "如需改变财务效果，请新建定义。",
+    "financialHint": "更改类型或折扣方式须新建优惠券。金额和上限的变更会影响后续使用及已关联的续费；适用范围和可用条件的变更仅影响新的使用。",
     "discountMode": "折扣方式",
     "percent": "百分比",
     "fixed": "固定 TXB",
@@ -40,7 +40,9 @@
     "editNamed": "编辑 {code}",
     "deactivate": "停用",
     "none": "暂无优惠券",
-    "noneHint": "创建定义，或将其作为抽奖奖品发放。"
+    "noneHint": "创建定义，或将其作为抽奖奖品发放。",
+    "invalidFields": "请检查优惠券代码、精确金额、日期及正整数使用上限。",
+    "optionsFailed": "无法刷新适用套餐和分组，现有选择已保留。"
   },
   "pm": {
     "title": "私信",

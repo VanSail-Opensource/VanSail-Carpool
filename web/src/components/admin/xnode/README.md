@@ -1,5 +1,16 @@
 # X-Node administration
 
+Audit recovery: `XNodeDDNSSettings.test.ts` covers stable editable rows, endpoint
+binding isolation after deletion and temporary duplicate job names.
+`XNodeCommands.test.ts` rejects results from a command superseded by a later
+action. `XNodeNodes.test.ts` additionally covers serialized enrollment creation
+and discarded token responses after the selected editor changes.
+`useXNodeWorkspace.test.ts` prevents post-disposal mutation refreshes.
+Certificate observers suspend on browser expiry and recover durable history only
+after verified same-administrator authentication; logout and disposal remain final.
+`XNodeFirewallGrant.test.ts` verifies that grant retries use the submitted
+normalized IP text as their identity.
+
 `XNodeConfigurations.vue` exposes a resource-named delete action beside each
 configuration. It reuses the workspace mutation/reload/error flow, blocks
 duplicate actions while pending and retains failed rows for retry. The existing
@@ -210,7 +221,7 @@ Node editors reuse the common `JsonDocumentField.vue` field.
 
 Named-service browser validation uses the constructed X-Node fixture at 390px/dark and 1440px/light. Creation, access edits, disable, rotation, routing JSON validation, loading, empty, read failures and save failures were exercised through Chrome DevTools MCP. No production agents are contacted by that fixture.
 
-Typed operational editing: `useXNodeGlobalSettings.ts` owns abortable, generation-checked reads and preserves drafts after mutation failures. `XNodeGlobalPolicies.vue` edits opt-in master GeoIP countries, explicit legacy-schedule conversion, and the requested shared-domain JSON list. `XNodeDNSSettings.vue`, `XNodeDNSProviders.vue` and `providerCatalog.ts` provide native resolver controls and write-only provider credential forms verified against the pinned agent registry. Blank credentials retain saved values.
+Typed operational editing: `useXNodeGlobalSettings.ts` owns abortable, generation-checked reads and preserves drafts after mutation failures. `XNodeGlobalPolicies.vue` edits opt-in master GeoIP countries, explicit legacy-schedule conversion, and the requested shared-domain JSON list. `XNodeDNSSettings.vue`, `XNodeDNSProviders.vue` and `providerCatalog.ts` provide native DNS redirect and write-only provider credential forms verified against the pinned agent registry. Blank credentials retain saved values.
 
 Per-node bandwidth controls are retired; legacy settings decode without restoring those overrides. Native per-user speed policy remains available for commerce. `XNodeFirewallFields.vue` edits typed port/prefix lists and forwarding while `XNodeFirewallRules.vue` retains native detection thresholds. `XNodeAccessBindings.vue` and `nodeFormOptions.ts` derive node/inbound selections from loaded configuration documents. `XNodeEndpointOptions.vue` edits supported client security/transport fields while preserving additional imported settings. Document editors remain for Xray, snippets and administrator subscription documents.
 
@@ -304,7 +315,7 @@ The lease form uses the existing global write endpoint with
 newer credentials or sampling settings. The general global form omits the
 unedited lease property, preserving lease changes from another administrator.
 
-Node removal uses one confirmation and the existing receipt tracker with explicit blockers. Every squad binding hides removal, including disabled squads. Automatic lease paging retains metadata while loading, offers adjacent/edge controls, and clamps expired final pages. Activity charts use adaptive byte/rate units and raw bytes as secondary detail.
+Node removal uses one confirmation and the existing receipt tracker with explicit resumable dependencies. Automatic lease paging retains metadata while loading, offers adjacent/edge controls, and clamps expired final pages. Activity charts use adaptive byte/rate units and raw bytes as secondary detail.
 
 `XNodeRemovalDialog.vue` confirms queued removal and displays explicit blockers.
 
@@ -333,3 +344,27 @@ names rendered correctly. The mobile optional-domain/PEM layout was inspected
 without horizontal overflow. Console checks were clear and mock fetch/XHR made
 no actual failing requests. PEM envelopes were synthetic; real key/name matching
 is covered by hosted backend regressions. No live issuance was performed.
+
+Service routing reads and saves capture both native owner and node identity.
+Changing either invalidates older requests; saving outbounds preserves unsaved
+rules and saving rules preserves unsaved outbounds. Named-service list refreshes
+cannot overwrite newer mutation reloads, returned subscription links identify
+their owner, and disposed views cannot restart loading.
+
+Configuration, snippet, group and endpoint writes capture their payload before
+the shared mutation runner executes. Editors clone reactive API data through the
+existing compatibility helper and retain failed drafts. Busy dialogs and fields
+stay locked until the result is known. Group writes include only editable
+identity/name/enabled/binding fields; server-derived membership remains read-only.
+
+`XNodeServiceRouting.test.ts` covers owner replacement, late saves, reactive
+snapshots and independent routing drafts. `XNodeServiceUsers.test.ts` covers
+stale refreshes, owner-labelled links and disposal during a save.
+`XNodeEditorSnapshots.test.ts` covers deferred configuration/group writers and
+busy controls. `XNodeServiceEditor.test.ts` also guards busy keyboard submission
+and modal dismissal. These additions require hosted CI; no new browser execution
+is claimed for the audit reconstruction.
+
+`XNodeNodes.test.ts` also covers immutable node-save payloads and local pending
+locks when a workspace mutation runner defers dispatch. Node fields and native
+modal closing stay disabled until that reviewed save settles.

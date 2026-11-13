@@ -5,7 +5,7 @@ import type { AdminUserDetail } from '@/api/adminOperations'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import { useI18n } from '@/i18n'
 import { formatDateTime, formatMoney } from '@/utils/format'
-import { adminUserName, hasPositiveBalance } from './adminUserFormat'
+import { adminUserName } from './adminUserFormat'
 
 const props = defineProps<{ detail: AdminUserDetail }>()
 const { t } = useI18n()
@@ -15,10 +15,7 @@ const identity = computed(() => props.detail.user.telegramUsername
   : props.detail.user.displayName || props.detail.user.telegramId)
 const synchronizationTone = computed(() => props.detail.synchronization.status === 'synchronized'
   ? 'success' : props.detail.synchronization.status === 'failed' ? 'danger' : 'warning')
-const synchronizationLabel = computed(() => props.detail.synchronization.status === 'not_provisioned'
-  && hasPositiveBalance(props.detail.balance.minor)
-  ? 'adminUserProfile.sync.payg_funded'
-  : `adminUserProfile.sync.${props.detail.synchronization.status}`)
+const synchronizationLabel = computed(() => `adminUserProfile.sync.${props.detail.synchronization.status}`)
 </script>
 
 <template>

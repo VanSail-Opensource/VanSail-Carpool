@@ -15,7 +15,7 @@ func TestConnectionScanReplayAndMonotonicLifecycle(t *testing.T) {
 	store := newTestStore(t)
 	user := createTestUser(t, store, 50_002)
 	now := time.Date(2026, 8, 18, 9, 0, 0, 0, time.UTC)
-	input := providerops.ConnectionScanInput{UserID: user.ID, IdempotencyKey: "scan-key",
+	input := providerops.ConnectionScanInput{ActorUserID: scanAdministrator(t, store).ID, UserID: user.ID, IdempotencyKey: "scan-key",
 		RequestFingerprint: "0123456789abcdef", ExpiresAt: now.Add(10 * time.Minute)}
 	scan, replayed, err := store.CreateConnectionScan(ctx, input, now)
 	if err != nil || replayed || scan.Status != providerops.StatusQueued || scan.ProviderJobID != "" {
@@ -79,7 +79,7 @@ func TestConnectionScanPendingReviewIsTerminal(t *testing.T) {
 	store := newTestStore(t)
 	user := createTestUser(t, store, 50_003)
 	now := time.Date(2026, 8, 18, 10, 0, 0, 0, time.UTC)
-	scan, _, err := store.CreateConnectionScan(ctx, providerops.ConnectionScanInput{
+	scan, _, err := store.CreateConnectionScan(ctx, providerops.ConnectionScanInput{ActorUserID: scanAdministrator(t, store).ID,
 		UserID: user.ID, IdempotencyKey: "ambiguous-scan", RequestFingerprint: "0123456789abcdef",
 		ExpiresAt: now.Add(10 * time.Minute),
 	}, now)

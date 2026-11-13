@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 
 import { useAffiliateCentre } from '@/composables/useAffiliateCentre'
 import { useTelegramBackButton } from '@/composables/useTelegramBackButton'
+import InlineNotice from '@/components/common/InlineNotice.vue'
 import AffiliateReferralList from './AffiliateReferralList.vue'
 import AffiliateSummary from './AffiliateSummary.vue'
 import AffiliateTierProgress from './AffiliateTierProgress.vue'
@@ -24,6 +25,7 @@ useTelegramBackButton(computed(() => true), async () => { await router.push('/ho
       <USkeleton class="h-44 w-full" /><USkeleton class="h-40 w-full" /><USkeleton class="h-56 w-full" />
     </template>
     <template v-else-if="state.overview.value && state.referrals.value">
+      <InlineNotice v-if="state.error.value" tone="warning">{{ state.error.value }}</InlineNotice>
       <AffiliateSummary :overview="state.overview.value" />
       <AffiliateTierProgress :progress="state.overview.value.tierProgress" />
       <AffiliateReferralList

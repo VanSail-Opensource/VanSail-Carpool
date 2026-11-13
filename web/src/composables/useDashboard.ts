@@ -1,4 +1,4 @@
-import { computed, inject, onMounted, onScopeDispose, provide, readonly, shallowRef, type InjectionKey } from 'vue'
+import { computed, onMounted, onScopeDispose, readonly, shallowRef } from 'vue'
 
 import { api } from '@/api/client'
 import { restoreRef } from '@/api/cache/restore'
@@ -6,11 +6,8 @@ import { localizedError } from '@/i18n'
 import type { Dashboard } from '@/api/types'
 import { notifyHaptic } from '@/utils/telegram'
 import { createLatestRequest } from '@/utils/latestRequest'
-import { createNodeUsageController, type NodeUsageController } from './dashboardNodeUsage'
 import { useDurableCommand } from './useDurableCommand'
 import { usePurchaseValidity } from './usePurchaseValidity'
-
-const nodeUsageControllerKey: InjectionKey<NodeUsageController> = Symbol('dashboard-node-usage')
 
 export function useDashboard() {
   const dashboard = shallowRef<Dashboard | null>(null)
@@ -18,8 +15,6 @@ export function useDashboard() {
   const refreshing = shallowRef(false)
   const loadError = shallowRef<string | null>(null)
   const latestLoad = createLatestRequest()
-  const nodeUsageController = createNodeUsageController()
-  const { nodeUsage, nodeUsageLoading, nodeUsageError, nodeUsageStart, nodeUsageEnd, loadNodeUsage, setNodeUsageStart, setNodeUsageEnd } = nodeUsageController
   const revokeCommand = useDurableCommand({
     errorKey: 'errors.subscriptionRevoke',
     onTerminal: async (receipt) => {
@@ -81,12 +76,9 @@ export function useDashboard() {
     return accepted
   }
 
-  provide(nodeUsageControllerKey, nodeUsageController)
-
   onMounted(() => void load())
   onScopeDispose(() => {
     latestLoad.dispose()
-    nodeUsageController.dispose()
   })
 
   return {
@@ -95,24 +87,11 @@ export function useDashboard() {
     revokeReceipt: revokeCommand.receipt, revokeChecking: revokeCommand.checking,
     revokeError: revokeCommand.error,
     error: readonly(error),
-    nodeUsage: readonly(nodeUsage), nodeUsageLoading: readonly(nodeUsageLoading),
-    nodeUsageError: readonly(nodeUsageError), nodeUsageStart: readonly(nodeUsageStart),
-    nodeUsageEnd: readonly(nodeUsageEnd), hasEntitlement,
+    hasEntitlement,
     usageRatio,
     activeSquadNames,
     load,
     revokeSubscription,
     refreshRevoke: revokeCommand.refresh,
-    loadNodeUsage,
-    setNodeUsageStart,
-    setNodeUsageEnd,
   }
-}
-
-export function useDashboardNodeUsage(): NodeUsageController {
-  const injected = inject(nodeUsageControllerKey, null)
-  if (injected) return injected
-  const controller = createNodeUsageController()
-  onScopeDispose(controller.dispose)
-  return controller
 }

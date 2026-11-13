@@ -9,6 +9,9 @@ import (
 // PricingCleanup prunes only bounded, summarized derived data. Financial facts,
 // contracts, approved prices and compact administrative audit are never deleted.
 func (s *Store) retryAttempt_PricingCleanup(ctx context.Context, now time.Time) (map[string]int64, error) {
+	if err := s.expirePricingFinancialReservations(ctx, now); err != nil {
+		return nil, err
+	}
 	if err := s.SummarizePricingValidation(ctx, now); err != nil {
 		return nil, err
 	}
@@ -16,13 +19,22 @@ func (s *Store) retryAttempt_PricingCleanup(ctx context.Context, now time.Time) 
 		return nil, err
 	}
 
-	tx, err := s.db.BeginTx(ctx, nil)
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback()
 	counts := map[string]int64{}
-	if _, err = tx.ExecContext(ctx, `UPDATE pricing_discount_spend SET status='RELEASED' WHERE status='RESERVED' AND reference_id IN (SELECT 'renewal:'||id FROM pricing_renewal_quotes WHERE state IN ('CANCELLED','EXPIRED') OR valid_until<=$1 AND state<>'SETTLED')`, pricingStamp(now)); err != nil {
+	for _, kind := range []string{"calibration", "validation"} {
+		acquired, err := lockPricingSummaryTx(ctx, tx, kind)
+		if err != nil || !acquired {
+			return counts, err
+		}
+	}
+	if err = sealPricingValidationTx(ctx, tx, now); err != nil {
+		return nil, err
+	}
+	if err = sealPricingCalibrationTx(ctx, tx, now); err != nil {
 		return nil, err
 	}
 	queries := []struct {
@@ -30,16 +42,16 @@ func (s *Store) retryAttempt_PricingCleanup(ctx context.Context, now time.Time) 
 		at          any
 	}{
 		{"compute", `DELETE FROM pricing_features WHERE feature_key IN (SELECT f.feature_key FROM pricing_features f WHERE f.entity_type IN ('compute_input','compute_result') AND f.watermark<$1 AND NOT EXISTS(SELECT 1 FROM outbox_jobs j WHERE j.kind='pricing_compute' AND (CASE ((j.payload)::jsonb #> '{inputId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (j.payload)::jsonb #>> '{inputId}' END)='compute-input:'||f.entity_id) LIMIT 1000)`, pricingStamp(now.Add(-24 * time.Hour))},
-		{"forecasts_user_node", `DELETE FROM pricing_forecast_values WHERE forecast_id IN (SELECT f.forecast_id FROM pricing_forecast_vintages f WHERE f.entity_type='user_node' AND f.target_until<$1 AND EXISTS(SELECT 1 FROM pricing_model_validation_daily m WHERE m.day=SUBSTR(f.target_from,1,10) AND m.model_version=f.model_version AND m.metric=f.metric AND m.horizon_seconds=f.horizon_seconds) LIMIT 1000)`, pricingStamp(now.AddDate(0, 0, -30))},
-		{"forecasts_user", `DELETE FROM pricing_forecast_values WHERE forecast_id IN (SELECT f.forecast_id FROM pricing_forecast_vintages f WHERE f.entity_type='user' AND f.target_until<$1 AND EXISTS(SELECT 1 FROM pricing_model_validation_daily m WHERE m.day=SUBSTR(f.target_from,1,10) AND m.model_version=f.model_version AND m.metric=f.metric AND m.horizon_seconds=f.horizon_seconds) LIMIT 1000)`, pricingStamp(now.AddDate(0, 0, -60))},
-		{"forecasts", `DELETE FROM pricing_forecast_values WHERE forecast_id IN (SELECT f.forecast_id FROM pricing_forecast_vintages f WHERE f.target_until<$1 AND EXISTS(SELECT 1 FROM pricing_model_validation_daily m WHERE m.day=SUBSTR(f.target_from,1,10) AND m.model_version=f.model_version AND m.metric=f.metric AND m.horizon_seconds=f.horizon_seconds) LIMIT 1000)`, pricingStamp(now.AddDate(0, 0, -90))},
+		{"forecasts_user_node", `DELETE FROM pricing_forecast_values WHERE forecast_id IN (SELECT f.forecast_id FROM pricing_forecast_vintages f WHERE f.entity_type='user_node' AND f.target_until<$1 AND EXISTS(SELECT 1 FROM pricing_model_validation_daily m WHERE m.day=SUBSTR(f.target_from,1,10) AND m.model_version=f.model_version AND m.metric=f.metric AND m.horizon_seconds=f.horizon_seconds AND m.sealed) AND EXISTS(SELECT 1 FROM pricing_forecast_actuals a WHERE a.forecast_id=f.forecast_id) LIMIT 1000)`, pricingStamp(now.AddDate(0, 0, -30))},
+		{"forecasts_user", `DELETE FROM pricing_forecast_values WHERE forecast_id IN (SELECT f.forecast_id FROM pricing_forecast_vintages f WHERE f.entity_type='user' AND f.target_until<$1 AND EXISTS(SELECT 1 FROM pricing_model_validation_daily m WHERE m.day=SUBSTR(f.target_from,1,10) AND m.model_version=f.model_version AND m.metric=f.metric AND m.horizon_seconds=f.horizon_seconds AND m.sealed) AND EXISTS(SELECT 1 FROM pricing_forecast_actuals a WHERE a.forecast_id=f.forecast_id) LIMIT 1000)`, pricingStamp(now.AddDate(0, 0, -60))},
+		{"forecasts", `DELETE FROM pricing_forecast_values WHERE forecast_id IN (SELECT f.forecast_id FROM pricing_forecast_vintages f WHERE f.target_until<$1 AND EXISTS(SELECT 1 FROM pricing_model_validation_daily m WHERE m.day=SUBSTR(f.target_from,1,10) AND m.model_version=f.model_version AND m.metric=f.metric AND m.horizon_seconds=f.horizon_seconds AND m.sealed) AND EXISTS(SELECT 1 FROM pricing_forecast_actuals a WHERE a.forecast_id=f.forecast_id) LIMIT 1000)`, pricingStamp(now.AddDate(0, 0, -90))},
 		{"batches", `DELETE FROM pricing_forecast_batches WHERE batch_key IN (SELECT b.batch_key FROM pricing_forecast_batches b WHERE generated_at<$1 AND NOT EXISTS(SELECT 1 FROM pricing_forecast_values v WHERE v.batch_key=b.batch_key) LIMIT 1000)`, pricingStamp(now.AddDate(0, 0, -90))},
 		{"features", `DELETE FROM pricing_features WHERE feature_key IN (SELECT f.feature_key FROM pricing_features f WHERE day<$1 AND NOT EXISTS(SELECT 1 FROM pricing_forecast_values v WHERE v.feature_key=f.feature_key) LIMIT 1000)`, now.AddDate(0, 0, -60).Format("2006-01-02")},
-		{"offers", `DELETE FROM pricing_offers WHERE id IN (SELECT id FROM pricing_offers WHERE expires_at<$1 AND outcome IS NOT NULL AND EXISTS(SELECT 1 FROM pricing_calibration_daily c WHERE c.day=SUBSTR(pricing_offers.exposed_at,1,10) AND c.model_version=pricing_offers.model_version AND c.kind='purchase') LIMIT 1000)`, pricingStamp(now.AddDate(0, 0, -60))},
+		{"offers", `DELETE FROM pricing_offers WHERE id IN (SELECT id FROM pricing_offers WHERE expires_at<$1 AND outcome IS NOT NULL AND EXISTS(SELECT 1 FROM pricing_calibration_daily c WHERE c.day=SUBSTR(pricing_offers.exposed_at,1,10) AND c.model_version=pricing_offers.model_version AND c.kind='purchase' AND c.sealed) LIMIT 1000)`, pricingStamp(pricingOfferRetentionCutoff(now))},
 		{"decisions", `DELETE FROM pricing_decisions WHERE id IN (SELECT id FROM pricing_decisions WHERE generated_at<$1 LIMIT 1000)`, pricingStamp(now.AddDate(0, 0, -60))},
 		{"incidents", `DELETE FROM pricing_operational_incidents WHERE id IN (SELECT id FROM pricing_operational_incidents WHERE ended_at<$1 LIMIT 1000)`, pricingStamp(now.AddDate(0, 0, -90))},
-		{"calibration", `DELETE FROM pricing_calibration_daily WHERE day<$1`, now.AddDate(-1, 0, 0).Format("2006-01-02")},
-		{"summaries", `DELETE FROM pricing_model_validation_daily WHERE day<$1`, now.AddDate(-1, 0, 0).Format("2006-01-02")},
+		{"calibration", `DELETE FROM pricing_calibration_daily c WHERE c.day<$1 AND (c.kind<>'purchase' OR NOT EXISTS(SELECT 1 FROM pricing_offers t WHERE SUBSTR(t.exposed_at,1,10)=c.day AND t.model_version=c.model_version))`, now.AddDate(-1, 0, 0).Format("2006-01-02")},
+		{"summaries", `DELETE FROM pricing_model_validation_daily m WHERE m.day<$1 AND NOT EXISTS(SELECT 1 FROM pricing_forecast_vintages f WHERE SUBSTR(f.target_from,1,10)=m.day AND f.model_version=m.model_version AND f.metric=m.metric AND f.horizon_seconds=m.horizon_seconds)`, now.AddDate(-1, 0, 0).Format("2006-01-02")},
 	}
 	for _, q := range queries {
 		result, e := tx.ExecContext(ctx, q.query, q.at)
@@ -52,10 +64,24 @@ func (s *Store) retryAttempt_PricingCleanup(ctx context.Context, now time.Time) 
 		}
 		counts[q.name] = n
 	}
-	if err = expirePricingOverridesTx(ctx, tx, now); err != nil {
-		return nil, err
-	}
 	return counts, tx.Commit()
+}
+
+// Financial reservations and policy expiry use their existing transaction order;
+// they must never run while analytics holds a source-compaction lock.
+func (s *Store) expirePricingFinancialReservations(ctx context.Context, now time.Time) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err = tx.ExecContext(ctx, `UPDATE pricing_discount_spend SET status='RELEASED' WHERE status='RESERVED' AND reference_id IN (SELECT 'renewal:'||id FROM pricing_renewal_quotes WHERE state IN ('CANCELLED','EXPIRED') OR valid_until<=$1 AND state<>'SETTLED')`, pricingStamp(now)); err != nil {
+		return err
+	}
+	if err = expirePricingOverridesTx(ctx, tx, now); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func expirePricingOverridesTx(ctx context.Context, tx *sql.Tx, now time.Time) error {

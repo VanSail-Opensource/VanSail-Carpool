@@ -111,7 +111,11 @@ func (s *Server) browserExchange(w http.ResponseWriter, r *http.Request) {
 	}
 	user, token, expires, returnTo, err := s.deps.BrowserAuth.Exchange(r.Context(), input.Token)
 	if err != nil {
-		s.browserFailure(w, r, 401, "BROWSER_LINK_INVALID")
+		if errors.Is(err, browserauth.ErrUnauthorized) {
+			s.browserFailure(w, r, http.StatusUnauthorized, "BROWSER_LINK_INVALID")
+		} else {
+			s.browserSessionFailure(w, r, err)
+		}
 		return
 	}
 	if err = s.setBrowserCookies(w, token, expires); err != nil {

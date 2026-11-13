@@ -44,22 +44,25 @@ const schema = computed(() => z.object({
       <InlineNotice v-if="errorCode" tone="warning">{{ ipLookupErrorText(errorCode) }}</InlineNotice>
       <InlineNotice v-if="saved" tone="success">{{ t('ipLookup.saved') }}</InlineNotice>
       <UForm id="ip-lookup-settings" :state="settings" :schema="schema" class="lookup-settings" @submit="saveSettings">
-        <div v-show="workspace === 'general'" class="lookup-general">
-          <SwitchField id="ip-lookup-enabled" v-model="settings.enabled" :label="t('ipLookup.enable')" :help="t('ipLookup.enableHelp')" />
-          <div class="lookup-fees"><TxbAmountField id="lookup-fee" v-model="settings.lookupFeeTxb" :label="t('ipLookup.lookupFee')" min-minor="0" /><TxbAmountField id="refresh-fee" v-model="settings.refreshFeeTxb" :label="t('ipLookup.refreshFee')" min-minor="0" /></div>
-          <div class="lookup-orders"><ProviderOrder v-model="checkOrder" :title="t('ipLookup.checkOrder')" :help="t('ipLookup.checkOrderHelp')" :disabled="busy" /><ProviderOrder v-model="settings.geolocationOrder" :title="t('ipLookup.geolocationOrder')" :help="t('ipLookup.geolocationOrderHelp')" :disabled="busy" /></div>
-          <UFormField name="refreshQuotaCost" :label="t('ipLookup.refreshQuotaCost')" :help="t('ipLookup.refreshQuotaHelp')"><UInputNumber v-model="settings.refreshQuotaCost" :min="0" :max="1000000" :step="1" :disabled="busy" /></UFormField>
-          <RetrySettings v-if="settings.retry" v-model="settings.retry" :disabled="busy" />
-        </div>
-        <ProviderSettings v-show="workspace === 'providers'" v-model="settings" />
-        <ComboQuotas v-show="workspace === 'quotas'" v-model="settings.comboQuotas" :combos="combos" />
+        <fieldset class="lookup-settings__fields" :disabled="busy">
+          <div v-show="workspace === 'general'" class="lookup-general">
+            <SwitchField id="ip-lookup-enabled" v-model="settings.enabled" :label="t('ipLookup.enable')" :help="t('ipLookup.enableHelp')" />
+            <div class="lookup-fees"><TxbAmountField id="lookup-fee" v-model="settings.lookupFeeTxb" :label="t('ipLookup.lookupFee')" min-minor="0" /><TxbAmountField id="refresh-fee" v-model="settings.refreshFeeTxb" :label="t('ipLookup.refreshFee')" min-minor="0" /></div>
+            <div class="lookup-orders"><ProviderOrder v-model="checkOrder" :title="t('ipLookup.checkOrder')" :help="t('ipLookup.checkOrderHelp')" :disabled="busy" /><ProviderOrder v-model="settings.geolocationOrder" :title="t('ipLookup.geolocationOrder')" :help="t('ipLookup.geolocationOrderHelp')" :disabled="busy" /></div>
+            <UFormField name="refreshQuotaCost" :label="t('ipLookup.refreshQuotaCost')" :help="t('ipLookup.refreshQuotaHelp')"><UInputNumber v-model="settings.refreshQuotaCost" :min="0" :max="1000000" :step="1" :disabled="busy" /></UFormField>
+            <RetrySettings v-if="settings.retry" v-model="settings.retry" :disabled="busy" />
+          </div>
+          <ProviderSettings v-show="workspace === 'providers'" v-model="settings" />
+          <ComboQuotas v-show="workspace === 'quotas'" v-model="settings.comboQuotas" :combos="combos" />
+        </fieldset>
       </UForm>
       <UButton v-if="errorCode && !settings.providers.length" color="neutral" variant="outline" :label="t('common.tryAgain')" @click="load" />
     </template>
   </section>
 </template>
 <style scoped>
-.lookup-settings, .lookup-general { display: grid; gap: 1.5rem; min-width: 0; }
+.lookup-settings, .lookup-settings__fields, .lookup-general { display: grid; gap: 1.5rem; min-width: 0; }
+.lookup-settings__fields { border: 0; margin: 0; padding: 0; }
 .lookup-fees, .lookup-orders { display: grid; gap: 1.25rem; }
 @media (min-width: 1024px) { .lookup-fees, .lookup-orders { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 </style>

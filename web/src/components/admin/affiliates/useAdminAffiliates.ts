@@ -1,10 +1,11 @@
 import { restoreItems, restoreRef } from '@/api/cache/restore'
-import { onMounted, readonly, shallowRef } from 'vue'
+import { onMounted, onScopeDispose, readonly, shallowRef } from 'vue'
 
 import type { AdminAffiliateView, AffiliateTier, CouponDefinition } from '@/api/features'
 import { featuresApi } from '@/api/features'
 import { localizedError } from '@/i18n'
 import { cloneForEditing } from '@/utils/browserCompatibility'
+import { createLatestRequest } from '@/utils/latestRequest'
 
 export function useAdminAffiliates() {
   const configuration = shallowRef<AdminAffiliateView | null>(null)
@@ -13,16 +14,22 @@ export function useAdminAffiliates() {
   const loading = shallowRef(true)
   const saving = shallowRef(false)
   const error = shallowRef<string | null>(null)
+  const latest = createLatestRequest()
+  let disposed = false
+  let hydrated = false
 
   async function load(): Promise<void> {
-    loading.value = ![
+    if (disposed || saving.value) return
+    const ticket = latest.begin()
+    loading.value = hydrated || ![
       restoreRef('/api/v1/admin/affiliates', configuration),
       restoreItems('/api/v1/admin/coupons', coupons),
     ].every(Boolean)
 
-    if (configuration.value) {
+    if (!hydrated && configuration.value) {
       tiers.value = cloneForEditing(configuration.value.tiers)
     }
+    hydrated = true
 
     coupons.value = coupons.value.filter(
       (coupon) => coupon.active && coupon.kind.startsWith('purchase_'),
@@ -36,6 +43,7 @@ export function useAdminAffiliates() {
         featuresApi.getAdminAffiliates(),
         featuresApi.getAdminCoupons(),
       ])
+      if (!latest.isCurrent(ticket)) return
 
       if (JSON.stringify(tiers.value) === originalTiers) {
         configuration.value = config
@@ -46,37 +54,42 @@ export function useAdminAffiliates() {
         (coupon) => coupon.active && coupon.kind.startsWith('purchase_'),
       )
     } catch (caught) {
-      error.value = localizedError(caught, 'adminAffiliates.loadFailed')
+      if (latest.isCurrent(ticket)) error.value = localizedError(caught, 'adminAffiliates.loadFailed')
     } finally {
-      loading.value = false
+      if (latest.isCurrent(ticket)) loading.value = false
     }
   }
 
   async function save(): Promise<void> {
-    if (!configuration.value || saving.value) return
+    if (disposed || !configuration.value || saving.value || loading.value) return
 
+    const ticket = latest.begin()
+    const snapshot = cloneForEditing(tiers.value)
+    const originalTiers = JSON.stringify(snapshot)
     saving.value = true
     error.value = null
 
     try {
       const saved = await featuresApi.saveAdminAffiliates(
         configuration.value.version,
-        tiers.value,
+        snapshot,
       )
+      if (!latest.isCurrent(ticket)) return
       configuration.value = saved
-      tiers.value = cloneForEditing(saved.tiers)
+      if (JSON.stringify(tiers.value) === originalTiers) tiers.value = cloneForEditing(saved.tiers)
     } catch (caught) {
-      error.value = localizedError(caught, 'adminAffiliates.saveFailed')
+      if (latest.isCurrent(ticket)) error.value = localizedError(caught, 'adminAffiliates.saveFailed')
     } finally {
-      saving.value = false
+      if (latest.isCurrent(ticket)) saving.value = false
     }
   }
 
   function replace(next: AffiliateTier[]): void {
-    tiers.value = next
+    if (!disposed) tiers.value = next
   }
 
   onMounted(() => void load())
+  onScopeDispose(() => { disposed = true; latest.dispose(); configuration.value = null; tiers.value = []; coupons.value = [] })
 
   return {
     configuration: readonly(configuration),

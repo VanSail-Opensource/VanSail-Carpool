@@ -20,7 +20,7 @@ func tableProtection(name string) string {
 		return "financialEvidence"
 	case "settings", "sessions", "browser_sessions", "browser_access_links", "api_tokens", "panel_api_tokens", "xnode_identities", "xnode_member_diy", "xnode_routing_plans", "xnode_customizations":
 		return "secrets"
-	case "backup_runs", "backup_uploads", "restore_jobs", "maintenance_runs", "pricing_worker_watermark", "statistics_snapshots", "connection_ip_blocks", "connection_scans", "database_admin_reviews", "outbox_jobs", "xnode_compile_revision", "xnode_firewall_clock", "xnode_firewall_members", "xnode_firewall_sources", "xnode_firewall_bans":
+	case "backup_runs", "backup_uploads", "restore_jobs", "maintenance_runs", "pricing_worker_watermark", "statistics_snapshots", "connection_ip_blocks", "connection_scans", "database_admin_reviews", "outbox_jobs", "telegram_star_reconciliation", "xnode_compile_revision", "xnode_firewall_clock", "xnode_firewall_members", "xnode_firewall_sources", "xnode_firewall_bans":
 		return "managedState"
 	}
 	if strings.HasPrefix(name, "pricing_") && name != "pricing_product_settings" && name != "pricing_admin_overrides" && name != "pricing_operational_incidents" {
@@ -28,6 +28,12 @@ func tableProtection(name string) string {
 	}
 	if strings.HasPrefix(name, "activity_") && name != "activity_games" && name != "activity_lucky_prizes" {
 		return "financialEvidence"
+	}
+	if strings.HasPrefix(name, "hourly_") {
+		return "financialEvidence"
+	}
+	if strings.HasPrefix(name, "account_cleanup_") || strings.HasPrefix(name, "xnode_usage_") {
+		return "managedState"
 	}
 	for _, prefix := range []string{"payment_", "usdt_", "billing_", "purchase_", "provider_operation", "xnode_period", "xnode_traffic", "xnode_payg_", "xnode_imported_", "xnode_accounting", "activity_bet", "activity_raffle_ticket", "activity_lucky_result", "admin_operation", "compensation_"} {
 		if strings.HasPrefix(name, prefix) {

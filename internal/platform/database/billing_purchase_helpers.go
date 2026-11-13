@@ -51,13 +51,20 @@ func checkSquadStockTx(ctx context.Context, tx *sql.Tx, squadUUIDs []string, hol
 
 func nextPurchaseStartTx(ctx context.Context, tx *sql.Tx, userID string, now time.Time) (time.Time, error) {
 	validFrom := now
-	var latestEnd string
-	err := tx.QueryRowContext(ctx, `SELECT valid_until FROM purchases WHERE user_id=$1 AND status IN ('activating','active','queued') ORDER BY valid_until DESC LIMIT 1`, userID).Scan(&latestEnd)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	rows, err := tx.QueryContext(ctx, `SELECT valid_until FROM purchases WHERE user_id=$1 AND status IN ('activating','active','queued')`, userID)
+	if err != nil {
 		return time.Time{}, fmt.Errorf("find current entitlement: %w", err)
 	}
-	if err == nil {
-		parsed, parseErr := parseStamp(latestEnd)
+	defer rows.Close()
+	// Stored RFC3339Nano values have variable fractional precision. Text order
+	// reverses whole/fractional seconds, and PostgreSQL timestamps round to
+	// microseconds. Compare parsed instants to retain the exact paid boundary.
+	for rows.Next() {
+		var end string
+		if err := rows.Scan(&end); err != nil {
+			return time.Time{}, fmt.Errorf("scan current entitlement: %w", err)
+		}
+		parsed, parseErr := parseStamp(end)
 		if parseErr != nil {
 			return time.Time{}, fmt.Errorf("parse current entitlement: %w", parseErr)
 		}
@@ -65,7 +72,7 @@ func nextPurchaseStartTx(ctx context.Context, tx *sql.Tx, userID string, now tim
 			validFrom = parsed
 		}
 	}
-	return validFrom, nil
+	return validFrom, rows.Err()
 }
 
 func normalizeAndFingerprintPurchase(input *PurchaseInput) (string, error) {

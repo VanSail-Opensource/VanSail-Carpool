@@ -78,13 +78,7 @@ func (s *Service) checkCommunitySpaceMembership(ctx context.Context, user model.
 	if err != nil {
 		return model.User{}, false, fmt.Errorf("check %s membership: %w", space, err)
 	}
-	groupJoined, channelJoined := user.GroupJoined, user.ChannelJoined
-	if space == CommunityGroup {
-		groupJoined = joined
-	} else {
-		channelJoined = joined
-	}
-	refreshed, err := s.repository.UpdateMembership(ctx, user.ID, groupJoined, channelJoined)
+	refreshed, err := s.repository.UpdateCommunityMembership(ctx, user.ID, string(space), joined)
 	return refreshed, joined, err
 }
 

@@ -9,39 +9,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
-type enqueuedRetry struct {
-	kind    string
-	payload string
-	at      time.Time
-}
-
-type reportRetryRepo struct {
-	workerRepo
-	gone     bool
-	conflict bool
-	enqueued []enqueuedRetry
-}
-
-func (r *reportRetryRepo) IPLookupReportByID(context.Context, string) (Report, Config, error) {
-	if r.gone {
-		return Report{}, Config{}, ErrRepairGone
-	}
-	return r.report, r.config, nil
-}
-
-func (r *reportRetryRepo) UpdateIPLookupCachedReport(_ context.Context, report Report) error {
-	if r.conflict {
-		return ErrRepairConflict
-	}
-	r.report, r.saves = report, r.saves+1
-	return nil
-}
-
-func (r *reportRetryRepo) EnqueueOutbox(_ context.Context, kind, payload string, at time.Time) error {
-	r.enqueued = append(r.enqueued, enqueuedRetry{kind: kind, payload: payload, at: at})
-	return nil
-}
-
 // partialReport freezes one successful stage and one failed stage.
 func partialReport(t *testing.T, c Config) Report {
 	t.Helper()

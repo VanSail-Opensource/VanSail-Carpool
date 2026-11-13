@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,8 +15,9 @@ import (
 
 // AdminUserRecord is the list-safe user and aggregate balance projection.
 type AdminUserRecord struct {
-	User    model.User
-	Balance model.Money
+	User            model.User
+	Balance         model.Money
+	Synchronization AdminUserSynchronization
 }
 
 // AdminUserSearchFilter is the normalized, cursor-bound administrative search.
@@ -43,8 +45,9 @@ func (s *Store) ListAdminUsersPage(ctx context.Context, cursor string, filter Ad
 	if err != nil {
 		return nil, nil, err
 	}
-	query := `SELECT ` + userColumns + `,COALESCE(balances.txb_minor,0) FROM users
-		LEFT JOIN balances ON balances.user_id=users.id WHERE users.account_status='active'`
+	query := `SELECT ` + userColumns + `,COALESCE(balances.txb_minor,0),` + adminUserSynchronizationColumns + ` FROM users
+		LEFT JOIN balances ON balances.user_id=users.id
+		LEFT JOIN xnode_identities native ON native.user_id=users.id WHERE users.account_status='active'`
 	args := make([]any, 0, 20)
 	if filter.Search != "" {
 		pattern := "%" + escapeLike(filter.Search) + "%"
@@ -56,16 +59,17 @@ func (s *Store) ListAdminUsersPage(ctx context.Context, cursor string, filter Ad
 		query += " AND (" + clause + ")"
 		args = append(args, clauseArgs...)
 	}
+	orderedCreated := purchaseTimestampOrderSQL("users.created_at")
 	if cursor != "" {
 		decoded, err := decodeTimestampCursor(cursor, fingerprint)
 		if err != nil {
 			return nil, nil, err
 		}
-		query += fmt.Sprintf(" AND (users.created_at<$%d OR (users.created_at=$%d AND users.id<$%d))", len(args)+1, len(args)+2, len(args)+3)
-
-		args = append(args, decoded.Timestamp, decoded.Timestamp, decoded.ID)
+		orderedCursor := purchaseTimestampOrderSQL(fmt.Sprintf("$%d", len(args)+1))
+		query += fmt.Sprintf(" AND (%s,users.id)<(%s,$%d)", orderedCreated, orderedCursor, len(args)+2)
+		args = append(args, decoded.Timestamp, decoded.ID)
 	}
-	query += fmt.Sprintf(" ORDER BY users.created_at DESC,users.id DESC LIMIT $%d", len(args)+1)
+	query += fmt.Sprintf(" ORDER BY %s DESC,users.id DESC LIMIT $%d", orderedCreated, len(args)+1)
 
 	args = append(args, limit+1)
 	rows, err := s.db.QueryContext(ctx, query, args...)
@@ -76,11 +80,14 @@ func (s *Store) ListAdminUsersPage(ctx context.Context, cursor string, filter Ad
 	items := make([]AdminUserRecord, 0, limit+1)
 	for rows.Next() {
 		var balanceMinor int64
-		user, scanErr := scanUserWith(rows, &balanceMinor)
+		var nativeID sql.NullInt64
+		var credentialsReady, applied bool
+		user, scanErr := scanUserWith(rows, &balanceMinor, &nativeID, &credentialsReady, &applied)
 		if scanErr != nil {
 			return nil, nil, scanErr
 		}
-		items = append(items, AdminUserRecord{User: user, Balance: model.TXBMoney(balanceMinor)})
+		items = append(items, AdminUserRecord{User: user, Balance: model.TXBMoney(balanceMinor),
+			Synchronization: adminUserSynchronizationFor(user, nativeID, credentialsReady, applied)})
 	}
 	if err := rows.Err(); err != nil {
 		return nil, nil, err
@@ -153,13 +160,13 @@ func adminUserFacetClause(filter AdminUserSearchFilter, now time.Time, first ...
 	}
 	conditions := make([]string, 0, 3)
 	args := make([]any, 0, 8+len(filter.ComboIDs)+2*len(filter.SquadUUIDs))
-	active := fmt.Sprintf(`purchases.status IN ('active','activating') AND purchases.valid_from<=$%d AND purchases.valid_until>$%d`, start, start+1)
+	active := fmt.Sprintf(`purchases.status IN ('active','activating') AND `+purchaseTimestampOrderSQL("purchases.valid_from")+`<=$%d AND `+purchaseTimestampOrderSQL("purchases.valid_until")+`>$%d`, start, start+1)
 	if filter.State == "active" {
 		conditions = append(conditions, `EXISTS (SELECT 1 FROM purchases WHERE purchases.user_id=users.id AND `+active+`)`)
-		args = append(args, stamp(now), stamp(now))
+		args = append(args, purchaseTimestampOrder(now), purchaseTimestampOrder(now))
 	} else if filter.State == "non_active" {
 		conditions = append(conditions, `NOT EXISTS (SELECT 1 FROM purchases WHERE purchases.user_id=users.id AND `+active+`)`)
-		args = append(args, stamp(now), stamp(now))
+		args = append(args, purchaseTimestampOrder(now), purchaseTimestampOrder(now))
 	}
 	if len(filter.ComboIDs) > 0 {
 		conditions = append(conditions, `EXISTS (SELECT 1 FROM purchases WHERE purchases.user_id=users.id AND purchases.combo_id IN (`+placeholders(len(filter.ComboIDs), start+len(args))+`))`)

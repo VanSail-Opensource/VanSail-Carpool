@@ -123,6 +123,9 @@ type ProviderResult struct {
 
 // Report freezes the verdict and original coverage; toggles never rewrite it.
 type Report struct {
+	// RepairRevision binds cache repairs to the exact persisted document.
+	RepairRevision string `json:"-"`
+
 	RefundRequired bool              `json:"refundRequired"`
 	ID             string            `json:"id"`
 	IP             string            `json:"ip"`

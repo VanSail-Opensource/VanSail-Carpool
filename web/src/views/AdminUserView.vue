@@ -15,5 +15,5 @@ function backToUsers(): void {
 </script>
 
 <template>
-  <AdminUserProfilePage :user-id="userId" @back="backToUsers" />
+  <AdminUserProfilePage :key="userId" :user-id="userId" @back="backToUsers" />
 </template>

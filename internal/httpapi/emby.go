@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/emby"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
@@ -45,17 +46,40 @@ func mapEmbyAccount(account emby.Account) embyAccountResponse {
 	}
 	return embyAccountResponse{ID: account.ID, Username: username, Status: account.Status,
 		MaxParentalRating: account.Preferences.MaxParentalRating, DisabledLibraryIDs: libraries,
-		Retryable: account.Retryable, ErrorMessage: account.LastError, UpdatedAt: account.UpdatedAt}
+		Retryable: account.Retryable, ErrorMessage: embyAccountFailure(account), UpdatedAt: account.UpdatedAt}
+}
+
+// Historical account rows may predate safe error persistence. Never return the
+// stored diagnostic, even when an older provider included a URL or response body.
+func embyAccountFailure(account emby.Account) string {
+	if account.LastError == "" {
+		return ""
+	}
+	if account.Status == emby.StatusPendingReview {
+		return "Emby setup requires administrator review."
+	}
+	if account.Retryable {
+		return "Emby setup is temporarily unavailable and can be retried."
+	}
+	return "The Emby account operation could not be completed."
 }
 
 func (s *Server) embyAccount(w http.ResponseWriter, r *http.Request) {
 	_, _, connectionErr := s.deps.Settings.EmbyCredentials(r.Context())
+	if connectionErr != nil && !errors.Is(connectionErr, admin.ErrEmbyConnection) {
+		s.writeError(w, r, http.StatusServiceUnavailable, "EMBY_UNAVAILABLE", "Emby account configuration is temporarily unavailable.")
+		return
+	}
 	configured := connectionErr == nil
 	priceMinor := int64(0)
 	if configured {
 		var priceErr error
 		priceMinor, priceErr = s.deps.EmbyPrice.EmbySetupPriceTXBMinor(r.Context())
 		if priceErr != nil {
+			if !errors.Is(priceErr, database.ErrNotFound) && !errors.Is(priceErr, emby.ErrInvalidSetup) {
+				s.writeError(w, r, http.StatusServiceUnavailable, "EMBY_UNAVAILABLE", "Emby account configuration is temporarily unavailable.")
+				return
+			}
 			configured = false
 		}
 	}

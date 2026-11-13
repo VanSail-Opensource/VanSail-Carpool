@@ -16,6 +16,13 @@ get:
       required: true
       schema:
         $ref: '../openapi.yaml#/components/schemas/ID'
+    - name: capability
+      in: query
+      required: false
+      description: Existing checkout-issued receipt capability; navigation never renews it.
+      schema:
+        type: string
+        pattern: '^v2\.[0-9]+\.[a-f0-9]{64}$'
   responses:
     '303':
       description: Redirect to the same-origin payment result route.

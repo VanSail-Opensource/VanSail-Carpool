@@ -51,7 +51,8 @@ func (s *Store) BeginMemberRefund(ctx context.Context, input providerops.CreateI
 
 func (s *Store) retryAttempt_beginMemberPurchaseOperation(ctx context.Context, input providerops.CreateInput, purchaseID string, now time.Time) (providerops.Operation, bool, error) {
 	input, err := providerops.NormalizeCreate(input)
-	if err != nil || input.Kind != purchaseops.OperationRefundKind || len(input.Items) != 1 || input.Items[0].TargetID != purchaseID {
+	if err != nil || input.Kind != purchaseops.OperationRefundKind || input.ActorUserID != input.OwnerUserID ||
+		len(input.Items) != 1 || input.Items[0].Key != "purchase" || input.Items[0].TargetType != "purchase" || input.Items[0].TargetID != purchaseID {
 		return providerops.Operation{}, false, ErrConflict
 	}
 

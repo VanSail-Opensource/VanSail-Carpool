@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
 type memberDashboardReader interface {
@@ -49,9 +48,7 @@ func (s *Service) Dashboard(ctx context.Context, user model.User) (model.Dashboa
 	if !native && user.ProxyUserID == nil {
 		return dashboard, nil
 	}
-	s.cacheMu.RLock()
-	cached, exists := s.cache[user.ID]
-	s.cacheMu.RUnlock()
+	cached, exists, epoch := s.dashboardSnapshot(user)
 	if exists && now.Sub(cached.fetchedAt) <= s.cacheTTL {
 		dashboard.Statistics = &cached.value.Statistics
 		dashboard.SubscriptionURL = &cached.value.SubscriptionURL
@@ -67,12 +64,19 @@ func (s *Service) Dashboard(ctx context.Context, user model.User) (model.Dashboa
 		remote, remoteErr = s.provider.Dashboard(ctx, *user.ProxyUserID)
 	}
 	if remoteErr == nil {
+		if !s.cacheDashboard(user, remote, now, epoch) {
+			dashboard.StatisticsStale = true
+			dashboard.StatisticsWarning = "Account or subscription state changed. Refresh to load current usage."
+			return dashboard, nil
+		}
 		dashboard.Statistics = &remote.Statistics
 		dashboard.SubscriptionURL = &remote.SubscriptionURL
 		dashboard.SubscriptionReady = remote.SubscriptionURL != ""
-		s.cacheDashboard(user.ID, remote, now)
 		return dashboard, nil
 	}
+	s.cacheMu.RLock()
+	exists = exists && s.cacheEpoch == epoch
+	s.cacheMu.RUnlock()
 	if !exists {
 		dashboard.StatisticsStale = true
 		dashboard.StatisticsWarning = "Live usage is temporarily unavailable. Local balance and entitlement data are still current."
@@ -87,23 +91,11 @@ func (s *Service) Dashboard(ctx context.Context, user model.User) (model.Dashboa
 	return dashboard, nil
 }
 
-// RevokeSubscription rotates the bearer URL and invalidates the process-local cache.
-func (s *Service) RevokeSubscription(ctx context.Context, user model.User) (string, error) {
-	if user.ProxyUserID == nil {
-		return "", database.ErrNotFound
-	}
-	url, err := s.provider.RevokeSubscription(ctx, *user.ProxyUserID)
-	if err != nil {
-		return "", err
-	}
-	s.InvalidateDashboard(user.ID)
-	return url, nil
-}
-
 // InvalidateDashboard drops usage cached before an entitlement reset or change.
 func (s *Service) InvalidateDashboard(userID string) {
 	s.cacheMu.Lock()
 	s.cacheBytes -= s.cache[userID].bytes
 	delete(s.cache, userID)
+	s.cacheEpoch++
 	s.cacheMu.Unlock()
 }

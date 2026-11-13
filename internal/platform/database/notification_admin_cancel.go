@@ -26,6 +26,9 @@ func (s *Store) retryAttempt_CancelAdminPurchase(ctx context.Context, actorID, p
 		return model.Purchase{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
+	if err := catalogAdminActorTx(ctx, tx, actorID); err != nil {
+		return model.Purchase{}, err
+	}
 	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=$1`, purchaseID))
 	if err != nil {
 		return model.Purchase{}, err
@@ -76,8 +79,12 @@ func (s *Store) retryAttempt_CancelAdminPurchase(ctx context.Context, actorID, p
 		purchase.UserID, jobpayload.UserEventAdminUpdate, gate, facts, now); err != nil {
 		return model.Purchase{}, err
 	}
+	updated, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=$1`, purchase.ID))
+	if err != nil {
+		return model.Purchase{}, err
+	}
 	if err := tx.Commit(); err != nil {
 		return model.Purchase{}, err
 	}
-	return s.PurchaseByID(ctx, purchase.ID)
+	return updated, nil
 }

@@ -9,7 +9,8 @@ func (s *Service) servicePeriod(ctx context.Context, identity Identity, access *
 	if err := access.validate(); err != nil {
 		return nil, err
 	}
-	if identity.AccessDisabled || access.Disabled || !access.ExpiresAt.After(s.now()) || identity.CurrentPeriodID == "" {
+	now := s.now()
+	if identity.AccessDisabled || access.Disabled || access.StartedAt.After(now) || !access.ExpiresAt.After(now) || identity.CurrentPeriodID == "" {
 		return nil, nil
 	}
 	period, err := s.repo.XNodePeriod(ctx, identity.CurrentPeriodID)

@@ -1,4 +1,5 @@
 import { request } from './http'
+import type { components } from './generated'
 
 export interface PricingPolicy {
   productType: 'combo' | 'payg' | 'addon'
@@ -18,8 +19,9 @@ export interface PricingPolicy {
 
 const productPath = (kind: string, id: string) => `/api/v1/admin/pricing/products/${encodeURIComponent(kind)}/${encodeURIComponent(id)}`
 export interface PricingRenewalInfo {
+  contract: components['schemas']['PricingContract'] | null
   policy: PricingPolicy
-  quote: { priceMinor: string; state: string; generatedAt: string; settleAfter: string; validUntil: string } | null
+  quote: components['schemas']['PricingRenewalQuote'] | null
   graceSeconds: number
 }
 export const pricingApi = {

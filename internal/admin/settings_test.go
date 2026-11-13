@@ -191,7 +191,6 @@ func TestSettingValidators(t *testing.T) {
 		{name: "integer", validate: validateInteger, valid: []string{"1", "-1001"}, invalid: []string{"0", "1.5", "x"}},
 		{name: "optional integer", validate: validateOptionalInteger, valid: []string{"", "-1001"}, invalid: []string{"0", "1.5", "x"}},
 		{name: "HTTPS URL", validate: validateHTTPSURL, valid: []string{"https://example.test/path"}, invalid: []string{"http://example.test", "https://user@example.test", "/relative", "https:///missing"}},
-		{name: "HTTP or HTTPS URL", validate: validateHTTPOrHTTPSURL, valid: []string{"http://provider:3000", "https://example.test/path"}, invalid: []string{"https://user@example.test", "/relative", "http:///missing"}},
 		{name: "boolean", validate: validateBoolean, valid: []string{"true", "false"}, invalid: []string{"TRUE", "1", ""}},
 		{name: "ack", validate: validateAck, valid: []string{"ok", "success", "SUCCESS"}, invalid: []string{"true", "done"}},
 		{name: "EZPay methods", validate: billing.ValidateEZPayMethods, valid: []string{"alipay", "wxpay,alipay", "qqpay,bank,jdpay"}, invalid: []string{"card", "", "alipay,alipay"}},
@@ -215,12 +214,14 @@ func TestSettingValidators(t *testing.T) {
 }
 
 type adminSettingsRepository struct {
-	settings  map[string]database.Setting
-	putErr    error
-	getErr    error
-	listErr   error
-	putCalls  int
-	lastActor *string
+	settings    map[string]database.Setting
+	putErr      error
+	getErr      error
+	listErr     error
+	putCalls    int
+	lastActor   *string
+	auditCalls  int
+	lastAuditAt time.Time
 }
 
 func newAdminSettingsRepository() *adminSettingsRepository {

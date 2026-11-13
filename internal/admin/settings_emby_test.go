@@ -10,7 +10,8 @@ import (
 
 type embySettingsRepository struct {
 	*adminSettingsRepository
-	pair database.EmbyConnectionRecord
+	pair    database.EmbyConnectionRecord
+	saveErr error
 }
 
 func (r *embySettingsRepository) EmbyConnection(context.Context) (database.EmbyConnectionRecord, error) {
@@ -18,11 +19,34 @@ func (r *embySettingsRepository) EmbyConnection(context.Context) (database.EmbyC
 }
 
 func (r *embySettingsRepository) SaveEmbyConnection(_ context.Context, version string, next database.EmbyConnectionRecord, _ string) error {
+	if r.saveErr != nil {
+		return r.saveErr
+	}
 	if r.pair.Version() != version {
 		return database.ErrConflict
 	}
 	r.pair = next
 	return nil
+}
+
+func TestEmbyConnectionReliesOnAtomicMutationAudit(t *testing.T) {
+	ctx := context.Background()
+	repository := &embySettingsRepository{adminSettingsRepository: newAdminSettingsRepository()}
+	catalog := &adminCatalogRepository{auditErr: errors.New("separate audit unavailable")}
+	service := NewService(catalog, NewSettingsService(repository, testVault(t)), nil, nil, nil)
+	initial, err := service.EmbyConnection(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	saved, err := service.SaveEmbyConnection(ctx, "admin", EmbyConnectionWrite{initial.Version, "https://emby.example", "first-token"})
+	if err != nil || !saved.TokenConfigured || len(catalog.audits) != 0 {
+		t.Fatal("committed pair depended on a second audit", err)
+	}
+	repository.saveErr = errors.New("atomic audit unavailable")
+	before := repository.pair.Version()
+	if _, err := service.SaveEmbyConnection(ctx, "admin", EmbyConnectionWrite{saved.Version, "", "replacement-token"}); !errors.Is(err, repository.saveErr) || repository.pair.Version() != before {
+		t.Fatal("atomic audit failure changed connection", err)
+	}
 }
 
 func TestEmbyConnectionCannotRetargetInheritedSecret(t *testing.T) {

@@ -68,7 +68,7 @@ func TestHourlyExtraOptOutSurvivesUnreadablePolicyAndKeepsCredit(t *testing.T) {
 	if _, err := f.server.deps.Store.DB().Exec(`UPDATE hourly_credit_days SET extra_funded_bytes=1000000000 WHERE owner_id=$1`, f.user.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := f.server.deps.Store.CompareAndSwapHourlyPolicy(context.Background(), f.user.ID, f.policy.Version, "unreadable-ciphertext"); err != nil {
+	if _, err := f.server.deps.Store.CompareAndSwapHourlyPolicy(context.Background(), f.admin.ID, f.policy.Version, "unreadable-ciphertext"); err != nil {
 		t.Fatal(err)
 	}
 	w := f.request(t, "PUT", "/api/v1/hourly/extra-traffic", `{"enabled":false}`, "", true)

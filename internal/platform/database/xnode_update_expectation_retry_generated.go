@@ -3,17 +3,16 @@ package database
 
 import (
 	context "context"
+	providerops "github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
+	xnode "github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	time "time"
-
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
 func (s *Store) PrepareXNodeUpdate(ctx context.Context, id string, expected xnode.UpdateExpectation, now time.Time) (providerops.Operation, error) {
 	for retryIndex := 0; ; retryIndex++ {
-		operation, err := s.retryAttempt_PrepareXNodeUpdate(ctx, id, expected, now)
-		if !s.retryTransaction(ctx, err, retryIndex) {
-			return operation, err
+		r0, r1 := s.retryAttempt_PrepareXNodeUpdate(ctx, id, expected, now)
+		if !s.retryTransaction(ctx, r1, retryIndex) {
+			return r0, r1
 		}
 	}
 }

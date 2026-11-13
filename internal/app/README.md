@@ -76,7 +76,7 @@ waits for the scheduler and provider workers to finish before returning.
 - `lucky_draw_format.go` keeps raffle entry and progress details ahead of a bounded prize list; `lucky_draw_result_format.go` builds escaped mentions and paginated outcomes.
 - `lucky_draw_format_test.go` covers long announcements retaining the seat count and join command within Telegram's limit.
 - `application.go` defines the process-owned application resource container.
-- `member_workflows.go` composes member connection/reset/refund services and registers legacy drop plus block/unblock operation workers on one dispatcher.
+- `member_workflows.go` composes administrator connection diagnostics, member refunds and historical reset settlement, and registers retained IP-unblock cleanup on the shared dispatcher. No retired block/drop admission or executor is installed.
 - `outbox_composition.go` registers core jobs, user/payment/affiliate Telegram notifications, the scheduled IP-unblock backstop, and the shared provider-operation dispatcher.
 - `admin_user_outbox.go` schedules due manual temporary-ban restoration through the shared provider-operation lane.
 - `payment_operations.go` registers durable payment create and cancellation handlers on that dispatcher.
@@ -84,7 +84,9 @@ waits for the scheduler and provider workers to finish before returning.
 - `maintenance_operation.go` registers the durable admin maintenance command with bounded execution, receipt completion, retries, lease-aware recovery, and structured failure diagnostics.
 - `maintenance_runner.go` shares the full backup-gated database and migration-snapshot cleanup flow between the scheduler and manual command worker.
 - `payment_refund_adapter.go` reconciles ambiguous Telegram Stars refunds from authoritative transaction history.
-- `application_lifecycle.go` starts and stops provider queues, the scheduler, HTTP serving, and database resources in dependency order.
+- `payment_refund_adapter_test.go` checks exact charge, amount, owner, direction and later-page proof before a local Stars refund is accepted.
+- `stars_test_helpers_test.go` supplies a queued Telegram history endpoint for refund and reconciliation regressions.
+- `application_lifecycle.go` starts and stops provider queues, the scheduler, HTTP serving, and database resources in dependency order. It attaches the IP lookup lease runtime before outbox dispatch and joins that runtime on startup failure.
 - Startup upload reconciliation receives an independent ten-minute context so a large verified candidate is not truncated by the ordinary bootstrap deadline.
 - `provider_queues.go` configures, starts, and shuts down the independent X-Node and Emby admission queues.
 - `adapters.go` implements Telegram identity/membership and payment-provider bridges used by domain services.
@@ -98,7 +100,7 @@ waits for the scheduler and provider workers to finish before returning.
 - The scheduler delegates the daily backup-gated cleanup order to
   `internal/maintenance`; the durable local-date lease prevents overlapping
   runs across process instances.
-- `telegram_scheduler.go` configures Telegram delivery and reconciles Telegram Stars transactions.
+- `telegram_scheduler.go` configures Telegram delivery; Stars history advances through durable page jobs.
 - `telegram_queue_adapter.go` queues bot identity, membership, invite approval, decline, revocation, setup, and message operations.
 - `telegram_queue_payments.go` queues Telegram Stars invoice, query, history, and refund operations.
 - `telegram_command_registration.go` installs localized private-chat, configured-group, and PM-topic admin command menus.
@@ -140,7 +142,7 @@ Turnstile uses an independent bounded provider queue in `provider_queues.go`, wi
 
 - `xnode_provider.go`: Entry points: `FindUserByUsername`, `FindUserByTelegramID`, `FindUserByID`, `CreateUser`.
 
-- `xnode_statistics.go`: Entry points: `Digest`, `Traffic`, `Nodes`.
+- `xnode_statistics.go` aggregates native fleet traffic for the active statistics provider; duplicate retired provider entry points have been removed.
 
 - `native_statistics.go`: Entry points: `nativeStatisticsProvider.Digest`,
   drives aggregate partitions. Statistics read only X-Node activity, and nodes
@@ -148,7 +150,11 @@ Turnstile uses an independent bounded provider queue in `provider_queues.go`, wi
   transport liveness remains independent of accounting settlement in Master.Metrics.
 
 
-- `xnode_usage.go`: Entry points: `NodeUsage`.
+- `xnode_usage.go`: `NodeUsageForMember` resolves the authenticated panel owner's
+  native identity, ignores stale historical proxy pointers, and retains exact
+  decimal daily/total counters across native and imported history.
+  `xnode_usage_test.go` covers owner isolation, missing identities, invalid
+  counters, and totals beyond the signed 64-bit range.
 
 
 
@@ -187,9 +193,9 @@ PAYG jobs use the existing durable outbox and master executor. Startup and 30-se
 
 `retention.go` runs bounded PAYG expiry independently at startup and each transition tick, reporting counts and failures without coupling deletion to account repairs.
 
-- `pricing_worker.go`: Single joined 20-second worker, three-second shared work budget, rotating bounded batches and pressure/storage gates.
+- `pricing_worker.go`: Single joined five-second worker with independent bounded
+  stage budgets, rotating batches and pressure/storage gates.
 - `pricing_health.go`: Reuse authenticated X-Node CPU/memory and connection health without raw telemetry SQL.
-- `pricing_notice.go`: Queued model requests and nonblocking renewal price notifications.
 - `pricing_health_notice.go`: Queued administrator incident notifications containing sanitized facts.
 - `pricing_change_notice.go`: Notify administrators after direct audited pricing edits and material campaigns; no approval stage.
 
@@ -199,13 +205,19 @@ PAYG jobs use the existing durable outbox and master executor. Startup and 30-se
 
 - `pricing_compute.go`: Connects durable numerical jobs to negotiated master/local execution without blocking the observer.
 
-- `pricing_model_actions.go`: Schedules bounded pricing model work.
+- `pricing_model_actions.go`: Runs bounded pricing model work from its durable outbox claim. Global and non-product model actions checkpoint each completed product, resume at most four products per pass, and keep pending compute/resource waits from exhausting delivery attempts.
 
 - `purchase_expiry.go`: Purchase expiry and successor lifecycle orchestration.
 
 - `xnode_accounting.go`: Adapts exact native periods and historical usage into purchase accounting.
 
 Existing bootstrap, scheduler, native entitlement and queued Telegram/PM composition: `bootstrap_settings.go`, `pm_forum_validation.go`, `pm_profile.go`, `scheduler.go`, `telegram_queue_pm.go`, `xnode_entitlements.go`.
+
+`xnode_entitlements.go` also routes queued member synchronization through the
+same native owner-scoped desired-state path as administrator changes.
+`xnode_entitlement_sync_test.go` verifies active/ended access with missing and
+incorrect legacy pointers, repeated delivery, and untouched accounting for
+another paid member.
 
 `mutation_operation_composition.go` registers the shared subscription, Emby, retry, and refund workers.
 
@@ -216,3 +228,75 @@ Node-outage observation and its scheduler have been retired. Existing pre-retire
 - `xnode_retired_reset_test.go`: Hosted regression refusing unpaid reset receipts without changing native periods. Historical paid reset fixtures and replay checks remain in the existing purchase tests.
 
 The Emby adapter resolves URL/token from `SettingsService.EmbyCredentials` in one database snapshot inside the existing upstream queue executor. Validation precedes client creation and every outbound request; independent settings reads are forbidden for this coupled credential.
+
+Queued password changes transfer copied secret-buffer ownership to the executor.
+Cancellation can return before a transport stops, so only that executor clears
+its active buffers; calls canceled before execution clear them in the caller.
+`emby_password_queue_test.go` checks cancellation, caller-buffer reuse and final
+cleanup with a deliberately delayed provider callback.
+
+`payment_callback_profiles.go` selects a retained order's exact payment account
+before authenticating its complete callback. Legacy two-part orders use the
+provider-named migrated account and retain their empty event profile ID; disabled
+profiles remain available for historical verification. The all-profile verifier
+is used only when the order is missing, after which settlement still requires
+matching callback tombstones. `payment_profile_fallback.go` prevents explicit
+account, decryption and unavailable-storage failures from selecting global
+credentials. `payment_callback_profiles_test.go` covers shared-key account
+selection, legacy callbacks, missing-order authentication and failure paths.
+
+`payment_profile_test_helpers_test.go` supplies encrypted multi-account settings and durable-order lookup fixtures for callback account-isolation regressions.
+
+Payment cancellation uses the same retained order-account resolver as callback
+verification. Disabled rails block new checkout without blocking historical
+cancellation; legacy orders keep the provider-named migrated account instead of
+selecting a newer default. `payment_cancel_profiles_test.go` exercises exact
+queued signatures, disabled rails and refusal of unusable account identities.
+
+`xnode_admin_entitlements.go` resolves administrator mutations through the panel
+owner's native identity. A required entitlement may provision that identity;
+an empty stale snapshot rechecks effective paid access before exact accounting
+closure. Restriction writes carry the durable ban/unban operation ID and preserve
+the existing paid period on release. `xnode_admin_entitlements_test.go` covers
+native-only owners, incorrect historical links, edits, refunds and stale empty
+snapshots. `xnode_admin_bans_test.go` covers owner isolation, retained usage,
+repeated restrictions and refusal of old restoration commands.
+
+`stars_reconciliation.go` registers one durable page job per bot/cursor generation. Startup and five-minute admission resume exhausted work; each job reads at most 100 chronological transactions through the existing Telegram queue. A one-record hash overlap detects shifted offsets and rewinds safely; caught-up polls read only the boundary. `stars_reconciliation_events.go` applies verified credits/refunds and records unmatched outgoing proof in immutable administrator audits before advancing. Refund proof binds charge, invoice, whole Stars amount and owner.
+
+`stars_reconciliation_test.go` covers history beyond 100 records, restart/partial-page recovery, tail-only polling and shifted boundaries. `stars_reconciliation_events_test.go` covers exact-charge refunds, durable unmatched-proof review and retryable storage failures. `stars_reconciliation_test_helpers_test.go` supplies stateful cursor and billing fixtures; PostgreSQL cursor atomicity is tested separately in the database module.
+
+`stars_reconciliation_integration_test.go` runs the real billing validator and PostgreSQL settlement/refund/cursor APIs against queued Telegram history. A matching refund beyond the immediate 1,000-record search resolves a durable pending-review receipt, retains one reversal, and leaves subsequent polling at the history boundary.
+
+The pagination contract follows [Telegram Bot API](https://core.telegram.org/bots/api#getstartransactions) and its [official implementation](https://github.com/tdlib/telegram-bot-api/blob/114fe93d27f8a06554f04b375ad03b90aa98d61b/telegram-bot-api/Client.cpp), whose TDLib [StarManager](https://github.com/tdlib/td/blob/025086e3134b638b44dae8aa0df1609c83c3a309/td/telegram/StarManager.cpp) requests ascending order for bots. Refund IDs match their original charge; outgoing and incoming records therefore remain distinct in cursor hashes.
+
+`maintenance_operation_recovery_test.go` verifies that a completed maintenance item
+recovers its exact receipt outcome after an interrupted final commit without
+starting another backup or retention pass.
+
+`xnode_member_subscription.go` brackets readiness, inventory, credential export and
+subscription URL projection with the native subscription read helper. It retries
+the complete read at most three times for first-sync proof gain or benign compile
+revision/time contention while binding the original owner generation, restrictions,
+native material and token. Authority changes and URL failures discard the entire
+response. `xnode_member_subscription_fence_test.go` verifies restriction/token
+refusal and first-sync proof recovery with the original requested links.
+
+`payment_profile_revision_test.go` checks that delayed discovery and deletion
+cannot disable, replace, or erase a newer saved account revision.
+
+`purchase_expiry.go` passes one captured UTC instant through purchase-specific native expiry admission and lifecycle expiry. Native admission rechecks the purchase inside the database transaction, so a delayed job cannot close an intervening extension.
+
+`xnode_entitlements.go` binds queued activation to a native owner and an exact
+purchase snapshot. `xnode_purchase_activation_test.go` exercises the real worker,
+native service and PostgreSQL store with missing/foreign legacy pointers,
+repeated activation, first provisioning and a retained purged identity. Existing
+period usage and another owner's state remain unchanged.
+
+`xnode_identity_generation_test.go` exercises real public native identity provisioning with an old captured user after revival, then verifies current-generation dormant credential preparation succeeds.
+
+`xnode_subscription_owner.go` binds both authenticated subscription loaders to the original panel account generation before and after native projection. `xnode_subscription_owner_test.go` covers stale authenticated snapshots before revival, purged/blocked owners, current-generation access, and a generation change immediately before publication.
+
+`emby_price_test.go` verifies that the setup-price adapter keeps missing settings
+and storage failures distinct from invalid pricing, while retaining free and
+exact integer-priced setup.

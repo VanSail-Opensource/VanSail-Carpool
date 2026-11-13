@@ -21,10 +21,8 @@ func applySubscriptionExtensionHoursTx(ctx context.Context, tx *sql.Tx, userID s
 	if hours < 1 || hours > 3650*24 {
 		return activity.ErrInvalidInput
 	}
-	var purchaseID, validUntilRaw string
-	err := tx.QueryRowContext(ctx, `SELECT id,valid_until FROM purchases WHERE user_id=$1 AND status IN ('activating','active') AND valid_from<=$2 AND valid_until>$3
-		ORDER BY valid_from DESC LIMIT 1`, userID, stamp(now), stamp(now)).Scan(&purchaseID, &validUntilRaw)
-	if errors.Is(err, sql.ErrNoRows) {
+	purchase, err := activePurchaseAt(ctx, tx, userID, now)
+	if errors.Is(err, ErrNotFound) {
 		creditID, idErr := ids.New()
 		if idErr != nil {
 			return idErr
@@ -36,10 +34,7 @@ func applySubscriptionExtensionHoursTx(ctx context.Context, tx *sql.Tx, userID s
 	if err != nil {
 		return err
 	}
-	validUntil, err := parseStamp(validUntilRaw)
-	if err != nil {
-		return err
-	}
+	purchaseID, validUntil := purchase.ID, purchase.ValidUntil
 	shiftedUntil, err := addSubscriptionHours(validUntil, hours)
 	if err != nil {
 		return err
@@ -47,45 +42,8 @@ func applySubscriptionExtensionHoursTx(ctx context.Context, tx *sql.Tx, userID s
 	if _, err := tx.ExecContext(ctx, `UPDATE purchases SET valid_until=$1,updated_at=$2 WHERE id=$3`, stamp(shiftedUntil), stamp(now), purchaseID); err != nil {
 		return err
 	}
-	rows, err := tx.QueryContext(ctx, `SELECT id,valid_from,valid_until FROM purchases WHERE user_id=$1 AND status='queued' AND valid_from>=$2 ORDER BY valid_from`, userID, validUntilRaw)
-	if err != nil {
+	if err := shiftExtensionQueueTx(ctx, tx, userID, purchaseID, validUntil, hours, now); err != nil {
 		return err
-	}
-	type queuedTerm struct{ id, from, until string }
-	queued := make([]queuedTerm, 0)
-	for rows.Next() {
-		var term queuedTerm
-		if err := rows.Scan(&term.id, &term.from, &term.until); err != nil {
-			_ = rows.Close()
-			return err
-		}
-		queued = append(queued, term)
-	}
-	if err := rows.Err(); err != nil {
-		_ = rows.Close()
-		return err
-	}
-	_ = rows.Close()
-	for _, term := range queued {
-		from, parseErr := parseStamp(term.from)
-		if parseErr != nil {
-			return parseErr
-		}
-		until, parseErr := parseStamp(term.until)
-		if parseErr != nil {
-			return parseErr
-		}
-		shiftedFrom, shiftErr := addSubscriptionHours(from, hours)
-		if shiftErr != nil {
-			return shiftErr
-		}
-		shiftedUntil, shiftErr := addSubscriptionHours(until, hours)
-		if shiftErr != nil {
-			return shiftErr
-		}
-		if _, err := tx.ExecContext(ctx, `UPDATE purchases SET valid_from=$1,valid_until=$2,updated_at=$3 WHERE id=$4`, stamp(shiftedFrom), stamp(shiftedUntil), stamp(now), term.id); err != nil {
-			return err
-		}
 	}
 	return insertOutboxTx(ctx, tx, "xnode_sync_user", `{"userId":"`+userID+`"}`, now, now)
 }
@@ -108,7 +66,7 @@ func consumePendingExtensionsTx(ctx context.Context, tx *sql.Tx, userID, purchas
 			_ = rows.Close()
 			return 0, err
 		}
-		if total > math.MaxInt64-int64(days) {
+		if days <= 0 || total > math.MaxInt64-int64(days) {
 			_ = rows.Close()
 			return 0, activity.ErrInvalidInput
 		}

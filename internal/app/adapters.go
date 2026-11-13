@@ -65,6 +65,7 @@ type paymentAdapter struct {
 	queue    *upstreamqueue.Queue
 	users    interface {
 		UserByID(context.Context, string) (model.User, error)
+		PaymentOrderByID(context.Context, string) (model.PaymentOrder, error)
 	}
 }
 
@@ -151,11 +152,11 @@ func (a paymentAdapter) Cancel(ctx context.Context, order model.PaymentOrder) er
 	if order.Provider != "bepusdt" || order.ProviderTradeID == nil || *order.ProviderTradeID == "" {
 		return nil
 	}
-	_, profileID, rail, parseErr := billing.ParseMethodSelection(order.MethodID)
-	if parseErr != nil {
-		profileID, rail = "", order.ProviderRail
+	profile, _, err := a.orderPaymentProfile(ctx, "bepusdt", order)
+	if err != nil {
+		return err
 	}
-	client, err := a.bepusdtClient(ctx, profileID, rail)
+	client, err := bepusdt.NewClient(profile.Endpoint, profile.CredentialPlaintext)
 	if err != nil {
 		return err
 	}
@@ -176,30 +177,4 @@ func (a paymentAdapter) createStars(ctx context.Context, request billing.Provide
 	}
 	return billing.ProviderCheckout{PaymentURL: &link, PayableAmount: request.PayableAmount,
 		PayableCurrency: "XTR", ExpiresAt: time.Now().UTC().Add(30 * time.Minute)}, nil
-}
-
-func (a paymentAdapter) ezpayClient(ctx context.Context, profileID, rail string) (*ezpay.Client, error) {
-	var profile model.PaymentProfileRuntime
-	var err error
-	if profileID != "" {
-		profile, err = a.settings.PaymentProfileByID(ctx, profileID, rail)
-	} else {
-		profile, err = a.settings.PaymentProfile(ctx, "ezpay", rail)
-	}
-	if err != nil {
-		baseURL, fallbackErr := a.settings.Plaintext(ctx, "billing.ezpay.base_url")
-		if fallbackErr != nil {
-			return nil, err
-		}
-		merchantID, merchantErr := a.settings.Plaintext(ctx, "billing.ezpay.merchant_id")
-		if merchantErr != nil {
-			return nil, merchantErr
-		}
-		key, keyErr := a.settings.Plaintext(ctx, "billing.ezpay.key")
-		if keyErr != nil {
-			return nil, keyErr
-		}
-		return ezpay.NewClient(baseURL, merchantID, key)
-	}
-	return ezpay.NewClient(profile.Endpoint, profile.MerchantID, profile.CredentialPlaintext)
 }

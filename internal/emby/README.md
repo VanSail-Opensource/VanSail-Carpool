@@ -6,7 +6,7 @@ Priced Emby setup, durable provisioning, policy hardening, preference updates, a
 ## Files
 
 - `types.go` defines safe domain types, dependency interfaces, secret adapters, and policy-hardening helpers.
-- `service.go` constructs the service and handles account lookup, options, retries, and setup queueing.
+- `service.go` constructs the service and handles account lookup, options, and preparation for durable setup commands.
 - `operations.go` validates and creates durable setup, preference, password, and reviewed-retry commands.
 - `operation_targets.go` HMAC-fingerprints desired state and encrypts write-only command payloads.
 - `operation_worker.go` owns setup and reviewed-retry reconciliation through provider-operation receipts.
@@ -21,3 +21,41 @@ Priced Emby setup, durable provisioning, policy hardening, preference updates, a
 - `service_test_helpers_test.go` contains shared repository, remote, price, secret, and cipher doubles.
 - `README.md` documents the package layout.
 - `types_part2.go` contains policy hardening and policy comparison helpers.
+
+`policy_proof_test.go` verifies that non-negotiable false restrictions require an
+explicit JSON boolean; null or missing proof cannot complete provisioning. The
+existing pending-review path retains ambiguous setup state for reconciliation.
+
+Terminal operation items are replayed into their parent receipt before secret
+decryption or live account/provider reads. Retry preserves the recorded status,
+reference, error code and result; a known successful password write cannot be
+reclassified as ambiguous after a parent-receipt storage failure.
+
+`provisioning_failure.go` separates terminal request errors from proof that no
+remote account remains. A password or policy rejection after creation retains
+the paid setup and sealed recovery state for review. Explicitly rejected creates
+refund only after exact-name absence is confirmed; stored identities require
+authoritative identity/candidate absence. `provisioning_refund_test.go` covers
+these distinctions, including unavailable absence checks and retired secrets.
+
+Reviewed provisioning retries read the durable account before marking a provider
+attempt. Temporary storage failures remain retryable; only typed missing-account
+evidence completes a rejected retry. Retained terminal items still win without
+consulting mutable account state.
+
+`provisioning_identity.go` completes the existing restore path only after the
+old remote ID is absent and the retained exact username resolves to a replacement.
+The production persistence adapter binds that observation to the current owner,
+account, setup attempt, revision and identity, and preserves an audit of both IDs.
+
+The unused direct `Service.Setup` and `Service.RetryProvisioning` entrypoints have
+been removed. Setup and administrator retries enter through `OperationService`,
+which binds idempotency keys to exact intent and atomically records the receipt
+with the charge or retry. The legacy provisioning outbox handler remains active
+so previously queued work can still be recovered.
+
+Provisioning persists stable failure messages for all provider stages, including
+username lookup, remote identity reads and policy application. Wrapped causes
+remain available for retry/terminal classification without appearing in account
+diagnostics. `error_privacy_test.go` verifies retry, terminal refund and ambiguous
+review behavior with private provider URLs/response bodies.

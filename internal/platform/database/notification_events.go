@@ -3,11 +3,11 @@ package database
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/notifications"
 	jobpayload "github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
 )
@@ -104,8 +104,8 @@ func (s *Store) releaseNotificationGateTx(ctx context.Context, tx *sql.Tx, gateK
 }
 
 func notificationPayloadForRelease(encoded string, now time.Time) (string, error) {
-	var payload jobpayload.UserNotification
-	if err := json.Unmarshal([]byte(encoded), &payload); err != nil {
+	payload, err := jobpayload.DecodeUserNotification(model.OutboxJob{Kind: jobpayload.UserNotificationKind, Payload: encoded})
+	if err != nil {
 		return "", fmt.Errorf("decode gated notification: %w", err)
 	}
 	switch payload.Kind {

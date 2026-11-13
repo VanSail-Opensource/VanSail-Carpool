@@ -122,6 +122,17 @@ typed expansion, retaining the 2 MiB HTTP/WS document limit. Cancellation joins
 started executor callbacks before output is released or replacement work starts.
 `solana_cursor.go` compacts only owners outside the complete watched recipient
 set; closed accounts and unpaid late-payment recipients remain monitored.
+`cursor_limits.go` bounds serialized progress to 2 MiB and its decoding graph,
+with at most 4,096 retained Solana account histories per token rail. Discovery
+or persistence beyond these bounds closes readiness and retains the earlier
+cursor and payment evidence for operator review; it never evicts a watched
+owner's archived history. `cursor_limits_test.go` and the database cursor-bound
+regression cover rejection before allocation/provider work or durable mutation.
+`time_page_recipients.go` binds TRON fingerprints and TON offsets to the exact
+ordered recipient query. A changed set restarts the same saved time window;
+durable event identities deduplicate repeated proof. Invalid negative indexes
+or impossible time windows fail proof instead of panicking or skipping history.
+`time_page_recipients_test.go` verifies the actual restarted provider queries.
 `memory_test.go` covers graph/page limits, cursor retention and callback joining.
 The single shared concurrency setting, settlement and durable evidence retention
 are unchanged. Lifecycle logs memory and goroutines once per minute.
@@ -130,8 +141,56 @@ are unchanged. Lifecycle logs memory and goroutines once per minute.
 
 `token_probe_test.go` verifies that queued native USDC probes use each pinned EVM contract and reject unexpected precision.
 
+Solana transaction fetches declare version 1 support while retaining parsed,
+finalized instruction proofs. The official [versioned transaction contract](https://solana.com/docs/core/transactions/versioned-transactions)
+states that v1 signatures remain visible to history queries but body requests
+with a version 0 ceiling fail. `solana_version_test.go` covers v0/v1 recovery,
+failed execution and unsupported-version cursor preservation; no incomplete
+page advances the durable cursor.
+
+`ton_batch_test.go` verifies that a trace containing several deposits to one
+wallet resolves each indexed transfer by its exact sender transaction and
+message. An unrelated map entry does not reject the matching deposit; missing
+receiving events and invalid bodies still fail proof. WebSocket setup closes a
+connection allocated by a started dial when queue cancellation wins delivery.
+The unused `timeNowMinusThirty` helper is removed; scan windows continue through
+the shared resumable time-page implementation.
+
+`config_network_test.go` covers canonical registry aliases: accepted rail names
+normalize before currency switches and duplicate checks, so a saved network
+cannot silently become an unwatched alias or duplicate another collector.
+
 `memory_soak_test.go`, `memory_soak_fixture_test.go` and `memory_soak_scanner_test.go` stress queued multi-network scanner startup, transfer proof batches, cancellation and cleanup in the hosted 256 MiB container gate. No retired proxy inventory code is needed.
 
 The soak compares retained heap after two stopped-worker garbage collections, so JSON/HTTP `sync.Pool` victim buffers are released consistently before sampling. The 8 MiB retained-growth limit, 224 MiB peak RSS limit, goroutine bound and 256 MiB no-swap container remain unchanged. In Actions run 42465600146, a single-GC sample was 8,957,392 bytes while the final collected profile retained about 513 KiB and peak RSS stayed 72,990,720 bytes; allocation stacks were dominated by synthetic JSON RPC generation/decoding. This is a measurement correction, not a looser memory budget.
 
 `config_secrets.go` resolves masked URLs by canonical registry network and endpoint ID before reusing API keys. An inherited key requires exact unchanged RPC, WS and indexer destinations, including stored inactive destinations. Rejected merges leave drafts untouched, never persist and never wake collectors. `config_secrets_test.go` covers host/path/query retargets, WS/indexer changes, cross-network ID reuse, explicit fresh keys and readiness preservation. Existing configuration decoding and validation still precede all queued calls; no new queue or persistence is introduced.
+
+Scanner readiness and history advancement require complete response evidence.
+An absent Aptos processor version, missing Solana signature execution metadata,
+or absent TRON contract execution result preserves the cursor for retry.
+Required history/account collections distinguish an explicit empty array from
+missing or null data, so an incomplete successful HTTP envelope cannot skip
+deposits. `scanner_metadata_test.go` and `scanner_pages_test.go` cover these
+boundaries and retain valid zero-version baselines, empty pages and explicit
+failed-transaction handling. This follows the documented
+[Solana signature fields](https://solana.com/docs/rpc/http/getsignaturesforaddress)
+and [TRON solidified receipt semantics](https://developers.tron.network/reference/gettransactioninfobyid-1).
+
+`solana_signature.go` validates the documented null/string/tagged-object error
+forms before treating history as failed. Malformed booleans, numbers and empty
+variants cannot skip a payment. TRON contract result `SUCCESS=1` is distinct
+from the unexecuted `DEFAULT=0`; the top-level `SUCESS=0` may be omitted.
+The [protocol definitions](https://github.com/tronprotocol/protocol/blob/master/core/Tron.proto)
+and [execution result table](https://developers.tron.network/docs/errors) govern
+these checks, including retained explicit VM failures. The hosted scanner and
+TRON fixtures cover both omitted and explicit top-level success.
+
+`monitor_subscriptions.go` owns the selected endpoint's notification connection.
+Failed scans, endpoint failover, empty watched-account sets and partial
+subscription setup close and join inactive socket readers, clearing retained
+socket references. Socket retirement preserves shared HTTP idle pools; returning
+to an endpoint reconnects through the existing bounded executor.
+`monitor_subscriptions_test.go` uses live local WebSocket fixtures to cover
+selection, reader cleanup, reconnect and partial multi-account subscription
+failure. Payment evidence still comes only from the durable history scanner.

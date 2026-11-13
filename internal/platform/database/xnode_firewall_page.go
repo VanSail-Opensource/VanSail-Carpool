@@ -66,7 +66,7 @@ func (s *Store) FirewallBans(ctx context.Context, limit int) ([]xnode.FirewallBa
 	if limit < 1 || limit > 500 {
 		limit = 100
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT prefix,generation,ip,rule,detected_count,detected_at,until_at,refresh_seconds,participants,expired FROM xnode_firewall_bans WHERE released_version=0 ORDER BY detected_at DESC LIMIT $1`, limit)
+	rows, err := s.db.QueryContext(ctx, `SELECT prefix,generation,ip,rule,detected_count,detected_at,until_at,refresh_seconds,participants,expired FROM xnode_firewall_bans WHERE released_version=0 ORDER BY `+purchaseTimestampOrderSQL("detected_at")+` DESC,generation DESC LIMIT $1`, limit)
 	if err != nil {
 		return nil, err
 	}

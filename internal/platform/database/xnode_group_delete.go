@@ -19,6 +19,14 @@ func (s *Store) retryAttempt_DeleteXNodeGroupAtVersion(ctx context.Context, id s
 		return err
 	}
 	defer tx.Rollback()
+	if err = deleteXNodeGroupTx(ctx, tx, nil, id, version, endpoints); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func deleteXNodeGroupTx(ctx context.Context, tx *sql.Tx, actor *string, id string, version int64, endpoints []xnode.Endpoint) error {
+	var err error
 	var serial int64
 	if err = tx.QueryRowContext(ctx, `SELECT singleton FROM pricing_worker_watermark WHERE singleton=1 FOR UPDATE`).Scan(&serial); err != nil {
 		return err
@@ -68,8 +76,8 @@ func (s *Store) retryAttempt_DeleteXNodeGroupAtVersion(ctx context.Context, id s
 			return err
 		}
 	}
-	if err = insertAuditTx(ctx, tx, fmt.Sprintf("group-deleted:%s:%d", id, version), nil, "xnode.group_deleted", "xnode_group", id, `{"historicalAccounting":"retained"}`, now); err != nil {
+	if err = insertAuditTx(ctx, tx, fmt.Sprintf("group-deleted:%s:%d", id, version), actor, "xnode.group_deleted", "xnode_group", id, `{"historicalAccounting":"retained"}`, now); err != nil {
 		return err
 	}
-	return tx.Commit()
+	return nil
 }

@@ -79,7 +79,7 @@ func (m *Master) Metrics(ctx context.Context, summary ...bool) (MetricsSummary, 
 		}
 		if item.Available {
 			for _, count := range snapshot.report.Users.Connections {
-				item.ActiveConnections += int64(count)
+				item.ActiveConnections = addConnectionCount(item.ActiveConnections, int64(count))
 			}
 			item.UsersOnlineAvailable = item.TotalConnections != nil
 			if item.UsersOnlineAvailable {
@@ -92,12 +92,12 @@ func (m *Master) Metrics(ctx context.Context, summary ...bool) (MetricsSummary, 
 				}
 			}
 			for _, rate := range snapshot.report.Users.Rates {
-				item.UploadBytesPerSecond += rate.UploadBytesPerSecond
-				item.DownloadBytesPerSecond += rate.DownloadBytesPerSecond
+				item.UploadBytesPerSecond = addMetricRate(item.UploadBytesPerSecond, rate.UploadBytesPerSecond)
+				item.DownloadBytesPerSecond = addMetricRate(item.DownloadBytesPerSecond, rate.DownloadBytesPerSecond)
 			}
-			result.ActiveConnections += item.ActiveConnections
-			result.UploadBytesPerSecond += item.UploadBytesPerSecond
-			result.DownloadBytesPerSecond += item.DownloadBytesPerSecond
+			result.ActiveConnections = addConnectionCount(result.ActiveConnections, item.ActiveConnections)
+			result.UploadBytesPerSecond = addMetricRate(result.UploadBytesPerSecond, item.UploadBytesPerSecond)
+			result.DownloadBytesPerSecond = addMetricRate(result.DownloadBytesPerSecond, item.DownloadBytesPerSecond)
 		}
 		result.Nodes = append(result.Nodes, item)
 	}

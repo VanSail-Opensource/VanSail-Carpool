@@ -82,11 +82,19 @@ func process(ctx context.Context, input <-chan int) <-chan int {
     out := make(chan int)
     go func() {
         defer close(out)
-        for val := range input {
+        for {
             select {
-            case out <- val * 2:
             case <-ctx.Done():
                 return
+            case val, ok := <-input:
+                if !ok {
+                    return
+                }
+                select {
+                case out <- val * 2:
+                case <-ctx.Done():
+                    return
+                }
             }
         }
     }()
@@ -101,11 +109,19 @@ func fanIn(ctx context.Context, channels ...<-chan int) <-chan int {
         wg.Add(1)
         go func(c <-chan int) {
             defer wg.Done()
-            for val := range c {
+            for {
                 select {
-                case out <- val:
                 case <-ctx.Done():
                     return
+                case val, ok := <-c:
+                    if !ok {
+                        return
+                    }
+                    select {
+                    case out <- val:
+                    case <-ctx.Done():
+                        return
+                    }
                 }
             }
         }(ch)
@@ -289,11 +305,19 @@ func pipeline(ctx context.Context, input <-chan int) <-chan int {
     stage1 := make(chan int)
     go func() {
         defer close(stage1)
-        for num := range input {
+        for {
             select {
-            case stage1 <- num * num:
             case <-ctx.Done():
                 return
+            case num, ok := <-input:
+                if !ok {
+                    return
+                }
+                select {
+                case stage1 <- num * num:
+                case <-ctx.Done():
+                    return
+                }
             }
         }
     }()
@@ -302,12 +326,20 @@ func pipeline(ctx context.Context, input <-chan int) <-chan int {
     stage2 := make(chan int)
     go func() {
         defer close(stage2)
-        for num := range stage1 {
-            if num%2 == 0 {
-                select {
-                case stage2 <- num:
-                case <-ctx.Done():
+        for {
+            select {
+            case <-ctx.Done():
+                return
+            case num, ok := <-stage1:
+                if !ok {
                     return
+                }
+                if num%2 == 0 {
+                    select {
+                    case stage2 <- num:
+                    case <-ctx.Done():
+                        return
+                    }
                 }
             }
         }

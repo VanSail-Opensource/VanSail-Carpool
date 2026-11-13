@@ -4,6 +4,7 @@ import { en, zh_cn } from '@nuxt/ui/locale'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from '@/i18n'
 import { adminOperationsApi } from '@/api/adminOperations'
+import { useSessionStore } from '@/stores/session'
 import { operationReceiptLoaderKey } from '@/composables/operationReceiptLoader'
 import BrowserConsole from './BrowserConsole.vue'
 import { useBrowserSession } from './session'
@@ -17,6 +18,7 @@ const startupTarget = globalThis.location.pathname + globalThis.location.search 
 const { reducedMotion } = useMotionPreferences()
 provide(operationReceiptLoaderKey, adminOperationsApi.getOperation)
 const session = useBrowserSession()
+const identity = useSessionStore()
 const { t, locale } = useI18n()
 const routeError = computed(() => browserRouteRecovery.error.value ? t('browser.routeLoadFailed') : session.error)
 const uiLocale = computed(() => locale.value === 'zh-CN' ? zh_cn : en)
@@ -56,7 +58,7 @@ onUnmounted(() => {
       </BrowserLoading>
     </Transition>
     <RouterView v-slot="{ Component }">
-      <BrowserConsole v-if="route.meta.console"><component :is="Component" /></BrowserConsole>
+      <BrowserConsole v-if="route.meta.console" :key="identity.user?.id"><component :is="Component" /></BrowserConsole>
       <Transition name="browser-startup" :css="!reducedMotion && accessLeaving" @before-leave="element => element.setAttribute('inert', '')">
         <component :is="Component" v-if="Component && !route.meta.console" />
       </Transition>

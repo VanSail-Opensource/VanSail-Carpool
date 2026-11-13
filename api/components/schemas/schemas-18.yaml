@@ -72,8 +72,14 @@ BulkExtensionRequest:
   additionalProperties: false
   required: [comboIds, addonSquadUuids]
   oneOf:
-    - required: [durationMinutes]
-    - required: [days]
+    - type: object
+      required: [durationMinutes]
+      properties:
+        durationMinutes: { type: integer }
+    - type: object
+      required: [days]
+      properties:
+        days: { type: integer }
   properties:
     comboIds:
       type: array
@@ -100,8 +106,14 @@ BulkExtensionCreateRequest:
   additionalProperties: false
   required: [comboIds, addonSquadUuids, reason]
   oneOf:
-    - required: [durationMinutes]
-    - required: [days]
+    - type: object
+      required: [durationMinutes]
+      properties:
+        durationMinutes: { type: integer }
+    - type: object
+      required: [days]
+      properties:
+        days: { type: integer }
   properties:
     comboIds:
       type: array
@@ -116,6 +128,7 @@ BulkExtensionCreateRequest:
     reason: { type: string, minLength: 3, maxLength: 500 }
 
 OperationResolutionRequest:
+  description: Requested parent-receipt status must match retained completed item outcomes for a supported administrative workflow; this is not a domain or financial override.
   type: object
   additionalProperties: false
   required: [resolution, reason]
@@ -124,12 +137,13 @@ OperationResolutionRequest:
     reason: { type: string, minLength: 3, maxLength: 500 }
 
 AdminSynchronization:
+  description: Historical application of the current native credentials, independent of current node liveness. A current lifecycle requires its own authenticated deployment proof; retained recovery errors take precedence.
   type: object
   additionalProperties: false
   required: [status]
   properties:
     status: { type: string, enum: [synchronized, pending, failed, not_provisioned] }
-    remoteUserId: { type: [string, 'null'] }
+    remoteUserId: { type: [string, 'null'], description: Current native identity ID when provisioned. }
     lastError: { type: [string, 'null'] }
 
 AdminUserDetail:

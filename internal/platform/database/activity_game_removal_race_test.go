@@ -36,14 +36,15 @@ func TestGameEditWaitingForRemovalCannotResurrectDefinition(t *testing.T) {
 	f := newGameRemovalFixture(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	actorLock, err := f.store.DB().BeginTx(ctx, nil)
+	auditLock, err := f.store.DB().BeginTx(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer actorLock.Rollback()
-	// The deletion's audit FK waits here after its game update. The real
-	// removal transaction therefore retains its game row lock until released.
-	if err = requireRowTx(ctx, actorLock, `SELECT 1 FROM users WHERE id=$1 FOR UPDATE`, f.actor.ID); err != nil {
+	defer auditLock.Rollback()
+	// Pause the deletion at audit insertion, after its current-actor check
+	// and game update. Reads of the tombstone remain available while the
+	// real removal transaction retains the game row lock until released.
+	if _, err = auditLock.ExecContext(ctx, `LOCK TABLE audit_events IN SHARE MODE`); err != nil {
 		t.Fatal(err)
 	}
 	removed := make(chan error, 1)
@@ -55,7 +56,7 @@ func TestGameEditWaitingForRemovalCannotResurrectDefinition(t *testing.T) {
 		edited <- err
 	}()
 	waitGameRemovalLock(t, f, ctx, "SELECT 1 FROM activity_games WHERE id=$1 FOR UPDATE")
-	if err = actorLock.Commit(); err != nil {
+	if err = auditLock.Commit(); err != nil {
 		t.Fatal(err)
 	}
 	if err = <-removed; err != nil {

@@ -12,7 +12,7 @@ import (
 
 func TestHourlyOffersHaveNoLegacyDefaultsAndCASCompetingEdits(t *testing.T) {
 	ctx, store := context.Background(), newTestStore(t)
-	actor := createTestUser(t, store, 498024)
+	actor := createTestAdmin(t, store, 498024)
 	group := xnode.Group{ID: "hourly-offer-group", Name: "Hourly offer", Enabled: true}
 	if err := store.SaveXNodeGroup(ctx, group); err != nil {
 		t.Fatal(err)
@@ -75,7 +75,7 @@ func TestHourlyOffersHaveNoLegacyDefaultsAndCASCompetingEdits(t *testing.T) {
 
 func TestHourlyOfferPersistsPerSquadRequiredHours(t *testing.T) {
 	ctx, store := context.Background(), newTestStore(t)
-	actor := createTestUser(t, store, 498026)
+	actor := createTestAdmin(t, store, 498026)
 	group := xnode.Group{ID: "hourly-required-hours", Name: "Required hours", Enabled: true}
 	if err := store.SaveXNodeGroup(ctx, group); err != nil {
 		t.Fatal(err)
@@ -102,7 +102,7 @@ func TestHourlyOfferPersistsPerSquadRequiredHours(t *testing.T) {
 
 func TestHourlyOfferRejectsMissingGroupsAndUnavailablePrices(t *testing.T) {
 	ctx, store := context.Background(), newTestStore(t)
-	actor := createTestUser(t, store, 498025)
+	actor := createTestAdmin(t, store, 498025)
 	if _, err := store.SaveHourlyOffer(ctx, actor.ID, model.HourlyOffer{GroupID: "missing", Enabled: true, HourlyPriceTXBMinor: 1}, 0); !errors.Is(err, ErrNotFound) {
 		t.Fatal("offer admitted a missing native squad", err)
 	}

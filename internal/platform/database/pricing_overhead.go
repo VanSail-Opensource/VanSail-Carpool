@@ -3,11 +3,9 @@ package database
 import (
 	"context"
 	"database/sql"
-	"math"
-	"strconv"
+	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
-	"time"
 )
 
 func (s *Store) retryAttempt_pricingUnallocatedOverhead(ctx context.Context, now time.Time) (string, error) {
@@ -61,5 +59,5 @@ func (s *Store) retryAttempt_pricingUnallocatedOverhead(ctx context.Context, now
 	if count == 0 {
 		return "", nil
 	}
-	return strconv.FormatInt(int64(math.Round(overhead)), 10), nil
+	return pricingSummaryEstimate(overhead)
 }

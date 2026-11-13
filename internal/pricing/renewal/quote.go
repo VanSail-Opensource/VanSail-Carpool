@@ -29,7 +29,17 @@ type Quote struct {
 
 // Settleable revalidates the immutable settlement window without recalculating quoted prices.
 func (q Quote) Settleable(c Contract, now time.Time) error {
-	if q.ContractID != c.ID || q.ContractVersion != c.Version || q.Price > c.Ceiling || q.Price > c.Price+c.Price*c.MaxChangeBPS/10000 || q.AuthorizedAt == nil || now.Before(q.SettleAfter) || !now.Before(q.ValidUntil) {
+	if err := c.Validate(); err != nil {
+		return pricing.RenewalQuoteUnavailable
+	}
+	if q.ContractID != c.ID || q.PurchaseID != c.PurchaseID || q.ContractVersion != c.Version || q.Price < 0 || q.Price > c.Ceiling || q.Price > c.Price+c.Price*c.MaxChangeBPS/10000 || q.AuthorizedAt == nil || now.Before(q.SettleAfter) || !now.Before(q.ValidUntil) {
+		return pricing.RenewalQuoteUnavailable
+	}
+	var addonBasis int64
+	for _, addon := range c.Addons {
+		addonBasis += addon.Price
+	}
+	if q.Price < addonBasis {
 		return pricing.RenewalQuoteUnavailable
 	}
 	if q.State != "AUTHORIZED" && q.State != "READY_TO_SETTLE" && q.State != "DEFERRED_HEALTH" {

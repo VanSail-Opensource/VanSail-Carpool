@@ -26,8 +26,8 @@ func TestListAdminHourlyEnrollmentsReturnsEveryStatusForCurrentGeneration(t *tes
 	store, snapshot, input := hourlyBillingFixture(t)
 	ctx := context.Background()
 	active := activateHourlyBillingFixture(t, store, input, snapshot).Enrollment
-	addHourlyBillingOffer(t, store, input.OwnerID, "billing-hourly-b", 250)
-	addHourlyBillingOffer(t, store, input.OwnerID, "billing-hourly-c", 350)
+	addHourlyBillingOffer(t, store, hourlyBillingAdmin(t, store), "billing-hourly-b", 250)
+	addHourlyBillingOffer(t, store, hourlyBillingAdmin(t, store), "billing-hourly-c", 350)
 	insertManualHourlyEnrollment(t, store, input.OwnerID, input.AccountGeneration, "billing-hourly-b", "disabled")
 	insertManualHourlyEnrollment(t, store, input.OwnerID, input.AccountGeneration, "billing-hourly-c", "closed")
 	insertManualHourlyEnrollment(t, store, input.OwnerID, input.AccountGeneration+1, "billing-hourly-b", "disabled")

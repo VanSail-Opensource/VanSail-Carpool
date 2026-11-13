@@ -24,3 +24,14 @@ LOWERCASE_HEX_SHA256_OF_EXACT_BODY_BYTES
 Explicit protocol exceptions are the Telegram `initData` bootstrap, Telegram/EZPay/BEPusdt callbacks with their existing provider authentication, health and readiness probes, payment return pages/receipt projections, and static assets. Those routes do not represent an already-authenticated browser API session.
 
 `bearer.go` reuses body and rate budgets for authenticated automation without requiring browser signatures. `bearer_test.go` covers both limits.
+
+`body_expiry_test.go` verifies that a request whose body crosses the signature
+expiry boundary cannot enter an already-expired nonce reservation. Timestamp
+freshness is checked both before reading the bounded body and immediately before
+recording the authenticated nonce, including a delayed replay of a prior request.
+
+The replay cache retains at most 512 nonces per session and 32,768 per process.
+Exhaustion rejects new requests without evicting live replay evidence or creating
+empty sessions. Expired entries are reclaimed periodically and when a session
+reaches its budget. `replay_capacity_test.go` covers process-wide admission,
+expiry accounting, and concurrent capacity enforcement.

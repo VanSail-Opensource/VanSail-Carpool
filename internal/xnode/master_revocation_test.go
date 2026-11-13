@@ -11,13 +11,28 @@ import (
 
 type revokedPeerRepository struct {
 	Repository
-	deleted int
+	deleted     int
+	adminDenied bool
 }
 
 func (*revokedPeerRepository) RotateXNodeToken(context.Context, string, []byte) error { return nil }
 func (r *revokedPeerRepository) DeleteXNodeNode(context.Context, string) error {
 	r.deleted++
 	return nil
+}
+
+func (r *revokedPeerRepository) RotateAdminXNodeToken(context.Context, string, string, []byte) error {
+	if r.adminDenied {
+		return ErrConflict
+	}
+	return nil
+}
+
+func (r *revokedPeerRepository) DeleteAdminXNodeNode(ctx context.Context, _, id string) error {
+	if r.adminDenied {
+		return ErrConflict
+	}
+	return r.DeleteXNodeNode(ctx, id)
 }
 
 func TestRevokedPeerCannotCreateLeasesOrSurviveDeletion(t *testing.T) {
@@ -42,5 +57,27 @@ func TestRevokedPeerCannotCreateLeasesOrSurviveDeletion(t *testing.T) {
 	}
 	if m.Connected(peer.nodeID) {
 		t.Fatal("revoked peer remained registered")
+	}
+}
+
+func TestRejectedAdministratorMutationPreservesConnectedPeerAndNode(t *testing.T) {
+	repo := &revokedPeerRepository{adminDenied: true}
+	s := NewService(repo, nil, nil, nil, nil)
+	m := NewMaster(s, nil)
+	peer := &agentPeer{nodeID: "node"}
+	m.peers[peer.nodeID] = peer
+	if err := m.rotateEnrollmentAs(context.Background(), peer.nodeID, []byte("replacement"), "demoted"); !errors.Is(err, ErrConflict) {
+		t.Fatal("rejected rotation did not preserve store refusal", err)
+	}
+	if !m.Connected(peer.nodeID) {
+		t.Fatal("uncommitted token rotation disconnected the authorized peer")
+	}
+	delete(m.peers, peer.nodeID)
+	if err := s.DeleteNodeAs(context.Background(), "demoted", peer.nodeID); !errors.Is(err, ErrConflict) || repo.deleted != 0 {
+		t.Fatal("rejected administrator deletion used a raw writer", err, repo.deleted)
+	}
+	repo.adminDenied = false
+	if err := s.DeleteNodeAs(context.Background(), "restored", peer.nodeID); err != nil || repo.deleted != 1 {
+		t.Fatal("restored administrator could not delete the drained node", err, repo.deleted)
 	}
 }

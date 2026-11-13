@@ -1,5 +1,11 @@
 # Explore, member access and administration validation
 
+Historical implementation and validation record. Version pins, schema numbers,
+UI behavior and pending checks below describe that work at its recorded
+revisions; they are not the current release status. Current dependencies are
+declared in `go.mod` and `web/package.json`, and current operations use the
+PostgreSQL deployment and recovery runbooks.
+
 Implementation commits: 661a2c04 (connections/retirement), c62f6f79 (routing,
 first-sync and PAYG history), f3d0ac7d (administration), 65017b73 (Explore).
 All task commits remained local until implementation and combined review finished.

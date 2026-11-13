@@ -57,8 +57,8 @@ func TestPaymentProfilesReadinessAndListing(t *testing.T) {
 		t.Fatalf("disabled readiness = (%v, %v)", issues, found)
 	}
 	repository.listErr = errors.New("list failed")
-	if _, found = service.paymentProfileReadiness(ctx, "ezpay"); found {
-		t.Fatal("readiness reported a profile after list failure")
+	if issues, found = service.paymentProfileReadiness(ctx, "ezpay"); !found || len(issues) != 1 || issues[0] != "unavailable:payment_profile.ezpay" {
+		t.Fatal("profile storage outage fell back to legacy disabled settings", issues, found)
 	}
 }
 
@@ -94,15 +94,18 @@ func TestPaymentProfileRuntimeDecryptsAndFiltersChannels(t *testing.T) {
 	ctx := context.Background()
 	settingsRepository := newAdminSettingsRepository()
 	service := NewSettingsService(settingsRepository, testVault(t))
-	repository := &paymentProfileRepositoryStub{record: database.PaymentProfileRecord{PaymentProfile: model.PaymentProfile{ID: "p1", Provider: "ezpay", EnabledChannels: []string{"wechat"}}, CredentialCiphertext: "bad"}}
+	ciphertext, err := testVault(t).Encrypt("payment-profile:p1", "profile-key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	repository := &paymentProfileRepositoryStub{record: database.PaymentProfileRecord{PaymentProfile: model.PaymentProfile{ID: "p1", Provider: "ezpay", EnabledChannels: []string{"wechat"}}, CredentialCiphertext: ciphertext}}
 	service.SetPaymentProfileRepository(repository)
 
 	if _, err := service.PaymentProfile(ctx, "ezpay", "alipay"); !errors.Is(err, database.ErrNotFound) {
 		t.Fatalf("disabled channel error = %v", err)
 	}
-	settingsRepository.settings["billing.ezpay.key"] = database.Setting{Key: "billing.ezpay.key", Value: "legacy-key"}
 	runtime, err := service.PaymentProfile(ctx, "ezpay", "wechat")
-	if err != nil || runtime.CredentialPlaintext != "legacy-key" {
+	if err != nil || runtime.CredentialPlaintext != "profile-key" {
 		t.Fatalf("PaymentProfile() = (%+v, %v)", runtime, err)
 	}
 	if _, err := service.PaymentProfile(ctx, "ezpay", ""); err != nil {

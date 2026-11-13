@@ -49,6 +49,22 @@ entry or settlement receipt is converted.
   accounting. `db-schema fingerprint` exposes the bounded evidence document.
   Boolean values retain a distinct deterministic type in these fingerprints;
   `recovery_digest_bool_test.go` covers true/false and scalar type separation.
+  Native DATE and TIMESTAMPTZ values retain their own type and canonical UTC
+  precision. `recovery_digest_time_test.go` checks location/precision boundaries;
+  `recovery_time_integration_test.go` fingerprints populated hourly rows through
+  pgx, checks time-zone stability and detects a one-microsecond stored change.
+- `recovery_sequences.go` adds exact next-value state and options for every
+  sequence owned by the inspected application tables, plus the standalone native
+  identity sequence. The legacy `sequences` report field remains available;
+  `sequenceStates` also covers durable FIFO and pricing identities and preserves
+  uncalled values. `recovery_sequences_test.go` detects sequence-only changes
+  without changing table rows, including `is_called` and increment changes.
+  Sequences are not MVCC snapshots: recovery verification still requires stopped
+  writers as documented by the offline recovery procedure.
+  The schema and table digest also include the outbox `claim_generation`, so a
+  changed or missing durable attempt fence cannot pass recovery verification.
+  `recovery_outbox_test.go` covers a fence-only change with all other rows and
+  sequence states unchanged, plus a missing-column schema failure.
 
 Schema 32 replaces the live JSON checks, time/string expression indexes and paid
 access trigger functions, then drops obsolete compatibility functions without
@@ -110,3 +126,37 @@ financial/operational evidence. `recovery_payment_test.go` covers exact scope,
 key, envelope and historical-proof boundaries;
 `recovery_payment_integration_test.go` exercises the complete read-only snapshot
 against isolated hosted PostgreSQL and checks retained records remain unchanged.
+
+`recovery_emby_test.go` verifies the retained encrypted Emby command targets in
+outbox jobs using their original owner, kind and request fingerprint. Wrong-owner
+ciphertexts are refused without rewriting evidence or exposing passwords. The
+verification is kind-specific: unrelated plaintext refund command targets remain
+valid and are not mistaken for encrypted envelopes.
+
+Schema 49 conservatively clears historical member first-sync timestamps once.
+New confirmation binds compiled owner generation, accounting period and both
+principal/owner credential hashes, under serializable lifecycle/material locks.
+Purge and material rotation clear prior proof; token-only changes preserve it.
+Fresh authenticated membership restores readiness, including forced publication
+when the native digest is unchanged. No financial or credential data is migrated.
+
+`first_sync_upgrade_test.go` upgrades a populated schema48 snapshot through49,
+checks member-proof invalidation and retained service proof, fingerprints all other
+native/financial fields and sequences, and verifies repeated migration preserves
+newly confirmed readiness.
+
+## Pricing summary recovery state
+
+Schema 50 preserves compacted analytics as sealed snapshots and marks later
+material source changes stale. Unsealed complete-source summaries become dirty
+until their next full rebuild. Legacy groups that might already have lost detail
+are conservatively sealed/stale; recent metrics stay visible as dirty until
+recomputed. All three flags are part of the native schema and recovery digest.
+The migration changes only derived summary state and adds guards/triggers; source
+facts, contracts, purchases and financial records remain untouched.
+
+`pricing_summary_upgrade_test.go` rehearses the populated 49-to-50 transition,
+compares every source/financial table fingerprint, verifies preserved old metrics
+and explicit uncertainty, rejects sealed rewrites, and checks restart idempotency.
+The database-level `pricing_summary_*_test.go` fixtures cover shared writer gates,
+late source updates, conflict-ignored inserts and retained metric evidence.

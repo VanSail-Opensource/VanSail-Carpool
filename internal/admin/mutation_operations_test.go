@@ -46,9 +46,13 @@ type adminMutationRepository struct {
 	creates   int
 }
 
-func (r *adminMutationRepository) CreateProviderOperation(_ context.Context, input providerops.CreateInput, _ time.Time) (providerops.Operation, bool, error) {
+func (r *adminMutationRepository) CreateAdminMutation(_ context.Context, input providerops.CreateInput, _ time.Time) (providerops.Operation, bool, error) {
+	if r.auditErr != nil {
+		return providerops.Operation{}, false, r.auditErr
+	}
 	r.creates++
 	r.input = input
+	r.audits = append(r.audits, adminAuditCall{action: input.Kind + ".queue", targetType: input.Items[0].TargetType})
 	return r.operation, false, nil
 }
 

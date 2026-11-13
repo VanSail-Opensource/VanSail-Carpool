@@ -65,11 +65,15 @@ func TestDrawCouponCannotBeRedeemedByCode(t *testing.T) {
 				t.Fatal(err)
 			}
 			_, quoteErr := quoteAttachedRecurringDiscountTx(ctx, tx, other.ID, copyGrant.ID, 100)
+			eligible, pricingErr := pricingCouponsTx(ctx, tx, other.ID, combo.ID, nil, now)
 			if err = tx.Rollback(); err != nil {
 				t.Fatal(err)
 			}
 			if !errors.Is(quoteErr, ErrNotFound) {
 				t.Fatalf("historical code copy renewal: %v", quoteErr)
+			}
+			if pricingErr != nil || len(eligible) != 0 {
+				t.Fatalf("historical code copy blocked pricing or became eligible: %+v, %v", eligible, pricingErr)
 			}
 			wallet, err := store.ListCouponGrants(ctx, other.ID, now)
 			if err != nil || len(wallet) != 0 {
@@ -84,6 +88,17 @@ func TestDrawCouponCannotBeRedeemedByCode(t *testing.T) {
 			}
 			if _, err = store.RedeemCoupon(ctx, other.ID, public.Code, "public", now); err != nil {
 				t.Fatalf("public coupon redemption: %v", err)
+			}
+			tx, err = store.DB().BeginTx(ctx, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			eligible, pricingErr = pricingCouponsTx(ctx, tx, other.ID, combo.ID, nil, now)
+			if err := tx.Rollback(); err != nil {
+				t.Fatal(err)
+			}
+			if pricingErr != nil || len(eligible) != 1 || eligible[0].Coupon.ID != public.ID {
+				t.Fatalf("public coupon beside historical copy = %+v, %v", eligible, pricingErr)
 			}
 		})
 	}

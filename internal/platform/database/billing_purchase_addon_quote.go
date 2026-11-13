@@ -72,6 +72,9 @@ func quotePurchaseAddonsTx(ctx context.Context, tx *sql.Tx, input PurchaseAddonI
 		if loadErr != nil {
 			return model.PurchaseAddonQuote{}, nil, loadErr
 		}
+		if product.BillingMode == "payg" {
+			return model.PurchaseAddonQuote{}, nil, ErrNotFound
+		}
 		if _, found := existing[product.GroupID]; found {
 			return model.PurchaseAddonQuote{}, nil, ErrSquadAlreadyAdded
 		}
@@ -83,6 +86,13 @@ func quotePurchaseAddonsTx(ctx context.Context, tx *sql.Tx, input PurchaseAddonI
 		return model.PurchaseAddonQuote{}, nil, err
 	}
 	original := time.Duration(combo.ValidityDays) * 24 * time.Hour
+	if purchase.PurchasedTermSeconds != nil {
+		seconds := *purchase.PurchasedTermSeconds
+		if seconds <= 0 || seconds > int64((1<<63-1)/time.Second) {
+			return model.PurchaseAddonQuote{}, nil, errors.New("invalid purchased squad proration basis")
+		}
+		original = time.Duration(seconds) * time.Second
+	}
 	remaining := purchase.ValidUntil.Sub(now)
 	priced := make([]pricedPurchaseAddon, 0, len(products))
 	total := int64(0)

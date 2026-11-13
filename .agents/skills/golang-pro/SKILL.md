@@ -44,8 +44,10 @@ Goroutine with proper context cancellation and error propagation:
 
 ```go
 // worker runs until ctx is cancelled or an error occurs.
-// Errors are returned via the errCh channel; the caller must drain it.
+// This worker owns errCh. Closing it reports successful completion;
+// the caller must drain it or buffer the single terminal error.
 func worker(ctx context.Context, jobs <-chan Job, errCh chan<- error) {
+    defer close(errCh)
     for {
         select {
         case <-ctx.Done():

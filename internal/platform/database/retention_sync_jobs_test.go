@@ -47,7 +47,7 @@ func TestFailedSyncCleanupKeepsPurchaseMoneyAndProtectsQueuedManualRetry(t *test
 	ctx, store := context.Background(), newTestStore(t)
 	now := time.Date(2026, 10, 8, 12, 0, 0, 0, time.UTC)
 	user := createTestUser(t, store, 31933)
-	actor := createTestUser(t, store, 31934)
+	actor := createTestAdmin(t, store, 31934)
 	combo := saveTestCombo(t, store, "failed-sync-ownership", 100, 30)
 	if _, err := store.AdjustBalance(ctx, user.ID, 500, "retention-sync-seed", "seed", now); err != nil {
 		t.Fatal(err)

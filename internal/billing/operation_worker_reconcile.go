@@ -9,15 +9,12 @@ import (
 )
 
 func (w *OperationWorker) complete(ctx context.Context, operation providerops.Operation, item providerops.Item,
-	status providerops.Status, code, providerReference string, providerMessage ...string) error {
+	status providerops.Status, code, providerReference string) error {
 	if providerops.Terminal(providerops.Status(operation.Receipt.Status)) {
 		return nil
 	}
 	now := w.now().UTC()
 	resultFields := map[string]string{"paymentOrderId": item.TargetID}
-	if len(providerMessage) > 0 && providerMessage[0] != "" {
-		resultFields["providerMessage"] = providerMessage[0]
-	}
 	result, err := json.Marshal(resultFields)
 	if err != nil {
 		return err
@@ -42,6 +39,16 @@ func (w *OperationWorker) complete(ctx context.Context, operation providerops.Op
 	return nil
 }
 
+func (w *OperationWorker) completeRecorded(ctx context.Context, operation providerops.Operation, item providerops.Item) error {
+	completion := providerops.Completion{Status: item.Status, ErrorCode: item.ErrorCode,
+		ProviderReference: item.ProviderReference, ResultJSON: item.ResultJSON}
+	_, err := w.repository.CompleteProviderOperation(ctx, operation.Receipt.ID, completion, w.now().UTC())
+	if err != nil {
+		return w.concurrentCompletion(ctx, operation.Receipt.ID, err)
+	}
+	return nil
+}
+
 func (w *OperationWorker) concurrentCompletion(ctx context.Context, operationID string, original error) error {
 	current, err := w.repository.ProviderOperationByID(ctx, operationID)
 	if err == nil && providerops.Terminal(providerops.Status(current.Receipt.Status)) {
@@ -51,7 +58,7 @@ func (w *OperationWorker) concurrentCompletion(ctx context.Context, operationID 
 }
 
 func (w *OperationWorker) reconcile(ctx context.Context, operation providerops.Operation, item providerops.Item) error {
-	order, err := w.repository.PaymentOrderByID(ctx, item.TargetID)
+	order, err := w.loadTarget(ctx, operation, item)
 	if err != nil {
 		return w.complete(ctx, operation, item, providerops.StatusPendingReview,
 			"PAYMENT_LOCAL_STATE_UNAVAILABLE", "")
@@ -74,11 +81,6 @@ func (w *OperationWorker) reconcileOrder(ctx context.Context, operation provider
 
 func (w *OperationWorker) reconcileCreate(ctx context.Context, operation providerops.Operation,
 	item providerops.Item, order model.PaymentOrder, reference string) error {
-	// Local quote reservation is transactional and idempotent; an interrupted
-	// create can safely resume without repeating an external mutation.
-	if order.Provider == "builtin_usdt" && order.Status == "creating" && order.CancelledAt == nil {
-		return w.create(ctx, operation, item)
-	}
 	if order.PaidAt != nil || order.Status == "paid" || order.Status == "refunded" || order.Status == "pending" {
 		return w.complete(ctx, operation, item, providerops.StatusSucceeded, "", reference)
 	}
@@ -87,6 +89,21 @@ func (w *OperationWorker) reconcileCreate(ctx context.Context, operation provide
 	}
 	if reference != "" || order.PaymentURL != nil || order.QRPayload != nil || order.ReceivingAddress != nil {
 		return w.complete(ctx, operation, item, providerops.StatusSucceeded, "", reference)
+	}
+	// A stopped checkout with no attempt has a definite local outcome. Once an
+	// external attempt exists, cancellation or expiry cannot prove it failed.
+	if item.Status == providerops.StatusQueued && item.AttemptStartedAt == nil {
+		if order.CancelledAt != nil || order.Status == "cancelled" {
+			return w.complete(ctx, operation, item, providerops.StatusFailed, "PAYMENT_CREATE_CANCELLED", reference)
+		}
+		if order.Status == "expired" {
+			return w.complete(ctx, operation, item, providerops.StatusFailed, "PAYMENT_CREATE_EXPIRED", reference)
+		}
+	}
+	// Local quote reservation is transactional and idempotent; an interrupted
+	// create can safely resume without repeating an external mutation.
+	if order.Provider == "builtin_usdt" && order.Status == "creating" && order.CancelledAt == nil {
+		return w.create(ctx, operation, item)
 	}
 	return w.complete(ctx, operation, item, providerops.StatusPendingReview, "PAYMENT_CREATE_OUTCOME_UNKNOWN", reference)
 }

@@ -3,6 +3,7 @@ package xnode
 import (
 	"context"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"slices"
 	"time"
 )
 
@@ -43,6 +44,15 @@ func (s *Service) continuityUntil(ctx context.Context, purchase model.Purchase) 
 	if err != nil {
 		return until, err
 	}
+	// History reads are newest first, while continuity follows each adjacent
+	// paid term forwards. Keep the compilation cache's shared slice unchanged.
+	items = slices.Clone(items)
+	slices.SortFunc(items, func(a, b model.Purchase) int {
+		if order := a.ValidFrom.Compare(b.ValidFrom); order != 0 {
+			return order
+		}
+		return b.ValidUntil.Compare(a.ValidUntil)
+	})
 	for _, next := range items {
 		if next.Status == "queued" && next.ValidFrom.Equal(until) && next.ValidUntil.After(until) {
 			until = next.ValidUntil

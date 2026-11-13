@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"time"
@@ -10,6 +11,19 @@ import (
 // SaveXNodeNamedService commits encrypted terms, authorization and quota changes
 // together. Existing usage and settled periods can never be rewritten by edits.
 func (s *Store) retryAttempt_SaveXNodeNamedService(ctx context.Context, item xnode.Identity, access xnode.ServiceAccess) (xnode.Identity, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return item, err
+	}
+	defer tx.Rollback()
+	item, err = saveXNodeNamedServiceTx(ctx, tx, item, access)
+	if err != nil {
+		return item, err
+	}
+	return item, tx.Commit()
+}
+
+func saveXNodeNamedServiceTx(ctx context.Context, tx *sql.Tx, item xnode.Identity, access xnode.ServiceAccess) (xnode.Identity, error) {
 	created := item.ProxyUserID == 0
 	var err error
 	if created {
@@ -18,15 +32,8 @@ func (s *Store) retryAttempt_SaveXNodeNamedService(ctx context.Context, item xno
 			return item, err
 		}
 	}
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return item, err
-	}
-	defer tx.Rollback()
 	if created {
-		query := `SELECT GREATEST(COALESCE(MAX(proxy_user_id),0),4503599627370495)+1 FROM xnode_identities`
-
-		query = `SELECT nextval('xnode_service_proxy_id_seq')`
+		query := `SELECT nextval('xnode_service_proxy_id_seq')`
 
 		if err = tx.QueryRowContext(ctx, query).Scan(&item.ProxyUserID); err != nil {
 			return item, err
@@ -83,8 +90,12 @@ func (s *Store) retryAttempt_SaveXNodeNamedService(ctx context.Context, item xno
 	if err != nil {
 		return item, err
 	}
-	if err = tx.Commit(); err != nil {
+	// Validate and return the exact snapshot covered by this commit. A later
+	// response read must not turn a committed edit into an apparent failure or
+	// return another administrator's replacement credentials.
+	item, err = scanXNodeIdentity(tx.QueryRowContext(ctx, xnodeIdentitySelect+` WHERE p.proxy_user_id=$1`, item.ProxyUserID))
+	if err != nil {
 		return item, err
 	}
-	return s.XNodeIdentity(ctx, item.ProxyUserID)
+	return item, nil
 }

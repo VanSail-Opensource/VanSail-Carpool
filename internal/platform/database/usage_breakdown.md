@@ -26,6 +26,11 @@ groups remain visible; absent names fall back to the public group ID. Settlement
 costs never depend on current offers, rates or traffic allocation. Shared paid
 extra-GB receipts remain explicitly unallocated. Monetary windows use exact
 ledger timestamps, independent of traffic bucket rounding.
+Retained canonical UTC TEXT timestamps are normalized for comparison to nine
+fractional digits with C collation; PostgreSQL timestamp casts never round their
+nanoseconds. Typed native observations use a microsecond ceiling for inclusive
+lower bounds and a microsecond floor for inclusive upper bounds. These rules
+also apply to lifecycle admission and closed-period coverage overlap.
 
 The current legacy purchase estimate is its cumulative `charged_txb_minor`
 multiplied by 259,200 seconds and divided by its immutable original
@@ -69,3 +74,5 @@ squads, catalog-price independence, lifecycle/owner/principal/period isolation,
 values beyond JavaScript's integer precision, shared caps, mixed fractional
 omissions, source immutability and retained coverage-only loss. No new table,
 column, migration, upstream call or persistent presentation cache is introduced.
+`usage_breakdown_time_bounds_test.go` covers nanosecond receipt/expiry boundaries,
+typed observation bounds and lifecycle isolation without rewriting stored facts.

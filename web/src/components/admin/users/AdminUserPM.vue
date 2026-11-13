@@ -31,9 +31,9 @@ function begin(): boolean {
 async function moderate(key: 'blocked' | 'muted', value: boolean): Promise<void> {
   const item = props.conversation
   if (!item || !begin()) return
-  await command.execute(item.id, `${item.id}:${key}:${value}`,
-    idempotencyKey => pmApi.moderate(item.id, { [key]: value }, idempotencyKey))
-  emit('changed')
+  const body = key === 'blocked' ? { blocked: value } : { muted: value }
+  if (await command.execute(item.id, `${item.id}:${key}:${value}`,
+    idempotencyKey => pmApi.moderate(item.id, body, idempotencyKey)) && command.busy.value) emit('changed')
 }
 
 async function repairTopic(body: { topicId: string; profileMessageId?: string }): Promise<void> {

@@ -74,3 +74,8 @@ PERSONAL pricing is retired. Product policies expose public purchase and renewal
 modes only. Interventions cannot create targeted discount campaigns. User price
 analysis shows the fixed reference, public base and ordinary coupon estimate;
 historical financial traces remain available through scoped analytical exports.
+
+`PricingInterventionForm.test.ts` rejects malformed or out-of-bound manual prices before submission. Route scope changes replace the intervention editor, and pending submissions disable their input fields.
+Confirmed interventions remain successful if only the next version read fails;
+the consumed version is retired before re-entry. A departed editor does not
+perform another read or emit a refresh into its replacement workspace.

@@ -37,9 +37,24 @@ func TestPaymentReturnCheckoutCapabilityAndOwnerFallback(t *testing.T) {
 	fixture := &returnCheckoutFixture{}
 	server.deps.RequestSigningKey = make([]byte, 32)
 	server.deps.Billing = billing.NewService(server.deps.Store, fixture, fixture, server.deps.PublicURL, server.deps.RequestSigningKey)
-	order, err := server.deps.Billing.CreateOrder(ctx, owner, "ezpay", 100)
+	queued, err := server.deps.Billing.QueueOrder(ctx, owner, "ezpay", 100, "return-capability")
 	if err != nil {
 		t.Fatal(err)
+	}
+	worker, err := billing.NewOperationWorker(server.deps.Billing)
+	if err != nil {
+		t.Fatal(err)
+	}
+	operation, err := server.deps.Store.ProviderOperationByID(ctx, queued.Operation.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := worker.HandleProviderOperation(ctx, operation, model.OutboxJob{}); err != nil {
+		t.Fatal(err)
+	}
+	order, err := server.deps.Store.PaymentOrderByID(ctx, queued.PaymentOrderID)
+	if err != nil || order.Status != "pending" {
+		t.Fatal("queued checkout did not succeed", order, err)
 	}
 	checkout, err := url.Parse(fixture.request.ReturnURL)
 	if err != nil {

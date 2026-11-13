@@ -22,10 +22,20 @@ func TestStandaloneAuthorizationKeepsQuotaAndGroupPolicies(t *testing.T) {
 		{"exhausted", 1000, 1000, true},
 		{"disabled identity", 1000, 100, true},
 		{"disabled group", 1000, 100, true},
+		{"future term", 1000, 100, true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			f, identity, _ := standaloneFixture(t, tc.limit, tc.used, "NO_RESET")
+			f, identity, access := standaloneFixture(t, tc.limit, tc.used, "NO_RESET")
 			ctx := context.Background()
+			if tc.name == "future term" {
+				access.StartedAt = time.Now().UTC().Add(time.Hour)
+				access.ExpiresAt = access.StartedAt.Add(time.Hour)
+				identity = seedLegacyServiceCadence(t, f, identity, access)
+				metadata, err := f.service.ServiceSubscription(ctx, stringID(identity))
+				if err != nil || metadata.Active {
+					t.Fatal("future standalone term exported credentials", metadata, err)
+				}
+			}
 			if tc.name == "disabled identity" {
 				if err := f.store.SetXNodeAccessDisabled(ctx, identity.ProxyUserID, true); err != nil {
 					t.Fatal(err)

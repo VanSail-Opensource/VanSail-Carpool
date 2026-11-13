@@ -14,7 +14,7 @@ type groupUsageReader interface {
 
 // A dormant unfunded PAYG tuple is history, not membership. Its accounting rows
 // survive deletion. Closing/review periods are an explicit unfinished barrier.
-const groupUsageQuery = `WITH selected_purchases AS (
+var groupUsageQuery = `WITH selected_purchases AS (
  SELECT ` + purchaseSquadColumns + ` FROM purchases
 ), ` + purchaseSquadMembershipCTE + `, members AS (
  SELECT o.group_id,o.user_id FROM owned_squads o JOIN purchases p ON p.id=o.purchase_id
@@ -26,7 +26,7 @@ const groupUsageQuery = `WITH selected_purchases AS (
  LEFT JOIN user_preferences prefs ON prefs.user_id=a.user_id
  LEFT JOIN squad_product_overrides s ON s.group_id=a.group_id
  LEFT JOIN pricing_product_settings pricing ON pricing.product_type='payg' AND pricing.product_id=a.group_id
- WHERE (a.credit_bytes>0 AND vansail_timestamp(a.credit_started_at)>vansail_timestamp($1)-INTERVAL '3 days')
+ WHERE (a.credit_bytes>0 AND ` + purchaseTimestampOrderSQL("a.credit_started_at") + ` > $1)
  OR (p.status='open' AND u.account_status='active' AND u.onboarding_state='complete'
  AND COALESCE(prefs.payg_enabled,1)=1 AND s.billing_mode='payg' AND s.payg_state<>'unavailable'
  AND NOT EXISTS(SELECT 1 FROM user_disabled_payg_squads d WHERE d.user_id=a.user_id AND d.group_id=a.group_id)
@@ -41,7 +41,7 @@ SELECT g.id,COUNT(DISTINCT m.user_id),EXISTS(SELECT 1 FROM unfinished f WHERE f.
 FROM xnode_groups g LEFT JOIN members m ON m.group_id=g.id GROUP BY g.id`
 
 func readGroupUsage(ctx context.Context, q groupUsageReader, now time.Time) (map[string]xnode.GroupUsage, error) {
-	rows, err := q.QueryContext(ctx, groupUsageQuery, stamp(now))
+	rows, err := q.QueryContext(ctx, groupUsageQuery, purchaseTimestampOrder(now.Add(-72*time.Hour)))
 	if err != nil {
 		return nil, err
 	}

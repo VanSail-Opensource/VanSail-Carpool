@@ -3,6 +3,7 @@ package providerops
 import (
 	"encoding/json"
 	"errors"
+	"slices"
 	"strings"
 )
 
@@ -20,6 +21,9 @@ func NormalizeCreate(input CreateInput) (CreateInput, error) {
 		len(input.SealedTarget) > 16*1024 {
 		return CreateInput{}, errors.New("invalid provider operation command")
 	}
+	// The command value may be reused concurrently by callers. Own the backing
+	// array before normalizing items, including paths that reject a later item.
+	input.Items = slices.Clone(input.Items)
 	seen := make(map[string]struct{}, len(input.Items))
 	for index := range input.Items {
 		item := &input.Items[index]
@@ -54,8 +58,13 @@ func ResultObject(value string) (string, error) {
 	if value == "" {
 		return "{}", nil
 	}
+	if len(value) > 16*1024 || !json.Valid([]byte(value)) {
+		return "", errors.New("operation result must be a JSON object")
+	}
 	var result map[string]any
-	if len(value) > 16*1024 || json.Unmarshal([]byte(value), &result) != nil || result == nil {
+	decoder := json.NewDecoder(strings.NewReader(value))
+	decoder.UseNumber()
+	if decoder.Decode(&result) != nil || result == nil {
 		return "", errors.New("operation result must be a JSON object")
 	}
 	canonical, err := json.Marshal(result)

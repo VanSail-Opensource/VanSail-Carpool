@@ -15,7 +15,7 @@ func (s *Store) ListRefundsForUser(ctx context.Context, userID string, limit int
 	rows, err := s.db.QueryContext(ctx, `SELECT refunds.id,refunds.payment_order_id,refunds.actor_user_id,
 		refunds.txb_minor,refunds.reason,refunds.status,refunds.created_at FROM refunds
 		JOIN payment_orders ON payment_orders.id=refunds.payment_order_id
-		WHERE payment_orders.user_id=$1 ORDER BY refunds.created_at DESC LIMIT $2`, userID, limit)
+		WHERE payment_orders.user_id=$1 ORDER BY `+purchaseTimestampOrderSQL("refunds.created_at")+` DESC,refunds.id DESC LIMIT $2`, userID, limit)
 	if err != nil {
 		return nil, err
 	}

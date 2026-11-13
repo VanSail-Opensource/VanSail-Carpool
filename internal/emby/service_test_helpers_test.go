@@ -47,12 +47,6 @@ type serviceRepository struct {
 func (r *serviceRepository) EmbyBaseUsername(context.Context, string) (string, error) {
 	return r.baseUsername, nil
 }
-func (r *serviceRepository) QueueEmbySetup(_ context.Context, input QueueSetupInput, now time.Time) (Account, bool, error) {
-	r.record = ProvisioningRecord{Account: Account{ID: input.ID, UserID: input.UserID, BaseUsername: input.BaseUsername,
-		Status: StatusQueued, SetupPriceTXBMinor: input.SetupPriceTXBMinor, SetupAttempt: 1, Preferences: input.Preferences,
-		CreatedAt: now, UpdatedAt: now}, PasswordCiphertext: input.PasswordCiphertext, PasswordContext: input.PasswordContext}
-	return r.record.Account, true, nil
-}
 func (r *serviceRepository) EmbyAccountForUser(context.Context, string) (Account, error) {
 	if r.record.ID == "" {
 		return Account{}, ErrNotFound
@@ -67,9 +61,6 @@ func (r *serviceRepository) ListEmbyAccounts(context.Context, int) ([]Account, e
 }
 func (r *serviceRepository) EmbyProvisioningByID(context.Context, string) (ProvisioningRecord, error) {
 	return r.record, nil
-}
-func (r *serviceRepository) RetryEmbyProvisioning(context.Context, string, time.Time) (Account, error) {
-	return r.record.Account, nil
 }
 func (r *serviceRepository) BeginEmbyProvisioning(context.Context, string, time.Time) (ProvisioningRecord, error) {
 	if r.record.Status == StatusQueued {

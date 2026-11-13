@@ -7,7 +7,7 @@ import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
 import SquadActivationDialog from '@/components/catalog/SquadActivationDialog.vue'
 import { localizedError, useI18n } from '@/i18n'
-import { displayInputFromTXBMinor } from '@/utils/displayCurrency'
+import { txbInputFromMinor } from '@/utils/format'
 import { hourlyRequiredHours } from './hourlyHours'
 import HourlyLegacyBlock from './HourlyLegacyBlock.vue'
 import HourlySummary from './HourlySummary.vue'
@@ -21,6 +21,8 @@ const disabling = shallowRef<HourlySquad | null>(null)
 const activating = shallowRef<HourlySquad | null>(null)
 const codeOpen = shallowRef(false)
 const extraOpen = shallowRef(false)
+const reviewedPolicyVersion = shallowRef<string | null>(null)
+const consentError = shallowRef<string | null>(null)
 const disableOpen = computed({ get: () => disabling.value !== null, set: value => { if (!value) disabling.value = null } })
 const cooldownHours = computed(() => String((data.value?.policy.policy.cooldownSeconds ?? 86400) / 3600))
 const hasHourlyHistory = computed(() => {
@@ -49,33 +51,58 @@ const operationMessage = computed(() => {
   const key = `hourly.result.${receipt.errorCode ?? ''}`
   return t(key) !== key ? t(key) : localizedError({ code: receipt.errorCode }, 'hourly.applicationFailed')
 })
-// A fixed-term purchase locks every hourly mutation, including stale dialogs.
-watch(() => data.value?.legacyBlocked === true, blocked => {
-  if (!blocked) return
+function beginConsent(): boolean {
+  if (busy.value || !data.value || data.value.legacyBlocked) return false
+  reviewedPolicyVersion.value = data.value.policy.version
+  consentError.value = null
+  return true
+}
+function consentCurrent(): boolean {
+  const current = data.value
+  if (!current || current.legacyBlocked || current.policy.version !== reviewedPolicyVersion.value) return false
+  if (activating.value) {
+    const target = current.squads.find(item => item.offer.groupId === activating.value?.offer.groupId)
+    if (!target?.ready || !target.offer.enabled || !current.policy.policy.salesEnabled || target.offer.revision !== activating.value.offer.revision) return false
+  }
+  if (disabling.value) {
+    const target = current.squads.find(item => item.offer.groupId === disabling.value?.offer.groupId)
+    if (!target?.enrollment || target.enrollment.id !== disabling.value.enrollment?.id || !['active', 'preparing'].includes(target.enrollment.status)) return false
+  }
+  return true
+}
+// Refreshes cannot silently replace the policy, paid enrollment, or gated offer
+// that the member reviewed before opening a destructive/billing dialog.
+watch(data, () => {
+  if ((!codeOpen.value && !extraOpen.value && !disabling.value) || consentCurrent()) return
   codeOpen.value = false
   extraOpen.value = false
   activating.value = null
   disabling.value = null
-}, { immediate: true })
+  if (!hourly.submitting.value) consentError.value = t('hourly.conflict')
+}, { flush: 'sync' })
 async function activate(item: HourlySquad): Promise<void> {
-  if (data.value?.legacyBlocked) return
+  if (!beginConsent()) return
   if (item.squad.activationRequired) { activating.value = item; codeOpen.value = true }
   else await hourly.activate(item)
 }
 async function submitCode(code: string): Promise<void> {
+  if (!codeOpen.value || !consentCurrent()) return
   if (activating.value && await hourly.activate(activating.value, code)) { codeOpen.value = false; activating.value = null }
 }
+function requestDisable(item: HourlySquad): void {
+  if (beginConsent()) disabling.value = item
+}
 async function disable(): Promise<void> {
-  if (data.value?.legacyBlocked) return
+  if (!disabling.value || !consentCurrent()) return
   if (disabling.value && await hourly.disable(disabling.value)) disabling.value = null
 }
 async function extra(enabled: boolean): Promise<void> {
-  if (data.value?.legacyBlocked) return
+  if (!beginConsent()) return
   if (enabled) extraOpen.value = true
   else await hourly.extra(false)
 }
 async function enableExtra(): Promise<void> {
-  if (data.value?.legacyBlocked) return
+  if (!extraOpen.value || !consentCurrent()) return
   if (await hourly.extra(true)) extraOpen.value = false
 }
 </script>
@@ -91,14 +118,14 @@ async function enableExtra(): Promise<void> {
       <InlineNotice v-if="!data.policy.policy.salesEnabled">{{ t('hourly.salesPaused') }}</InlineNotice>
       <p v-if="!data.squads.length" class="hourly-page__terms hourly-page__empty">{{ t('hourly.empty') }}</p>
       <div v-else class="hourly-page__squads">
-        <HourlySquadCard v-for="(item, index) in data.squads" :key="item.offer.groupId" :style="{ '--entry-delay': `${Math.min(index, 5) * 30}ms` }" :item="item" :busy="busy" :sales-enabled="data.policy.policy.salesEnabled" :hours="hoursFor(item)" @activate="activate(item)" @disable="disabling = item" />
+        <HourlySquadCard v-for="(item, index) in data.squads" :key="item.offer.groupId" :style="{ '--entry-delay': `${Math.min(index, 5) * 30}ms` }" :item="item" :busy="busy" :sales-enabled="data.policy.policy.salesEnabled" :hours="hoursFor(item)" @activate="activate(item)" @disable="requestDisable(item)" />
       </div>
     </template>
-    <InlineNotice v-if="actionError" tone="warning">{{ actionError }}</InlineNotice>
+    <InlineNotice v-if="actionError || consentError" tone="warning">{{ actionError || consentError }}</InlineNotice>
     <OperationStatusNotice :receipt="hourly.operation.receipt.value" :error="hourly.operation.error.value" :checking="hourly.operation.checking.value" :message="operationMessage" @refresh="hourly.operation.refresh" />
     <SquadActivationDialog v-model:open="codeOpen" :squad="activating?.squad ?? null" :busy="hourly.submitting.value" :error="actionError" @submit="submitCode" @cancel="activating = null" />
     <ConfirmDialog v-model:open="disableOpen" :title="t('hourly.disableTitle')" :description="t('hourly.disableWarning', { hours: cooldownHours })" :confirm-label="t('hourly.disable')" :busy="hourly.submitting.value" :error="actionError" danger @confirm="disable" />
-    <ConfirmDialog v-model:open="extraOpen" :title="t('hourly.extraTitle')" :description="t('hourly.extraWarning', { price: displayInputFromTXBMinor(data?.policy.policy.extraGBPriceTXBMinor ?? '0') })" :confirm-label="t('hourly.extraConfirm')" :busy="hourly.submitting.value" :error="actionError" @confirm="enableExtra" />
+    <ConfirmDialog v-model:open="extraOpen" :title="t('hourly.extraTitle')" :description="t('hourly.extraWarning', { price: txbInputFromMinor(data?.policy.policy.extraGBPriceTXBMinor ?? '0') })" :confirm-label="t('hourly.extraConfirm')" :busy="hourly.submitting.value" :error="actionError" @confirm="enableExtra" />
   </section>
 </template>
 

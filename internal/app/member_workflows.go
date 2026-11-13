@@ -27,7 +27,7 @@ func newMemberWorkflows(store *database.Store, proxy proxyProvider, vault *secre
 	secrets := emby.NewSecretBox(vault)
 	services := memberWorkflowServices{
 		connections: connections.NewService(store, proxy, signer),
-		drops:       connections.NewDropService(store, signer, secrets),
+		drops:       connections.NewDropService(store, secrets),
 		purchases:   purchaseops.NewService(store, proxy),
 	}
 	dispatcher := providerops.NewDispatcher(store)

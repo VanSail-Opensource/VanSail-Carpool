@@ -10,7 +10,7 @@ Network context and streaming: `IPASNDetails.vue`, `IPBGPFocus.vue`, `IPBGPTopol
 
 Feature implementation and contracts: `IPLocationMap.vue`, `IPLookupForm.vue`, `IPLookupPage.vue`, `IPLookupProgress.vue`, `IPLookupProgressTasks.vue`, `IPLookupReport.vue`, `IPRPKIStatus.vue`, `IPRefusals.vue`, `IPShodanDetails.vue`, `IPTrafficBars.vue`, `IPTransferHistory.vue`, `map.ts`, `presentation.ts`, `refusalPresentation.ts`, `reportPresentation.ts`, `useBGPGraph.ts`, `useGraphViewport.ts`, `useIPLookup.ts`, `useSharedIPProgress.ts`.
 
-Hosted regression coverage: `bgpGraph.test.ts`, `bgpLayout.test.ts`, `presentation.test.ts`, `refusalPresentation.test.ts`, `useGraphViewport.test.ts`, `IPBGPTopology.test.ts`, `useIPLookup.test.ts`, `useLiveIPDetails.test.ts`.
+Hosted regression coverage: `bgpGraph.test.ts`, `bgpLayout.test.ts`, `presentation.test.ts`, `refusalPresentation.test.ts`, `useGraphViewport.test.ts`, `IPBGPTopology.test.ts`, `useIPLookup.test.ts`, `useLiveIPDetails.test.ts`, `useSharedIPProgress.test.ts`.
 
 `useGraphViewport.ts` leaves wheel scrolling, browser pinch zoom and touch page
 scrolling native by default. Mouse drag, centered toolbar zoom and focused
@@ -28,3 +28,24 @@ scrolled the sole page container from the focused graph. Explicit interaction
 contained graph wheel input while Ctrl-wheel retained browser zoom. Browser
 emulation does not verify Telegram iOS/Android/desktop host gestures; those remain
 physical-device acceptance checks. No swipe suppression was enabled speculatively.
+
+Paid lookup attempts keep their signed quote and idempotency key when the member
+edits away from an IP and returns after an ambiguous failure. Accepted operation
+IDs remain associated with their exact input; late acceptance and polling errors
+cannot replace a newer address. Receipt reads resume after a visibility pause and
+are fenced by owner, input generation and read generation. `useIPLookup.test.ts`
+covers these transitions without issuing provider traffic.
+
+Partial topologies omit edges whose node metadata is absent instead of crashing
+the geometry; `bgpGraph.test.ts` covers that recovery. Same-prefix refreshes retire
+removed node/route selections and clamp the focused route page. IP timestamps
+follow the selected application locale, preserving UTC for date-only provenance.
+Progress tasks retain their status icons without spinning under reduced motion.
+Live-detail snapshots retire synchronously on logout or account replacement;
+the replacement account must supply a new snapshot or complete its own read.
+Late streams cannot restore retired details, and disposed views cannot restart
+requests. Hosted IP recovery fixtures exercise these boundaries without providers.
+
+Shared progress refreshes cancel the previous scheduled poll. Only the current,
+unaborted request can schedule another poll, so an obsolete request cannot interrupt
+a slow replacement refresh. `useSharedIPProgress.test.ts` covers this overlap.

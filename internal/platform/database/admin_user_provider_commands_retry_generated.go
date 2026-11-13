@@ -24,12 +24,3 @@ func (s *Store) CreateAdminTemporaryUnban(ctx context.Context, actorID, userID, 
 		}
 	}
 }
-
-func (s *Store) QueueExpiredAdminTemporaryBan(ctx context.Context, userID string, now time.Time) error {
-	for retryIndex := 0; ; retryIndex++ {
-		r0 := s.retryAttempt_QueueExpiredAdminTemporaryBan(ctx, userID, now)
-		if !s.retryTransaction(ctx, r0, retryIndex) {
-			return r0
-		}
-	}
-}

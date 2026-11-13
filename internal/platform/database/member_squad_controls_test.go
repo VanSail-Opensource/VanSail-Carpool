@@ -96,13 +96,10 @@ func TestSquadPreferencesCarryAndRestoreStableFirst(t *testing.T) {
 	t.Parallel()
 	ctx, store := context.Background(), newTestStore(t)
 	user := createTestUser(t, store, 49003)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET proxy_user_id='49003' WHERE id=$1`, user.ID); err != nil {
-		t.Fatal(err)
-	}
 	if _, err := store.DB().ExecContext(ctx, `INSERT INTO user_disabled_squads VALUES($1,'squad-a'),($2,'squad-b')`, user.ID, user.ID); err != nil {
 		t.Fatal(err)
 	}
-	enabled, err := store.EnabledSquadsForRemote(ctx, "49003", []string{"squad-b", "squad-a"})
+	enabled, err := store.EnabledSquadsForUser(ctx, user.ID, []string{"squad-b", "squad-a"})
 	if err != nil || !slices.Equal(enabled, []string{"squad-a"}) {
 		t.Fatalf("fallback=%v, %v", enabled, err)
 	}
@@ -110,11 +107,11 @@ func TestSquadPreferencesCarryAndRestoreStableFirst(t *testing.T) {
 	if err != nil || !slices.Equal(disabled, []string{"squad-b"}) {
 		t.Fatalf("preferences=%v, %v", disabled, err)
 	}
-	enabled, err = store.EnabledSquadsForRemote(ctx, "49003", []string{"squad-b", "squad-c"})
+	enabled, err = store.EnabledSquadsForUser(ctx, user.ID, []string{"squad-b", "squad-c"})
 	if err != nil || !slices.Equal(enabled, []string{"squad-c"}) {
 		t.Fatalf("carried preferences=%v, %v", enabled, err)
 	}
-	enabled, err = store.EnabledSquadsForRemote(ctx, "49003", []string{"squad-b"})
+	enabled, err = store.EnabledSquadsForUser(ctx, user.ID, []string{"squad-b"})
 	if err != nil || !slices.Equal(enabled, []string{"squad-b"}) {
 		t.Fatalf("single squad=%v, %v", enabled, err)
 	}

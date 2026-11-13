@@ -155,7 +155,7 @@ func TestCachedReportRepairKeepsCompletionAndStopsAfterStatusChange(t *testing.T
 	}
 	iplookup.PrepareRepair(&loaded)
 	loaded.Status = "succeeded"
-	if err := store.UpdateIPLookupCachedReport(ctx, loaded); err != nil {
+	if _, err := store.UpdateIPLookupCachedReport(ctx, loaded); err != nil {
 		t.Fatal(err)
 	}
 	var status, completedAt string
@@ -165,7 +165,7 @@ func TestCachedReportRepairKeepsCompletionAndStopsAfterStatusChange(t *testing.T
 	if status != "succeeded" || completedAt != stamp(completed) {
 		t.Fatalf("repair rewrote freeze data: status=%s completed=%s", status, completedAt)
 	}
-	if err := store.UpdateIPLookupCachedReport(ctx, loaded); err != iplookup.ErrRepairConflict {
+	if _, err := store.UpdateIPLookupCachedReport(ctx, loaded); err != iplookup.ErrRepairConflict {
 		t.Fatalf("second repair not conflicting: %v", err)
 	}
 }
@@ -204,7 +204,8 @@ func TestSavingPartialLiveSnapshotSchedulesSectionRetry(t *testing.T) {
 	if err != nil || status != "partial" || details.IP != "1.1.1.2" {
 		t.Fatalf("snapshot load failed: %+v %s %v", details, status, err)
 	}
-	if err := store.UpdateIPLiveSnapshot(ctx, snapshotID, healthy); err != nil {
+	details.PTR = healthy.PTR
+	if _, err := store.UpdateIPLiveSnapshot(ctx, snapshotID, details); err != nil {
 		t.Fatal(err)
 	}
 	if _, status, err := store.IPLiveSnapshotByID(ctx, snapshotID); err != nil || status != "succeeded" {

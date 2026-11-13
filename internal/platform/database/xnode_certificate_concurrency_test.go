@@ -12,7 +12,7 @@ import (
 func TestCertificateOperationConcurrentAdministratorsQueueOneIntent(t *testing.T) {
 	t.Parallel()
 	store := newTestStore(t)
-	actors := []string{createTestUser(t, store, 871005).ID, createTestUser(t, store, 871006).ID}
+	actors := []string{createTestAdmin(t, store, 871005).ID, createTestAdmin(t, store, 871006).ID}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	start, results := make(chan struct{}), make(chan error, len(actors))
@@ -45,7 +45,7 @@ func TestCertificateOperationConcurrentAdministratorsQueueOneIntent(t *testing.T
 func TestCertificateOperationProfileLockHonorsCancellation(t *testing.T) {
 	t.Parallel()
 	store := newTestStore(t)
-	actor := createTestUser(t, store, 871007)
+	actor := createTestAdmin(t, store, 871007)
 	tx, err := store.DB().BeginTx(context.Background(), nil)
 	if err != nil {
 		t.Fatal(err)

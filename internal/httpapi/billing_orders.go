@@ -74,8 +74,16 @@ func (s *Server) cancelPaymentOrder(w http.ResponseWriter, r *http.Request) {
 func (s *Server) paymentOrder(w http.ResponseWriter, r *http.Request) {
 	order, err := s.deps.Billing.OrderForUser(r.Context(), chiURLParam(r, "id"), currentUser(r).ID)
 	if err != nil {
-		s.writeError(w, r, http.StatusNotFound, "PAYMENT_NOT_FOUND", "Payment order not found.")
+		s.paymentReadError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, order)
+}
+
+func (s *Server) paymentReadError(w http.ResponseWriter, r *http.Request, err error) {
+	if errors.Is(err, database.ErrNotFound) {
+		s.writeError(w, r, http.StatusNotFound, "PAYMENT_NOT_FOUND", "Payment order not found.")
+		return
+	}
+	s.writeError(w, r, http.StatusInternalServerError, "PAYMENT_LOAD_FAILED", "Payment status is temporarily unavailable.")
 }

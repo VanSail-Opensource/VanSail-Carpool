@@ -3,20 +3,11 @@ package httpapi
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
 )
 
-const (
-	activityTimezoneSetting      = "activity.timezone"
-	activityRewardMinSetting     = "activity.daily_reward_min_txb"
-	activityRewardMaxSetting     = "activity.daily_reward_max_txb"
-	groupMessageThresholdSetting = "activity.group_message_threshold"
-	groupMessageRewardSetting    = "activity.group_message_reward_txb"
-	defaultActivityTimezone      = "Asia/Shanghai"
-	maxMultipartOverhead         = int64(256 << 10)
-)
-
-var errActivityConfiguration = errors.New("invalid activity configuration")
+const defaultActivityTimezone = activity.DefaultTimezone
 
 type nullableRequestField[T any] struct {
 	Set   bool

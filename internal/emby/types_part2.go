@@ -96,8 +96,8 @@ func PolicyMatchesPreferences(policy Policy, preferences Preferences) bool {
 }
 
 func policyBooleanEquals(policy Policy, key string, expected bool) bool {
-	var actual bool
-	return json.Unmarshal(policy[key], &actual) == nil && actual == expected
+	var actual *bool
+	return json.Unmarshal(policy[key], &actual) == nil && actual != nil && *actual == expected
 }
 
 func setPolicy(policy Policy, key string, value any) {

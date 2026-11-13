@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -36,16 +37,23 @@ func TestActivityBetAtomicOutcomeAndReplay(t *testing.T) {
 			if err != nil {
 				t.Fatalf("SaveActivityGame(): %v", err)
 			}
-			played, err := store.PlaceActivityBet(ctx, user.ID, game.ID, 100, "bet-key", fixedActivityRandom{value: test.roll}, time.Now())
+			random := &countingActivityRandom{value: test.roll}
+			played, err := store.PlaceActivityBet(ctx, user.ID, game.ID, 100, "bet-key", random, time.Now())
 			if err != nil {
 				t.Fatalf("PlaceActivityBet(): %v", err)
 			}
 			if played.Won != test.wantWon || played.PayoutMinor != test.wantPayout {
 				t.Fatalf("bet = won %t payout %d, want %t/%d", played.Won, played.PayoutMinor, test.wantWon, test.wantPayout)
 			}
-			replayed, err := store.PlaceActivityBet(ctx, user.ID, game.ID, 100, "bet-key", fixedActivityRandom{value: 1}, time.Now())
+			replayed, err := store.PlaceActivityBet(ctx, user.ID, game.ID, 100, "bet-key", random, time.Now())
 			if err != nil || !replayed.Replayed || replayed.ID != played.ID {
 				t.Fatalf("replay = (%+v, %v)", replayed, err)
+			}
+			if _, err := store.PlaceActivityBet(ctx, user.ID, game.ID, 200, "bet-key", random, time.Now()); !errors.Is(err, ErrConflict) {
+				t.Fatalf("replay with changed stake = %v, want conflict", err)
+			}
+			if random.calls != 1 {
+				t.Fatalf("random calls = %d, want one persisted outcome", random.calls)
 			}
 			balance, err := store.Balance(ctx, user.ID)
 			if err != nil || balance.Minor != test.wantBalance {

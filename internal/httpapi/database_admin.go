@@ -8,7 +8,6 @@ import (
 	"mime"
 	"net/http"
 	"strconv"
-	"strings"
 )
 
 type DatabaseAdministrationHTTP struct {
@@ -132,9 +131,6 @@ func (h *DatabaseAdministrationHTTP) download(w http.ResponseWriter, r *http.Req
 	defer func() { _ = download.File.Close() }()
 	disposition := mime.FormatMediaType("attachment", map[string]string{"filename": download.Name})
 	w.Header().Set("Content-Type", "application/octet-stream")
-	if strings.HasSuffix(download.Name, ".dump") {
-		w.Header().Set("Content-Type", "application/octet-stream")
-	}
 	w.Header().Set("Content-Disposition", disposition)
 	w.Header().Set("Content-Length", strconv.FormatInt(download.Size, 10))
 	w.Header().Set("Cache-Control", "no-store")

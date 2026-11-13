@@ -8,6 +8,9 @@ func (p Proxy) SingBox() (map[string]any, error) {
 	if p.EndpointTuning != nil {
 		return p.endpointDocument("sing-box")
 	}
+	if p.Protocol == "vless" && text(p.Account, "encryption") != "" && text(p.Account, "encryption") != "none" {
+		return nil, fmt.Errorf("%w: sing-box VLESS encryption", ErrUnsupported)
+	}
 	protocol := p.Protocol
 	if protocol == "hysteria" {
 		protocol = "hysteria2"

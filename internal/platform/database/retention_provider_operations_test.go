@@ -8,11 +8,11 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
-func TestCompactAndPrunePreservesReferencedProviderOperations(t *testing.T) {
+func TestCompactAndPrunePreservesReferencedAndUnreferencedCommandReceipts(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	store := newTestStore(t)
-	actor, user := createTestUser(t, store, 50_401), createTestUser(t, store, 50_402)
+	actor, user := createTestAdmin(t, store, 50_401), createTestUser(t, store, 50_402)
 	now := time.Date(2026, 8, 20, 2, 0, 0, 0, time.UTC)
 
 	unreferenced, _, err := store.CreateProviderOperation(ctx, providerops.CreateInput{
@@ -59,15 +59,15 @@ func TestCompactAndPrunePreservesReferencedProviderOperations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CompactAndPrune(): %v", err)
 	}
-	if counts["provider_operations"] != 1 {
-		t.Fatalf("pruned provider operations = %d, want 1", counts["provider_operations"])
+	if counts["provider_operations"] != 0 {
+		t.Fatalf("pruned durable command receipts = %d, want 0", counts["provider_operations"])
 	}
 	var remaining int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM provider_operations WHERE id IN ($1,$2,$3)`, ban.ID, unban.ID, compensation.Receipt.ID).Scan(&remaining); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM provider_operations WHERE id IN ($1,$2,$3,$4)`, ban.ID, unban.ID, compensation.Receipt.ID, unreferenced.Receipt.ID).Scan(&remaining); err != nil {
 		t.Fatal(err)
 	}
-	if remaining != 3 {
-		t.Fatalf("referenced provider operations = %d, want 3", remaining)
+	if remaining != 4 {
+		t.Fatalf("durable provider operations = %d, want 4", remaining)
 	}
 }
 

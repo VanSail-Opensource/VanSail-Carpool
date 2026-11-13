@@ -50,6 +50,9 @@ func (s *Store) retryAttempt_UpdateUserPreferences(ctx context.Context, userID s
 		return preferences.Snapshot{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
+	if err := lockProviderOperationAccountsTx(ctx, tx, userID, ""); err != nil {
+		return preferences.Snapshot{}, err
+	}
 	if enablesPAYG(patch) {
 		balance, err := balanceTx(ctx, tx, userID)
 		if err != nil {
@@ -63,8 +66,7 @@ func (s *Store) retryAttempt_UpdateUserPreferences(ctx context.Context, userID s
 	if err != nil {
 		return preferences.Snapshot{}, err
 	}
-	var active bool
-	err = tx.QueryRowContext(ctx, memberEligibilitySQL, userID, stamp(now), stamp(now), userID).Scan(&active)
+	active, err := memberEligibility(ctx, tx, userID, now)
 	if err != nil {
 		return preferences.Snapshot{}, err
 	}

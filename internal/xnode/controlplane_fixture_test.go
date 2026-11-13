@@ -40,7 +40,7 @@ func (f *fixtureSettings) PutXNodeSubscriptionTemplates(_ context.Context, _ str
 	f.templates = raw
 	return nil
 }
-func (f *fixtureSettings) PutXNodeGlobal(_ context.Context, _ string, raw string) error {
+func (f *fixtureSettings) PutXNodeGlobalAtVersion(_ context.Context, _ string, raw string, _ int64, _ time.Time) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.raw = raw

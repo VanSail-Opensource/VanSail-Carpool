@@ -77,7 +77,7 @@ func TestHourlyExtraPriceIncreaseRequiresNewConsentAndDecreaseUsesActualPrice(t 
 		t.Fatal(err)
 	}
 	optIntoHourlyExtras(t, s, input, policy)
-	record, err := s.CompareAndSwapHourlyPolicy(ctx, input.OwnerID, policy.Version, "higher-extra-price")
+	record, err := s.CompareAndSwapHourlyPolicy(ctx, hourlyBillingAdmin(t, s), policy.Version, "higher-extra-price")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,7 +86,7 @@ func TestHourlyExtraPriceIncreaseRequiresNewConsentAndDecreaseUsesActualPrice(t 
 	if _, err := s.FundHourlyExtraGB(ctx, funding, policy, time.Time{}); !errors.Is(err, ErrHourlyExtraDisabled) {
 		t.Fatalf("higher automatic price bypassed consent: %v", err)
 	}
-	record, err = s.CompareAndSwapHourlyPolicy(ctx, input.OwnerID, policy.Version, "lower-extra-price")
+	record, err = s.CompareAndSwapHourlyPolicy(ctx, hourlyBillingAdmin(t, s), policy.Version, "lower-extra-price")
 	if err != nil {
 		t.Fatal(err)
 	}

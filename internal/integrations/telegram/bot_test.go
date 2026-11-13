@@ -147,3 +147,26 @@ func TestMarkdownSendDoesNotRetryOtherTelegramErrors(t *testing.T) {
 		t.Fatalf("blocked delivery = %v after %d calls", err, calls.Load())
 	}
 }
+
+func TestMarkdownSendDoesNotRetryContradictoryParseRejection(t *testing.T) {
+	for _, status := range []int{http.StatusOK, http.StatusTooManyRequests, http.StatusServiceUnavailable} {
+		var calls atomic.Int32
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			calls.Add(1)
+			w.WriteHeader(status)
+			_, _ = w.Write([]byte(`{"ok":false,"error_code":400,"description":"Bad Request: can't parse entities"}`))
+		}))
+		client, err := NewClient("123:token", WithBaseURL(server.URL), WithHTTPClient(server.Client()))
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = client.PublishMarkdownV2Message(context.Background(), 42, "*notice*")
+		server.Close()
+		if err == nil || calls.Load() != 1 {
+			t.Fatalf("HTTP%d ambiguous delivery retried: calls=%d error=%v", status, calls.Load(), err)
+		}
+	}
+	if isEntityParseError(&APIError{HTTPStatus: 400, ErrorCode: 400, Description: "can't parse entities", RetryAfter: 5}) {
+		t.Fatal("throttling metadata accepted as definitive rejection")
+	}
+}

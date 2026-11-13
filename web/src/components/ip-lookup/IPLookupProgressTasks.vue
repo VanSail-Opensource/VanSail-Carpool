@@ -31,5 +31,6 @@ const icons: Record<IPLookupProgressTask['status'], string> = {
 .progress-tasks .spinning { animation: task-spin 1.2s linear infinite; }
 .progress-tasks .task-partial, .progress-tasks .task-error { color: var(--warning); }
 @keyframes task-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .progress-tasks .spinning { animation: none; } }
 @media (min-width: 640px) { .progress-tasks { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 </style>

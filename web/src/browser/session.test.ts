@@ -95,6 +95,26 @@ describe('isolated browser sessions', () => {
     expect(browser.isAdmin).toBe(true)
   })
 
+  it('resumes mounted observers only after verifying the same administrator', async () => {
+    const restored = vi.fn()
+    window.addEventListener('txc:browser-session-restored', restored)
+    try {
+      const browser = useBrowserSession()
+      await browser.bootstrap()
+      expect(restored).not.toHaveBeenCalled()
+      mocks.session.mockResolvedValue(anonymous)
+      await browser.bootstrap(true)
+      expect(restored).not.toHaveBeenCalled()
+      mocks.session.mockResolvedValue(admin)
+      await browser.bootstrap(true)
+      expect(restored).toHaveBeenCalledTimes(1)
+      mocks.session.mockResolvedValue({ ...admin, user: { ...admin.user, id: 'different-administrator' } })
+      await browser.bootstrap(true)
+      expect(useSessionStore().user?.id).toBe('different-administrator')
+      expect(restored).toHaveBeenCalledTimes(1)
+    } finally { window.removeEventListener('txc:browser-session-restored', restored) }
+  })
+
   it('preserves authentication and cached drafts during a transient renewal failure', async () => {
     const browser = useBrowserSession()
     await browser.bootstrap()
@@ -146,8 +166,38 @@ describe('isolated browser sessions', () => {
     mocks.exchange.mockResolvedValue({ ...admin, returnTo: '/admin/users/user-1' })
     const browser = useBrowserSession()
     expect(await browser.exchange('one-use-token')).toBe('/admin/users/user-1')
-    expect(mocks.exchange).toHaveBeenCalledExactlyOnceWith('one-use-token')
+    expect(mocks.exchange).toHaveBeenCalledExactlyOnceWith('one-use-token', undefined)
     expect(browser.isAdmin).toBe(true)
     expect(mocks.authTelegram).not.toHaveBeenCalled()
+  })
+
+  it('cannot restore an administrator from a renewal that finishes after logout', async () => {
+    const browser = useBrowserSession()
+    await browser.bootstrap()
+    let finishRenewal!: (value: BrowserSession) => void
+    mocks.renew.mockImplementation(() => new Promise(resolve => { finishRenewal = resolve }))
+    const renewal = browser.renew()
+    mocks.session.mockResolvedValue(anonymous)
+    await browser.logout()
+    finishRenewal(admin)
+    await renewal
+    expect(browser.state).toEqual(anonymous)
+    expect(browser.isAdmin).toBe(false)
+    expect(useSessionStore().session).toBeNull()
+  })
+
+  it('discards an entrance response started before a successful access exchange', async () => {
+    const browser = useBrowserSession()
+    let finishSession!: (value: BrowserSession) => void
+    mocks.session.mockImplementation(() => new Promise(resolve => { finishSession = resolve }))
+    const bootstrap = browser.bootstrap()
+    await vi.waitFor(() => expect(mocks.session).toHaveBeenCalledTimes(1))
+    mocks.exchange.mockResolvedValue(admin)
+    await browser.exchange('new-link')
+    finishSession(anonymous)
+    await bootstrap
+    expect(browser.isAdmin).toBe(true)
+    expect(browser.expired).toBe(false)
+    expect(useSessionStore().user?.id).toBe('admin-1')
   })
 })

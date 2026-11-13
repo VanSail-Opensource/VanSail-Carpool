@@ -59,7 +59,7 @@ func (s *Store) ipLiveRetryDelay(ctx context.Context) (time.Duration, bool) {
 	return iplookup.NextRetryDelay(c)
 }
 
-// IPLookupReportByID loads one report row with current saved settings.
+// IPLookupReportByID loads one report and its exact revision with current settings.
 func (s *Store) IPLookupReportByID(ctx context.Context, id string) (iplookup.Report, iplookup.Config, error) {
 	var raw, configJSON string
 	err := s.db.QueryRowContext(ctx, `SELECT report_json,COALESCE((SELECT value FROM settings WHERE key=$1),'') FROM ip_lookup_reports WHERE id=$2`, iplookup.SettingKey, id).Scan(&raw, &configJSON)
@@ -73,33 +73,12 @@ func (s *Store) IPLookupReportByID(ctx context.Context, id string) (iplookup.Rep
 	if err != nil {
 		return iplookup.Report{}, iplookup.Config{}, err
 	}
+	report.RepairRevision = ipRepairRevision(raw)
 	config, err := iplookup.DecodeConfig(configJSON)
 	return report, config, err
 }
 
-// UpdateIPLookupCachedReport repairs one frozen partial report in place. The
-// original completion timestamp stays untouched so newest-wins cache ordering
-// keeps preferring evidence from later paid refreshes.
-func (s *Store) UpdateIPLookupCachedReport(ctx context.Context, report iplookup.Report) error {
-	raw, err := iplookup.EncodeReport(report)
-	if err != nil {
-		return err
-	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
-	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_reports SET status=$1,report_json=$2 WHERE id=$3 AND status='partial'`, report.Status, string(raw), report.ID)
-	if err != nil {
-		return err
-	}
-	if affected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if affected != 1 {
-		return iplookup.ErrRepairConflict
-	}
-	return nil
-}
-
-// IPLiveSnapshotByID loads one stored snapshot with its freeze status.
+// IPLiveSnapshotByID loads one snapshot with its freeze status and exact revision.
 func (s *Store) IPLiveSnapshotByID(ctx context.Context, id string) (iplookup.LiveDetails, string, error) {
 	var raw, status string
 	err := s.db.QueryRowContext(ctx, `SELECT details_json,status FROM ip_lookup_live_snapshots WHERE id=$1`, id).Scan(&raw, &status)
@@ -114,35 +93,6 @@ func (s *Store) IPLiveSnapshotByID(ctx context.Context, id string) (iplookup.Liv
 		return iplookup.LiveDetails{}, "", err
 	}
 	details = iplookup.CompactLiveDetails(details)
-	details.SnapshotID = id
+	details.SnapshotID, details.RepairRevision = id, ipRepairRevision(raw)
 	return details, status, nil
-}
-
-// UpdateIPLiveSnapshot repairs failed sections of one frozen partial snapshot
-// in place without advancing its cache ordering position.
-func (s *Store) UpdateIPLiveSnapshot(ctx context.Context, id string, details iplookup.LiveDetails) error {
-	details = iplookup.CompactLiveDetails(details)
-	raw, err := json.Marshal(details)
-	if err != nil {
-		return err
-	}
-	if len(raw) > 4*1024*1024 {
-		return &iplookup.CodeError{Code: "IP_DETAILS_INVALID_RESPONSE"}
-	}
-	status := "succeeded"
-	if iplookup.LivePartial(details) {
-		status = "partial"
-	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
-	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_live_snapshots SET details_json=$1,status=$2 WHERE id=$3 AND status='partial'`, string(raw), status, id)
-	if err != nil {
-		return err
-	}
-	if affected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if affected != 1 {
-		return iplookup.ErrRepairConflict
-	}
-	return nil
 }

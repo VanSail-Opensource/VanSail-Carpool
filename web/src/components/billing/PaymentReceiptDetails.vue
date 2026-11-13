@@ -43,9 +43,10 @@ const statusIcon = computed(() => ({
   unavailable: 'i-ph-warning-circle',
 }[props.state]))
 const statusLabel = computed(() => status.value ? localized(`payment.status.${status.value}`, status.value) : props.title)
-const creditedAmount = computed(() => props.details ? formatMoney(props.details.txb) : t('common.notAvailable'))
+const balanceAmount = computed(() => props.details ? formatMoney(props.details.txb) : t('common.notAvailable'))
+const balanceLabel = computed(() => t(status.value === 'paid' ? 'payment.balanceCredited' : 'payment.balanceAmount'))
 const paymentAmount = computed(() => props.details ? `${props.details.payableAmount} ${props.details.payableCurrency}` : t('common.notAvailable'))
-const settledAmount = computed(() => props.details?.actualCryptoAmount && props.details.actualCryptoCurrency
+const cryptoAmount = computed(() => props.details?.actualCryptoAmount && props.details.actualCryptoCurrency
   ? `${props.details.actualCryptoAmount} ${props.details.actualCryptoCurrency}`
   : null)
 
@@ -55,7 +56,7 @@ const receiptFields = computed(() => {
   return [
     { key: 'id', label: t('payment.paymentId'), value: details.id, icon: 'i-ph-hash', mono: true },
     { key: 'provider', label: t('payment.provider'), value: localized(`payment.providers.${details.provider}`, details.provider), icon: 'i-ph-storefront' },
-    { key: 'channel', label: t('payment.channel'), value: paymentChannelLabel(details.providerRail, details.providerRail), icon: 'i-ph-channels' },
+    { key: 'channel', label: t('payment.channel'), value: paymentChannelLabel(details.providerRail, details.providerRail), icon: 'i-ph-arrows-left-right' },
     { key: 'paid', label: t('payment.successTime'), value: formatDateTime(details.paidAt ?? undefined), icon: 'i-ph-calendar-check' },
   ]
 })
@@ -90,10 +91,10 @@ function localized(key: string, fallback: string): string {
             :description="description"
           />
 
-          <section v-if="details || state === 'checking' || state === 'pending'" class="payment-receipt__amount" :aria-label="$t('payment.balanceCredited')">
+          <section v-if="details || state === 'checking' || state === 'pending'" class="payment-receipt__amount" :aria-label="balanceLabel">
             <div>
-              <span class="payment-receipt__label">{{ $t('payment.balanceCredited') }}</span>
-              <strong>{{ creditedAmount }}</strong>
+              <span class="payment-receipt__label">{{ balanceLabel }}</span>
+              <strong>{{ balanceAmount }}</strong>
               <span class="payment-receipt__secondary">{{ $t('payment.paymentAmountValue', { amount: paymentAmount }) }}</span>
             </div>
             <UIcon name="i-ph-wallet" class="payment-receipt__amount-icon" aria-hidden="true" />
@@ -120,9 +121,9 @@ function localized(key: string, fallback: string): string {
               <USkeleton v-for="index in 5" :key="index" class="payment-receipt__skeleton" />
             </div>
 
-            <div v-if="settledAmount" class="payment-receipt__settled">
-              <span>{{ $t('payment.settledAmount') }}</span>
-              <strong>{{ settledAmount }}</strong>
+            <div v-if="cryptoAmount" class="payment-receipt__settled">
+              <span>{{ $t('payment.cryptoAmount') }}</span>
+              <strong>{{ cryptoAmount }}</strong>
             </div>
           </section>
 

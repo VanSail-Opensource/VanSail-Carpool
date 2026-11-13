@@ -14,7 +14,7 @@ import (
 func TestPricingCapacityUsesGiBAndExactForecastHorizon(t *testing.T) {
 	s, identity, period := xnodeTrafficFixture(t)
 	ctx := context.Background()
-	now := time.Now().UTC()
+	now := time.Now().UTC().Truncate(time.Second)
 	group := saveTestSquad(t, s, "capacity", 100, true)
 	if err := s.SaveXNodeGroup(ctx, xnode.Group{ID: group.GroupID, Name: "Capacity", Enabled: true, Bindings: []xnode.GroupBinding{{NodeID: "node", InboundTag: "in"}}}); err != nil {
 		t.Fatal(err)
@@ -25,8 +25,8 @@ func TestPricingCapacityUsesGiBAndExactForecastHorizon(t *testing.T) {
 	if _, err := s.db.ExecContext(ctx, `INSERT INTO xnode_daily_usage(proxy_user_id,node_id,period_id,date,upload_bytes,download_bytes) VALUES($1,'node',$2,$3,$4,0)`, identity.ProxyUserID, period.ID, now.AddDate(0, 0, -1).Format(time.DateOnly), xnode.PAYGGB); err != nil {
 		t.Fatal(err)
 	}
-	stamp := pricingStamp(now)
-	if _, err := s.db.ExecContext(ctx, `INSERT INTO pricing_cost_metadata(node_id,cycle_cost_minor,cycle_days,capacity_bytes,effective_at,updated_by,updated_at) VALUES('node',3000,30,$1,$2, 'fixture',$3)`, 300*xnode.PAYGGB, stamp, stamp); err != nil {
+	nowStamp := pricingStamp(now)
+	if _, err := s.db.ExecContext(ctx, `INSERT INTO pricing_cost_metadata(node_id,cycle_cost_minor,cycle_days,capacity_bytes,effective_at,updated_by,updated_at) VALUES('node',3000,30,$1,$2, 'fixture',$3)`, 300*xnode.PAYGGB, nowStamp, nowStamp); err != nil {
 		t.Fatal(err)
 	}
 	base := pricingForecastFixture(t, s, "capacity-source", now)
@@ -76,12 +76,25 @@ func TestPricingCapacityUsesGiBAndExactForecastHorizon(t *testing.T) {
 		t.Fatal(got, err)
 	}
 	// Prepaid traffic is already in forecast consumption; reserve the larger amount.
-	if _, err = s.db.ExecContext(ctx, `UPDATE xnode_payg_accounts SET credit_bytes=$1,credit_started_at=$2`, 6*xnode.PAYGGB, stamp); err != nil {
+	if _, err = s.db.ExecContext(ctx, `UPDATE xnode_payg_accounts SET credit_bytes=$1,credit_started_at=$2`, 6*xnode.PAYGGB, nowStamp); err != nil {
 		t.Fatal(err)
 	}
 	got, err = read()
 	if err != nil || got.CommittedGB != 2 || got.DemandGB != 6 || got.SalesUnits != 6 {
 		t.Fatal(got, err)
+	}
+	for _, remaining := range []time.Duration{0, time.Nanosecond} {
+		if _, err := s.db.ExecContext(ctx, `UPDATE xnode_payg_accounts SET credit_started_at=$1`, stamp(now.Add(-xnode.PAYGWindow+remaining))); err != nil {
+			t.Fatal(err)
+		}
+		want := float64(0)
+		if remaining > 0 {
+			want = 2
+		}
+		got, err = read()
+		if err != nil || got.CommittedGB != want || got.DemandGB != 8-want || got.SalesUnits != 8-want {
+			t.Fatal("credit capacity used the wrong exact retention boundary", remaining, got, err)
+		}
 	}
 	if _, err = s.db.ExecContext(ctx, `UPDATE pricing_cost_metadata SET capacity_bytes=$1`, 30*xnode.PAYGGB); err != nil {
 		t.Fatal(err)

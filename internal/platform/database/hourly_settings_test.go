@@ -12,7 +12,7 @@ import (
 
 func TestHourlyPolicyInitialCASHasOneWinnerAndNoPlaintextAudit(t *testing.T) {
 	ctx, store := context.Background(), newTestStore(t)
-	actor := createTestUser(t, store, 498021)
+	actor := createTestAdmin(t, store, 498021)
 	initial, err := store.ReadHourlyPolicyRecord(ctx)
 	if err != nil || initial.Version != "" || initial.Ciphertext != "" {
 		t.Fatal("missing policy was not absent", err)
@@ -61,7 +61,7 @@ func TestHourlyPolicyInitialCASHasOneWinnerAndNoPlaintextAudit(t *testing.T) {
 
 func TestHourlyPolicySharedWalletFenceBlocksConfigurationUpdate(t *testing.T) {
 	ctx, store := context.Background(), newTestStore(t)
-	actor := createTestUser(t, store, 498022)
+	actor := createTestAdmin(t, store, 498022)
 	current, err := store.CompareAndSwapHourlyPolicy(ctx, actor.ID, "", "encrypted-original")
 	if err != nil {
 		t.Fatal(err)
@@ -96,7 +96,7 @@ func TestHourlyPolicySharedWalletFenceBlocksConfigurationUpdate(t *testing.T) {
 
 func TestHourlyPolicyRejectsUnencryptedOrEmptyExistingRows(t *testing.T) {
 	ctx, store := context.Background(), newTestStore(t)
-	actor := createTestUser(t, store, 498023)
+	actor := createTestAdmin(t, store, 498023)
 	for _, value := range []struct {
 		ciphertext string
 		encrypted  bool

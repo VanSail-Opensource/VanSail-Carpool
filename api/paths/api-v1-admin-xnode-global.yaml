@@ -76,7 +76,24 @@
       "content": {
         "application/json": {
           "schema": {
-            "$ref": "../openapi.yaml#/components/schemas/XNodeGlobal"
+            "anyOf": [
+              {
+                "$ref": "../openapi.yaml#/components/schemas/XNodeGlobal"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "automaticWhitelist"
+                ],
+                "properties": {
+                  "automaticWhitelist": {
+                    "$ref": "../openapi.yaml#/components/schemas/XNodeAutomaticWhitelistSettings"
+                  }
+                }
+              }
+            ],
+            "description": "The automaticWhitelist-only body is accepted only with part=automaticWhitelist. Without that query selector, submit the complete global settings object."
           }
         }
       }

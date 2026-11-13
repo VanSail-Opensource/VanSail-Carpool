@@ -59,7 +59,9 @@ func (s *Store) retryAttempt_pricingReadContext(ctx context.Context, user string
 		if err != nil {
 			return ctx, err
 		}
-		rows, err = tx.QueryContext(ctx, grantSelect+` WHERE coupon_grants.user_id=$1 AND coupon_grants.status='active' AND coupon_definitions.active=1 AND (coupon_definitions.expires_at IS NULL OR coupon_definitions.expires_at>$2) AND NOT EXISTS(SELECT 1 FROM coupon_grant_discards d WHERE d.grant_id=coupon_grants.id) AND `+authorizedCouponGrant+` AND coupon_definitions.kind IN ('purchase_once','purchase_recurring') AND (coupon_definitions.global_use_limit IS NULL OR (SELECT COUNT(*) FROM coupon_uses u WHERE u.coupon_id=coupon_definitions.id)<coupon_definitions.global_use_limit) AND (coupon_definitions.per_user_use_limit IS NULL OR (SELECT COUNT(*) FROM coupon_uses u WHERE u.coupon_id=coupon_definitions.id AND u.user_id=coupon_grants.user_id)<coupon_definitions.per_user_use_limit) ORDER BY coupon_grants.id LIMIT 4097`, user, pricingStamp(now))
+		// The whole-second prefix is a broad indexed lower bound that includes
+		// every fractional expiry in this second; scanGrant preserves nanoseconds.
+		rows, err = tx.QueryContext(ctx, grantSelect+` WHERE coupon_grants.user_id=$1 AND coupon_grants.status='active' AND coupon_definitions.active=1 AND (coupon_definitions.expires_at IS NULL OR coupon_definitions.expires_at>=$2) AND NOT EXISTS(SELECT 1 FROM coupon_grant_discards d WHERE d.grant_id=coupon_grants.id) AND `+authorizedCouponGrant+` AND coupon_definitions.kind IN ('purchase_once','purchase_recurring') AND (coupon_definitions.global_use_limit IS NULL OR (SELECT COUNT(*) FROM coupon_uses u WHERE u.coupon_id=coupon_definitions.id)<coupon_definitions.global_use_limit) AND (coupon_definitions.per_user_use_limit IS NULL OR (SELECT COUNT(*) FROM coupon_uses u WHERE u.coupon_id=coupon_definitions.id AND u.user_id=coupon_grants.user_id)<coupon_definitions.per_user_use_limit) ORDER BY coupon_grants.id LIMIT 4097`, user, now.UTC().Format("2006-01-02T15:04:05"))
 		if err != nil {
 			return ctx, err
 		}
@@ -75,7 +77,7 @@ func (s *Store) retryAttempt_pricingReadContext(ctx context.Context, user string
 				rows.Close()
 				return ctx, pricing.WorkerResourceLimit
 			}
-			if g.Coupon.Kind == coupons.KindPurchaseOnce || g.Coupon.Kind == coupons.KindPurchaseRecurring {
+			if couponAvailable(g.Coupon, now) == nil && (g.Coupon.Kind == coupons.KindPurchaseOnce || g.Coupon.Kind == coupons.KindPurchaseRecurring) {
 				batch.Grants = append(batch.Grants, g)
 			}
 		}

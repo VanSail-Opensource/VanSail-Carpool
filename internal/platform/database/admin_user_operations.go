@@ -14,7 +14,7 @@ func (s *Store) ListAdminOperationsForUser(ctx context.Context, userID string, l
 	}
 	rows, err := s.db.QueryContext(ctx, providerOperationSelect+` WHERE status IN ('queued','processing','pending_review','partial') AND (owner_user_id=$1 OR EXISTS (
 		SELECT 1 FROM provider_operation_items WHERE operation_id=provider_operations.id
-		AND target_type='user' AND target_id=$2)) ORDER BY created_at DESC,id DESC LIMIT $3`, userID, userID, limit)
+		AND target_type='user' AND target_id=$2)) ORDER BY `+purchaseTimestampOrderSQL("created_at")+` DESC,id DESC LIMIT $3`, userID, userID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list admin user operations: %w", err)
 	}

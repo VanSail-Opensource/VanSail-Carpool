@@ -16,7 +16,7 @@ func (s *Store) insertExpirationNotificationTx(ctx context.Context, tx *sql.Tx, 
 		FROM purchases JOIN combos ON combos.id=purchases.combo_id WHERE purchases.id=$1
 		AND purchases.auto_renew_enabled=0 AND purchases.auto_renew_failure_reason='' AND NOT EXISTS (
 			SELECT 1 FROM purchases successor WHERE successor.user_id=purchases.user_id AND successor.id<>purchases.id
-			AND successor.status IN ('queued','activating','active') AND successor.valid_until>purchases.valid_until
+			AND successor.status IN ('queued','activating','active') AND `+purchaseTimestampOrderSQL("successor.valid_until")+`>`+purchaseTimestampOrderSQL("purchases.valid_until")+`
 		)`, purchaseID).Scan(&userID, &combo, &expired)
 	if err == sql.ErrNoRows {
 		return nil

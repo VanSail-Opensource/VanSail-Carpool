@@ -31,12 +31,6 @@ func quoteAttachedRecurringDiscountTx(ctx context.Context, tx *sql.Tx, userID, g
 }
 
 func attachedDiscountMinor(coupon coupons.Coupon, grossMinor int64) (int64, error) {
-	if coupon.DiscountMode != coupons.DiscountFixed && coupon.DiscountMode != coupons.DiscountPercent {
-		return 0, nil
-	}
-	if coupon.ValueMinorOrBPS <= 0 {
-		return 0, nil
-	}
 	current := coupons.Coupon{CouponInput: coupons.CouponInput{
 		Kind: coupons.KindPurchaseRecurring, DiscountMode: coupon.DiscountMode,
 		ValueMinorOrBPS: coupon.ValueMinorOrBPS, PercentCapMinor: coupon.PercentCapMinor,

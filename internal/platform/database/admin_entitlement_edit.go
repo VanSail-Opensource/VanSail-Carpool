@@ -40,7 +40,17 @@ func (s *Store) retryAttempt_EditAdminEntitlement(ctx context.Context, input Adm
 		if err := tx.Commit(); err != nil {
 			return model.Purchase{}, err
 		}
-		return s.PurchaseByID(ctx, input.PurchaseID)
+		return before, nil
+	}
+	// Refunding a term settles its original debit. Reopening or rewriting that
+	// same row could make a different refund lane credit the same debit again.
+	// Retained receipts stay readable/replayable, while a new grant gets a new ID.
+	refunded, err := entitlementRefundedTx(ctx, tx, before)
+	if err != nil {
+		return model.Purchase{}, err
+	}
+	if refunded {
+		return model.Purchase{}, fmt.Errorf("refunded entitlement is immutable: %w", ErrConflict)
 	}
 	if !before.UpdatedAt.Equal(input.ExpectedUpdatedAt) {
 		return model.Purchase{}, ErrConflict
@@ -87,10 +97,28 @@ func (s *Store) retryAttempt_EditAdminEntitlement(ctx context.Context, input Adm
 		kind, providerItemGate(operation.Receipt.ID, input.UserID), facts, now); err != nil {
 		return model.Purchase{}, err
 	}
+	after, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=$1 AND purchases.user_id=$2`, input.PurchaseID, input.UserID))
+	if err != nil {
+		return model.Purchase{}, err
+	}
+	after.SquadUUIDs, err = purchaseSquadsFrom(ctx, tx, after.ID)
+	if err != nil {
+		return model.Purchase{}, err
+	}
 	if err := tx.Commit(); err != nil {
 		return model.Purchase{}, err
 	}
-	return s.PurchaseByID(ctx, input.PurchaseID)
+	return after, nil
+}
+
+func entitlementRefundedTx(ctx context.Context, tx *sql.Tx, purchase model.Purchase) (bool, error) {
+	var refunded bool
+	err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM ledger_entries entry WHERE entry.user_id=$1 AND (
+		(entry.reference_id=$2 AND entry.kind IN ('admin_entitlement_refund','admin_entitlement_cancellation','purchase_cancellation'))
+		OR (entry.kind='member_refund_credit' AND EXISTS(SELECT 1 FROM provider_operation_items item
+			WHERE item.operation_id=entry.reference_id AND item.target_type='purchase' AND item.target_id=$2))))`,
+		purchase.UserID, purchase.ID).Scan(&refunded)
+	return refunded, err
 }
 
 func entitlementSnapshot(purchase model.Purchase) map[string]any {

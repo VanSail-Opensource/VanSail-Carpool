@@ -9,6 +9,8 @@
     "reference": "https://github.com/google/fonts/blob/a85815a42757630ce188fdad368c2dfc444d4773/ofl/notosanssc/OFL.txt",
     "gitBlobSha1": "1c9f43281b8f216c5461fe9ac729afbade7724e4",
     "localOriginal": "web/public/fonts/NotoSansSC-OFL.txt",
+    "localSha256": "babcfe66c8a098b2fa279bc724a3a342f8124f77ce18941fbcc1bbb39823cded",
+    "localNormalization": "One trailing space is removed from the standalone notice; licenseText and sha256 preserve the original upstream bytes.",
     "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9"
   },
   "fontFiles": [

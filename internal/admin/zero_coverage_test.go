@@ -25,30 +25,26 @@ func TestAdminDeductBalance(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			service := newAdminServiceForTest(&adminCatalogRepository{}, nil, &adminSquadImporter{}, &adminBackupRunner{}, &adminRefunder{})
-			if _, err := service.DeductBalance(context.Background(), "admin", "user", test.amount, test.reason); err == nil {
-				t.Fatal("DeductBalance() unexpectedly succeeded")
+			if _, err := service.DeductBalanceWithReference(context.Background(), "admin", "user", test.amount, "deduction-key", test.reason); err == nil {
+				t.Fatal("DeductBalanceWithReference() unexpectedly succeeded")
 			}
 		})
 	}
 
 	repository := &adminCatalogRepository{adjustedEntry: model.LedgerEntry{ID: "ledger-1"}}
 	service := newAdminServiceForTest(repository, nil, &adminSquadImporter{}, &adminBackupRunner{}, &adminRefunder{})
-	entry, err := service.DeductBalance(context.Background(), "admin", "user", 250, "renewal")
-	if err != nil || entry.ID != "ledger-1" || repository.adjustDelta != -250 || repository.adjustReference == "" {
-		t.Fatalf("DeductBalance() = (%+v, %v), repository = %+v", entry, err, repository)
+	entry, err := service.DeductBalanceWithReference(context.Background(), "admin", "user", 250, "deduction-key", " renewal ")
+	if err != nil || entry.ID != "ledger-1" || repository.adjustDelta != -250 || repository.adjustReference != "deduction-key" || repository.adjustActor != "admin" || repository.adjustUser != "user" || repository.adjustReason != "renewal" {
+		t.Fatalf("DeductBalanceWithReference() = (%+v, %v), repository = %+v", entry, err, repository)
 	}
-	if len(repository.audits) != 1 || repository.audits[0].action != "telegram.balance_deduct" {
-		t.Fatalf("DeductBalance() audit = %+v", repository.audits)
-	}
-
 	repository.adjustErr = errors.New("deduct failure")
-	if _, err := service.DeductBalance(context.Background(), "admin", "user", 1, "retry"); err == nil {
-		t.Fatal("DeductBalance() ignored repository failure")
+	if _, err := service.DeductBalanceWithReference(context.Background(), "admin", "user", 1, "error-key", "retry"); err == nil {
+		t.Fatal("DeductBalanceWithReference() ignored repository failure")
 	}
 	repository.adjustErr = nil
 	repository.auditErr = errors.New("audit failure")
-	if _, err := service.DeductBalance(context.Background(), "admin", "user", 1, "retry"); err == nil {
-		t.Fatal("DeductBalance() ignored audit failure")
+	if _, err := service.DeductBalanceWithReference(context.Background(), "admin", "user", 1, "error-key", "retry"); err == nil {
+		t.Fatal("DeductBalanceWithReference() ignored audit failure")
 	}
 }
 
@@ -102,18 +98,24 @@ func TestPaymentProfileByIDAndRuntimes(t *testing.T) {
 	}
 
 	settingsRepository := newAdminSettingsRepository()
-	settingsRepository.settings["billing.ezpay.key"] = database.Setting{Key: "billing.ezpay.key", Value: "legacy-secret"}
+	credential := func(id string) string {
+		value, err := testVault(t).Encrypt("payment-profile:"+id, "profile-secret")
+		if err != nil {
+			t.Fatal(err)
+		}
+		return value
+	}
 	directRepository := &paymentProfileByIDRepositoryStub{
 		paymentProfileRepositoryStub: &paymentProfileRepositoryStub{},
 		byIDRecord: database.PaymentProfileRecord{
 			PaymentProfile:       model.PaymentProfile{ID: "profile-1", Provider: "ezpay", EnabledChannels: []string{"alipay"}},
-			CredentialCiphertext: "invalid-ciphertext",
+			CredentialCiphertext: credential("profile-1"),
 		},
 	}
 	service := NewSettingsService(settingsRepository, testVault(t))
 	service.SetPaymentProfileRepository(directRepository)
 	runtime, err := service.PaymentProfileByID(ctx, "profile-1", "alipay")
-	if err != nil || runtime.ID != "profile-1" || runtime.CredentialPlaintext != "legacy-secret" {
+	if err != nil || runtime.ID != "profile-1" || runtime.CredentialPlaintext != "profile-secret" {
 		t.Fatalf("PaymentProfileByID() = (%+v, %v)", runtime, err)
 	}
 	if _, err := service.PaymentProfileByID(ctx, "profile-1", "wxpay"); !errors.Is(err, database.ErrNotFound) {
@@ -128,11 +130,11 @@ func TestPaymentProfileByIDAndRuntimes(t *testing.T) {
 		profiles: []model.PaymentProfile{{ID: "fallback", Provider: "ezpay"}},
 		record: database.PaymentProfileRecord{
 			PaymentProfile:       model.PaymentProfile{ID: "fallback", Provider: "ezpay", EnabledChannels: []string{"alipay"}},
-			CredentialCiphertext: "invalid-ciphertext",
+			CredentialCiphertext: credential("fallback"),
 		},
 	}
 	service.SetPaymentProfileRepository(fallbackRepository)
-	if runtime, err := service.PaymentProfileByID(ctx, "fallback", "alipay"); err != nil || runtime.CredentialPlaintext != "legacy-secret" {
+	if runtime, err := service.PaymentProfileByID(ctx, "fallback", "alipay"); err != nil || runtime.CredentialPlaintext != "profile-secret" {
 		t.Fatalf("PaymentProfileByID(fallback) = (%+v, %v)", runtime, err)
 	}
 	if _, err := service.PaymentProfileByID(ctx, "unknown", ""); !errors.Is(err, database.ErrNotFound) {
@@ -156,7 +158,7 @@ func TestPaymentProfileByIDAndRuntimes(t *testing.T) {
 		}},
 		byIDRecord: database.PaymentProfileRecord{
 			PaymentProfile:       model.PaymentProfile{ID: "configured", Provider: "ezpay"},
-			CredentialCiphertext: "invalid-ciphertext",
+			CredentialCiphertext: credential("configured"),
 		},
 	}
 	service.SetPaymentProfileRepository(runtimesRepository)
@@ -174,51 +176,16 @@ func TestPaymentProfileByIDAndRuntimes(t *testing.T) {
 	}
 }
 
-func TestLegacyEZPayTypeValidator(t *testing.T) {
+func TestSettingsRequireAtomicActivityBundle(t *testing.T) {
 	t.Parallel()
-
-	for _, value := range []string{"alipay", "wxpay,bank"} {
-		if err := validateEZPayType(value); err != nil {
-			t.Errorf("validateEZPayType(%q): %v", value, err)
+	repository := newAdminSettingsRepository()
+	service := NewSettingsService(repository, testVault(t))
+	for _, key := range []string{"activity.timezone", "activity.daily_reward_min_txb", "activity.daily_reward_max_txb", "activity.group_message_threshold", "activity.group_message_reward_txb"} {
+		if err := service.Put(context.Background(), "admin", key, "1"); err == nil {
+			t.Fatalf("individual activity key %s bypassed the atomic bundle", key)
 		}
 	}
-	if err := validateEZPayType("unknown"); err == nil {
-		t.Fatal("validateEZPayType() accepted an unknown rail")
-	}
-}
-
-func TestValidateActivityRewardRange(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name    string
-		key     string
-		value   string
-		stored  map[string]string
-		getErr  error
-		wantErr bool
-	}{
-		{name: "invalid proposed value", key: "activity.daily_reward_min_txb", value: "bad", wantErr: true},
-		{name: "missing other boundary", key: "activity.daily_reward_min_txb", value: "1"},
-		{name: "repository failure", key: "activity.daily_reward_min_txb", value: "1", getErr: errors.New("settings unavailable"), wantErr: true},
-		{name: "invalid stored boundary", key: "activity.daily_reward_min_txb", value: "1", stored: map[string]string{"activity.daily_reward_max_txb": "bad"}, wantErr: true},
-		{name: "minimum exceeds maximum", key: "activity.daily_reward_min_txb", value: "2", stored: map[string]string{"activity.daily_reward_max_txb": "1"}, wantErr: true},
-		{name: "maximum below minimum", key: "activity.daily_reward_max_txb", value: "1", stored: map[string]string{"activity.daily_reward_min_txb": "2"}, wantErr: true},
-		{name: "valid minimum", key: "activity.daily_reward_min_txb", value: "1", stored: map[string]string{"activity.daily_reward_max_txb": "2"}},
-		{name: "valid maximum", key: "activity.daily_reward_max_txb", value: "2", stored: map[string]string{"activity.daily_reward_min_txb": "1"}},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			repository := newAdminSettingsRepository()
-			repository.getErr = test.getErr
-			for key, value := range test.stored {
-				repository.settings[key] = database.Setting{Key: key, Value: value}
-			}
-			service := NewSettingsService(repository, testVault(t))
-			err := service.validateActivityRewardRange(context.Background(), test.key, test.value)
-			if (err != nil) != test.wantErr {
-				t.Fatalf("validateActivityRewardRange() error = %v, want error %t", err, test.wantErr)
-			}
-		})
+	if repository.putCalls != 0 || repository.auditCalls != 0 {
+		t.Fatal("rejected partial bundle changed settings")
 	}
 }

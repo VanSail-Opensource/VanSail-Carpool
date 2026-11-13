@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { IPLookupQuote, IPLookupState } from '@/api/ipLookup'
-import { useI18n } from '@/i18n'
+import { getLocale, useI18n } from '@/i18n'
 import { formatMoney } from '@/utils/format'
 
 const ip = defineModel<string>({ required: true })
@@ -20,7 +20,7 @@ const cost = computed(() => props.shared ? t('ipLookup.sharedFree') : props.quot
       </UFormField>
       <UButton type="submit" class="lookup-submit" icon="i-ph-magnifying-glass" :loading="busy" :disabled="busy || !validIp || !quote || !!quote.cachedReport" :aria-label="cost" :title="cost" />
     </form>
-    <div class="lookup-caption"><span><UIcon name="i-ph-coins" aria-hidden="true" />{{ cost }}</span><span v-if="state.allowance" :title="$t('ipLookup.until', { date: new Date(state.allowance.validUntil).toLocaleDateString() })"><UIcon name="i-ph-ticket" aria-hidden="true" />{{ $t('ipLookup.allowanceShort', { remaining: state.allowance.remaining, total: state.allowance.total }) }}</span></div>
+    <div class="lookup-caption"><span><UIcon name="i-ph-coins" aria-hidden="true" />{{ cost }}</span><span v-if="state.allowance" :title="$t('ipLookup.until', { date: new Date(state.allowance.validUntil).toLocaleDateString(getLocale()) })"><UIcon name="i-ph-ticket" aria-hidden="true" />{{ $t('ipLookup.allowanceShort', { remaining: state.allowance.remaining, total: state.allowance.total }) }}</span></div>
   </section>
 </template>
 

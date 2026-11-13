@@ -8,28 +8,30 @@ import (
 	"time"
 )
 
-func TestLegacyReserveUsernameDoesNotStoreUsername(t *testing.T) {
+func TestBeginAgreementIsIdempotentAndPreservesCompletedSignup(t *testing.T) {
 	t.Parallel()
-
 	ctx := context.Background()
 	store := newTestStore(t)
 	user := createTestUser(t, store, 20001)
-	if err := store.ReserveUsername(ctx, user.ID, "river"); err != nil {
-		t.Fatalf("ReserveUsername(first): %v", err)
+	for range 2 {
+		if err := store.BeginAgreement(ctx, user.ID); err != nil {
+			t.Fatal("agreement progression failed", err)
+		}
 	}
-	if err := store.ReserveUsername(ctx, user.ID, "river"); err != nil {
-		t.Fatalf("ReserveUsername(retry): %v", err)
-	}
-	if err := store.ReserveUsername(ctx, user.ID, "meadow"); err != nil {
-		t.Fatalf("ReserveUsername(legacy caller): %v", err)
-	}
-
 	updated, err := store.UserByID(ctx, user.ID)
-	if err != nil {
-		t.Fatalf("UserByID(): %v", err)
+	if err != nil || updated.Username != nil || updated.OnboardingState != "agreement" {
+		t.Fatal("agreement progression changed username or state", updated, err)
 	}
-	if updated.Username != nil {
-		t.Fatalf("legacy reservation stored a username: %v", updated.Username)
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='complete',
+		group_joined=1,channel_joined=1,policy_accepted_at=$1 WHERE id=$2`, stamp(time.Now()), user.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.BeginAgreement(ctx, user.ID); !errors.Is(err, ErrConflict) {
+		t.Fatal("completed signup was rewound", err)
+	}
+	updated, err = store.UserByID(ctx, user.ID)
+	if err != nil || updated.OnboardingState != "complete" || updated.Username != nil {
+		t.Fatal("completed signup did not remain intact", updated, err)
 	}
 }
 

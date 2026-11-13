@@ -28,6 +28,9 @@ func (a paymentAdapter) bepusdtClient(ctx context.Context, profileID, rail strin
 	} else {
 		profile, err = a.settings.PaymentProfile(ctx, "bepusdt", rail)
 		if err != nil {
+			if fallbackErr := a.legacyPaymentFallback(ctx, "bepusdt", err); fallbackErr != nil {
+				return nil, fallbackErr
+			}
 			baseURL, fallbackErr := a.settings.Plaintext(ctx, "billing.bepusdt.base_url")
 			if fallbackErr != nil {
 				return nil, err
@@ -43,7 +46,26 @@ func (a paymentAdapter) bepusdtClient(ctx context.Context, profileID, rail strin
 }
 
 func (a paymentAdapter) VerifyEZPay(ctx context.Context, values url.Values) (billing.ProviderEvent, bool, error) {
-	if profiles, profilesErr := a.settings.PaymentProfileRuntimes(ctx, "ezpay"); profilesErr == nil && len(profiles) > 0 {
+	profile, profileID, known, err := a.callbackPaymentProfile(ctx, "ezpay", values.Get("out_trade_no"))
+	if err != nil {
+		return billing.ProviderEvent{}, false, err
+	}
+	if known {
+		client, err := ezpay.NewClient(profile.Endpoint, profile.MerchantID, profile.CredentialPlaintext)
+		if err != nil {
+			return billing.ProviderEvent{}, false, err
+		}
+		notification, err := client.ParseNotification(values)
+		if err != nil {
+			return billing.ProviderEvent{}, false, err
+		}
+		return ezpayEvent(notification, values, profileID), notification.Successful(), nil
+	}
+	profiles, profilesErr := a.settings.PaymentProfileRuntimes(ctx, "ezpay")
+	if profilesErr != nil {
+		return billing.ProviderEvent{}, false, profilesErr
+	}
+	if len(profiles) > 0 {
 		var lastErr error
 		for _, profile := range profiles {
 			client, clientErr := ezpay.NewClient(profile.Endpoint, profile.MerchantID, profile.CredentialPlaintext)
@@ -80,7 +102,30 @@ func ezpayEvent(notification *ezpay.Notification, values url.Values, profileID s
 }
 
 func (a paymentAdapter) VerifyBEPusdt(ctx context.Context, body []byte) (billing.ProviderEvent, int, error) {
-	if profiles, profilesErr := a.settings.PaymentProfileRuntimes(ctx, "bepusdt"); profilesErr == nil && len(profiles) > 0 {
+	unverified, _, err := bepusdt.ParseWebhook(body)
+	if err != nil {
+		return billing.ProviderEvent{}, 0, err
+	}
+	profile, profileID, known, err := a.callbackPaymentProfile(ctx, "bepusdt", unverified.OrderID)
+	if err != nil {
+		return billing.ProviderEvent{}, 0, err
+	}
+	if known {
+		client, err := bepusdt.NewClient(profile.Endpoint, profile.CredentialPlaintext)
+		if err != nil {
+			return billing.ProviderEvent{}, 0, err
+		}
+		webhook, err := client.ParseAndVerifyWebhook(body)
+		if err != nil {
+			return billing.ProviderEvent{}, 0, err
+		}
+		return bepusdtEvent(webhook, body, profileID)
+	}
+	profiles, profilesErr := a.settings.PaymentProfileRuntimes(ctx, "bepusdt")
+	if profilesErr != nil {
+		return billing.ProviderEvent{}, 0, profilesErr
+	}
+	if len(profiles) > 0 {
 		var lastErr error
 		for _, profile := range profiles {
 			client, clientErr := bepusdt.NewClient(profile.Endpoint, profile.CredentialPlaintext)

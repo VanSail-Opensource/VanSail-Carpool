@@ -1,8 +1,11 @@
 # Incremental Xray configuration delivery
 
-## Compatible baseline
+## Historical compatible baseline
 
-The panel pins X-Node source `e938bae9fc2905eb8752dbb30c008dc3428d8ba3`, released
+The release evidence in this document describes the recorded v2.0.12 delivery,
+not the current dependency pin. See `go.mod` and
+[the maintained X-Node reference](../../reference/Upstream/X-Node/README.md) for
+the current source selection. The delivery used X-Node source `e938bae9fc2905eb8752dbb30c008dc3428d8ba3`, released
 as [v2.0.12](https://github.com/VanSail-Opensource/X-Node/releases/tag/v2.0.12).
 Its native validator and the panel's direct core dependency both use
 `v1.260327.1-0.20261017152356-92ccc939aaf4` (Xray v26.10.17). This preserves the

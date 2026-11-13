@@ -196,7 +196,7 @@ func TestCreateTransactionAPIError(t *testing.T) {
 	t.Parallel()
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
 		writer.WriteHeader(http.StatusBadRequest)
-		_, _ = writer.Write([]byte(`{"status_code":400,"message":"invalid signature","request_id":"request-1"}`))
+		_, _ = writer.Write([]byte(`{"status_code":400,"message":"invalid signature: secret","request_id":"request-1"}`))
 	}))
 	defer server.Close()
 	client, err := NewClient(server.URL, "secret", WithHTTPClient(server.Client()))

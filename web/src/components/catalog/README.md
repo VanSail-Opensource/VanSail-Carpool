@@ -1,100 +1,51 @@
 # Catalog components
 
-`CatalogExperience.vue` switches between Charge by traffic (`PAYGPage.vue`) and
-Charge by hour (`../hourly/HourlyPage.vue`). New fixed-term checkout is no longer
-an Explore entrance. Grandfathered purchases retain their Home renewal controls.
-`CatalogExperience.test.ts` checks lazy hourly entry and one haptic per actual
-mode change. `SquadActivationDialog.vue` is shared by the retained purchase
-reader and hourly activation, with an optional busy/error state and Enter submit.
+Explore offers Charge by traffic and Charge by hour. Fixed-term purchase screens,
+their drafts and their checkout-only helpers are retired. Existing owners keep
+Home renewal/refund controls and the Settings add-squad flow. The shared squad
+and coupon components below remain in those supported flows.
 
-`PAYGStatusDot.vue` gives each squad an accessible semantic status marker;
-reduced-motion users receive a static dot. Hidden squads are filtered only from
-Explore cards and subscription output, while server totals include consumption
-and server authorization preserves existing connections.
-Card traffic/spending occupy opposite bottom corners; funding remains on Home.
+- `CatalogExperience.vue` lazily selects `PAYGPage.vue` or
+  `../hourly/HourlyPage.vue`, defaults to PAYG and emits one selection haptic
+  per actual change. `CatalogExperience.test.ts` covers mode switching and
+  independent lazy loading.
+- `CatalogChunkState.vue` provides localized loading and chunk-recovery UI
+  while keeping the mode controls available.
+- `PAYGPage.vue` polls owner-scoped availability and the authoritative 72-hour
+  traffic/spending totals through the shared subscription-data lifecycle.
+  `PAYGPage.test.ts` covers loading, empty results, exact totals and retained
+  last-good data after a failed refresh.
+- `PAYGSummary.vue` presents the 72-hour summary. `PAYGSquadCard.vue` adds
+  per-GiB pricing, availability and raw traffic/spending to the shared card.
+- `PAYGStatusDot.vue` exposes localized availability through a keyboard/touch
+  popover. Reduced motion disables the opacity/ring animation.
+- `CatalogSquadStep.vue` passes active-term add-squad selections to
+  `SquadSelector.vue`, which composes `SquadPricingTable.vue` and
+  `SquadPricingCard.vue`. `CatalogSquadStep.test.ts` and
+  `SquadSelector.test.ts` cover prepared ordering, type groups and events.
+- `SquadPricingCard.vue` renders profile facts and keyboard-accessible selection;
+  PAYG uses its informational variant. `SquadPricingCard.test.ts` covers profile
+  types, absent profiles/nodes, hidden node names and ordered features.
+- `SquadFeatures.vue` shows administrator-authored icon/title/detail rows in
+  saved order through the allowlisted icon map.
+- `catalogSquadPresentation.ts` orders candidates within type groups and
+  preserves included/stock-held eligibility. `catalogSquadPresentation.test.ts`
+  covers stable catalog order, profile grouping, included/full placement and
+  stock held by the current member.
+- `useCatalogSquadPresentation.ts` derives member ordering from current catalog
+  data without requesting administrator-only composition statistics. The retired
+  composition/share ranking and its never-populated featured badge are removed.
+- `CatalogCouponStep.vue` selects an eligible wallet grant, redeems a new code
+  and confirms permitted grant discards in the add-squad flow. Redemption and
+  commit retry identities remain in their owning composables.
+- `SquadActivationDialog.vue` collects memory-only codes for selected gated
+  squads and hourly activation, with busy/error handling and Enter submission.
 
-role without redirecting or blocking the PAYG mode switch. The catalog's optional
-`autoRenewalBlockedUntil` is refreshed on focus and expiry by
+Cards omit individual node names and legacy traffic multipliers. Feature text is
+escaped Vue text; no application Markdown parser is involved. PAYG cards use
+content-sized desktop columns and one column on mobile. The 140ms mode entrance
+is interruptible and disabled by reduced-motion preferences.
 
-`PAYGSummary.vue` centers the 72-hour label and traffic/spending metrics on one
-row, with contained wrapping when available width is insufficient.
-
-Optional squads sort by ascending popularity within their existing type groups;
-included and sold-out entries remain last. Combo and PAYG cards show squad names
-and configured profile facts, including carriers, routes, bandwidth and region.
-Individual node names, rows and multipliers are omitted.
-Shared cards use compact padding and profile gaps; PAYG keeps its wallet, totals
-and cards close together while preserving 44px primary controls.
-At desktop widths, squad cards use content-sized masonry columns within each
-type group, preserving the prepared order down each column and reducing gaps
-between squads with different profile content; mobile keeps a single column.
-
-
-- `useCatalogStepPersistence.ts` owns user-scoped step restoration, scroll reset, and quote refresh after a restored or changed coupon/squad selection; it stores only the current step and keeps quote state server-authoritative.
-- `useCatalogSquadPresentation.ts` starts non-blocking composition-statistics loading with the catalog page and returns featured and ordered squad IDs from the selected combo or the global composition fallback.
-- `CatalogFlowProgress.vue` and `CatalogFlowControls.vue` present the current step and navigation controls; completed catalog steps use a Motion-presence check indicator, the active marker uses a shared layout ID, and the Back control uses local layout/presence. The compact progress rail fits narrow phones without forced horizontal expansion, and controls stay in normal document flow.
-- `catalogFlowProgress.ts` contains the pure completed-step icon rule used by the progress component.
-- `CatalogFlowProgress.test.ts` verifies one-based catalog steps map to the stepper index and completed steps use check indicators.
-- `catalogSquadPresentation.ts` orders selectable add-ons independently inside each squad type, uses aggregate global composition before a combo is selected, moves Included and Full squads not already held by the current user to the end of their type, and returns every tied positive leader per type. `catalogSquadPresentation.test.ts` covers selected-combo ordering, global fallback, type-local leaders, exclusions, and missing data.
-- `CatalogCouponStep.vue` selects an eligible wallet coupon or redeems a new code while its Continue action waits for a quote matching the current selection.
-- `CatalogConfirmation.vue` presents the localized post-purchase summary, uses a short one-shot Motion confirmation reveal with a reduced-motion opacity fallback, and emits the Home navigation action.
-- `CatalogConfirmation.test.ts` verifies purchase details and the Home action.
-- `CatalogCheckout.vue` combines authoritative review and idempotent purchase confirmation; payment funding remains in the balance sheet. Returning to review restores a missing quote before confirmation and does not leave a completed or failed quote in a calculating state.
-- `SquadActivationDialog.vue` prompts sequentially for every selected gated squad, including combo-included squads; raw codes remain memory-only until one purchase request.
-- `CatalogPaymentStep.vue` is retained as the route-safe payment handoff component for legacy links while the catalog review owns purchase confirmation.
-- `CatalogPage.test.ts` verifies confirmed purchases do not trigger quote restoration, squad-step exit refreshes the quote, empty node unions block progress, and Coupon-step continuation stays disabled until a usable quote returns.
-- `SquadSelector.test.ts` verifies non-empty type grouping, prepared order handoff, legacy-profile exclusion, and event forwarding.
-- `ComboOption.test.ts` verifies stable plan values, hidden included-squad detail, and selection events.
-- `CatalogPaymentStep.test.ts` verifies the add-balance action stays in Vue Router history.
-
-Coupon purchase discounts are described as price reductions, including recurring
-discounts, rather than as balance additions.
-Combo, squad, and coupon feedback is emitted only when the selection changes; step navigation is soft and purchase confirmation is rigid.
-
-Combo and squad selection cards show entitlements without prices; checkout displays the authoritative server quote. PAYG cards retain their separate per-GiB price slot.
-
-`CatalogSquadStep.vue` composes `SquadSelector.vue`, `SquadPricingTable.vue` and `SquadPricingCard.vue` for localized ordering and selection. Profile facts render independently of accessible nodes. `SquadPricingCard.test.ts` covers profile types, empty node lists, missing profiles and hidden node names.
-
-`CatalogPage.vue` owns the four-step purchase flow. `CatalogSquadStep.test.ts` covers prepared ordering.
-
-Shared cards keep the entire selection surface keyboard accessible; profile facts have no independent selection behavior.
-
-`CatalogExperience.vue` owns the PAYG/Combo view selection, defaulting to PAYG, and the accessible reduced-motion entry transition. `PAYGPage.vue` polls owner-scoped availability and 72-hour raw traffic/wallet spending with the existing `useSubscriptionData` lifecycle. It reuses `SquadPricingCard.vue` in informational mode, without node rows, stock gates, selection controls or traffic multipliers. The Combo flow remains in `CatalogPage.vue`; only Combo retains the automatic-renewal purchase gate.
-
-`CatalogExperience.test.ts` guards PAYG defaults, isolation from the combo purchase gate and view switching in hosted CI.
-
-Explore is a lazy router entry. Its PAYG and Combo components are independent
-Vue async imports; only the rendered mode loads its resources. `CatalogChunkState.vue`
-uses shared skeleton/notice components for import loading and recovery, preserving
-mode controls. API errors retain each mode's existing retry flow. Catalog/coupon
-reads are excluded from session preload and Home; financial decisions still make
-fresh requests through their existing loaders and checkout paths.
-
-
-
-- `PAYGSummary.vue` presents authoritative wallet balance, recharge navigation and one 72-hour traffic/spend summary. `PAYGSquadCard.vue` reuses the shared profile card with price/GB, availability and raw-traffic/spend metrics; neither derives financial totals or exposes node names.
-- `PAYGPage.test.ts` covers initial loading, empty results, exact summary values and retained totals after a background refresh failure. All automated regressions run in hosted CI.
-
-Mode changes emit exactly one selection haptic; tapping the active mode is silent. PAYG recharge and retry controls use the existing delegated semantic feedback. Informational PAYG cards remain non-interactive.
-# PAYG squad presentation
-
-PAYG cards use content-sized masonry columns on desktop and a single column on
-mobile. Traffic and spending remain in the footer. The status marker stays fixed; synchronized opacity and
-ring animations provide blink/ripple feedback without vertical movement.
-Reduced-motion preferences disable both animations. Status labels remain
-localized and available to keyboard and screen-reader users.
-
-`SquadFeatures.vue` displays administrator-authored features in their saved order
-for both billing modes, using the shared allowlisted icon map; empty lists add no
-section. Member cards omit the legacy Markdown description and feature count;
-the stored description remains in the API and database. Combo cards retain
-full-card keyboard selection, stock and visibility guards.
-`SquadPricingCard.test.ts` covers feature ordering and empty lists.
-
-Selectable core Combo presentation with price and traffic terms: `CatalogComboPricingTable.vue`, `ComboOption.vue`.
-
-Combo descriptions are plain escaped text with preserved line breaks. Combo selection uses a shared Motion layout indicator that slides between cards; reduced-motion preferences shorten that movement. Squad cards reuse typed features and native focus/active transitions; reduced-motion preferences disable card transforms.
-
-Explore uses immediate, interruptible native 140ms content entrance transitions; mode controls stay interactive and reduced motion skips the entrance. Combo and squad cards follow content height with no automatic spacer. Shared SquadFeatures renders ordered icon/title/detail rows with aligned text. PAYG status uses a header popover trigger with accessible text, keyboard and touch support.
-
-PAYG headers project the price through the shared profile heading-meta slot: name, static status dot and price share one centered row. The status marker sits directly beside the squad name while retaining its 24px focus/touch trigger; the separate price position and header height stay unchanged. Long names retain full accessible text and a native title.
+Hidden PAYG squads are omitted from Explore/subscription output while server
+totals preserve consumption. Client presentation never substitutes for server
+authorization, settlement or owned fixed-term renewal eligibility.

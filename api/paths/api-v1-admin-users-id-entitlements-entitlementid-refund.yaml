@@ -31,6 +31,7 @@ post:
         schema: { $ref: '../openapi.yaml#/components/schemas/AdminEntitlementRefundRequest' }
   responses:
     '202':
+      description: Durable operation receipt for the entitlement refund.
       content:
         application/json:
           schema: { $ref: '../openapi.yaml#/components/schemas/OperationReceipt' }

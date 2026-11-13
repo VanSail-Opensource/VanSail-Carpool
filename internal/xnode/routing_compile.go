@@ -3,6 +3,7 @@ package xnode
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/routingmatch"
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
@@ -73,6 +74,9 @@ func (s *Service) managedRouting(ctx context.Context, node string, users []wire.
 		// inventory, so they stay valid and are applied while reconciliation
 		// re-prepares the generation in the background.
 		if err != nil {
+			if !errors.Is(err, ErrInvalid) {
+				return nil, nil, nil, err
+			}
 			continue
 		}
 		for _, r := range input.rules {

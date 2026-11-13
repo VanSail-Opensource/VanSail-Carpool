@@ -874,15 +874,14 @@ export default function RootLayout({ children }) {
 
 ### Vue 3 / Nuxt
 
-```vue
-<!-- composables/useTelegram.ts -->
-<script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
-
-const tg = ref<any>(null);
-const user = ref<any>(null);
+```typescript
+// composables/useTelegram.ts
+import { shallowRef, onMounted, onUnmounted } from "vue";
 
 export function useTelegram() {
+  const tg = shallowRef<any>(null);
+  const user = shallowRef<any>(null);
+
   onMounted(() => {
     if (window.Telegram?.WebApp) {
       tg.value = window.Telegram.WebApp;
@@ -892,18 +891,22 @@ export function useTelegram() {
     }
   });
 
+  // Call during component setup so both lifecycle hooks belong to its scope.
   function showBackButton(onClick: () => void) {
-    tg.value?.BackButton.show();
-    tg.value?.BackButton.onClick(onClick);
+    let registered: any = null;
+    onMounted(() => {
+      registered = tg.value;
+      registered?.BackButton.show();
+      registered?.BackButton.onClick(onClick);
+    });
     onUnmounted(() => {
-      tg.value?.BackButton.offClick(onClick);
-      tg.value?.BackButton.hide();
+      registered?.BackButton.offClick(onClick);
+      registered?.BackButton.hide();
     });
   }
 
   return { tg, user, showBackButton };
 }
-</script>
 ```
 
 ```vue
@@ -931,16 +934,14 @@ showBackButton(() => router.back());
 
 ### Svelte / SvelteKit
 
-```svelte
-<!-- lib/telegram.ts -->
-<script context="module" lang="ts">
-  export function getTelegram() {
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      return window.Telegram.WebApp;
-    }
-    return null;
+```typescript
+// lib/telegram.ts
+export function getTelegram() {
+  if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+    return window.Telegram.WebApp;
   }
-</script>
+  return null;
+}
 ```
 
 ```svelte
@@ -950,22 +951,25 @@ showBackButton(() => router.back());
   import { getTelegram } from '$lib/telegram';
 
   let user: any = null;
+  let registered: ReturnType<typeof getTelegram> = null;
+  const goBack = () => history.back();
 
   onMount(() => {
     const tg = getTelegram();
+    registered = tg;
     if (tg) {
       tg.ready();
       tg.expand();
       user = tg.initDataUnsafe?.user;
 
       tg.BackButton.show();
-      tg.BackButton.onClick(() => history.back());
+      tg.BackButton.onClick(goBack);
     }
   });
 
   onDestroy(() => {
-    const tg = getTelegram();
-    tg?.BackButton.hide();
+    registered?.BackButton.offClick(goBack);
+    registered?.BackButton.hide();
   });
 </script>
 

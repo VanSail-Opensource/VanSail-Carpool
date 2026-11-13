@@ -26,10 +26,21 @@ type LiveEvent struct {
 
 var livePhases = []string{"topology", "relationships", "names", "asns", "scores", "ptr", "shodan", "transfers"}
 
-func liveComplete(ip string, data []byte) LiveEvent {
+func liveComplete(details LiveDetails, data []byte) LiveEvent {
 	progress := &Progress{Phase: "complete", Completed: len(livePhases), Total: len(livePhases), Tasks: make([]ProgressTask, 0, len(livePhases))}
-	for _, phase := range livePhases {
-		progress.Tasks = append(progress.Tasks, ProgressTask{Key: phase, Status: "success"})
+	sections := map[string]any{
+		"topology": details.Topology, "relationships": details.Topology, "names": details.Topology,
+		"asns": details.ASNs, "scores": details.Scores, "ptr": details.PTR, "shodan": details.Shodan,
 	}
-	return LiveEvent{Type: "complete", IP: ip, Data: data, Progress: progress}
+	if details.Transfers != nil {
+		sections["transfers"] = *details.Transfers
+	}
+	for _, phase := range livePhases {
+		task := ProgressTask{Key: phase, Status: "skipped"}
+		if section, ok := sections[phase]; ok {
+			task = liveTaskStatus(phase, section)
+		}
+		progress.Tasks = append(progress.Tasks, task)
+	}
+	return LiveEvent{Type: "complete", IP: details.IP, Data: data, Progress: progress}
 }

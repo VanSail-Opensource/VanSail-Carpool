@@ -14,17 +14,24 @@ import (
 // matches beyond earlier pages are visible without materializing address ranges.
 func (s *Store) SearchFirewallBans(ctx context.Context, query netip.Prefix, cursor string, limit int) (xnode.FirewallBanPage, error) {
 	page := xnode.FirewallBanPage{Items: []xnode.FirewallBanView{}}
-	if limit < 1 || limit > 100 {
+	if limit < 1 || limit > 100 || len(cursor) > 512 {
 		return page, xnode.ErrInvalid
 	}
 	var after [2]string
+	afterTime := ""
 	if cursor != "" {
 		raw, err := base64.RawURLEncoding.DecodeString(cursor)
 		if err != nil || json.Unmarshal(raw, &after) != nil || after[0] == "" || after[1] == "" {
 			return page, xnode.ErrInvalid
 		}
+		at, err := parseStamp(after[0])
+		if err != nil {
+			return page, xnode.ErrInvalid
+		}
+		afterTime = purchaseTimestampOrder(at)
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT prefix,generation,ip,rule,detected_count,detected_at,until_at,refresh_seconds,participants,expired FROM xnode_firewall_bans WHERE released_version=0 AND ($1='' OR detected_at<$2 OR (detected_at=$3 AND generation<$4)) ORDER BY detected_at DESC,generation DESC`, cursor, after[0], after[0], after[1])
+	detectedOrder := purchaseTimestampOrderSQL("detected_at")
+	rows, err := s.db.QueryContext(ctx, `SELECT prefix,generation,ip,rule,detected_count,detected_at,until_at,refresh_seconds,participants,expired FROM xnode_firewall_bans WHERE released_version=0 AND ($1='' OR `+detectedOrder+` < $2 OR (`+detectedOrder+` = $2 AND generation<$3)) ORDER BY `+detectedOrder+` DESC,generation DESC`, cursor, afterTime, after[1])
 	if err != nil {
 		return page, err
 	}

@@ -52,7 +52,7 @@ func TestHourlyRenewalsSpendDeterministicallyWithoutOverdraft(t *testing.T) {
 	t.Parallel()
 	s, policy, first := hourlyBillingFixture(t)
 	ctx := context.Background()
-	if _, err := s.SaveHourlyOffer(ctx, first.OwnerID, model.HourlyOffer{GroupID: first.GroupID, Enabled: true, HourlyPriceTXBMinor: 1}, 1); err != nil {
+	if _, err := s.SaveHourlyOffer(ctx, hourlyBillingAdmin(t, s), model.HourlyOffer{GroupID: first.GroupID, Enabled: true, HourlyPriceTXBMinor: 1}, 1); err != nil {
 		t.Fatal(err)
 	}
 	first.ExpectedOfferRevision = 2
@@ -60,7 +60,7 @@ func TestHourlyRenewalsSpendDeterministicallyWithoutOverdraft(t *testing.T) {
 	a := makeDueHourlyBillingFixture(t, s, first, policy, now.Add(-5*time.Hour))
 	second := first
 	second.GroupID, second.ActivationKey, second.ExpectedOfferRevision = "billing-hourly-b", "activation-two", 1
-	addHourlyBillingOffer(t, s, first.OwnerID, second.GroupID, 100)
+	addHourlyBillingOffer(t, s, hourlyBillingAdmin(t, s), second.GroupID, 100)
 	b := makeDueHourlyBillingFixture(t, s, second, policy, now.Add(-4*time.Hour))
 	if _, err := s.DB().Exec(`UPDATE balances SET txb_minor=1 WHERE user_id=$1`, first.OwnerID); err != nil {
 		t.Fatal(err)

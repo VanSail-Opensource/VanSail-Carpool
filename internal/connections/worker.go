@@ -42,13 +42,24 @@ func (w *Worker) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
 		}
 		return w.pendingReview(ctx, record, now)
 	}
-	record, err = w.repository.UpdateConnectionScan(ctx, record.ID, providerops.ConnectionScanUpdate{Status: providerops.StatusProcessing}, now)
+	// Local read failures have no external ambiguity and must leave the scan
+	// queued so the durable job can retry without losing its start intent.
+	user, err := w.repository.UserByID(ctx, record.UserID)
+	if err != nil {
+		return fmt.Errorf("load connection scan owner: %w", err)
+	}
+	now = w.now().UTC()
+	record, err = w.repository.StartConnectionScan(ctx, record.ID, now)
 	if err != nil {
 		return err
 	}
-	user, err := w.repository.UserByID(ctx, record.UserID)
-	if err != nil {
-		return w.fail(ctx, record.ID, "CONNECTION_SCAN_FAILED", now, err)
+	// Admission can finish an expired scan or one whose owner became unavailable
+	// while the queued job was waiting. Its durable refusal must fence node I/O.
+	if providerops.Terminal(record.Status) || record.ProviderJobID != "" {
+		return nil
+	}
+	if record.Status != providerops.StatusProcessing {
+		return fmt.Errorf("connection scan admission returned status %q", record.Status)
 	}
 	var providerJobID string
 	var requestErr error

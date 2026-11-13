@@ -11,6 +11,15 @@ export function useBGPGraph(topology: () => IPLookupBGPTopology, viewport: Reado
   const index = computed(() => indexTopology(topology()))
   const layout = computed(() => graphLayout(index.value))
   const focusedRoutes = computed(() => routesToASN(index.value, selectedASN.value))
+  watch(() => layout.value.nodes, nodes => {
+    if (selectedASN.value !== null && !nodes.some(node => node.asn === selectedASN.value)) {
+      selectedASN.value = null
+      selectedRoute.value = null
+    }
+  })
+  watch(focusedRoutes, routes => {
+    if (selectedRoute.value !== null && !routes.some(route => route.id === selectedRoute.value)) selectedRoute.value = null
+  })
   const view = useGraphViewport()
   const bounds = computed(() => ({ left: -view.offset.value.x / view.scale.value - 20, top: -view.offset.value.y / view.scale.value - 20, right: (size.value.width - view.offset.value.x) / view.scale.value + 20, bottom: (size.value.height - view.offset.value.y) / view.scale.value + 20 }))
   const visibleNodes = computed(() => layout.value.nodes.filter(node => node.x + nodeWidth >= bounds.value.left && node.x <= bounds.value.right && node.y + nodeHeight >= bounds.value.top && node.y <= bounds.value.bottom))

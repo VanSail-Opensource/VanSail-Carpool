@@ -22,11 +22,6 @@ published agreements without accepting or reserving an assigned username.
 `api-v1-admin-xnode-providers-id-zones.yaml` defines administrator-only discovery
 using saved provider credentials. No credentials are accepted in the request.
 
-`api-v1-admin-xnode-migration-final-export.yaml` queues final source accounting
-reconciliation with an operator backup reference.
-`api-v1-admin-xnode-migration-finalize.yaml` queues digest-checked completion
-after a final source counter and credential check.
-
 `api-v1-browser-config.yaml` serves `/api/v1/browser/config`.
 `api-v1-browser-session.yaml`, `api-v1-browser-exchange.yaml`,
 `api-v1-browser-renew.yaml`, and `api-v1-browser-logout.yaml` serve the scoped
@@ -43,14 +38,15 @@ handoff; Telegram OAuth endpoints and settings have been removed.
 Each YAML file is one complete OpenAPI Path Item Object. `../openapi.yaml` registers these files under their canonical URL paths.
 
 
-Member connection scans, purchase refund resources, operation receipts, statistics, and admin bulk/backup mutations use the same signed-session and idempotency conventions as the existing paths.
+Member connection observations, purchase refunds, operation receipts, statistics,
+and administrator bulk/backup mutations use their declared session and token
+boundaries. Shared browser routes declare the session-scope selector explicitly.
 
 - `api-v1-auth-telegram.yaml`: `/api/v1/auth/telegram`
 - `api-v1-me.yaml`: `/api/v1/me`
 - `api-v1-me-display-currency.yaml`: `/api/v1/me/display-currency`, persisted member display preference plus current TXB-per-CNY/USD rates
 - `api-v1-community-membership-check.yaml`: `/api/v1/community/membership/check`, with `GET` for read-only active-combo visibility and `POST` for canonical Telegram membership refresh
 - `api-v1-community-invites-kind.yaml`: `/api/v1/community/invites/{kind}`, one identity-bound group or channel invite
-- `api-v1-onboarding-username.yaml`: `/api/v1/onboarding/username`
 - `api-v1-onboarding-agreement.yaml`: `/api/v1/onboarding/agreement`
 - `api-v1-onboarding-content.yaml`: `/api/v1/onboarding/content`
 - `api-v1-dashboard.yaml`: `/api/v1/dashboard`
@@ -61,22 +57,17 @@ Member connection scans, purchase refund resources, operation receipts, statisti
 - `api-v1-purchases-id-addons-quote.yaml`: `/api/v1/purchases/{id}/addons/quote`, owner-only active-term addition quote
 - `api-v1-purchases-id-addons.yaml`: `/api/v1/purchases/{id}/addons`, owner-only idempotent active-term addition commit
 - `api-v1-purchases-id-cancel.yaml`: `/api/v1/purchases/{id}/cancel`, owner-only queued cancellation with atomic TXB refund
-- `api-v1-purchases-id-rollover.yaml`: `/api/v1/purchases/{id}/rollover`, owner-only live aggregate rollover projection
 - `api-v1-purchases-id-auto-renewal.yaml`: `/api/v1/purchases/{id}/auto-renewal`, owner-only one-cycle automatic-renewal state and toggle
 - `api-v1-purchases-id-refund.yaml`: `/api/v1/purchases/{id}/refund`, first-term zero-usage refund quote and mutation
 - `api-v1-operations-id.yaml`: `/api/v1/operations/{operationId}`, owner-scoped durable operation receipt
 - `api-v1-subscription-revoke.yaml`: `/api/v1/subscription/revoke`
-- `api-v1-subscription-connections.yaml`: `/api/v1/subscription/connections`, idempotent connection scan creation
-- `api-v1-subscription-connections-id.yaml`: `/api/v1/subscription/connections/{scanId}`, owner-scoped scan polling
-- `api-v1-subscription-connections-drop.yaml`: `/api/v1/subscription/connections/drop`, signed-handle three-day node block followed by disconnect
-- `api-v1-subscription-ip-blocks.yaml`: `/api/v1/subscription/ip-blocks`, owner-only active block list
-- `api-v1-subscription-ip-blocks-id-unblock.yaml`: `/api/v1/subscription/ip-blocks/{blockId}/unblock`, owner-only durable unblock
+- `api-v1-subscription-connections.yaml`: `/api/v1/subscription/connections`, owner-scoped connection observations
 - `api-v1-balance.yaml`: `/api/v1/balance`
 - `api-v1-ledger.yaml`: `/api/v1/ledger`
 - `api-v1-affiliates.yaml`: `/api/v1/affiliates`, member metrics and tier progress
 - `api-v1-affiliates-referrals.yaml`: `/api/v1/affiliates/referrals`, fixed five-row registration pages
-- `api-v1-statistics.yaml`: `/api/v1/statistics`, persisted 30-minute aggregate dashboard
-- `api-v1-statistics-nodes.yaml`: `/api/v1/statistics/nodes`, on-demand shared 10-second node snapshot
+- `api-v1-statistics.yaml`: `/api/v1/admin/statistics`, persisted 30-minute administrator aggregate dashboard
+- `api-v1-statistics-nodes.yaml`: `/api/v1/admin/statistics/nodes`, on-demand shared 10-second administrator node snapshot
 - `api-v1-payments-orders.yaml`: `/api/v1/payments/orders`, idempotent durable checkout creation
 - `api-v1-payments-orders-id.yaml`: `/api/v1/payments/orders/{id}`
 - `api-v1-payments-orders-id-cancel.yaml`: `/api/v1/payments/orders/{id}/cancel`, idempotent durable provider cancellation
@@ -181,15 +172,12 @@ Member connection scans, purchase refund resources, operation receipts, statisti
 
 `api-v1-ip-lookup-progress.yaml` documents the authenticated no-store exact-IP work projection. A null response means no check is running; reading progress never creates a receipt or consumes quota.
 
-`api-v1-admin-ip-lookup-source-test.yaml` defines admin diagnostic starts (202); `api-v1-admin-ip-lookup-source-test-id.yaml` defines no-store progress/result reads. Existing report contracts gain optional source diagnostics, task outcomes and bounded DNS evidence.
 
-- `api-v1-admin-ip-lookup-sources.yaml`: admin-only read of shared source cache phase, unique-IP counts and freshness/scheduling metadata; single-source refresh retains the existing test operation routes.
-
-- `api-v1-admin-usdt-check.yaml` ? Dedicated administrator USDT check API contract.
-- `api-v1-admin-usdt-resolution.yaml` ? Dedicated administrator USDT resolution API contract.
-- `api-v1-admin-usdt-review.yaml` ? Dedicated administrator USDT review API contract.
-- `api-v1-admin-usdt-status.yaml` ? Dedicated administrator USDT status API contract.
-- `api-v1-admin-usdt.yaml` ? Dedicated administrator USDT  API contract.
+- `api-v1-admin-usdt-check.yaml`: Dedicated administrator USDT check API contract.
+- `api-v1-admin-usdt-resolution.yaml`: Dedicated administrator USDT resolution API contract.
+- `api-v1-admin-usdt-review.yaml`: Dedicated administrator USDT review API contract.
+- `api-v1-admin-usdt-status.yaml`: Dedicated administrator USDT status API contract.
+- `api-v1-admin-usdt.yaml`: Dedicated administrator USDT API contract.
 
 `api-v1-admin-xnode-*.yaml` defines browser-scoped node, config, snippet, group, endpoint, enrollment, validation and metrics operations.
 
@@ -208,27 +196,11 @@ Member connection scans, purchase refund resources, operation receipts, statisti
 `api-v1-admin-xnode-snippets-id.yaml` defines the matching browser-scoped X-Node resource operation.
 `api-v1-admin-xnode-snippets.yaml` defines the matching browser-scoped X-Node resource operation.
 
-- `api-v1-admin-xnode-migration-import.yaml` defines the typed X-Node contract for this resource.
-
-- `api-v1-admin-xnode-migration-nodes-id-cutover.yaml` defines the typed X-Node contract for this resource.
-
-- `api-v1-admin-xnode-migration-nodes-id-rollback.yaml` defines the typed X-Node contract for this resource.
-
-- `api-v1-admin-xnode-migration-preview.yaml` defines the typed X-Node contract for this resource.
-
-- `api-v1-admin-xnode-migration.yaml` defines the typed X-Node contract for this resource.
 
 - `api-v1-admin-xnode-nodes-id-commands.yaml` defines the typed X-Node contract for this resource.
 
 - `api-v1-xnode-metrics.yaml` defines the typed X-Node contract for this resource.
 
-- `api-v1-xnode-routing-id-outbounds.yaml` defines the typed X-Node contract for this resource.
-
-- `api-v1-xnode-routing-id-rules.yaml` defines the typed X-Node contract for this resource.
-
-- `api-v1-xnode-routing-id.yaml` defines the typed X-Node contract for this resource.
-
-- `api-v1-xnode-routing-templates.yaml` defines the typed X-Node contract for this resource.
 
 - `api-v1-xnode-subscription.yaml` defines the typed X-Node contract for this resource.
 
@@ -250,7 +222,9 @@ standalone-account subscription metadata and bearer URLs to administrators.
 - `api-v1-admin-xnode-service-identities-id-rotate.yaml`: Administrator-only native service identity management.
 - `api-v1-admin-xnode-service-identities-id-routing.yaml`: Administrator-only native service identity management.
 
-`api-v1-admin-xnode-firewall-bans.yaml` exposes browser-admin shared detection evidence. `api-v1-xnode-firewall-exemption.yaml` exposes member quotes and idempotent TXB purchases; success means committed queued delivery.
+`api-v1-admin-xnode-firewall-bans.yaml` exposes administrator shared detection
+evidence. Exemption grants and generation-bound releases use the administrator
+firewall-exemption command and durable deployment receipts.
 
 
 `api-v1-xnode-routing.yaml` and `api-v1-xnode-routing-preview.yaml` expose scoped
@@ -261,7 +235,9 @@ provides browser-only admin preset inventory and optimistic writes.
 
 `api-v1-admin-xnode-subscription-templates-selection-preview.yaml` describes bounded Go regex validation and selection preview. `api-v1-subscriptions-token.yaml` documents the canonical configuration download with actual Base64 fallback and explicit native compatibility.
 
-`api-v1-admin-xnode-firewall-exemptions.yaml` defines idempotent administrator IP/CIDR exemptions with custom 1-8760 hour lifetimes and durable delivery receipts.
+`api-v1-admin-xnode-firewall-exemptions.yaml` defines idempotent administrator
+IP/CIDR exemptions with 1-8760 hour lifetimes and durable delivery receipts.
+A zero-hour release requires the exact active ban generation.
 
 `api-v1-admin-xnode-nodes-id-logs.yaml` documents the admin-only selected-node live log buffer. `api-v1-admin-xnode-metrics.yaml` documents summary=true polling without fleet log payloads.
 
@@ -274,17 +250,17 @@ provides browser-only admin preset inventory and optimistic writes.
 
 ## Pricing routes
 
-- `api-v1-admin-pricing-costs-id.yaml`: savePricingProviderCost; existing signed administrator or owned member authorization applies.
-- `api-v1-admin-pricing-data.yaml`: getPricingAnalyticalRecords; existing signed administrator or owned member authorization applies.
-- `api-v1-admin-pricing-exports-authorization.yaml`: authorizeSensitivePricingExport; existing signed administrator or owned member authorization applies.
-- `api-v1-admin-pricing-exports.yaml`: streamPricingAnalyticalExport; existing signed administrator or owned member authorization applies.
-- `api-v1-admin-pricing-history.yaml`: getOriginalPricingForecastHistory; existing signed administrator or owned member authorization applies.
-- `api-v1-admin-pricing-interventions-id-cancel.yaml`: cancelPricingIntervention; existing signed administrator or owned member authorization applies.
-- `api-v1-admin-pricing-interventions-version.yaml`: getPricingScopeVersion; existing signed administrator or owned member authorization applies.
-- `api-v1-admin-pricing-interventions.yaml`: createPricingIntervention; existing signed administrator or owned member authorization applies.
-- `api-v1-admin-pricing-products-kind-id.yaml`: getPricingProductPolicy; existing signed administrator or owned member authorization applies.
-- `api-v1-admin-pricing.yaml`: getPricingDashboard; existing signed administrator or owned member authorization applies.
-- `api-v1-purchases-id-pricing.yaml`: getOwnedPricingRenewalInfo; existing signed administrator or owned member authorization applies.
+- `api-v1-admin-pricing-costs-id.yaml`: savePricingProviderCost; administrator authorization applies.
+- `api-v1-admin-pricing-data.yaml`: getPricingAnalyticalRecords; administrator authorization applies.
+- `api-v1-admin-pricing-exports-authorization.yaml`: authorizeSensitivePricingExport; administrator authorization applies.
+- `api-v1-admin-pricing-exports.yaml`: streamPricingAnalyticalExport; administrator authorization applies.
+- `api-v1-admin-pricing-history.yaml`: getOriginalPricingForecastHistory; administrator authorization applies.
+- `api-v1-admin-pricing-interventions-id-cancel.yaml`: cancelPricingIntervention; administrator authorization applies.
+- `api-v1-admin-pricing-interventions-version.yaml`: getPricingScopeVersion; administrator authorization applies.
+- `api-v1-admin-pricing-interventions.yaml`: createPricingIntervention; administrator authorization applies.
+- `api-v1-admin-pricing-products-kind-id.yaml`: getPricingProductPolicy; administrator authorization applies.
+- `api-v1-admin-pricing.yaml`: getPricingDashboard; signed browser administrator or scoped API-token authorization applies.
+- `api-v1-purchases-id-pricing.yaml`: getOwnedPricingRenewalInfo; owned-member authorization applies.
 
 - `api-v1-admin-users-id-predictions.yaml`: Admin owner-specific forecasts.
 
@@ -308,3 +284,9 @@ retain their existing validated endpoint and write scope.
 `api-v1-hourly.yaml`, `api-v1-hourly-activate.yaml`, `api-v1-hourly-enrollments-id-disable.yaml`, and `api-v1-hourly-extra-traffic.yaml` expose owner-only hourly controls. `api-v1-admin-hourly-policy.yaml`, `api-v1-admin-hourly-offers.yaml`, and `api-v1-admin-hourly-offers-groupId.yaml` require resource-specific X-Node scopes and CAS versions.
 
 `api-v1-admin-users-id-entitlements.yaml`, `api-v1-admin-users-id-hourly.yaml`, and `api-v1-admin-users-id-hourly-enrollments-id-disable.yaml` expose the audited zero-charge manual grant, the administrator hourly projection, and the administrator disable receipt under the existing administrator session/API-token boundary.
+
+`api-v1-admin-xnode-nodes-id.yaml` also documents the compatibility DELETE for
+disabled, never-enrolled node drafts with no deployment, endpoint dependency or
+retained history. Already absent nodes succeed idempotently; ineligible existing
+nodes return 409. Enrolled and historical nodes use the durable removal command
+so routing and accounting drain before cleanup.

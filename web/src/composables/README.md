@@ -1,14 +1,10 @@
 # Composables
 
-  refresh renewal admission on expiry/focus; authoritative catalog reloads clear
-
 - `usePurchaseValidity.ts` owns a boundary timer and focus/visibility revalidation for member and browser-admin purchase displays. Consumers pass raw purchases and an optional error-handling refresh callback; the returned status/current helpers derive UI validity without changing settlement state. Timers/listeners are disposed with their consumer.
 - `usePurchaseValidity.test.ts` covers offline boundary expiry, focus refresh and timer/listener disposal in hosted CI.
 
 - `motionPresets.ts` owns the shared timing tokens and critically damped layout spring.
 - `useMotionPreferences.ts` is the central reduced-motion boundary for Motion Vue components; it returns reduced-safe transitions and bounded offsets without storing animation state in components.
-
-- `dashboardNodeUsage.ts` owns the dashboard's date-range validation, cached usage display, latest-request guard and disposal.
 
 Page loaders restore typed session snapshots through `api/cache/restore.ts` before
 their existing requests. Cached content renders during refresh; backend responses
@@ -18,41 +14,37 @@ separate. Action quotes and permission decisions still await the backend.
 - `useSquadAddition.ts` owns active-term optional-squad filtering, time-adjusted quote freshness, activation-code handoff, balance recovery, and idempotent commit feedback.
 
 - `useActivity.ts` loads games, draws, and check-in actions.
-- `useActivity.test.ts` checks that ambiguous draw failures reuse the same idempotency key and confirmed draws release it.
+- `useActivity.test.ts` checks that ambiguous draw failures reuse the same idempotency key and confirmed draws release it. Disposed views retire pending activity replies, feedback and follow-up refreshes, and clear retained account results.
 - `useAffiliateCentre.ts` loads member metrics and fixed five-row referral pages.
+- `useAffiliateCentre.test.ts` covers obsolete page replies and retrying a failed
+  page; only current requests update referral data or loading state.
 - `useAdminDatabase.ts` coordinates protected database review and mutation flows.
 - `useAdminSection.ts` provides latest-request-safe administrator list operations and cursor accumulation.
-- `useCatalog.ts` prepares catalog selection, quote freshness, full paid add-on guards, automatic-renewal catalog blocking, and user-scoped session drafts.
-- `catalogQuoteState.ts` owns the request-versioned authoritative catalog quote and its selection fingerprint.
-- `catalogDraft.ts` reads, validates through callers, writes, and clears user-scoped catalog drafts in session storage.
-- `catalogLoader.ts` loads catalog, balance, coupon wallet, and validated user-scoped drafts while reporting whether the latest response was applied.
-- `useCatalog.test.ts` covers catalog selection behavior.
+
 - `useCouponRedemption.ts` redeems a coupon code for the guided purchase flow.
 - `useCouponRedemption.test.ts` covers guided redemption normalization and idempotency reuse.
 - `useAutoRenewal.ts` owns the owner-scoped automatic-renewal status load, eligibility, and server toggle update.
-- `useDisplayCurrency.ts` keeps the persisted member display choice and read-only CNY/USD rate snapshot in one reactive source of truth.
+- `useDisplayCurrency.ts` keeps the persisted member display choice and read-only CNY/USD rate snapshot in one reactive source of truth. Selection supersedes earlier reads; session hydration retires previous-owner replies and resets pending state. Logout clears currency/rates. Deferred-response regressions in `useDisplayCurrency.test.ts` cover these ownership boundaries.
 - `useAutoRenewal.test.ts` covers the server-ineligible toggle constraint.
 - `useClipboard.ts` provides safe clipboard feedback.
-- `useConnectionScan.ts` creates one idempotent provider scan and polls its owner-scoped progress every second without repeating an ambiguous start mutation.
-- `useConnectionScan.test.ts` covers accepted scan polling and ambiguous-start idempotency reuse.
-- `useConnectionBlocks.ts` loads active blocks, retains per-target block/unblock idempotency keys across ambiguous failures, and delegates receipt polling without replaying mutations.
-- `useConnectionBlocks.test.ts` covers key reuse, unblock polling, and active-list refresh.
-- `useCoupons.ts` manages coupon-wallet redemption and server-confirmed grant discards.
-- `useCoupons.test.ts` covers confirmed and failed coupon-wallet discards.
-- `useDashboard.ts` loads dashboard summaries and provides disposal-safe bounded per-node UTC traffic state to its Home descendants.
+
+- `useDashboard.ts` loads owner-scoped dashboard summaries, revalidates purchase boundaries and resumes durable subscription-revocation receipts. Usage Breakdown owns detailed traffic.
 - `useEmby.ts` manages Emby setup and preferences.
-- `useImageZoom.ts` owns bounded focal-point pinch, pan, wheel, double-tap, button, interaction, and reset state for image canvases.
-- `useImageZoom.test.ts` covers zoom bounds, reset, and two-finger gesture state.
+
 - `useIntroSequence.ts` drives the onboarding intro sequence.
 - `useIntroSequence.test.ts` covers intro timing and completion.
-- `useOnboarding.ts` coordinates the intro, username, and agreement steps, including idempotent agreement recovery for returning users.
-- `useCommunityMembership.ts` refreshes canonical Telegram membership and strict active-combo access, opens requested-space invites, and unregisters its Telegram activation refresh handler on teardown.
-- `useCommunityAccess.ts` shares the read-only server-confirmed valid-combo and positive-balance gate between the shell, the sidebar entrances and Home product sections. Both reads refresh together after navigation or a completed payment.
-- `useCommunityMembership.test.ts` covers invite opening, error feedback, Telegram activation refresh, and event cleanup; `useOnboarding.test.ts` covers direct intro-to-username-to-agreement progression.
-- `usePaymentOrder.ts` coordinates durable checkout/cancellation receipts with payment-sheet presentation states.
+- `useOnboarding.ts` coordinates intro and current-revision agreement acceptance, including recovery when agreement state changes or completion was already committed. Content uses the latest locale request; mutations remain exclusive during concurrent refreshes, submit the revision actually reviewed, and ignore replies after owner replacement or disposal. Published revision changes clear earlier consent.
+- `useCommunityMembership.ts` refreshes canonical Telegram membership and strict active-combo access, opens requested-space invites, and unregisters its Telegram activation refresh handler on teardown. Overlapping reads retain only the newest result; session changes and disposal retire membership replies and pending invites.
+- `useCommunityAccess.ts` shares the read-only server-confirmed valid-combo and positive-balance gate between the shell, the sidebar entrances and Home product sections. Both reads refresh together after navigation or a completed payment. Owner changes synchronously clear prior access and start fresh reads; old responses cannot restore or revoke another member's access. `useCommunityAccess.test.ts` covers shared requests, owner replacement, logout and disposal.
+- `useCommunityMembership.test.ts` covers invite opening, error feedback, Telegram activation refresh, event cleanup, obsolete reads and retired invites. `useOnboarding.test.ts` covers username-free progression, owner/disposal boundaries, locale races, current-revision consent, exclusive mutations and conflict recovery.
+- `usePaymentOrder.ts` coordinates durable checkout/cancellation receipts with payment-sheet presentation states. Cancellation always projects the fetched payment order: a failed receipt cannot label a still-pending checkout cancelled, and polling continues until the authoritative order becomes terminal.
 - `usePaymentCountdown.ts` owns a disposal-safe one-second payment-window countdown used only for presentation and replacement prompts.
 - `usePaymentConfiguration.ts` owns exact TXB bounds, display-currency amount input, one canonical TXB-minor order amount, and selected payment method state; display switches re-render the field without repricing the order, and a missing stored rate falls back to TXB entry.
-- `usePaymentOrderOperations.ts` retains stable mutation keys and polls payment provider-operation receipts without replaying provider calls.
+- `usePaymentOrderOperations.ts` retains stable creation keys per method/amount and cancellation keys per order, then polls payment provider-operation receipts without replaying provider calls. An uncertain request can be retried unchanged without binding a different checkout to its key.
+- Payment resets and disposal invalidate pending submissions, receipt lookups and
+  presentation work. Superseded replies cannot reopen an earlier checkout or
+  restart its polling. `usePaymentOrderOperations.test.ts` covers ignored late
+  acceptance and per-order cancellation key recovery.
 - `usePaymentTarget.ts` opens accepted provider targets and read-only polls authoritative payment status.
 - `paymentOrderHelpers.ts` validates exact payment bounds and replacement candidates, classifies terminal orders, and renders address-first provider QR payloads.
 - `usePaymentOrder.test.ts` covers payment-order state transitions.
@@ -60,8 +52,8 @@ separate. Action quotes and permission decisions still await the backend.
 - `usePaymentReturn.test.ts` covers durable payment-return confirmation and pending polling.
 - `useOperationReceipt.ts` performs bounded, read-only polling for durable member operation receipts and stops on every terminal or review state.
 - `useDurableCommand.ts` retains stable UUID keys for ambiguous command retries, invalidates disposed submissions, and delegates accepted receipt polling to `useOperationReceipt.ts`.
-- `usePurchaseOperations.ts` owns authoritative first-term refund quotes, conflict refresh, mutation idempotency and receipt state. Automatic resets remain an account setting; no member manual-reset command is exposed.
-- `usePurchaseOperations.test.ts` covers quote conflict refresh, idempotency reuse, server-owned refund eligibility, and immediate automation persistence.
+- `usePurchaseOperations.ts` owns authoritative first-term refund quotes, conflict refresh, mutation idempotency and receipt state. Paid reset controls are retired.
+- `usePurchaseOperations.test.ts` covers quote conflict refresh, idempotency reuse, server-owned refund eligibility and stale purchase isolation.
 - `useStatistics.ts` independently loads the 30-minute aggregate snapshot and
   ten-second node cache while preserving last-good data across partial failures.
 - `useTelegramBackButton.ts` coordinates one native Telegram BackButton across route and overlay owners, adds soft navigation feedback, and removes every handler on teardown.
@@ -70,7 +62,7 @@ separate. Action quotes and permission decisions still await the backend.
 
 - `useActivity.ts` reads eligibility live, tracks refresh state and hides reward controls when verification refresh fails; a rejected check-in refreshes boost state while retaining its localized refusal.
 
-`useTelegramSettingsButton.ts` owns the native Settings button with SDK discovery, an optional visibility getter that hides it for members without a reachable Settings page, and lifecycle cleanup. Reset automation now belongs to the Settings page instead of `usePurchaseOperations.ts`.
+`useTelegramSettingsButton.ts` owns the native Settings button with SDK discovery, an optional visibility getter that hides it for members without a reachable Settings page, and lifecycle cleanup. Paid reset automation is retired.
 - `useIPLookupAvailability.ts` shares account-scoped feature availability across shell and Around TX entrances.
 
 `operationReceiptLoader.ts` defines the experience-owned receipt loader injection contract. `useOperationReceipt.ts` and `useDurableCommand.ts` accept injected/explicit loaders while retaining interval compatibility, disposal and retry limits. BrowserApp provides the signed admin operation reader; Mini App callers retain member-scoped reads. No session or signing state is shared between experiences.
@@ -83,10 +75,41 @@ separate. Action quotes and permission decisions still await the backend.
 
 `useSquadAddition.test.ts` covers retained request keys after a lost purchase reply. `useSquadAddition.ts` keeps the same key for an unchanged purchase/selection/activation attempt until a confirmed response, using memory only.
 
-- `catalogQuotePending.test.ts`: Hosted regression for pending-price admission and cancelled obsolete retries.
-
 - `usePricingQuote.ts`: Version-bound checkout preview lifecycle: request cancellation, bounded two-minute backoff, hidden-page pause and expiry; successful idempotency replay remains independent.
 
 - `usePricingQuote.test.ts`: Hosted regression for bounded pending retries, hidden-page pause, stale totals, obsolete responses and disposal.
 
 - `usePendingStatus.ts` replaces one live status after five seconds of pending work; Vue watcher cleanup cancels its timer. It never controls readiness or requests.
+
+`useAutoRenewal.ts` and `usePurchaseOperations.ts` capture purchase identity and invalidate pending reads/writes on reset or scope disposal. Late replies cannot replace another purchase's eligibility, renewal setting or receipt. Refund retry keys remain bound to the original purchase across a reset; hosted regressions cover replacement while requests are pending.
+
+`useSquadAddition.ts` retains one retry key per purchase/squad/coupon selection, including activation-code corrections, and rejects late load/mutation results after reset. A pending retry only bypasses quote readiness for that same selection.
+
+`useAdminDatabase.ts` allows newer read queries to supersede pending searches while keeping mutations exclusive. Query generations and abort signals prevent stale filters/table responses from replacing the latest rows. `useAdminDatabase.test.ts` covers out-of-order filters and table changes. `useAutoRenewal.test.ts`, `usePurchaseOperations.test.ts` and `useSquadAddition.test.ts` also cover stale purchase responses and retained retry identity after reset.
+
+`useClipboard.ts` fences feedback by copy attempt, exposes an owner reset and
+cancels its feedback timer on scope disposal. `useClipboard.test.ts` covers
+out-of-order results, owner replacement and timer cleanup in hosted CI.
+
+`useAdminDatabaseMutation.ts` snapshots the exact reviewed request, rejects a
+changed draft before Apply, retires invalidated/disposed reviews, and keeps one
+pending mutation bound to its selected table. Successful server rows and rescue
+backup IDs are retained. `useAdminDatabase.ts` retires metadata reads when a
+mutation begins and stops restoring pre-mutation row snapshots. Dedicated hosted
+regressions in `useAdminDatabase.test.ts` and `useAdminDatabaseMutation.test.ts`
+cover metadata ordering, exact reviewed values, single-flight Apply, confirmation,
+disposal and successful updates followed by read failure.
+
+Administrator list mutations admit one action at a time, retire earlier reads,
+and stop follow-up refreshes after their page is disposed. A confirmed write
+remains successful if only its refresh fails. `useAdminSection.test.ts` covers
+these boundaries. Emby snapshots retain only the newest read, and disposed Emby
+and coupon views cannot publish a previous owner's result or start new writes.
+`useEmby.test.ts` and `useCouponRedemption.test.ts` cover delayed responses.
+
+`useTelegramBackButton.test.ts` verifies stacked back-button owners, reactive visibility and final native button cleanup.
+
+`usePaymentOrder.ts` suspends all payment observers when a sheet closes, including
+a create reply, terminal-order lookup and delayed paid notification. It retains
+unresolved original request keys for reopening; `usePaymentOrder.test.ts` covers
+these close/reopen races without resubmitting a new attempt.

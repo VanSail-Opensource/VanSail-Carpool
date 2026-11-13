@@ -99,17 +99,18 @@ type PaymentChannel struct {
 
 // PaymentProfile is the masked administrative representation of one provider account.
 type PaymentProfile struct {
-	ID              string   `json:"id"`
-	Provider        string   `json:"provider"`
-	ProviderName    string   `json:"providerName"`
-	EnabledChannels []string `json:"enabledChannels"`
-	Endpoint        string   `json:"endpoint"`
-	MerchantID      string   `json:"merchantId"`
-	Credential      string   `json:"credential"`
-	Acknowledgement string   `json:"acknowledgement"`
-	Enabled         bool     `json:"enabled"`
-	Configured      bool     `json:"configured"`
-	Rail            string   `json:"-"`
+	ID              string    `json:"id"`
+	Provider        string    `json:"provider"`
+	ProviderName    string    `json:"providerName"`
+	EnabledChannels []string  `json:"enabledChannels"`
+	Endpoint        string    `json:"endpoint"`
+	MerchantID      string    `json:"merchantId"`
+	Credential      string    `json:"credential"`
+	Acknowledgement string    `json:"acknowledgement"`
+	Enabled         bool      `json:"enabled"`
+	Configured      bool      `json:"configured"`
+	Rail            string    `json:"-"`
+	UpdatedAt       time.Time `json:"-"`
 }
 
 // PaymentProfileRuntime is an internal-only profile with decrypted credentials.
@@ -145,10 +146,12 @@ type CourtesyCredit struct {
 // TXBMoney formats integer hundredths of TXB.
 func TXBMoney(minor int64) Money {
 	sign := ""
-	abs := minor
+	abs := uint64(minor)
 	if minor < 0 {
 		sign = "-"
-		abs = -minor
+		// Negating MinInt64 in signed arithmetic overflows. Convert its
+		// magnitude in two steps so every valid ledger amount formats exactly.
+		abs = uint64(-(minor + 1)) + 1
 	}
 	return Money{Currency: "TXB", Minor: fmt.Sprintf("%d", minor), Display: fmt.Sprintf("%s%d.%02d TXB", sign, abs/100, abs%100)}
 }

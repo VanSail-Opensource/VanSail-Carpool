@@ -27,14 +27,9 @@
   animation: icon-spin 900ms linear infinite;
 }
 
-@keyframes skeleton-shift {
-  from { transform: translateX(-110%); }
-  to { transform: translateX(260%); }
-}
-
-@keyframes loading-bars {
-  0%, 100% { background: var(--line); transform: scaleX(0.7); }
-  50% { background: var(--accent); transform: scaleX(1); }
+@keyframes skeleton-pulse {
+  from { opacity: 0.4; }
+  to { opacity: 1; }
 }
 
 @keyframes overlay-in {

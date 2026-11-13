@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, shallowRef, watch } from 'vue'
+import { computed, nextTick, onScopeDispose, reactive, shallowRef, watch } from 'vue'
 import { pricingAnalysisApi } from '@/api/pricingAnalysis'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import TxbAmountField from '@/components/common/TxbAmountField.vue'
@@ -13,6 +13,8 @@ const busy = shallowRef(false)
 const error = shallowRef('')
 const result = shallowRef('')
 const version = shallowRef<number | null>(null)
+let disposed = false
+onScopeDispose(() => { disposed = true })
 const commands = ['FREEZE', 'DISABLE', 'MANUAL_RATE', 'PAUSE_ADMISSIONS', 'MAINTENANCE', 'SUPPRESS_TELEMETRY', 'RETRY_MODEL', 'RECALIBRATE', 'RESTORE_PRICE', 'DISABLE_EXPERIMENTS', 'HOLD_RENEWAL', 'ACK_INCIDENT']
 const commandItems = computed(() => commands.map(value => ({ value, label: t(`pricing.commands.${value}`) })))
 const scopeItems = computed(() => ['global', 'product', 'node', 'machine', 'user_product', 'purchase', 'model', 'incident'].map(value => ({ value, label: t(`pricing.scopes.${value}`) })))
@@ -24,42 +26,56 @@ watch(() => [draft.scopeType, draft.scopeId], async (_, __, onCleanup) => {
   catch { if (!cancelled) error.value = t('pricing.loadError') }
 }, { immediate: true })
 async function submit(): Promise<void> {
-  if (version.value === null || busy.value || !draft.reason.trim()) return
-  const price = moneyFromTxbInput(draft.price) ?? '0'
+  if (disposed || version.value === null || busy.value || !draft.reason.trim()) return
+  const price = draft.command === 'MANUAL_RATE' ? moneyFromTxbInput(draft.price) : '0'
+  if (price === '' || BigInt(price) > 1_000_000_000_000n) { error.value = t('pricing.invalid'); return }
   if (!Number.isInteger(draft.hours) || draft.hours < 1 || draft.hours > 168) { error.value = t('pricing.invalid'); return }
   busy.value = true
   error.value = ''
+  result.value = ''
+  const scopeType = draft.scopeType, scopeId = draft.scopeId
   try {
-    const item = await pricingAnalysisApi.intervene({ scopeType: draft.scopeType, scopeId: draft.scopeId, command: draft.command, reason: draft.reason.trim(), priceMinor: price, priceVersion: draft.priceVersion, expectedVersion: version.value, expiresAt: new Date(Date.now() + draft.hours * 3600000).toISOString() })
+    const item = await pricingAnalysisApi.intervene({ scopeType, scopeId, command: draft.command, reason: draft.reason.trim(), priceMinor: price, priceVersion: draft.priceVersion, expectedVersion: version.value, expiresAt: new Date(Date.now() + draft.hours * 3600000).toISOString() })
+    if (disposed) return
     result.value = t(`pricing.states.${item.status}`)
-    version.value = (await pricingAnalysisApi.version(draft.scopeType, draft.scopeId)).version
+    version.value = null
     draft.reason = ''
     emit('changed')
-  } catch { error.value = t('pricing.saveError') }
-  finally { busy.value = false }
+    // The owner can replace this editor after the confirmed command. A failed
+    // follow-up read must never make that command appear to have failed.
+    await nextTick()
+    if (disposed || draft.scopeType !== scopeType || draft.scopeId !== scopeId) return
+    try {
+      const current = await pricingAnalysisApi.version(scopeType, scopeId)
+      if (!disposed && draft.scopeType === scopeType && draft.scopeId === scopeId) version.value = current.version
+    } catch { if (!disposed) error.value = t('pricing.loadError') }
+  } catch { if (!disposed) error.value = t('pricing.saveError') }
+  finally { if (!disposed) busy.value = false }
 }
 </script>
 <template>
   <section class="pricing-intervention">
     <h3>{{ t('pricing.intervene') }}</h3>
-    <form class="pricing-intervention__form" @submit.prevent="submit">
-      <UFormField :label="t('pricing.command')"><USelect v-model="draft.command" :items="commandItems" class="w-full" /></UFormField>
-      <UFormField :label="t('pricing.scope')"><USelect v-model="draft.scopeType" :items="scopeItems" class="w-full" /></UFormField>
-      <UFormField :label="t('pricing.scopeId')"><UInput v-model="draft.scopeId" :maxlength="256" class="w-full" /></UFormField>
-      <UFormField :label="t('pricing.hours')"><UInput v-model.number="draft.hours" type="number" :min="1" :max="168" class="w-full" /></UFormField>
-      <TxbAmountField v-if="draft.command === 'MANUAL_RATE'" id="manual-pricing-rate" v-model="draft.price" :label="t('pricing.manualRate')" min-minor="0" max-minor="1000000000000" required />
-      <UFormField v-if="draft.command === 'RESTORE_PRICE'" :label="t('pricing.priceVersion')"><UInput v-model="draft.priceVersion" class="w-full" /></UFormField>
-      <UFormField class="pricing-intervention__wide" :label="t('pricing.reason')" required><UTextarea v-model="draft.reason" :maxlength="1000" class="w-full" required /></UFormField>
-      <InlineNotice v-if="error" class="pricing-intervention__wide" tone="warning">{{ error }}</InlineNotice>
-      <InlineNotice v-if="result" class="pricing-intervention__wide">{{ result }}</InlineNotice>
-      <UButton type="submit" :label="t('pricing.apply')" :disabled="busy || version === null || !draft.reason.trim()" :loading="busy" />
+    <form @submit.prevent="submit">
+      <fieldset class="pricing-intervention__form" :disabled="busy">
+        <UFormField :label="t('pricing.command')"><USelect v-model="draft.command" :items="commandItems" class="w-full" /></UFormField>
+        <UFormField :label="t('pricing.scope')"><USelect v-model="draft.scopeType" :items="scopeItems" class="w-full" /></UFormField>
+        <UFormField :label="t('pricing.scopeId')"><UInput v-model="draft.scopeId" :maxlength="256" class="w-full" /></UFormField>
+        <UFormField :label="t('pricing.hours')"><UInput v-model.number="draft.hours" type="number" :min="1" :max="168" class="w-full" /></UFormField>
+        <TxbAmountField v-if="draft.command === 'MANUAL_RATE'" id="manual-pricing-rate" v-model="draft.price" :label="t('pricing.manualRate')" min-minor="0" max-minor="1000000000000" required />
+        <UFormField v-if="draft.command === 'RESTORE_PRICE'" :label="t('pricing.priceVersion')"><UInput v-model="draft.priceVersion" class="w-full" /></UFormField>
+        <UFormField class="pricing-intervention__wide" :label="t('pricing.reason')" required><UTextarea v-model="draft.reason" :maxlength="1000" class="w-full" required /></UFormField>
+        <InlineNotice v-if="error" class="pricing-intervention__wide" tone="warning">{{ error }}</InlineNotice>
+        <InlineNotice v-if="result" class="pricing-intervention__wide">{{ result }}</InlineNotice>
+        <UButton type="submit" :label="t('pricing.apply')" :disabled="busy || version === null || !draft.reason.trim()" :loading="busy" />
+      </fieldset>
     </form>
   </section>
 </template>
 <style scoped>
 .pricing-intervention { padding: 1rem 0; border-top: 1px solid var(--line); }
 .pricing-intervention h3 { cursor: pointer; font-weight: 600; }
-.pricing-intervention__form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
+.pricing-intervention__form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin: 1rem 0 0; padding: 0; border: 0; min-width: 0; }
 .pricing-intervention__wide { grid-column: 1 / -1; }
 @media (max-width: 520px) { .pricing-intervention__form { grid-template-columns: 1fr; } }
 </style>

@@ -25,11 +25,14 @@ func (s *Store) retryAttempt_CompleteOutboxRetryOperation(ctx context.Context, o
 		WHERE operation.id=$1 AND operation.kind=$2 AND operation.status='processing'
 		AND item.item_key=$3 AND item.target_type='outbox_job' AND item.status='processing'`,
 		operationID, providerops.KindOutboxRetry, itemKey).Scan(&targetID)
-	if errors.Is(err, sql.ErrNoRows) || targetID != jobID {
+	if errors.Is(err, sql.ErrNoRows) {
 		return ErrConflict
 	}
 	if err != nil {
 		return err
+	}
+	if targetID != jobID {
+		return ErrConflict
 	}
 	var kind, status string
 	if err := tx.QueryRowContext(ctx, `SELECT kind,status FROM outbox_jobs WHERE id=$1`, jobID).Scan(&kind, &status); err != nil {
@@ -83,7 +86,10 @@ func reactivateOutboxJobTx(ctx context.Context, tx *sql.Tx, jobID, kind string, 
 	if err != nil {
 		return err
 	}
-	if affected, _ := result.RowsAffected(); affected != 1 {
+	if affected, rowsErr := result.RowsAffected(); rowsErr != nil || affected != 1 {
+		if rowsErr != nil {
+			return rowsErr
+		}
 		return ErrConflict
 	}
 	return nil

@@ -171,8 +171,9 @@ export const api = {
     method: 'POST', headers: { 'Idempotency-Key': idempotencyKey },
   }),
   createAdminBackup: () => request<BackupRecord>('/api/v1/admin/backups', { method: 'POST' }),
-  adjustBalance: (userId: string, amountMinor: string, reason: string) => request<LedgerEntry>(`/api/v1/admin/users/${encodeURIComponent(userId)}/balance-adjustments`, {
+  adjustBalance: (userId: string, amountMinor: string, reason: string, idempotencyKey: string) => request<LedgerEntry>(`/api/v1/admin/users/${encodeURIComponent(userId)}/balance-adjustments`, {
     method: 'POST',
+    headers: { 'Idempotency-Key': idempotencyKey },
     body: { deltaTxbMinor: amountMinor, reason } satisfies BalanceAdjustmentRequest,
   }),
 }

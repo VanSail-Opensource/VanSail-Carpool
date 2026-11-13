@@ -99,11 +99,15 @@ func (s *Store) retryAttempt_USDTMatchingEvidence(ctx context.Context, orderID s
 		minimum.SetInt64(0)
 	}
 	lower := minimum.String()
+	// Retained RFC3339Nano values can have different fractional widths. Keep
+	// the indexed candidate bound coarse, but filter exact payment eligibility
+	// before LIMIT so older whole-second events cannot hide newer evidence.
+	createdLower, _ := purchaseWindowCandidateBounds(order.CreatedAt)
 	rows, err := tx.QueryContext(ctx, usdtTransferSelect+` WHERE network=$1 AND token=$2 AND recipient=$3 AND status IN ('review','ready')
-	 AND occurred_at>=$4
+	 AND occurred_at>=$4 AND `+purchaseTimestampOrderSQL("occurred_at")+`>=$11
 	 AND (length(atomic_amount)>length($5) OR (length(atomic_amount)=length($6) AND atomic_amount>=$7))
 	 AND (length(atomic_amount)<length($8) OR (length(atomic_amount)=length($9) AND atomic_amount<=$10))
-	 ORDER BY occurred_at DESC,id LIMIT 100`, q.Network, q.Token, q.Recipient, stamp(order.CreatedAt), lower, lower, lower, q.AtomicAmount, q.AtomicAmount, q.AtomicAmount)
+	 ORDER BY `+purchaseTimestampOrderSQL("occurred_at")+` DESC,id LIMIT 100`, q.Network, q.Token, q.Recipient, createdLower, lower, lower, lower, q.AtomicAmount, q.AtomicAmount, q.AtomicAmount, purchaseTimestampOrder(order.CreatedAt))
 	if err != nil {
 		return result, err
 	}
@@ -114,7 +118,7 @@ func (s *Store) retryAttempt_USDTMatchingEvidence(ctx context.Context, orderID s
 			_ = rows.Close()
 			return result, err
 		}
-		if t.AtomicAmount == q.AtomicAmount || usdt.IsAmountShortfallWithinTolerance(t.AtomicAmount, q.AtomicAmount, spec.Decimals) {
+		if !t.OccurredAt.Before(order.CreatedAt) && (t.AtomicAmount == q.AtomicAmount || usdt.IsAmountShortfallWithinTolerance(t.AtomicAmount, q.AtomicAmount, spec.Decimals)) {
 			candidates = append(candidates, t)
 		}
 	}

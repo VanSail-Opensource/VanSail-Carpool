@@ -2,36 +2,12 @@ package billing
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/url"
 	"strings"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
-
-func (s *Service) createCheckout(ctx context.Context, user model.User, order model.PaymentOrder) (model.PaymentOrder, error) {
-	request, err := s.providerCreateRequest(ctx, user, order)
-	if err != nil {
-		_ = s.repository.FailPaymentOrder(ctx, order.ID)
-		return model.PaymentOrder{}, err
-	}
-	checkout, err := s.gateway.Create(ctx, request)
-	if err != nil {
-		_ = s.repository.FailPaymentOrder(ctx, order.ID)
-		return model.PaymentOrder{}, fmt.Errorf("create provider checkout: %w", err)
-	}
-	result, err := s.storeCheckout(ctx, order, checkout)
-	if err != nil {
-		if errors.Is(err, ErrInvalidOrder) {
-			_ = s.repository.FailPaymentOrder(ctx, order.ID)
-		}
-		// The provider has accepted the create request, so the outcome must
-		// remain reconcilable when only the local checkout write failed.
-		return model.PaymentOrder{}, err
-	}
-	return result, nil
-}
 
 func (s *Service) providerCreateRequest(ctx context.Context, user model.User, order model.PaymentOrder) (ProviderCreateRequest, error) {
 	provider, profileID, rail, err := ParseMethodSelection(order.MethodID)

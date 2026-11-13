@@ -26,10 +26,16 @@ func (s *Store) retryAttempt_RedeemCoupon(ctx context.Context, userID, code, ide
 	}
 	defer func() { _ = tx.Rollback() }()
 	if existing, loadErr := redemptionByKeyTx(ctx, tx, userID, idempotencyKey); loadErr == nil {
+		if err := matchRedemptionCodeTx(ctx, tx, userID, canonical, existing); err != nil {
+			return coupons.RedemptionResult{}, err
+		}
 		existing.Replayed = true
 		return existing, nil
 	} else if !errors.Is(loadErr, ErrNotFound) {
 		return coupons.RedemptionResult{}, loadErr
+	}
+	if err := lockProviderOperationAccountsTx(ctx, tx, userID, ""); err != nil {
+		return coupons.RedemptionResult{}, err
 	}
 	coupon, err := couponByCodeTx(ctx, tx, canonical)
 	if err != nil {
@@ -86,10 +92,14 @@ func (s *Store) retryAttempt_RedeemCoupon(ctx context.Context, userID, code, ide
 	if err != nil {
 		return coupons.RedemptionResult{}, fmt.Errorf("record coupon redemption: %w", err)
 	}
+	result, err := redemptionByIDTx(ctx, tx, redemptionID)
+	if err != nil {
+		return coupons.RedemptionResult{}, err
+	}
 	if err := tx.Commit(); err != nil {
 		return coupons.RedemptionResult{}, fmt.Errorf("commit coupon redemption: %w", err)
 	}
-	return s.redemptionByID(ctx, redemptionID)
+	return result, nil
 }
 
 // GrantCoupon idempotently puts a purchase-discount coupon in a member wallet.
@@ -119,33 +129,6 @@ func (s *Store) retryAttempt_GrantCoupon(ctx context.Context, userID, couponID, 
 		return coupons.Grant{}, err
 	}
 	return grant, nil
-}
-
-// ListCouponGrants returns currently usable purchase-discount grants.
-
-func (s *Store) ListCouponGrants(ctx context.Context, userID string, now time.Time) ([]coupons.Grant, error) {
-	if _, err := s.db.ExecContext(ctx, `UPDATE coupon_grants SET status='expired' WHERE user_id=$1 AND status='active'
-		AND coupon_id IN (SELECT id FROM coupon_definitions WHERE expires_at IS NOT NULL AND expires_at<=$2)
-		AND NOT EXISTS (SELECT 1 FROM coupon_grant_discards WHERE coupon_grant_discards.grant_id=coupon_grants.id)`, userID, stamp(now)); err != nil {
-		return nil, fmt.Errorf("expire coupon grants: %w", err)
-	}
-	rows, err := s.db.QueryContext(ctx, grantSelect+` WHERE coupon_grants.user_id=$1 AND coupon_grants.status='active'
-		AND coupon_definitions.active=1 AND (coupon_definitions.expires_at IS NULL OR coupon_definitions.expires_at>$2)
-		AND NOT EXISTS (SELECT 1 FROM coupon_grant_discards WHERE coupon_grant_discards.grant_id=coupon_grants.id)
-		AND `+authorizedCouponGrant+` ORDER BY coupon_grants.created_at DESC`, userID, stamp(now))
-	if err != nil {
-		return nil, fmt.Errorf("list coupon grants: %w", err)
-	}
-	defer func() { _ = rows.Close() }()
-	result := make([]coupons.Grant, 0)
-	for rows.Next() {
-		grant, scanErr := scanGrant(rows)
-		if scanErr != nil {
-			return nil, scanErr
-		}
-		result = append(result, grant)
-	}
-	return result, rows.Err()
 }
 
 // DiscardCouponGrant hides one active grant while preserving its immutable

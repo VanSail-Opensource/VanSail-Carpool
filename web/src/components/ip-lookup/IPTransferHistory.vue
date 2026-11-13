@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getLocale } from '@/i18n'
 import { computed, shallowRef, watch } from 'vue'
 import type { IPLookupLiveDetails } from '@/api/ipLookup'
 import LiveSourceNote from './LiveSourceNote.vue'
@@ -21,7 +22,7 @@ watch(() => props.history, () => { page.value = 1 })
       <p v-if="history.status === 'empty'">{{ $t('ipLookupLive.transfers.empty') }}</p>
       <ol v-if="visible.length">
         <li v-for="(transfer, index) in visible" :key="`${transfer.transferTime}:${transfer.recipientResource}:${index}`">
-          <div class="transfer-meta"><time :datetime="transfer.transferTime">{{ new Date(transfer.transferTime).toLocaleDateString() }}</time><code>{{ transfer.recipientResource }}</code></div>
+          <div class="transfer-meta"><time :datetime="transfer.transferTime">{{ new Date(transfer.transferTime).toLocaleDateString(getLocale()) }}</time><code>{{ transfer.recipientResource }}</code></div>
           <div class="transfer-parties">
             <div><span class="sr-only">{{ $t('ipLookupLive.transfers.from') }}</span><span>{{ transfer.sourceHolderName || $t('ipLookupLive.status.empty') }}</span><small v-if="transfer.sourceRegistry">{{ transfer.sourceRegistry }}</small><code v-if="transfer.sourceResource && transfer.sourceResource !== transfer.recipientResource">{{ transfer.sourceResource }}</code></div>
             <UIcon name="i-ph-arrow-right" aria-hidden="true" />

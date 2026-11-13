@@ -7,6 +7,10 @@ import (
 )
 
 func (s *Service) Enrollment(ctx context.Context, id string) (string, string, error) {
+	return s.enrollment(ctx, id, "")
+}
+
+func (s *Service) enrollment(ctx context.Context, id, actor string) (string, string, error) {
 	node, err := s.repo.XNodeNode(ctx, id)
 	if err != nil {
 		return "", "", err
@@ -20,9 +24,9 @@ func (s *Service) Enrollment(ctx context.Context, id string) (string, string, er
 	}
 	hash := sha256.Sum256([]byte(token))
 	if s.master != nil {
-		err = s.master.rotateEnrollment(ctx, id, hash[:])
+		err = s.master.rotateEnrollmentAs(ctx, id, hash[:], actor)
 	} else {
-		err = s.repo.RotateXNodeToken(ctx, id, hash[:])
+		err = s.persistEnrollment(ctx, actor, id, hash[:])
 	}
 	if err != nil {
 		return "", "", err

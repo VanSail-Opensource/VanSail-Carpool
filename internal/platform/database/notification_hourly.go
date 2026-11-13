@@ -34,7 +34,10 @@ func (s *Store) EnqueueHourlyFundingWarnings(ctx context.Context, now time.Time)
 		LEFT JOIN balances b ON b.user_id=e.owner_id
 		WHERE e.status='active' AND e.paid_through>$1 AND e.paid_through<=$2
 		AND o.hourly_price_minor>COALESCE(b.txb_minor,0)
-		ORDER BY e.paid_through,e.id LIMIT $3`, now.UTC(), now.UTC().Add(time.Hour), hourlyFundingWarningLimit)
+		AND NOT EXISTS(SELECT 1 FROM user_notification_events event
+			WHERE event.event_key='hourly-funding-warning:'||e.id||':'||
+				floor(EXTRACT(EPOCH FROM e.paid_through))::bigint::text)
+		ORDER BY e.paid_through,e.id LIMIT $3`, now.UTC().Truncate(time.Microsecond), now.UTC().Add(time.Hour).Truncate(time.Microsecond), hourlyFundingWarningLimit)
 	if err != nil {
 		return 0, fmt.Errorf("list hourly funding warnings: %w", err)
 	}

@@ -15,7 +15,8 @@ func (s *Service) runRouteSpeedtestPair(ctx context.Context, op providerops.Oper
 		err = ErrConflict
 	}
 	if err != nil {
-		if errors.Is(err, ErrUnavailable) {
+		// A failed read is not evidence of changed access and cannot consume a pair.
+		if !errors.Is(err, ErrInvalid) && !errors.Is(err, ErrConflict) && !isMissing(err) {
 			return providerops.Item{}, err
 		}
 		return s.finishUnstartedSpeedtestPair(ctx, repo, op, key)

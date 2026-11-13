@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"sort"
-	"strings"
 	"time"
 )
 
@@ -63,6 +62,7 @@ func (s *Service) monitor(ctx context.Context, spec NetworkSpec, n NetworkConfig
 		}
 		sort.Strings(addresses)
 		if len(addresses) == 0 || len(readers) == 0 {
+			closeInactiveSubscriptions(readers, nil)
 			s.state(spec.Rail, "disabled", "", "")
 			continue
 		}
@@ -75,10 +75,12 @@ func (s *Service) monitor(ctx context.Context, spec NetworkSpec, n NetworkConfig
 		for _, reader := range readers {
 			batch, err := reader.scan(ctx, cursor, addresses)
 			if err != nil {
+				reader.closeSubscription()
 				code := ErrorCode(err)
 				s.state(spec.Rail, "error", cursor.Value, code)
 				continue
 			}
+			closeInactiveSubscriptions(readers, reader)
 			if err := s.repository.SaveUSDTBatch(ctx, spec.Rail, batch); err != nil {
 				s.state(spec.Rail, "error", cursor.Value, ErrorCode(err))
 				break
@@ -123,39 +125,5 @@ func (s *Service) monitor(ctx context.Context, spec NetworkSpec, n NetworkConfig
 		if !completed {
 			delay = 15 * time.Second
 		}
-	}
-}
-
-func (s *scanner) refreshSubscription(ctx context.Context, addresses []string) {
-	if len(addresses) > 128 {
-		addresses = addresses[:128]
-	}
-	key := strings.Join(addresses, ",")
-	s.client.mu.Lock()
-	socket := s.client.ws
-	s.client.mu.Unlock()
-	if socket != s.subSocket {
-		s.subscription = ""
-	}
-	if socket != nil {
-		select {
-		case <-socket.done:
-			s.subscription = ""
-		default:
-		}
-	}
-	if key == s.subscription {
-		return
-	}
-	// Replacing the connection drops old subscriptions instead of accumulating them.
-	if socket != nil && s.subscription != "" {
-		s.client.close()
-	}
-	s.subscription = ""
-	if err := s.client.subscribe(ctx, addresses); err == nil {
-		s.subscription = key
-		s.client.mu.Lock()
-		s.subSocket = s.client.ws
-		s.client.mu.Unlock()
 	}
 }

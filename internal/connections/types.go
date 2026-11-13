@@ -29,8 +29,12 @@ const (
 )
 
 var (
+	// ErrScanForbidden rejects stale or revoked administrator request authority.
+	ErrScanForbidden = errors.New("administrator connection scan access required")
 	// ErrScanNotFound hides scans owned by another member and expired scans.
 	ErrScanNotFound = errors.New("connection scan not found")
+	// ErrScanUnavailable preserves transient storage failures for retry.
+	ErrScanUnavailable = errors.New("connection scan is temporarily unavailable")
 	// ErrIdentityRequired means the member has no usable provider identity.
 	ErrIdentityRequired = errors.New("Proxy identity is required")
 	// ErrIPBlockNotFound hides blocks owned by another member.

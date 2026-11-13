@@ -16,9 +16,11 @@ import (
 func TestUserDetailBuildsAggregateAndSelectsCurrentActiveCombo(t *testing.T) {
 	t.Parallel()
 	now := time.Date(2026, 8, 18, 14, 0, 0, 0, time.UTC)
-	remoteID := "remote-user"
+	remoteID := "legacy-user"
+	nativeID := "4242"
 	repository := &userWorkflowRepositoryStub{user: model.User{ID: "user-1", ProxyUserID: &remoteID},
 		balance: model.TXBMoney(1234), accountErr: emby.ErrNotFound,
+		synchronization: database.AdminUserSynchronization{Status: "synchronized", RemoteUserID: &nativeID},
 		purchases: []model.Purchase{
 			{ID: "expired", Status: "expired", ValidFrom: now.Add(-60 * 24 * time.Hour), ValidUntil: now.Add(-30 * 24 * time.Hour)},
 			{ID: "active", Status: "active", ValidFrom: now.Add(-time.Hour), ValidUntil: now.Add(24 * time.Hour)},
@@ -29,7 +31,7 @@ func TestUserDetailBuildsAggregateAndSelectsCurrentActiveCombo(t *testing.T) {
 	service := NewUserWorkflows(repository, nil)
 	service.now = func() time.Time { return now }
 
-	detail, err := service.UserDetail(t.Context(), "user-1")
+	detail, err := service.UserDetail(t.Context(), "historical-user-alias")
 	if err != nil {
 		t.Fatalf("UserDetail(): %v", err)
 	}
@@ -42,18 +44,18 @@ func TestUserDetailBuildsAggregateAndSelectsCurrentActiveCombo(t *testing.T) {
 	if detail.EmbyAccounts == nil || len(detail.EmbyAccounts) != 0 {
 		t.Fatalf("Emby accounts = %+v, want an empty array", detail.EmbyAccounts)
 	}
-	if detail.Synchronization.Status != "synchronized" || len(detail.Payments) != 1 ||
+	if repository.syncOwnerID != "user-1" || detail.Synchronization.Status != "synchronized" || detail.Synchronization.RemoteUserID == nil || *detail.Synchronization.RemoteUserID != nativeID || len(detail.Payments) != 1 ||
 		len(detail.Refunds) != 1 || len(detail.Operations) != 1 {
 		t.Fatalf("aggregate detail = %+v", detail)
 	}
 }
 
-func TestSynchronizationForPrioritizesRecoveryFailure(t *testing.T) {
+func TestUserDetailPropagatesNativeSynchronizationReadFailure(t *testing.T) {
 	t.Parallel()
-	remoteID := "remote-user"
-	state := synchronizationFor(model.User{ProxyUserID: &remoteID, RecoveryReason: "identity conflict"})
-	if state.Status != "failed" || state.LastError == nil || *state.LastError != "identity conflict" {
-		t.Fatalf("synchronization = %+v", state)
+	sentinel := errors.New("native synchronization read failed")
+	repository := &userWorkflowRepositoryStub{user: model.User{ID: "user-1"}, synchronizationErr: sentinel}
+	if _, err := NewUserWorkflows(repository, nil).UserDetail(t.Context(), "user-1"); !errors.Is(err, sentinel) {
+		t.Fatalf("UserDetail() error = %v", err)
 	}
 }
 

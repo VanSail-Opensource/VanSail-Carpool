@@ -20,3 +20,8 @@ func globalPoliciesKey(config GlobalConfig) [32]byte {
 	raw, _ := json.Marshal([]any{config.SourceGeoIP, config.BlockedDomains, config.GeoIPURL, config.GeoIPHash, config.GeoSiteURL, config.GeoSiteHash})
 	return sha256.Sum256(raw)
 }
+
+func globalDocumentKey(config GlobalConfig) [32]byte {
+	raw, _ := json.Marshal(config)
+	return sha256.Sum256(raw)
+}

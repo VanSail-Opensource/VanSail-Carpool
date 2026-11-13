@@ -14,9 +14,23 @@ import (
 func (a proxyProvider) ApplyEntitlement(ctx context.Context, id string, limit int64, strategy string, groups []string, until time.Time) error {
 	return a.native.ApplyPurchase(ctx, id, limit, strategy, until)
 }
+
+// ApplyMemberPurchase binds activation to its retained purchase and native owner;
+// it never resets whichever account happens to be in a historical proxy link.
+func (a proxyProvider) ApplyMemberPurchase(ctx context.Context, user model.User, purchase model.Purchase) error {
+	return a.native.ApplyMemberPurchase(ctx, user, purchase)
+}
+
 func (a proxyProvider) RemoveEntitlement(ctx context.Context, id string) error {
 	return a.native.CloseForReplacement(ctx, id)
 }
+
+// SyncMemberEntitlement shares owner-scoped desired-state reconciliation with
+// administrative changes. A stale legacy link cannot select another identity.
+func (a proxyProvider) SyncMemberEntitlement(ctx context.Context, user model.User, desired *model.Purchase) error {
+	return a.SyncAdminUserEntitlement(ctx, user, desired)
+}
+
 func (a proxyProvider) ResetTraffic(ctx context.Context, id string) error {
 	return a.native.ResetTraffic(ctx, id)
 }
@@ -40,21 +54,4 @@ func (a proxyProvider) RestoreMemberOperation(ctx context.Context, id string, pu
 }
 func (a proxyProvider) DefinitiveMutationFailure(err error) bool {
 	return errors.Is(err, xnode.ErrInvalid) || errors.Is(err, xnode.ErrConflict)
-}
-func (a proxyProvider) SetAdminUserDisabled(ctx context.Context, id string, disabled bool) error {
-	identity, err := a.native.Identity(ctx, id)
-	if err != nil {
-		return err
-	}
-	if err = a.store.SetXNodeAccessDisabled(ctx, identity.ProxyUserID, disabled); err != nil {
-		return err
-	}
-	if disabled {
-		return a.native.CloseForReplacement(ctx, id)
-	}
-	purchase, err := a.store.DesiredEntitlement(ctx, identity.UserID, time.Now())
-	if err != nil || purchase == nil {
-		return err
-	}
-	return a.native.ResumePurchase(ctx, id, *purchase)
 }

@@ -1,4 +1,5 @@
 XNodeFirewallFilter:
+  description: Bounded recursive search expression. The server permits at most 64 total nodes, 32 leaves and four levels including the root; the per-array bound does not replace these aggregate limits.
   type: object
   additionalProperties: false
   properties:

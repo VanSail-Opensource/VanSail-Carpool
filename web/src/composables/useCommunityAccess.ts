@@ -1,6 +1,7 @@
-import { computed, inject, onMounted, onScopeDispose, provide, readonly, shallowRef, type ComputedRef, type InjectionKey, type ShallowRef } from 'vue'
+import { computed, inject, onScopeDispose, provide, readonly, shallowRef, watch, type ComputedRef, type InjectionKey, type ShallowRef } from 'vue'
 
 import { api } from '@/api/client'
+import { useSessionStore } from '@/stores/session'
 
 interface CommunityAccessContext {
   activeCombo: Readonly<ShallowRef<boolean>>
@@ -21,42 +22,58 @@ function positive(minor: string | undefined): boolean {
 }
 
 function createCommunityAccess(): CommunityAccessContext {
+  const session = useSessionStore()
   const activeCombo = shallowRef(false)
   const positiveBalance = shallowRef(false)
   const loading = shallowRef(true)
   const hasAccess = computed(() => activeCombo.value || positiveBalance.value)
   let disposed = false
+  let revision = 0
   let pending: Promise<void> | null = null
 
   function refresh(): Promise<void> {
+    const owner = session.user?.id
+    if (disposed || !owner) return Promise.resolve()
     if (pending) return pending
+    const current = revision
+    const valid = () => !disposed && current === revision && session.user?.id === owner
     const request = Promise.all([
       api.getCommunityAccess()
         .then((response) => {
-          if (!disposed) activeCombo.value = response.activeCombo
+          if (valid()) activeCombo.value = response.activeCombo
         })
         .catch(() => {
-          if (!disposed) activeCombo.value = false
+          if (valid()) activeCombo.value = false
         }),
       api.getBalance()
         .then((response) => {
-          if (!disposed) positiveBalance.value = positive(response.balance?.minor)
+          if (valid()) positiveBalance.value = positive(response.balance?.minor)
         })
         .catch(() => {
-          if (!disposed) positiveBalance.value = false
+          if (valid()) positiveBalance.value = false
         }),
     ])
       .then(() => undefined)
       .finally(() => {
-        if (!disposed) loading.value = false
+        if (valid()) loading.value = false
         if (pending === request) pending = null
       })
     pending = request
     return request
   }
 
-  onMounted(() => void refresh())
-  onScopeDispose(() => { disposed = true })
+  function clear(): void {
+    revision++
+    pending = null
+    activeCombo.value = false
+    positiveBalance.value = false
+    loading.value = false
+  }
+  watch(() => session.user?.id ?? null, owner => {
+    clear()
+    if (owner) { loading.value = true; void refresh() }
+  }, { immediate: true, flush: 'sync' })
+  onScopeDispose(() => { disposed = true; clear() })
 
   return { activeCombo: readonly(activeCombo), positiveBalance: readonly(positiveBalance), hasAccess, loading: readonly(loading), refresh }
 }

@@ -2,7 +2,6 @@ package emby
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 )
@@ -24,10 +23,10 @@ func (s *Service) resolveOrCreate(ctx context.Context, record *ProvisioningRecor
 				return RemoteUser{}, findErr
 			}
 			if exists {
-				return user, nil
+				return s.restoreRemoteIdentity(ctx, *record, user)
 			}
 		}
-		return RemoteUser{}, ErrRemoteAccountMissing
+		return RemoteUser{}, &remoteAbsenceProof{record: *record, cause: ErrRemoteAccountMissing}
 	}
 
 	if record.CandidateUsername == "" {
@@ -60,12 +59,13 @@ func (s *Service) resolveOrCreate(ctx context.Context, record *ProvisioningRecor
 	if err := s.repository.MarkEmbyCreateAttempted(ctx, record.ID, s.now().UTC()); err != nil {
 		return RemoteUser{}, err
 	}
+	record.CreateAttempted = true
 	created, createErr := s.remote.CreateUser(ctx, record.CandidateUsername)
 	if createErr == nil {
 		return created, nil
 	}
 	if s.remote.IsTerminal(createErr) {
-		return RemoteUser{}, fmt.Errorf("create Emby user: %w", createErr)
+		return RemoteUser{}, s.confirmRejectedCreate(ctx, *record, fmt.Errorf("create Emby user: %w", createErr))
 	}
 	// Emby can commit creation and lose the response. The candidate was
 	// persisted and preflighted before this call, so exact-name reconciliation
@@ -128,31 +128,6 @@ func (s *Service) validatePreferences(ctx context.Context, preferences Preferenc
 		if !found {
 			return fmt.Errorf("%w: unknown Emby parental rating", ErrInvalidSetup)
 		}
-	}
-	return nil
-}
-
-func (s *Service) handleProvisionError(ctx context.Context, accountID string, provisionErr error) error {
-	if errors.Is(provisionErr, ErrRemoteAccountMissing) || errors.Is(provisionErr, ErrAccountExists) ||
-		errors.Is(provisionErr, ErrInvalidSetup) || s.remote.IsTerminal(provisionErr) {
-		return s.failTerminal(ctx, accountID, provisionErr)
-	}
-	record, err := s.repository.EmbyProvisioningByID(ctx, accountID)
-	if err != nil {
-		return fmt.Errorf("load Emby provisioning stage: %w", err)
-	}
-	if record.CreateAttempted {
-		return s.pendingReview(ctx, accountID, provisionErr)
-	}
-	if err := s.repository.RequeueEmbyProvisioning(ctx, accountID, provisionErr, s.now().UTC()); err != nil {
-		return fmt.Errorf("record Emby provisioning retry: %w", err)
-	}
-	return provisionErr
-}
-
-func (s *Service) failTerminal(ctx context.Context, accountID string, cause error) error {
-	if _, err := s.repository.FailAndRefundEmbySetup(ctx, accountID, safeFailure(cause), s.now().UTC()); err != nil {
-		return fmt.Errorf("refund failed Emby setup: %w", err)
 	}
 	return nil
 }

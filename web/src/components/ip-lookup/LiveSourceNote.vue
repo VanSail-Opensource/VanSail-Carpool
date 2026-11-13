@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import type { IPLookupLiveMeta } from '@/api/ipLookup'
 import { computed } from 'vue'
-import { t } from '@/i18n'
+import { getLocale, t } from '@/i18n'
 const props = defineProps<{ meta: IPLookupLiveMeta }>()
 const time = computed(() => {
   if (!props.meta.observedAt) return ''
-  if (/^\d{4}-\d{2}-\d{2}$/.test(props.meta.observedAt)) return new Date(props.meta.observedAt).toLocaleDateString(undefined, { timeZone: 'UTC' })
+  if (/^\d{4}-\d{2}-\d{2}$/.test(props.meta.observedAt)) return new Date(props.meta.observedAt).toLocaleDateString(getLocale(), { timeZone: 'UTC' })
   const raw = /^\d{4}-\d{2}-\d{2}T[\d:.]+$/.test(props.meta.observedAt) ? `${props.meta.observedAt}Z` : props.meta.observedAt
   const date = new Date(raw)
-  return Number.isNaN(date.getTime()) ? props.meta.observedAt : date.toLocaleString()
+  return Number.isNaN(date.getTime()) ? props.meta.observedAt : date.toLocaleString(getLocale())
 })
 const message = computed(() => props.meta.status === 'error' || props.meta.status === 'restricted' ? t(`ipLookupLive.errors.${props.meta.errorCode || 'IP_DETAILS_UNAVAILABLE'}`) : t(`ipLookupLive.status.${props.meta.status}`))
 </script>

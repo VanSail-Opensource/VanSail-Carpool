@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
 // Rate changes and journal commits serialize on the same cursor before reading
@@ -13,7 +15,10 @@ func lockXNodeCursorTx(ctx context.Context, tx *sql.Tx, node, agent string) (uin
 		return 0, "", err
 	}
 	var sequence uint64
-	var digest string
-	err := tx.QueryRowContext(ctx, `SELECT last_sequence,last_digest FROM xnode_report_cursors WHERE agent_id=$1 FOR UPDATE`, agent).Scan(&sequence, &digest)
+	var digest, owner string
+	err := tx.QueryRowContext(ctx, `SELECT last_sequence,last_digest,node_id FROM xnode_report_cursors WHERE agent_id=$1 FOR UPDATE`, agent).Scan(&sequence, &digest, &owner)
+	if err == nil && owner != node {
+		err = xnode.ErrTrafficAgentMismatch
+	}
 	return sequence, digest, err
 }

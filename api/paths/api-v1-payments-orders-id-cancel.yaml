@@ -3,7 +3,8 @@ post:
   operationId: cancelPaymentOrder
   summary: Cancel a user-owned unpaid payment order
   description: |
-    Stops order polling and records a durable provider cancellation command.
+    Records a durable provider cancellation command. Clients re-read the
+    authoritative order after receipt completion and keep polling if it is pending.
     Interrupted provider attempts are reconciled from stored state or remain
     pending review. A later authoritative paid event may still settle once.
   parameters:

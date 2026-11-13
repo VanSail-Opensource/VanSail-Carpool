@@ -13,3 +13,5 @@ post:
       $ref: '../openapi.yaml#/components/responses/Unauthorized'
     '409':
       $ref: '../openapi.yaml#/components/responses/Conflict'
+    '503':
+      $ref: '../openapi.yaml#/components/responses/ServiceUnavailable'

@@ -54,15 +54,18 @@ func (s *Signer) Sign(claims HandleClaims) (string, error) {
 
 // Verify validates one handle for an expected owner and current time.
 func (s *Signer) Verify(handle, expectedUserID string, now time.Time) (HandleClaims, error) {
-	parts := strings.Split(handle, ".")
-	if s == nil || len(parts) != 2 || len(handle) > 4096 {
+	if s == nil || len(handle) > 4096 {
 		return HandleClaims{}, ErrInvalidHandle
 	}
-	signature, err := base64.RawURLEncoding.DecodeString(parts[1])
-	if err != nil || !hmac.Equal(signature, s.mac([]byte(parts[0]))) {
+	encoded, signatureText, found := strings.Cut(handle, ".")
+	if !found {
 		return HandleClaims{}, ErrInvalidHandle
 	}
-	raw, err := base64.RawURLEncoding.DecodeString(parts[0])
+	signature, err := base64.RawURLEncoding.DecodeString(signatureText)
+	if err != nil || !hmac.Equal(signature, s.mac([]byte(encoded))) {
+		return HandleClaims{}, ErrInvalidHandle
+	}
+	raw, err := base64.RawURLEncoding.DecodeString(encoded)
 	if err != nil {
 		return HandleClaims{}, ErrInvalidHandle
 	}

@@ -42,7 +42,7 @@ func TestNativeAdminScanUsesPanelIdentityAndNeverStartsTheLegacyReader(t *testin
 func TestAdminPollRefusesALegacyScanBeforeCallingAnyReader(t *testing.T) {
 	repo := &targetScopedScanRepository{scan: providerops.ConnectionScan{ID: "legacy", UserID: "member", Status: providerops.StatusProcessing, ProviderJobID: "legacy-job", RequestFingerprint: scanFingerprint(), ExpiresAt: time.Now().Add(time.Minute)}}
 	service := NewService(repo, nil, nil)
-	if _, err := service.PollAdmin(context.Background(), "member", "legacy"); !errors.Is(err, ErrScanNotFound) {
+	if _, err := service.PollAdmin(context.Background(), scanTestAdministrator(), "member", "legacy"); !errors.Is(err, ErrScanNotFound) {
 		t.Fatal("administrator polled a legacy job", err)
 	}
 }

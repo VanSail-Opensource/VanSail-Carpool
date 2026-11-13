@@ -9,3 +9,5 @@ The draw coordinator sends one idempotent request before displaying a prize. Pre
 - `presenters/README.md` maps the individual visual modes.
 - `selection.test.ts` checks Random coverage without Simple, bounded previews, selected-prize insertion, exact stopping for every preview size, and celebration eligibility.
 - `useDrawExperience.test.ts` checks request, retry, reduced-motion, and stalled-animation flows.
+  It also verifies that a delayed result cannot restore a disposed presentation.
+  Disposal clears retained draw/result state before older requests can finish.

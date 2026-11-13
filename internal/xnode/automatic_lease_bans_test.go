@@ -10,12 +10,42 @@ import (
 
 type automaticBanSpy struct {
 	Repository
-	calls int
+	calls       int
+	afterCommit func()
 }
 
 func (s *automaticBanSpy) ReleaseAutomaticLeaseBans(context.Context, []AutomaticLeaseGrant, time.Time) error {
 	s.calls++
+	if s.afterCommit != nil {
+		s.afterCommit()
+	}
 	return nil
+}
+
+func TestAutomaticLeaseOlderReleaseCannotAcknowledgeLateSameGenerationBan(t *testing.T) {
+	repo := &automaticBanSpy{}
+	m := NewMaster(NewService(repo, nil, nil, nil, nil), nil)
+	at := m.service.Now()
+	m.automaticLeases.observe([]AutomaticLeaseObservation{{IP: "8.8.8.8", Node: "node", At: at}}, at, time.Minute)
+	generation := m.automaticLeases.generation
+	repo.afterCommit = func() {
+		// The release transaction finished before an independently committed
+		// event's post-commit check. Its completion has not been acknowledged.
+		m.automaticLeases.protectedEventIPs([]wire.FirewallEvent{{Kind: "detected", IP: "8.8.8.8"}}, at, true)
+	}
+	if worked, err := m.releaseAutomaticLeaseBans(context.Background()); err != nil || !worked || repo.calls != 1 {
+		t.Fatal("initial release failed", worked, repo.calls, err)
+	}
+	if len(m.automaticLeases.pendingBans) != 1 || m.automaticLeases.generation != generation {
+		t.Fatal("old completion lost the late release or manufactured a lease renewal")
+	}
+	repo.afterCommit = nil
+	if worked, err := m.releaseAutomaticLeaseBans(context.Background()); err != nil || !worked || repo.calls != 2 || len(m.automaticLeases.pendingBans) != 0 {
+		t.Fatal("late release did not finish exactly once", worked, repo.calls, err)
+	}
+	if worked, err := m.releaseAutomaticLeaseBans(context.Background()); err != nil || worked || repo.calls != 2 {
+		t.Fatal("acknowledged release repeated", worked, repo.calls, err)
+	}
 }
 
 func TestAutomaticLeaseSteadyReportsDoNotWriteAndLateBanCommitRequeues(t *testing.T) {

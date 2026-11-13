@@ -10,6 +10,7 @@ import (
 // Store is the narrow persistence contract required by Service.
 type Store interface {
 	SaveCoupon(context.Context, CouponInput, time.Time) (Coupon, error)
+	SaveAdminCoupon(context.Context, string, CouponInput, time.Time, time.Time) (Coupon, error)
 	ListCoupons(context.Context, bool) ([]Coupon, error)
 	RedeemCoupon(context.Context, string, string, string, time.Time) (RedemptionResult, error)
 	GrantCoupon(context.Context, string, string, string, string, time.Time) (Grant, error)
@@ -32,13 +33,24 @@ func NewService(store Store, now func() time.Time) *Service {
 	return &Service{store: store, now: now}
 }
 
-// Save validates and persists one coupon definition.
+// Save is the raw definition writer retained for internal fixtures.
+// Administrator handlers use SaveAdmin for atomic authorization, revision and audit.
 func (service *Service) Save(ctx context.Context, input CouponInput) (Coupon, error) {
 	normalized, err := input.Normalize()
 	if err != nil {
 		return Coupon{}, err
 	}
 	return service.store.SaveCoupon(ctx, normalized, service.now().UTC())
+}
+
+// SaveAdmin validates a definition and binds a partial edit to the revision read
+// before merging it. Creation uses a zero expectedUpdatedAt.
+func (service *Service) SaveAdmin(ctx context.Context, actorID string, input CouponInput, expectedUpdatedAt time.Time) (Coupon, error) {
+	normalized, err := input.Normalize()
+	if err != nil {
+		return Coupon{}, err
+	}
+	return service.store.SaveAdminCoupon(ctx, actorID, normalized, expectedUpdatedAt, service.now().UTC())
 }
 
 // List returns active member-visible coupons or all administrator definitions.

@@ -57,7 +57,7 @@ func (m *Master) reconcile(ctx context.Context) error {
 		if native[id] && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds, global.Telemetry.SampleSeconds) {
 			for user, count := range snapshot.report.Users.Connections {
 				if owner := paid[user]; owner != "" {
-					totals[owner] += int64(count)
+					totals[owner] = addConnectionCount(totals[owner], int64(count))
 				}
 			}
 		}
@@ -157,7 +157,7 @@ func (m *Master) syncNodeLocked(ctx context.Context, peer *agentPeer, force bool
 		}
 	}
 	peer.mu.Lock()
-	peer.firstSync = firstSyncCandidates(normalized, revision, m.service.Now())
+	peer.firstSync = firstSyncCandidates(normalized, revision, m.service.Now(), peer.compiled.firstSync)
 	peer.revision = revision
 	peer.digest, peer.lastControls = digest, controls
 	if peer.failedDigest != digest {

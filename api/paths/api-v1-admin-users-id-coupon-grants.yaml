@@ -12,7 +12,7 @@ post:
       application/json:
         schema: { $ref: '../openapi.yaml#/components/schemas/AdminCouponGrantRequest' }
   responses:
-    '201': { content: { application/json: { schema: { $ref: '../openapi.yaml#/components/schemas/CouponGrant' } } } }
+    '201': { description: Coupon grant created in the selected user wallet., content: { application/json: { schema: { $ref: '../openapi.yaml#/components/schemas/CouponGrant' } } } }
     '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
     '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
     '409': { $ref: '../openapi.yaml#/components/responses/Conflict' }

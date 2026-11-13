@@ -12,7 +12,7 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <SquadPricingCard class="payg-squad" :squad="item.squad" :selected="false" :included="false" :featured="false" informational>
+  <SquadPricingCard class="payg-squad" :squad="item.squad" :selected="false" :included="false" informational>
     <template #status><PAYGStatusDot :status="item.status" /></template>
     <template #price><span class="payg-squad__price"><strong>{{ formatMemberMoney(item.squad.paygPrice ?? item.squad.price) }}</strong><small>{{ t('payg.perGB') }}</small><LivePrice :decision="item.squad.pricingDecision" /></span></template>
     <footer class="payg-squad__footer">

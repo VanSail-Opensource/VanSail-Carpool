@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
@@ -57,7 +58,14 @@ func (s *Store) retryAttempt_SaveXNodeGroup(ctx context.Context, item xnode.Grou
 		return err
 	}
 	defer tx.Rollback()
-	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_groups(id,name,enabled,created_at,updated_at) VALUES($1,$2,$3,$4,$5) ON CONFLICT(id) DO UPDATE SET name=excluded.name,enabled=excluded.enabled,updated_at=excluded.updated_at`, item.ID, item.Name, boolInt(item.Enabled), stamp(time.Now().UTC()), stamp(time.Now().UTC()))
+	if err = saveXNodeGroupTx(ctx, tx, item); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func saveXNodeGroupTx(ctx context.Context, tx *sql.Tx, item xnode.Group) error {
+	_, err := tx.ExecContext(ctx, `INSERT INTO xnode_groups(id,name,enabled,created_at,updated_at) VALUES($1,$2,$3,$4,$5) ON CONFLICT(id) DO UPDATE SET name=excluded.name,enabled=excluded.enabled,updated_at=excluded.updated_at`, item.ID, item.Name, boolInt(item.Enabled), stamp(time.Now().UTC()), stamp(time.Now().UTC()))
 	if err != nil {
 		return err
 	}
@@ -69,7 +77,7 @@ func (s *Store) retryAttempt_SaveXNodeGroup(ctx context.Context, item xnode.Grou
 			return err
 		}
 	}
-	return tx.Commit()
+	return nil
 }
 func (s *Store) DeleteXNodeGroup(ctx context.Context, id string) error {
 	version, _, err := s.XNodeCompileVersion(ctx, time.Now().UTC())

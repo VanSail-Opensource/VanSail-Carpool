@@ -39,6 +39,12 @@ func (s *Store) retryAttempt_GrantAdminCoupon(ctx context.Context, input AdminCo
 	if !errors.Is(err, sql.ErrNoRows) {
 		return coupons.Grant{}, err
 	}
+	if err = catalogAdminActorTx(ctx, tx, input.ActorUserID); err != nil {
+		return coupons.Grant{}, err
+	}
+	if err = lockProviderOperationAccountsTx(ctx, tx, input.ActorUserID, input.UserID); err != nil {
+		return coupons.Grant{}, err
+	}
 	coupon, err := couponByID(ctx, tx, input.CouponID)
 	if err != nil {
 		return coupons.Grant{}, err
@@ -88,6 +94,12 @@ func (s *Store) retryAttempt_DiscardAdminCoupon(ctx context.Context, actorID, us
 		return tx.Commit()
 	}
 	if !errors.Is(err, sql.ErrNoRows) {
+		return err
+	}
+	if err = catalogAdminActorTx(ctx, tx, actorID); err != nil {
+		return err
+	}
+	if err = lockProviderOperationAccountsTx(ctx, tx, actorID, userID); err != nil {
 		return err
 	}
 	var status string

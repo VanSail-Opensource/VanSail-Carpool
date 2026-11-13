@@ -12,9 +12,11 @@ reported separately from the successful daily cleanup. This keeps retention
 repair visible without treating the verified backup as unsafe or skipping the
 database compaction it authorizes.
 
-The daily transaction also bounds provider-operation receipts, notification
-deduplication, sessions, abandoned onboarding identities, and maintenance-run
-history. Stale locally debited operations are compensated before removal.
+The daily transaction bounds notification deduplication, sessions, abandoned
+onboarding identities, and maintenance-run history. Non-PM provider-operation
+receipts retain durable intent keys and sanitized outcomes; the separately
+documented PM receipt window remains unchanged. Stale locally debited operations
+are compensated before their transient work is removed.
 
 - `service.go` coordinates the locked backup, verification, warning separation, compaction, and purge sequence; scheduled calls keep the once-per-date guard while manual calls explicitly force a new run.
 - `service_test.go` covers backup-gated cleanup, verified-backup retention warnings, and same-date locking.

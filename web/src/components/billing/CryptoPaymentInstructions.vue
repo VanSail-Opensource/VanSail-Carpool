@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { watch } from 'vue'
 import type { FeaturePaymentOrder } from '@/api/features'
 import type { PaymentStage } from '@/composables/usePaymentOrder'
 import { useClipboard } from '@/composables/useClipboard'
@@ -19,6 +20,8 @@ const { t } = useI18n()
 const clipboard = useClipboard()
 const amountClipboard = useClipboard()
 const countdown = usePaymentCountdown(() => props.order.expiresAt)
+watch(() => [props.order.id, props.order.receivingAddress], clipboard.reset, { flush: 'sync' })
+watch(() => [props.order.id, props.order.actualCryptoAmount, props.order.actualCryptoCurrency], amountClipboard.reset, { flush: 'sync' })
 
 function copyAddress(): void {
   if (props.order.receivingAddress) void clipboard.copy(props.order.receivingAddress)
@@ -76,6 +79,7 @@ function copyAddress(): void {
       block
       icon="i-ph-arrows-clockwise"
       :label="t('cryptoPayment.recreate')"
+      :disabled="stage !== 'pending'"
       :loading="stage === 'creating'"
       data-haptic="confirm"
       @click="emit('recreate')"

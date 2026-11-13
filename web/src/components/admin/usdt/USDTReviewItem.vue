@@ -30,3 +30,15 @@ function dismiss(): void { if (reason.value.trim().length >= 3) emit('dismiss', 
     </div>
   </article>
 </template>
+
+<style scoped>
+.usdt-review-item { border-top: 1px solid var(--line); padding-top: .9rem; display: grid; gap: .8rem; }
+.usdt-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
+.usdt-toolbar > *, .usdt-form-grid > * { min-width: 0; }
+.usdt-evidence { margin: 0; display: grid; gap: .65rem; font-size: .75rem; }
+.usdt-evidence dt { color: var(--text-muted); }
+.usdt-evidence dd { margin: 0; overflow-wrap: anywhere; }
+.usdt-form-grid { display: grid; gap: .8rem; }
+.usdt-form-grid :deep(input), .usdt-form-grid :deep([data-slot="root"]) { width: 100%; }
+.usdt-form-grid > button { justify-self: start; }
+</style>

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ type Repository interface {
 	CreateConnectionScan(context.Context, providerops.ConnectionScanInput, time.Time) (providerops.ConnectionScan, bool, error)
 	ConnectionScanForUser(context.Context, string, string) (providerops.ConnectionScan, error)
 	ConnectionScanByID(context.Context, string) (providerops.ConnectionScan, error)
+	StartConnectionScan(context.Context, string, time.Time) (providerops.ConnectionScan, error)
 	UpdateConnectionScan(context.Context, string, providerops.ConnectionScanUpdate, time.Time) (providerops.ConnectionScan, error)
 	UserByID(context.Context, string) (model.User, error)
 }
@@ -45,14 +47,14 @@ func NewService(repository Repository, remote Remote, signer *Signer) *Service {
 }
 
 // RequestAdmin uses the existing durable scan/outbox with a native-only fingerprint.
-func (s *Service) RequestAdmin(ctx context.Context, user model.User, idempotencyKey string) (Scan, error) {
-	return s.request(ctx, user, idempotencyKey, nativeScanFingerprint())
-}
-
-func (s *Service) request(ctx context.Context, user model.User, idempotencyKey, fingerprint string) (Scan, error) {
+func (s *Service) RequestAdmin(ctx context.Context, actor, user model.User, idempotencyKey string) (Scan, error) {
+	if err := s.currentAdministrator(ctx, actor); err != nil {
+		return Scan{}, err
+	}
 	now := s.now().UTC()
 	record, _, err := s.repository.CreateConnectionScan(ctx, providerops.ConnectionScanInput{
-		UserID: user.ID, IdempotencyKey: idempotencyKey, RequestFingerprint: fingerprint, ExpiresAt: now.Add(ScanTTL),
+		ActorUserID: actor.ID, ActorAccountGeneration: actor.AccountGeneration,
+		UserID: user.ID, IdempotencyKey: idempotencyKey, RequestFingerprint: nativeScanFingerprint(), ExpiresAt: now.Add(ScanTTL),
 	}, now)
 	if err != nil {
 		return Scan{}, err
@@ -61,14 +63,30 @@ func (s *Service) request(ctx context.Context, user model.User, idempotencyKey, 
 }
 
 // PollAdmin refuses old bridge scans rather than initiating a legacy provider read.
-func (s *Service) PollAdmin(ctx context.Context, userID, scanID string) (Scan, error) {
-	return s.poll(ctx, userID, scanID, true)
+func (s *Service) PollAdmin(ctx context.Context, actor model.User, userID, scanID string) (Scan, error) {
+	if err := s.currentAdministrator(ctx, actor); err != nil {
+		return Scan{}, err
+	}
+	projection, err := s.poll(ctx, userID, scanID, true)
+	if err != nil {
+		return Scan{}, err
+	}
+	if err := s.currentAdministrator(ctx, actor); err != nil {
+		return Scan{}, err
+	}
+	return projection, nil
 }
 
 func (s *Service) poll(ctx context.Context, userID, scanID string, nativeOnly bool) (Scan, error) {
 	now := s.now().UTC()
 	record, err := s.repository.ConnectionScanForUser(ctx, scanID, userID)
-	if err != nil || !now.Before(record.ExpiresAt) {
+	if err != nil {
+		if errors.Is(err, ErrScanNotFound) {
+			return Scan{}, ErrScanNotFound
+		}
+		return Scan{}, errors.Join(ErrScanUnavailable, err)
+	}
+	if !now.Before(record.ExpiresAt) {
 		return Scan{}, ErrScanNotFound
 	}
 	if nativeOnly && record.RequestFingerprint != nativeScanFingerprint() {
@@ -93,7 +111,7 @@ func (s *Service) poll(ctx context.Context, userID, scanID string, nativeOnly bo
 			Status: status, ProviderJobID: record.ProviderJobID, ProgressPercent: result.ProgressPercent, ErrorCode: errorCode,
 		}, now)
 		if err != nil {
-			return Scan{}, err
+			return Scan{}, errors.Join(ErrScanUnavailable, err)
 		}
 	}
 	projection := projectMetadata(record)

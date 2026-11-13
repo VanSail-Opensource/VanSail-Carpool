@@ -21,10 +21,10 @@ func (s *Store) retryAttempt_EnqueueExpiryReminderNotifications(ctx context.Cont
 	defer func() { _ = tx.Rollback() }()
 	rows, err := tx.QueryContext(ctx, `SELECT purchases.id,purchases.user_id,combos.name,purchases.valid_until
 		FROM purchases JOIN combos ON combos.id=purchases.combo_id
-		WHERE purchases.status='active' AND purchases.valid_until>$1 AND purchases.valid_until<=$2
+		WHERE purchases.status='active' AND `+purchaseTimestampOrderSQL("purchases.valid_until")+`>$1 AND `+purchaseTimestampOrderSQL("purchases.valid_until")+`<=$2
 		AND purchases.auto_renew_enabled=0 AND NOT EXISTS (
-			SELECT 1 FROM purchases queued WHERE queued.user_id=purchases.user_id AND queued.status='queued' AND queued.valid_until>$3
-		) ORDER BY purchases.valid_until,purchases.id`, stamp(now), stamp(now.Add(48*time.Hour)), stamp(now))
+			SELECT 1 FROM purchases queued WHERE queued.user_id=purchases.user_id AND queued.status='queued' AND `+purchaseTimestampOrderSQL("queued.valid_until")+`>$3
+		) ORDER BY `+purchaseTimestampOrderSQL("purchases.valid_until")+`,purchases.id`, purchaseTimestampOrder(now), purchaseTimestampOrder(now.Add(48*time.Hour)), purchaseTimestampOrder(now))
 	if err != nil {
 		return 0, err
 	}
@@ -63,47 +63,75 @@ func (s *Store) retryAttempt_EnqueueExpiryReminderNotifications(ctx context.Cont
 	return queued, nil
 }
 
-// EnqueueTrafficThresholdNotification records one event per purchase reset period.
-func (s *Store) retryAttempt_EnqueueTrafficThresholdNotification(ctx context.Context, remoteID string, used, limit int64,
-	remoteReset string, lastReset *time.Time, now time.Time) (bool, error) {
-
+// EnqueueTrafficThresholdNotification rechecks the captured native lifecycle and
+// current counters before recording one event per purchase reset period.
+func (s *Store) retryAttempt_EnqueueTrafficThresholdNotification(ctx context.Context, user notifications.TrafficUser, now time.Time) (bool, error) {
+	if user.ID <= 0 || user.OwnerID == "" || user.PeriodID == "" || user.AccountGeneration < 0 {
+		return false, ErrConflict
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return false, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	var purchaseID, userID, combo, validFrom, reset string
-	err = tx.QueryRowContext(ctx, `SELECT purchases.id,purchases.user_id,combos.name,purchases.valid_from,
-		COALESCE(purchases.entitlement_reset_strategy,combos.reset_strategy)
-		FROM users JOIN purchases ON purchases.user_id=users.id JOIN combos ON combos.id=purchases.combo_id
-		WHERE users.proxy_user_id=$1 AND purchases.status='active'
-		AND purchases.valid_from<=$2 AND purchases.valid_until>$3 ORDER BY purchases.valid_from DESC LIMIT 1`,
-		remoteID, stamp(now), stamp(now)).Scan(&purchaseID, &userID, &combo, &validFrom, &reset)
+	var generation int64
+	var state, onboarding string
+	err = tx.QueryRowContext(ctx, `SELECT account_generation,account_status,onboarding_state
+		FROM users WHERE id=$1 FOR SHARE`, user.OwnerID).Scan(&generation, &state, &onboarding)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return false, nil
-		}
 		return false, err
 	}
-	if remoteReset != "" {
-		reset = remoteReset
+	if generation != user.AccountGeneration || state != "active" || onboarding != "complete" {
+		return false, nil
+	}
+	var purchaseID, combo, validFrom, reset string
+	var used, limit int64
+	var lastReset sql.NullString
+	err = tx.QueryRowContext(ctx, `SELECT b.id,c.name,b.valid_from,p.strategy,p.used_bytes,p.limit_bytes,p.last_reset_at
+		FROM xnode_identities i
+		JOIN xnode_periods p ON p.id=i.current_period_id AND p.proxy_user_id=i.proxy_user_id
+		JOIN purchases b ON b.id=p.purchase_id AND b.user_id=i.user_id
+		JOIN combos c ON c.id=b.combo_id
+		WHERE i.user_id=$1 AND i.proxy_user_id=$2 AND p.id=$3
+		AND i.credentials_cipher<>'' AND i.access_disabled=0 AND p.status='open' AND b.status='active'
+		AND `+purchaseTimestampOrderSQL("b.valid_from")+`<=`+databaseClockTimestampOrderSQL+` AND `+purchaseTimestampOrderSQL("b.valid_until")+`>`+databaseClockTimestampOrderSQL+`
+		FOR SHARE OF i,p,b`, user.OwnerID, user.ID, user.PeriodID).Scan(
+		&purchaseID, &combo, &validFrom, &reset, &used, &limit, &lastReset)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	// This is floor(limit*9/10), decomposed to avoid overflowing int64.
+	if used < 0 || limit <= 0 || used <= (limit/10)*9+(limit%10)*9/10 {
+		return false, nil
 	}
 	anchor := validFrom
-	if reset != "NO_RESET" && lastReset != nil {
-		anchor = stamp(lastReset.UTC())
+	if reset != "NO_RESET" && lastReset.Valid {
+		at, err := parseStamp(lastReset.String)
+		if err != nil {
+			return false, err
+		}
+		anchor = stamp(at)
 	}
-	var alreadyQueued int
-	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM user_notification_events\n\t\tWHERE event_key ILIKE $1 AND created_at>=$2))::integer", "traffic-90:"+purchaseID+":%", anchor).Scan(&alreadyQueued); err != nil {
+	var alreadyQueued bool
+	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM user_notification_events
+		WHERE source_kind='traffic-90' AND source_id=$1
+		AND `+purchaseTimestampOrderSQL("created_at")+`>=`+purchaseTimestampOrderSQL("$2")+`)`, purchaseID, anchor).Scan(&alreadyQueued); err != nil {
 		return false, err
 	}
-	if alreadyQueued == 1 {
+	if alreadyQueued {
 		return false, nil
 	}
 	remaining := limit - used
 	if remaining < 0 {
 		remaining = 0
 	}
-	inserted, err := s.insertUserNotificationTx(ctx, tx, "traffic-90:"+purchaseID+":"+anchor, userID,
+	inserted, err := s.insertUserNotificationTx(ctx, tx, "traffic-90:"+purchaseID+":"+anchor, user.OwnerID,
 		jobpayload.UserEventTrafficThreshold, "", map[string]string{
 			notifications.FactCombo: combo, notifications.FactUsed: strconv.FormatInt(used, 10),
 			notifications.FactTrafficLimit: strconv.FormatInt(limit, 10),

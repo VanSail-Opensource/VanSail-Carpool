@@ -17,8 +17,9 @@ func (s *Store) XNodePAYGNodeCosts(ctx context.Context, user string, from, to ti
 	rows, err := s.db.QueryContext(ctx, `SELECT a.node_id,COALESCE(n.name,a.node_id),COALESCE(n.country_code,''),SUM(c.blocks::numeric*c.unit_price_minor::numeric)::text
  FROM xnode_payg_charges c JOIN ledger_entries l ON l.id=c.ledger_id JOIN xnode_payg_accounts a ON a.proxy_user_id=c.proxy_user_id
  LEFT JOIN xnode_nodes n ON n.id=a.node_id
- WHERE a.user_id=$1 AND l.user_id=$1 AND l.created_at::timestamptz>=$2 AND l.created_at::timestamptz<=$3
- GROUP BY a.node_id,n.name,n.country_code ORDER BY a.node_id LIMIT $4`, user, from, to, xnode.MaxPAYGHistoryNodes+1)
+ WHERE a.user_id=$1 AND l.user_id=$1 AND `+purchaseTimestampOrderSQL("l.created_at")+` >= $2
+ AND `+purchaseTimestampOrderSQL("l.created_at")+` <= $3
+ GROUP BY a.node_id,n.name,n.country_code ORDER BY a.node_id LIMIT $4`, user, purchaseTimestampOrder(from), purchaseTimestampOrder(to), xnode.MaxPAYGHistoryNodes+1)
 	if err != nil {
 		return nil, false, err
 	}

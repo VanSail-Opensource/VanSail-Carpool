@@ -32,8 +32,6 @@
 - `telegramContext.ts` classifies the native `TelegramWebviewProxy` bridge, launch markers, SDK-captured `WebView.initParams`, platforms, and user agents before route construction, and skips the delayed-context wait for the public SDK placeholder in regular browsers.
 - `telegram.test.ts` covers Telegram capability behavior, semantic impact mapping, non-delegated selection, and listener disposal.
 - `telegramHaptics.test.ts` verifies one delegated action impact plus one bet outcome notification, older SDK behavior and safe host-call failure. `notifyBetOutcome` adds no second result-time impact.
-- `validation.ts` contains shared input validation helpers.
-- `validation.test.ts` covers validation boundaries.
 - `latestRequest.ts` supplies generation guards so disposed or superseded async
   work cannot overwrite current Vue state or restart timers.
 
@@ -42,3 +40,7 @@
 `adminSettingWrites.ts` saves disable toggles before clearing configuration, then keys/destinations before enabling, shared by Turnstile and PM.
 
 - `pricingDisplay.ts`: Exact minor-unit money display through the existing currency preference and localized pricing states/reasons.
+
+Display-currency amount inputs parse decimal strings directly before BigInt
+conversion; they reject fractional minor units and use the same TXB fallback
+for entry and labels when a persisted conversion rate is unavailable.

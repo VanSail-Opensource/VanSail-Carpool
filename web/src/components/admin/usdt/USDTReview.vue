@@ -19,15 +19,19 @@ const columns = computed<TableColumn<USDTTransfer>[]>(() => [{ accessorKey: 'amo
 <template>
   <section class="usdt-review">
     <div class="admin-subsection-heading"><div><h3>{{ t('adminUsdt.review') }}</h3><p>{{ t('adminUsdt.reviewHint') }}</p></div><UButton color="neutral" variant="ghost" icon="i-ph-arrows-clockwise" :aria-label="t('common.refresh')" @click="emit('refresh')" /></div>
-    <UTable class="admin-table" :data="page.items" :columns="columns">
+    <UTable v-if="page.items.length" class="admin-table" :data="page.items" :columns="columns">
       <template #amount-cell="{ row }">{{ row.original.amount }} {{ row.original.currency }}</template>
       <template #network-cell="{ row }">{{ networkLabel(row.original) }}</template>
       <template #date-cell="{ row }">{{ formatDateTime(row.original.occurredAt) }}</template>
       <template #reason-cell="{ row }">{{ t(`adminUsdt.reviewReasons.${row.original.reason}`) }}</template>
       <template #actions-cell="{ row }"><UButton color="neutral" variant="ghost" icon="i-ph-magnifying-glass" :label="t('adminWorkspace.details')" @click="selected = row.original" /></template>
-      <template #empty>{{ t('adminUsdt.noTransfers') }}</template>
     </UTable>
+    <p v-else class="usdt-review__empty">{{ t('adminUsdt.noTransfers') }}</p>
     <div v-if="page.nextCursor" class="admin-pagination"><UButton color="neutral" variant="outline" :label="t('adminUsdt.more')" @click="emit('more')" /></div>
     <USlideover :open="selected !== null" :title="t('adminUsdt.review')" :description="t('adminUsdt.reviewHint')" :dismissible="!resolving" @update:open="!$event && (selected = null)"><template #body><InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice><USDTReviewItem v-if="selected" :key="selected.id" :transfer="selected" :busy="resolving === selected.id" @dismiss="(id, reason) => { emit('dismiss', id, reason) }" /></template></USlideover>
   </section>
 </template>
+
+<style scoped>
+.usdt-review__empty { margin: 0; padding-block: 1rem; color: var(--text-muted); font-size: .85rem; }
+</style>

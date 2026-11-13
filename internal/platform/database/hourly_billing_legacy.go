@@ -43,7 +43,7 @@ func rejectLegacyHourlyActivationTx(ctx context.Context, tx *sql.Tx, owner strin
 	var found bool
 	// An accepted zero-price/coupon purchase is still a purchased benefit.
 	err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases WHERE user_id=$1
-		AND status IN ('active','activating','queued') AND valid_until::timestamptz>$2)`, owner, at.UTC()).Scan(&found)
+		AND status IN ('active','activating','queued') AND `+purchaseTimestampOrderSQL("valid_until")+`>$2)`, owner, purchaseTimestampOrder(at)).Scan(&found)
 	if err == nil && found {
 		return ErrHourlyLegacyConflict
 	}

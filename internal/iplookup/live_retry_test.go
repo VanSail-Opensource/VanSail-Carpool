@@ -17,44 +17,6 @@ func (failingResolver) LookupAddr(context.Context, string) ([]string, error) {
 	return nil, errors.New("resolver unavailable")
 }
 
-type liveRetryRepo struct {
-	details  LiveDetails
-	status   string
-	gone     bool
-	conflict bool
-	updates  int
-	enqueued []enqueuedRetry
-}
-
-func (r *liveRetryRepo) CachedIPDetails(context.Context, string) (*LiveDetails, error) {
-	return nil, nil
-}
-
-func (r *liveRetryRepo) SaveIPDetails(_ context.Context, _ string, details LiveDetails, _ time.Time) (string, error) {
-	r.details = details
-	return "snapshot", nil
-}
-
-func (r *liveRetryRepo) IPLiveSnapshotByID(context.Context, string) (LiveDetails, string, error) {
-	if r.gone {
-		return LiveDetails{}, "", ErrRepairGone
-	}
-	return r.details, r.status, nil
-}
-
-func (r *liveRetryRepo) UpdateIPLiveSnapshot(_ context.Context, _ string, details LiveDetails) error {
-	if r.conflict {
-		return ErrRepairConflict
-	}
-	r.details, r.updates = details, r.updates+1
-	return nil
-}
-
-func (r *liveRetryRepo) EnqueueOutbox(_ context.Context, kind, payload string, at time.Time) error {
-	r.enqueued = append(r.enqueued, enqueuedRetry{kind: kind, payload: payload, at: at})
-	return nil
-}
-
 func healthyMeta() LiveMeta { return LiveMeta{Status: "success", Source: "fixture"} }
 
 // partiallyFailingPTR leaves only the resolver section failed.

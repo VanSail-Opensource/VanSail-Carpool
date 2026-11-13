@@ -7,10 +7,6 @@ import (
 )
 
 type entitlementRepository struct {
-	jobs               []*model.OutboxJob
-	claimIndex         int
-	claimErr           error
-	completeErr        error
 	purchase           model.Purchase
 	purchaseErr        error
 	user               model.User
@@ -18,8 +14,6 @@ type entitlementRepository struct {
 	userByIDErr        error
 	desired            *model.Purchase
 	desiredErr         error
-	continuity         *model.Purchase
-	continuityErr      error
 	resetPhase         string
 	resetPhaseErr      error
 	advanceResetErr    error
@@ -29,28 +23,10 @@ type entitlementRepository struct {
 	markedSuccess      *bool
 	expiredPurchaseID  string
 	expireErr          error
-	completedJobID     string
-	completedAttempts  int
-	completedErr       error
 	releaseCalls       int
 	releaseErr         error
 }
 
-func (r *entitlementRepository) ClaimOutboxJob(context.Context, time.Time) (*model.OutboxJob, error) {
-	if r.claimErr != nil {
-		return nil, r.claimErr
-	}
-	if r.claimIndex >= len(r.jobs) {
-		return nil, nil
-	}
-	job := r.jobs[r.claimIndex]
-	r.claimIndex++
-	return job, nil
-}
-func (r *entitlementRepository) CompleteOutboxClaim(_ context.Context, job model.OutboxJob, jobErr error, _ time.Time) error {
-	r.completedJobID, r.completedAttempts, r.completedErr = job.ID, job.Attempts, jobErr
-	return r.completeErr
-}
 func (r *entitlementRepository) PurchaseByID(context.Context, string) (model.Purchase, error) {
 	return r.purchase, r.purchaseErr
 }
@@ -62,9 +38,6 @@ func (r *entitlementRepository) UserByID(context.Context, string) (model.User, e
 }
 func (r *entitlementRepository) DesiredEntitlement(context.Context, string, time.Time) (*model.Purchase, error) {
 	return r.desired, r.desiredErr
-}
-func (r *entitlementRepository) ContinuityEntitlement(context.Context, string, time.Time) (*model.Purchase, error) {
-	return r.continuity, r.continuityErr
 }
 func (r *entitlementRepository) PurchaseTrafficResetPhase(context.Context, string) (string, error) {
 	if r.resetPhaseErr != nil {

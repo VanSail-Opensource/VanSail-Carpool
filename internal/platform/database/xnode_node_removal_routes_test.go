@@ -76,10 +76,11 @@ func TestStaleNodeRemovalPlanRollsBackAdmissionFence(t *testing.T) {
 }
 
 func TestWaitingNodeRemovalKeepsMonotonicReceiptAttempts(t *testing.T) {
-	s, owner, _ := xnodeTrafficFixture(t)
+	s, _, _ := xnodeTrafficFixture(t)
+	actor := createTestAdmin(t, s, 80493)
 	ctx := context.Background()
 	now := time.Now()
-	input := providerops.CreateInput{ActorUserID: owner.UserID, Kind: xnode.OperationKind, IdempotencyKey: "waiting-node-removal", RequestFingerprint: "waiting-node-removal-fingerprint", Items: []providerops.ItemInput{{Key: "node", TargetType: "xnode", TargetID: "node"}}}
+	input := providerops.CreateInput{ActorUserID: actor.ID, Kind: xnode.OperationKind, IdempotencyKey: "waiting-node-removal", RequestFingerprint: "waiting-node-removal-fingerprint", Items: []providerops.ItemInput{{Key: "node", TargetType: "xnode", TargetID: "node"}}}
 	operation, _, err := s.CreateProviderOperation(ctx, input, now)
 	if err != nil {
 		t.Fatal(err)

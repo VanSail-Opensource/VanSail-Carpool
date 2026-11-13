@@ -31,15 +31,15 @@ Readiness checks required settings, enabled-provider completeness, and at least 
 ## Domain operations and audit retention
 
 - Combo records are live: changes affect active, queued, and historical purchases and enqueue deduplicated user synchronization. Referenced combos may be hidden but not hard-deleted.
-- Squad merchandising is a sparse override over the live X-Node list; default values remove the override. Node assignments are revalidated and re-fetched upstream and are never persisted locally.
+- Squad merchandising is a sparse override over the current native group inventory; default values remove the override. The X-Node domain owns durable group and node bindings. Merchandising reads revalidate that inventory instead of treating saved product metadata as authoritative node membership.
 - Balance adjustment requires a bounded nonzero signed amount and reason and appends one ledger entry plus audit event.
 - Telegram `/deduct <amount>` is accepted only from a configured administrator in the configured group as a reply to a known human sender. Amounts are positive human-major TXB values; the atomic debit rejects insufficient balance, uses a deterministic quoted-message reference for replay safety, and appends `telegram.balance_deduct` audit metadata for the sending administrator.
 - PM-topic `/refund`, `/addtxb <value>`, and `/deducttxb <value>` target only that topic's user. Refunds use the live verified remaining-traffic quote; balance adjustments use Telegram update references, immutable ledger entries, and administrator audit metadata.
 - Entitlement cancellation and payment refund append durable compensating commands; they never mutate provider state first and hope persistence follows.
 - A terminal failed/expired payment may receive one locally funded courtesy credit only with a 3-500 byte reason. Its ledger entry, dedicated idempotency record, and audit event commit together; it never changes the original order to provider-paid or calls a provider.
 - Activity games/draws, coupons/imports, and Emby retries use their module services so validation, transactions, and idempotency remain centralized.
-- Job retry is allowed only for an eligible failed job and cannot change kind or typed payload. Successful jobs are removed at completion; pending, failed, and legacy done jobs may be deleted, while processing jobs return `409`.
-- Every audit insertion transactionally retains the newest 200 events. Sensitive values are redacted before persistence.
+- Job retry is allowed only for an eligible failed job and cannot change kind or typed payload. Successful jobs are removed at completion. Manual deletion rejects processing jobs, unfinished provider commands, live retry targets, unresolved legacy Emby setup, required restriction expiry and unfinished financial/account-cleanup lanes with `409`. Resolve or retry the underlying work first. Eligible deletion and a sanitized `outbox.delete` actor audit commit together; receipts remain available for exact replay.
+- Audit events are retained durably; the bounded administrator list is a page of that history. Sensitive values are redacted before persistence.
 
 Payment profiles are durable records per provider account. EZPay and BEPusdt
 may each have multiple independent profiles, with separate endpoint,
@@ -47,7 +47,7 @@ encrypted credential, provider name, acknowledgement, and channel selection.
 The member method list uses each profile's stable ID so channels from accounts
 with the same provider remain independently selectable.
 
-## Read-only database catalog
+## Guarded database recovery editor
 
 The administrator can inspect allowlisted PostgreSQL tables and typed, redacted
 record pages. Native server catalogs supply validated table/column identifiers
@@ -56,9 +56,11 @@ values are sealed and bind the filter fingerprint; pages remain bounded.
 
 Wire values preserve exact decimal-string integers/numerics and typed booleans,
 nulls and base64 binary values. Sensitive fields are masked and excluded from
-broad search. Generic mutations return a read-only error before creating any
-review or backup. Domain APIs own changes to credentials, finance and desired
-state, preserving their transaction and synchronization contracts.
+broad search. Protected tables reject generic mutations. Eligible recovery edits
+require an exact one-use review, a reason, explicit table/action confirmation,
+a verified rescue backup and an unchanged record fingerprint. Mutation, review
+consumption and actor audit commit together. Direct edits bypass domain hooks;
+use the domain APIs for ordinary credential, financial and desired-state work.
 
 ## PostgreSQL archive administration
 
@@ -78,7 +80,7 @@ All failures use the request-ID envelope. Unauthorized responses do not reveal t
 
 - Authorization tests cover missing/expired sessions, non-admin identity, forged roles, exact administrator ID, and bootstrap setup.
 - Settings tests cover human-major TXB conversion, ordered rail validation, write-only secret rotation, nonce uniqueness, and redacted audits.
-- Database tests cover identifier injection, declared/composite-key cursors, exact large values, typed null/boolean/binary transport, sensitive masking and mutation refusal without side effects.
+- Database tests cover identifier injection, declared/composite-key cursors, exact large values, typed null/boolean/binary transport, sensitive masking, protected-table refusal and guarded mutation/replay boundaries.
 - Hosted recovery checks cover restricted-role exports, isolated logical/physical restoration, PITR, exact table/sequence fingerprints and encryption invariants.
 
 ## Aggregate user workflows
@@ -96,6 +98,10 @@ the exposed mutable configuration, and preserves IDs, charged/gross/core price
 facts, ledger history, and creation time. Refund credit, cancellation, audit,
 provider receipt, and outbox insertion commit together. No-charge replacement
 changes the active combo and add-on override without appending a TXB ledger row.
+Once any cancellation or refund lane has recorded credit for a purchase, fresh
+entitlement edits cannot reopen or rewrite it. Its accepted command keys remain
+replayable. Grant separate zero-charge access when a member needs a replacement
+term, preserving the settled purchase and refund evidence.
 
 `POST /api/v1/admin/users/{userId}/entitlements` creates a zero-charge manual
 fixed-term grant. It requires an `Idempotency-Key` and a reason of 3-500 bytes,
@@ -143,11 +149,31 @@ an `OperationReceipt`.
 
 Bulk extension filters use inclusive OR across combo IDs and add-on squad UUIDs.
 Only currently active purchases qualify, each user is targeted once, and every
-queued successor shifts by the same calendar-day count at both boundaries so
+queued successor shifts by the same extension duration at both boundaries so
 its duration remains unchanged. The preview and job use the same target query.
 
 The shared provider-operation worker records operation and item intent before
 calling the queued X-Node adapter. A completed target is never replayed. An
 interrupted attempt or uncertain network result becomes `pending_review`; mixed
-bulk results become `partial` and require audited resolution rather than a
-blind provider retry.
+bulk results become `partial`. Transient local reads before a provider attempt
+remain retryable and do not fabricate provider failure.
+
+### Repairing an operation receipt
+
+The generic administrator resolution endpoint repairs a parent receipt only
+when completed, retained item outcomes already establish the requested result.
+It supports the administrator entitlement edit, credited-refund synchronization,
+combo replacement, bulk extension, and retained legacy outage synchronization
+kinds. Every target must have a recorded attempt and completion; all outcomes
+must match `succeeded`, `failed`, or `compensated`, or fully completed mixed
+outcomes must substantiate `partial`.
+
+Unfinished or ambiguous items require the owning domain's reconciliation.
+Payment/member/hourly settlement, Emby provisioning, temporary restrictions and
+native X-Node command receipts cannot be force-completed through this endpoint.
+Receipt repair never changes item evidence, moves money, releases notification
+gates or holds, or dispatches a provider request. A repaired success clears the
+parent's obsolete error code. The actor, request key and exact returned receipt
+are committed with an immutable audit; replay returns that resolution's snapshot.
+Historical resolutions without a snapshot can replay only while the original
+receipt is unchanged.

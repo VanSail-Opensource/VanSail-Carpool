@@ -5,7 +5,8 @@ import type { FeaturePaymentMethod, FeaturePaymentOrder } from '@/api/features'
 import type { OperationReceipt } from '@/api/types'
 import { localizedError, t } from '@/i18n'
 import { notifyHaptic } from '@/utils/telegram'
-import { resolveOrderSelection, resolveReissueCandidate } from './paymentOrderHelpers'
+import { createLatestRequest } from '@/utils/latestRequest'
+import { isTerminalPaymentStatus, resolveOrderSelection, resolveReissueCandidate } from './paymentOrderHelpers'
 import { usePaymentConfiguration } from './usePaymentConfiguration'
 import { type PaymentCommand, usePaymentOrderOperations } from './usePaymentOrderOperations'
 import { usePaymentTarget } from './usePaymentTarget'
@@ -25,14 +26,22 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
   const canReissue = shallowRef(false)
   const canRecreate = shallowRef(false)
   let closeTimer: ReturnType<typeof setTimeout> | undefined
+  const latest = createLatestRequest()
   const configuration = usePaymentConfiguration(options, stage)
   const target = usePaymentTarget({ onPaid: handlePaid, onTerminal: handleOrderTerminal })
   const operations = usePaymentOrderOperations({ onTerminal: handleOperationTerminal })
   const error = computed(() => operations.error.value ?? localError.value)
 
-  function reset(methods: readonly FeaturePaymentMethod[]): void {
+  function suspend(): void {
+    latest.invalidate()
     if (closeTimer !== undefined) clearTimeout(closeTimer)
+    closeTimer = undefined
     operations.reset()
+    target.stop()
+  }
+
+  function reset(methods: readonly FeaturePaymentMethod[]): void {
+    suspend()
     target.reset()
     localError.value = null
     canReissue.value = false
@@ -57,6 +66,7 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
   }
   async function hydratePendingOrder(candidate: FeaturePaymentOrder, methods: readonly FeaturePaymentMethod[]): Promise<boolean> {
     if (candidate.status !== 'pending') return false
+    const token = latest.begin()
     const restored = resolveOrderSelection(candidate, methods, configuration.minimumMinor.value, configuration.maximumMinor.value)
     if (restored) {
       configuration.setAmountMinor(restored.amountMinor)
@@ -65,18 +75,21 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
     canRecreate.value = (candidate.provider === 'bepusdt' || candidate.provider === 'builtin_usdt') && restored !== null
     stage.value = 'pending'
     const result = await target.present(candidate)
+    if (!latest.isCurrent(token)) return false
     if (result === 'pending') stage.value = 'pending'
     return result === 'pending'
   }
   async function createOrder(): Promise<void> {
     const methodId = configuration.selectedMethodId.value
     if (!configuration.canCreate.value || !methodId) return
+    const token = latest.begin()
     stage.value = 'creating'
     localError.value = null
     canReissue.value = false
     try {
       await operations.queueCreate(methodId, configuration.amountMinor.value)
     } catch (caught) {
+      if (!latest.isCurrent(token)) return
       stage.value = 'configure'
       canReissue.value = true
       localError.value = localizedError(caught, 'errors.paymentCreate')
@@ -85,12 +98,14 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
   }
   async function cancelOrder(): Promise<void> {
     if (!target.order.value || stage.value !== 'pending') return
+    const token = latest.begin()
     target.stop()
     stage.value = 'cancelling'
     localError.value = null
     try {
       await operations.queueCancellation(target.order.value.id)
     } catch (caught) {
+      if (!latest.isCurrent(token)) return
       stage.value = 'pending'
       localError.value = localizedError(caught, 'errors.paymentCancel')
       void target.present(target.order.value)
@@ -99,48 +114,58 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
   async function recreateOrder(): Promise<void> {
     const current = target.order.value
     const methodId = configuration.selectedMethodId.value
-    if (!current || (current.provider !== 'bepusdt' && current.provider !== 'builtin_usdt') || !canRecreate.value || !methodId
+    if (!current || stage.value !== 'pending' || (current.provider !== 'bepusdt' && current.provider !== 'builtin_usdt') || !canRecreate.value || !methodId
       || Date.now() < new Date(current.expiresAt).getTime()) return
+    const token = latest.begin()
     target.stop()
     stage.value = 'creating'
     localError.value = null
     try {
       await operations.queueCreate(methodId, configuration.amountMinor.value)
     } catch (caught) {
+      if (!latest.isCurrent(token)) return
       stage.value = 'pending'
       localError.value = localizedError(caught, 'errors.paymentCreate')
       notifyHaptic('error')
     }
   }
   async function handleOperationTerminal(command: PaymentCommand, receipt: OperationReceipt): Promise<void> {
+    const token = latest.begin()
     let current: FeaturePaymentOrder
     try {
       current = await api.getPaymentOrder(command.paymentOrderId)
     } catch (caught) {
+      if (!latest.isCurrent(token)) return
       stage.value = 'review'
       localError.value = localizedError(caught, 'operations.statusUnavailable')
       return
     }
+    if (!latest.isCurrent(token)) return
     if (receipt.status === 'succeeded') {
-      if (command.kind === 'create') await presentCreatedOrder(current)
-      else finishCancellation(current)
+      if (command.kind === 'create') await presentCreatedOrder(current, token)
+      else await presentCancellationOutcome(current, token)
       return
     }
     await target.remember(current)
+    if (!latest.isCurrent(token)) return
     localError.value = receipt.errorCode?.startsWith('USDT_')
       ? localizedError({ code: receipt.errorCode }, 'errors.paymentCreate')
       : receipt.errorMessage
       ? t('cryptoPayment.rejected', { message: receipt.errorMessage })
       : t('payment.operationStatus', { status: t(`operations.status.${receipt.status}`) })
-    if (current.status === 'paid') handlePaid()
+    if (command.kind === 'cancel' && (isTerminalPaymentStatus(current.status) || ['failed', 'compensated'].includes(receipt.status))) {
+      await presentCancellationOutcome(current, token)
+    } else if (current.status === 'paid') handlePaid()
     else if (command.kind === 'create' && ['failed', 'compensated'].includes(receipt.status)) {
       stage.value = 'configure'
       canReissue.value = true
-    } else stage.value = receipt.status === 'failed' && command.kind === 'cancel' ? 'cancelled' : 'review'
+    } else stage.value = 'review'
   }
-  async function presentCreatedOrder(current: FeaturePaymentOrder): Promise<void> {
-    canRecreate.value = (current.provider === 'bepusdt' || current.provider === 'builtin_usdt') && configuration.canCreate.value
+  async function presentCreatedOrder(current: FeaturePaymentOrder, token: number): Promise<void> {
+    canRecreate.value = (current.provider === 'bepusdt' || current.provider === 'builtin_usdt')
+      && configuration.amountValid.value && configuration.selectedMethodId.value === current.methodId
     const result = await target.present(current)
+    if (!latest.isCurrent(token)) return
     if (result === 'pending') stage.value = 'pending'
     else if (result === 'missing') {
       stage.value = 'review'
@@ -148,13 +173,12 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
       notifyHaptic('error')
     }
   }
-  function finishCancellation(current: FeaturePaymentOrder): void {
-    void target.remember(current)
-    if (current.status === 'paid') handlePaid()
-    else {
-      stage.value = 'cancelled'
-      target.cancelled()
-    }
+  async function presentCancellationOutcome(current: FeaturePaymentOrder, token: number): Promise<void> {
+    const result = await target.present(current)
+    if (!latest.isCurrent(token)) return
+    if (result === 'pending') stage.value = 'pending'
+    else if (result === 'missing') stage.value = 'review'
+    if (current.status === 'cancelled') target.cancelled()
   }
   function handleOrderTerminal(current: FeaturePaymentOrder): void {
     canRecreate.value = false
@@ -173,7 +197,7 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
     closeTimer = setTimeout(options.onPaid, 700)
   }
 
-  onScopeDispose(() => closeTimer !== undefined && clearTimeout(closeTimer))
+  onScopeDispose(() => { latest.dispose(); if (closeTimer !== undefined) clearTimeout(closeTimer) })
   return {
     amount: configuration.amount,
     selectedMethodId: readonly(configuration.selectedMethodId),
@@ -195,6 +219,6 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
     recreateOrder,
     retryOperation: operations.retry,
     openPaymentTarget: target.open,
-    stopPolling: target.stop,
+    suspend,
   }
 }

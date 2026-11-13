@@ -13,7 +13,7 @@ import (
 // reportRetryRepository repairs frozen cache rows and appends durable jobs.
 type reportRetryRepository interface {
 	IPLookupReportByID(context.Context, string) (Report, Config, error)
-	UpdateIPLookupCachedReport(context.Context, Report) error
+	UpdateIPLookupCachedReport(context.Context, Report) (string, error)
 	EnqueueOutbox(context.Context, string, string, time.Time) error
 }
 
@@ -52,7 +52,11 @@ func (w *Worker) HandleReportRetryOutbox(ctx context.Context, job model.OutboxJo
 	}
 	PrepareRepair(&r)
 	persist := func(progress Report) error {
-		return repository.UpdateIPLookupCachedReport(ctx, progress)
+		revision, err := repository.UpdateIPLookupCachedReport(ctx, progress)
+		if err == nil {
+			r.RepairRevision = revision
+		}
+		return err
 	}
 	if err := w.runQueuedStages(ctx, &r, c, persist); err != nil {
 		if errors.Is(err, ErrRepairConflict) {
@@ -68,7 +72,7 @@ func (w *Worker) HandleReportRetryOutbox(ctx context.Context, job model.OutboxJo
 	}
 	r = Aggregate(r, w.now().UTC())
 	applyEnrichmentVerdict(&r)
-	if err := repository.UpdateIPLookupCachedReport(ctx, r); err != nil {
+	if err := persist(r); err != nil {
 		if errors.Is(err, ErrRepairConflict) {
 			return nil
 		}

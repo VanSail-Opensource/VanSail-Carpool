@@ -69,11 +69,25 @@ broken imports. Host exclusions are applied before rendering.
 - `clash.go`: Projects accounts and transports into Clash Meta YAML.
 - `render_test.go`: Covers VLESS credentials, REALITY and composite SS-2022 keys.
 
+`native_encryption_test.go` verifies that administrator-owned VLESS encryption
+material survives native links, member tuning and endpoint projection without
+alteration. Native links follow the
+[Xray share-link encryption contract](https://github.com/XTLS/Xray-core/discussions/716).
+Mihomo and Stash retain their supported encryption field; the published
+[sing-box VLESS schema](https://sing-box.sagernet.org/configuration/outbound/vless/)
+has no encryption representation, so those endpoints are explicitly excluded
+while compatible peers continue rendering.
+
 `template.go` expands structural proxy/name markers into administrator client documents without evaluating expressions. Xray returns one selectable profile per endpoint; explicit per-host templates take precedence. `template_validation.go` checks references and converts source Xray templates; the fleet service adds pinned-core Xray validation. sing-box and Clash validation is structural, with client runtime compatibility depending on their supported fields. `template_test.go` covers insertion, isolation of endpoint profiles, imported settings, TLS choices and WebSocket host translation. Output profiles and member credentials are never persisted.
 
 Public interfaces: `Template`, `DefaultTemplate`, `PreviewTemplate`, `RenderTemplate` and `ConvertXrayTemplate`. Extend format-specific `Proxy` renderers alongside reference validation. YAML conversion uses the existing ghodss/yaml dependency; Xray previews additionally use the panel pinned native validator. These functions perform no outbound requests.
 
 `template_markers.go` bounds structural insertion depth and checks the single proxy marker. `template_references.go` rejects dangling rules and cyclic selectors. Generated output is bounded to 4,096 endpoints and 8 MiB; the renderer never drops unsupported endpoints silently. Explicit source exclusions are retained.
+
+`template_budget.go` accounts for every proxy/name insertion before allocating
+expanded arrays; all selectable Xray profiles share the same byte allowance.
+`template_budget_test.go` covers repeated escaped names, small previews that
+amplify for larger owner inventories and cumulative profile expansion.
 
 Clash and the distinct Stash template share structural YAML validation. Generated REALITY hosts always include `reality-opts.support-x25519mlkem768: true`, following https://stash.wiki/en/proxy-protocols/proxy-types. Stash uses its own mapper and SNI field. Member credentials are rendered on demand; previews use synthetic credentials.
 
@@ -159,3 +173,10 @@ and saved templates remain authoritative. Regression coverage lives in
 `template_names_test.go` and `internal/xnode/payg_subscription_test.go`.
 
 `member.go` defines owner-scoped host and subscription projections. `client_mapper.go` and `client_mapper_path.go` implement bounded ordered client mapping without retaining credentials; `client_mapper_test.go` covers copying, mutation isolation and rejected paths.
+
+`endpoint_fingerprint_test.go` verifies both TLS legs expose the current
+fingerprint catalog, pass pinned native validation and omit optional unsupported
+download fingerprints per client. Final endpoint TLS verification policy runs
+after legacy format mapping, including the independent download leg;
+`endpoint_tls_policy_test.go` also verifies mapped insecure settings cannot
+override that policy or mutate saved mapper documents.

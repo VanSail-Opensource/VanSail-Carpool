@@ -1,0 +1,72 @@
+package database
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connections"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
+)
+
+// Legacy creation exists only to seed historical block cleanup/recovery tests.
+func (s *Store) BeginConnectionIPBlock(ctx context.Context, input connections.CreateIPBlockInput,
+	command providerops.CreateInput, now time.Time) (connections.IPBlockRecord, providerops.Operation, bool, error) {
+	for retryIndex := 0; ; retryIndex++ {
+		r0, r1, r2, r3 := s.retryAttempt_BeginConnectionIPBlock(ctx, input, command, now)
+		if !s.retryTransaction(ctx, r3, retryIndex) {
+			return r0, r1, r2, r3
+		}
+	}
+}
+
+// BeginConnectionIPBlock atomically stores the encrypted target and both jobs.
+func (s *Store) retryAttempt_BeginConnectionIPBlock(ctx context.Context, input connections.CreateIPBlockInput,
+	command providerops.CreateInput, now time.Time) (connections.IPBlockRecord, providerops.Operation, bool, error) {
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return connections.IPBlockRecord{}, providerops.Operation{}, false, err
+	}
+	defer func() { _ = tx.Rollback() }()
+	operation, replayed, err := createProviderOperationTx(ctx, tx, command, now.UTC())
+	if err != nil {
+		return connections.IPBlockRecord{}, providerops.Operation{}, false, err
+	}
+	if replayed {
+		block, loadErr := scanIPBlock(tx.QueryRowContext(ctx, ipBlockSelect+` WHERE block_operation_id=$1`, operation.Receipt.ID))
+		if loadErr != nil {
+			return connections.IPBlockRecord{}, providerops.Operation{}, false, loadErr
+		}
+		return block, operation, true, tx.Commit()
+	}
+	blockID, err := ids.New()
+	if err != nil {
+		return connections.IPBlockRecord{}, providerops.Operation{}, false, err
+	}
+	payload, _ := json.Marshal(map[string]string{"blockId": blockID})
+	expiryJobID, err := insertOutboxJobTx(ctx, tx, connections.BlockExpiryOutboxKind, string(payload), input.ExpiresAt.UTC(), now.UTC())
+	if err != nil {
+		return connections.IPBlockRecord{}, providerops.Operation{}, false, err
+	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO connection_ip_blocks(id,user_id,node_uuid,ip_digest,sealed_ip,status,
+		block_operation_id,expiry_job_id,created_at,updated_at,expires_at) VALUES($1,$2,$3,$4,$5,'blocking',$6,$7,$8,$9,$10)`,
+		blockID, input.UserID, input.NodeUUID, input.IPDigest, input.SealedIP, operation.Receipt.ID,
+		expiryJobID, stamp(now), stamp(now), stamp(input.ExpiresAt))
+	if err != nil {
+		if isUniqueViolation(err) {
+			return connections.IPBlockRecord{}, providerops.Operation{}, false, ErrConflict
+		}
+		return connections.IPBlockRecord{}, providerops.Operation{}, false, fmt.Errorf("insert connection IP block: %w", err)
+	}
+	block, err := scanIPBlock(tx.QueryRowContext(ctx, ipBlockSelect+` WHERE id=$1`, blockID))
+	if err != nil {
+		return connections.IPBlockRecord{}, providerops.Operation{}, false, err
+	}
+	if err := tx.Commit(); err != nil {
+		return connections.IPBlockRecord{}, providerops.Operation{}, false, err
+	}
+	return block, operation, false, nil
+}

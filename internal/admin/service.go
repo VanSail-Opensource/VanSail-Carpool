@@ -10,26 +10,23 @@ import (
 
 // CatalogRepository is the domain-safe database surface available to admins.
 type CatalogRepository interface {
-	SaveCombo(context.Context, database.ComboInput) (model.Combo, error)
-	DeleteCombo(context.Context, string) error
+	SaveAdminCombo(context.Context, string, database.ComboInput) (model.Combo, error)
+	DeleteAdminCombo(context.Context, string, string) error
 	ListCombos(context.Context, bool) ([]model.Combo, error)
-	SaveSquadProduct(context.Context, database.SquadProductInput) (model.SquadProduct, error)
+	SaveAdminSquadProduct(context.Context, string, database.SquadProductInput) (model.SquadProduct, error)
 	SquadProductByID(context.Context, string) (model.SquadProduct, error)
 	SquadProductByGroupID(context.Context, string) (model.SquadProduct, error)
 	ListSquadProducts(context.Context, bool) ([]model.SquadProduct, error)
-	RefreshImportedSquads(context.Context, []database.ImportedSquad) error
 	ListUsers(context.Context, int) ([]model.User, error)
-	AdjustBalance(context.Context, string, int64, string, string, time.Time) (model.LedgerEntry, error)
-	DeductBalance(context.Context, string, int64, string, string, time.Time) (model.LedgerEntry, error)
+	AdjustAdminBalance(context.Context, string, string, int64, string, string, time.Time) (model.LedgerEntry, error)
+	DeductAdminBalance(context.Context, string, string, int64, string, string, time.Time) (model.LedgerEntry, error)
 	ListPaymentOrders(context.Context, string, int) ([]model.PaymentOrder, error)
 	PaymentOrderByID(context.Context, string) (model.PaymentOrder, error)
-	RefundPayment(context.Context, *string, string, string, time.Time) (model.PaymentOrder, error)
 	ListRefunds(context.Context, int) ([]model.Refund, error)
 	ListAllPurchases(context.Context, int) ([]model.Purchase, error)
-	CancelPurchase(context.Context, string, string, time.Time) (model.Purchase, error)
+	CancelAdminPurchase(context.Context, string, string, string, time.Time) (model.Purchase, error)
 	ListBackupRuns(context.Context, int) ([]model.BackupRun, error)
 	ListOutboxJobs(context.Context, int) ([]model.OutboxJob, error)
-	RetryOutboxJob(context.Context, string, time.Time) error
 	ListAuditEvents(context.Context, int) ([]model.AuditEvent, error)
 	AppendAudit(context.Context, *string, string, string, string, string, time.Time) error
 }
@@ -50,9 +47,9 @@ type SquadImporter interface {
 	ListInternalSquads(context.Context) ([]UpstreamSquad, error)
 }
 
-// BackupRunner creates and verifies one online backup.
+// BackupRunner audits admission before creating and verifying one online backup.
 type BackupRunner interface {
-	Run(context.Context) (model.BackupRun, error)
+	RunForActor(context.Context, string) (model.BackupRun, error)
 }
 
 type backupDeleter interface {
@@ -91,8 +88,5 @@ func (s *Service) Settings(ctx context.Context) ([]model.Setting, error) {
 
 // PutSetting validates and audits one config mutation.
 func (s *Service) PutSetting(ctx context.Context, actorID, key, value string) error {
-	if err := s.settings.Put(ctx, actorID, key, value); err != nil {
-		return err
-	}
-	return s.audit(ctx, actorID, "setting.update", "setting", key, map[string]any{"secret": settingDefinitions[key].Secret})
+	return s.settings.Put(ctx, actorID, key, value)
 }

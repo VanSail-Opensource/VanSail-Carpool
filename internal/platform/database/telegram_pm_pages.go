@@ -27,11 +27,16 @@ func (s *Store) ListPMConversations(ctx context.Context, cursor, search string, 
 		if err != nil {
 			return nil, nil, err
 		}
-		query += fmt.Sprintf(" AND (c.created_at<$%d OR (c.created_at=$%d AND c.id<$%d))", len(args)+1, len(args)+2, len(args)+3)
+		cutoff, err := parseStamp(decoded.Timestamp)
+		if err != nil {
+			return nil, nil, err
+		}
+		ordered := purchaseTimestampOrderSQL("c.created_at")
+		query += fmt.Sprintf(" AND (%s<$%d OR (%s=$%d AND c.id<$%d))", ordered, len(args)+1, ordered, len(args)+2, len(args)+3)
 
-		args = append(args, decoded.Timestamp, decoded.Timestamp, decoded.ID)
+		args = append(args, purchaseTimestampOrder(cutoff), purchaseTimestampOrder(cutoff), decoded.ID)
 	}
-	query += fmt.Sprintf(" ORDER BY c.created_at DESC,c.id DESC LIMIT $%d", len(args)+1)
+	query += fmt.Sprintf(" ORDER BY %s DESC,c.id DESC LIMIT $%d", purchaseTimestampOrderSQL("c.created_at"), len(args)+1)
 
 	args = append(args, limit+1)
 	rows, err := s.db.QueryContext(ctx, query, args...)
@@ -65,7 +70,7 @@ func (s *Store) ListPMDeliveries(ctx context.Context, id string) ([]model.PMDeli
 		FROM provider_operations o JOIN provider_operation_items p ON p.operation_id=o.id AND p.item_key='topic' AND p.target_id=$1
 		JOIN provider_operation_items r ON r.operation_id=o.id AND r.item_key='relay'
 		LEFT JOIN telegram_pm_read_status read_state ON read_state.operation_id=o.id WHERE o.kind='telegram_pm_relay'
-		ORDER BY o.created_at DESC,o.id DESC LIMIT 50`, id)
+		ORDER BY `+purchaseTimestampOrderSQL("o.created_at")+` DESC,o.id DESC LIMIT 50`, id)
 	if err != nil {
 		return nil, err
 	}

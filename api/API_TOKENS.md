@@ -19,6 +19,13 @@ requirement on the shared operation-polling endpoint. Token management requires 
 signed browser session. Bearer tokens do not authenticate member, browser-login,
 Mini App handoff, subscription-bearer or agent endpoints.
 
+Generic database and backup operations span both administrator and X-Node data.
+Their read endpoints, including `POST /admin/database/tables/{table}/query`,
+require read access to **both** resources. Their mutations require write access
+to both resources. An `admin:*` token alone cannot use these generic operations
+to bypass the native scope boundary. Signed browser administrator sessions keep
+their existing access policy.
+
 ```sh
 curl --fail-with-body -H "Authorization: Bearer $API_TOKEN" "$PANEL_URL/api/v1/admin/xnode/nodes"
 ```
@@ -29,6 +36,12 @@ action and body. Queued mutations return durable operation receipts; poll the
 administrator operation endpoint until terminal completion. Receipt reads also
 check actor/owner and resource scope. Revocation prevents subsequent requests
 without cancelling already accepted work.
+
+Administrator balance adjustments also require `Idempotency-Key`. Keep the same
+key when retrying an unchanged adjustment after a lost response; use a new key
+for a different amount, member or reason. The key is scoped to the acting
+administrator and replays the existing ledger entry without another balance
+change or notification.
 
 The existing request budget applies per token. Tokens are never accepted from
 URLs or query parameters. Creation defaults to 30 days; `expiresInDays: 0`

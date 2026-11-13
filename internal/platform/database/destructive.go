@@ -68,6 +68,9 @@ func (s *Store) retryAttempt_deleteFeature(ctx context.Context, actorID, action,
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
+	if err := catalogAdminActorTx(ctx, tx, actorID); err != nil {
+		return err
+	}
 	if err := mutate(tx); err != nil {
 		return err
 	}

@@ -74,12 +74,7 @@ func (service *Service) CheckIn(ctx context.Context, userID string, config Check
 	return service.store.ClaimBoostedDailyActivityRange(ctx, userID, now.In(location).Format(time.DateOnly), location.String(), config.RewardMinMinor, config.RewardMaxMinor, *boost.Count, service.rng, now.UTC())
 }
 func (service *Service) SaveDraw(ctx context.Context, input LuckyDrawInput) (LuckyDraw, error) {
-	input.Name, input.Description = strings.TrimSpace(input.Name), strings.TrimSpace(input.Description)
-	for index := range input.Prizes {
-		input.Prizes[index].Name = strings.TrimSpace(input.Prizes[index].Name)
-		input.Prizes[index].Reward.CouponID = strings.TrimSpace(input.Prizes[index].Reward.CouponID)
-	}
-	return service.store.SaveLuckyDraw(ctx, input, service.now().UTC())
+	return service.store.SaveLuckyDraw(ctx, normalizedDrawInput(input), service.now().UTC())
 }
 func (service *Service) Draws(ctx context.Context, enabledOnly bool) ([]LuckyDraw, error) {
 	return service.store.ListLuckyDraws(ctx, enabledOnly)

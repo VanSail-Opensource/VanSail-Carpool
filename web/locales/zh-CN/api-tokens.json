@@ -10,7 +10,7 @@
     "readOnly": "只读",
     "fullAccess": "完整管理权限",
     "permissions": "权限",
-    "permissionsHint": "写入权限包含对应资源的读取权限。完整管理权限还可控制交易和系统设置。",
+    "permissionsHint": "管理权限与节点权限相互独立。写入权限包含对应资源的读取权限。数据库和备份访问需要同时具有两组权限。完整管理权限会选中两项写入权限。",
     "create": "创建令牌",
     "nameRequired": "请输入 1–80 个字符的名称。",
     "scopeRequired": "请至少选择一项权限。",
@@ -42,8 +42,8 @@
       "xnode": "节点"
     },
     "scopes": {
-      "admin:read": "读取全部管理数据",
-      "admin:write": "控制全部管理功能",
+      "admin:read": "读取交易和管理数据",
+      "admin:write": "控制交易和管理功能",
       "xnode:read": "读取节点和配置",
       "xnode:write": "配置节点和执行命令"
     }

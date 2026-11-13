@@ -2,12 +2,16 @@ package catalog
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
+	"strings"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	jobpayload "github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
@@ -24,21 +28,51 @@ func (s *Service) HandleProviderOperation(ctx context.Context, operation provide
 	if err != nil {
 		return err
 	}
+	// A completed item is the immutable outcome of an earlier attempt. Recover
+	// its parent receipt before reading mutable credentials or calling the provider.
+	if providerops.Terminal(item.Status) {
+		if item.Status == providerops.StatusSucceeded {
+			s.InvalidateDashboard(item.TargetID)
+		}
+		completion := providerops.Completion{Status: item.Status, ErrorCode: item.ErrorCode,
+			ProviderReference: item.ProviderReference, ResultJSON: item.ResultJSON}
+		_, err := repository.CompleteProviderOperation(ctx, operation.Receipt.ID, completion, s.now().UTC())
+		return err
+	}
+	if operation.OwnerUserID == "" || operation.ActorUserID != operation.OwnerUserID || item.TargetID != operation.OwnerUserID {
+		return errors.New("subscription revoke owner does not match the command")
+	}
 	target, err := revokeOperationTarget(job)
 	if err != nil {
 		return err
 	}
-	user, err := repository.UserByID(ctx, item.TargetID)
-	if err != nil || user.ProxyUserID == nil {
+	user, err := repository.UserByID(ctx, operation.OwnerUserID)
+	if err != nil && !errors.Is(err, database.ErrNotFound) {
+		return err
+	}
+	if err != nil {
 		return s.finishRevoke(ctx, repository, operation, item, providerops.StatusFailed, "XNODE_IDENTITY_REQUIRED")
 	}
-	current, err := s.provider.Dashboard(ctx, *user.ProxyUserID)
+	if user.ID != operation.OwnerUserID || user.AccountGeneration != target.Generation || user.AccountStatus != "active" {
+		return s.finishRevoke(ctx, repository, operation, item, providerops.StatusFailed, "ACCOUNT_GENERATION_SUPERSEDED")
+	}
+	provider, ok := s.provider.(memberSubscriptionRevoker)
+	if !ok {
+		return errors.New("member subscription revocation is unavailable")
+	}
+	current, err := revokeDashboard(ctx, repository, provider, user)
+	if errors.Is(err, database.ErrAccountUnavailable) {
+		return s.finishRevoke(ctx, repository, operation, item, providerops.StatusFailed, "ACCOUNT_GENERATION_SUPERSEDED")
+	}
 	if err != nil {
 		return err
 	}
+	if strings.TrimSpace(current.SubscriptionURL) == "" {
+		return errors.New("current subscription credential is unavailable")
+	}
 	if item.Status == providerops.StatusProcessing {
 		if subscriptionHash(current.SubscriptionURL) != target.PreviousHash {
-			s.invalidateDashboard(user.ID)
+			s.InvalidateDashboard(user.ID)
 			return s.finishRevoke(ctx, repository, operation, item, providerops.StatusSucceeded, "")
 		}
 		return s.finishRevoke(ctx, repository, operation, item, providerops.StatusPendingReview, "REVOKE_OUTCOME_AMBIGUOUS")
@@ -48,17 +82,23 @@ func (s *Service) HandleProviderOperation(ctx context.Context, operation provide
 		return err
 	}
 	if subscriptionHash(current.SubscriptionURL) != target.PreviousHash {
-		s.invalidateDashboard(user.ID)
+		s.InvalidateDashboard(user.ID)
 		return s.finishRevoke(ctx, repository, operation, item, providerops.StatusSucceeded, "")
 	}
-	_, callErr := s.provider.RevokeSubscription(ctx, *user.ProxyUserID)
+	_, callErr := provider.RevokeSubscriptionForMember(ctx, user)
 	if callErr == nil {
-		s.invalidateDashboard(user.ID)
+		s.InvalidateDashboard(user.ID)
 		return s.finishRevoke(ctx, repository, operation, item, providerops.StatusSucceeded, "")
 	}
-	after, reconcileErr := s.provider.Dashboard(ctx, *user.ProxyUserID)
-	if reconcileErr == nil && subscriptionHash(after.SubscriptionURL) != target.PreviousHash {
-		s.invalidateDashboard(user.ID)
+	if errors.Is(callErr, database.ErrAccountUnavailable) {
+		return s.finishRevoke(ctx, repository, operation, item, providerops.StatusFailed, "ACCOUNT_GENERATION_SUPERSEDED")
+	}
+	after, reconcileErr := revokeDashboard(ctx, repository, provider, user)
+	if errors.Is(reconcileErr, database.ErrAccountUnavailable) {
+		return s.finishRevoke(ctx, repository, operation, item, providerops.StatusFailed, "ACCOUNT_GENERATION_SUPERSEDED")
+	}
+	if reconcileErr == nil && strings.TrimSpace(after.SubscriptionURL) != "" && subscriptionHash(after.SubscriptionURL) != target.PreviousHash {
+		s.InvalidateDashboard(user.ID)
 		return s.finishRevoke(ctx, repository, operation, item, providerops.StatusSucceeded, "")
 	}
 	if definitiveCatalogFailure(s.provider, callErr) {
@@ -67,13 +107,37 @@ func (s *Service) HandleProviderOperation(ctx context.Context, operation provide
 	return s.finishRevoke(ctx, repository, operation, item, providerops.StatusPendingReview, "REVOKE_OUTCOME_AMBIGUOUS")
 }
 
+// A credential read can race a purge and recreation even when the provider
+// resolves the correct owner. Recheck the generation after the read so the new
+// account's token can never serve as proof for the retired command.
+func revokeDashboard(ctx context.Context, repository revokeOperationRepository, provider memberDashboardReader, admitted model.User) (RemoteDashboard, error) {
+	current, err := provider.DashboardForMember(ctx, admitted)
+	if err != nil {
+		return RemoteDashboard{}, err
+	}
+	user, err := repository.UserByID(ctx, admitted.ID)
+	if errors.Is(err, database.ErrNotFound) || err == nil && (user.ID != admitted.ID || user.AccountGeneration != admitted.AccountGeneration || user.AccountStatus != "active") {
+		return RemoteDashboard{}, database.ErrAccountUnavailable
+	}
+	if err != nil {
+		return RemoteDashboard{}, err
+	}
+	return current, nil
+}
+
 func revokeOperationTarget(job model.OutboxJob) (revokeTarget, error) {
 	value, err := jobpayload.TargetID(job, "sealedTarget")
 	if err != nil {
 		return revokeTarget{}, err
 	}
 	var target revokeTarget
-	if json.Unmarshal([]byte(value), &target) != nil || len(target.PreviousHash) != 64 {
+	decoder := json.NewDecoder(strings.NewReader(value))
+	decoder.DisallowUnknownFields()
+	if len(value) > 1024 || decoder.Decode(&target) != nil || decoder.Decode(new(any)) != io.EOF || target.Generation < 0 {
+		return revokeTarget{}, errors.New("subscription revoke target is invalid")
+	}
+	hash, err := hex.DecodeString(target.PreviousHash)
+	if err != nil || len(hash) != 32 {
 		return revokeTarget{}, errors.New("subscription revoke target is invalid")
 	}
 	return target, nil

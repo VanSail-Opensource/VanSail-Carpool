@@ -19,7 +19,7 @@
     },
     "expires": "Expires {date}",
     "noExpiry": "No expiry",
-    "grantSummary": "{code} 路 {kind} 路 {expiry}",
+    "grantSummary": "{code} · {kind} · {expiry}",
     "unlimited": "Unlimited",
     "uses": "{count} uses left",
     "discard": "Discard",

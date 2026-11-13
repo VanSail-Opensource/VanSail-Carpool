@@ -18,13 +18,17 @@ Trusted Telegram authentication and resumable account onboarding live here. Netw
 
 - `service.go` defines service contracts, authentication, session lookup, and service construction.
 - `auth_limiter.go` bounds verified Telegram-ID authentication exchanges before account or session writes.
-- `membership.go` refreshes canonical group and channel membership facts without changing onboarding state.
+- `membership.go` refreshes canonical group and channel membership facts without changing onboarding state. A single-space probe updates only that space so stale caller snapshots cannot overwrite newer membership in the other space.
 - `community_invites.go` creates one requested-space identity-bound invite for a current active combo or a member with actual PAYG spending, rechecks eligibility before approval, and declines plus revokes an ineligible request. Wallet funding and free traffic do not qualify.
 - `onboarding.go` advances directly to agreements and completes them locally.
   Agreement acceptance atomically queues native subscription credentials and
   applicable PAYG provisioning through the existing durable outbox. A combo is
   required only for combo access, never for a member's subscription link.
 - `service_test.go` covers authentication and session behavior.
+- `session_recovery_test.go` distinguishes absent/expired credentials from storage
+  and context failures. Only confirmed missing sessions are authentication errors;
+  transient lookups retain their cause so the HTTP boundary can return a retryable
+  response and preserve the member's existing cookie.
 - `auth_limiter_test.go` covers per-identity isolation and token refill behavior.
 - `membership_test.go` covers community membership facts, one-space invite eligibility, and approval-time entitlement rechecks.
 - `onboarding_test.go` covers provider-free agreement completion without a username.

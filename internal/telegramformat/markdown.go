@@ -3,6 +3,7 @@ package telegramformat
 
 import (
 	"strings"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -64,7 +65,7 @@ func Limit(value string) string {
 		character := runes[index]
 		if character == '\\' && index+1 < len(runes) {
 			index++ // Keep an escaped control character and its slash together.
-			if bold {
+			if bold && !unicode.IsSpace(runes[index]) {
 				boldHasText = true
 			}
 		} else {
@@ -81,7 +82,7 @@ func Limit(value string) string {
 				bold = !bold
 				boldHasText = false
 			default:
-				if bold {
+				if bold && !unicode.IsSpace(character) {
 					boldHasText = true
 				}
 				if linkStage == 2 {
@@ -109,12 +110,4 @@ func boolRune(value bool) int {
 		return 1
 	}
 	return 0
-}
-
-func trailingBackslashes(value []rune) int {
-	count := 0
-	for index := len(value) - 1; index >= 0 && value[index] == '\\'; index-- {
-		count++
-	}
-	return count
 }

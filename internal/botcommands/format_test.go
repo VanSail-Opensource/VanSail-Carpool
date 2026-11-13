@@ -97,6 +97,23 @@ func TestFormatWelcomeUsesLocalizedSafeMention(t *testing.T) {
 	}
 }
 
+func TestFormatComboIncludesLocalizedResetSchedule(t *testing.T) {
+	for _, test := range []struct {
+		language Language
+		want     map[string]string
+	}{
+		{English, map[string]string{"DAY": "Daily", "WEEK": "Weekly", "MONTH_ROLLING": "Monthly"}},
+		{Chinese, map[string]string{"DAY": "每天", "WEEK": "每周", "MONTH_ROLLING": "每月"}},
+	} {
+		for strategy, label := range test.want {
+			purchase := &model.Purchase{ComboName: "Plan", ResetStrategy: strategy}
+			if got := FormatCombo(Text(test.language), purchase, nil); !strings.Contains(got, escapeMarkdownV2(label)) {
+				t.Errorf("%s %s omitted schedule %q: %s", test.language, strategy, label, got)
+			}
+		}
+	}
+}
+
 func TestLimitMarkdownV2KeepsEscapesComplete(t *testing.T) {
 	t.Parallel()
 	result := Limit(strings.Repeat("a", MessageLimit-7) + "\\" + strings.Repeat("x", 10))

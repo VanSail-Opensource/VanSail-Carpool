@@ -29,7 +29,7 @@ type paymentProfileReader interface {
 }
 
 type paymentProfileChannelReader interface {
-	PaymentProfileChannels(string) []model.PaymentChannel
+	PaymentProfileChannels(string, time.Time) []model.PaymentChannel
 }
 
 type paymentProfileRuntimeReader interface {
@@ -42,7 +42,6 @@ type paymentProfileByIDRuntimeReader interface {
 
 // Repository is the transactional billing persistence contract.
 type Repository interface {
-	CreatePaymentOrder(context.Context, model.PaymentOrder) (model.PaymentOrder, error)
 	UpdatePaymentCheckout(context.Context, string, *string, *string, *string, string, string, time.Time) (model.PaymentOrder, error)
 	FailPaymentOrder(context.Context, string) error
 	PaymentOrderByID(context.Context, string) (model.PaymentOrder, error)
@@ -53,11 +52,6 @@ type Repository interface {
 
 type checkoutDetailsRepository interface {
 	UpdatePaymentCheckoutDetails(context.Context, string, *string, *string, *string, *string, *string, *string, string, string, time.Time) (model.PaymentOrder, error)
-}
-
-type cancellationRepository interface {
-	CancelPaymentOrder(context.Context, string, string, string, time.Time) (model.PaymentOrder, bool, error)
-	SetPaymentProviderCancellation(context.Context, string, string, time.Time) error
 }
 
 // Service calculates prices and commits verified provider events.
@@ -76,19 +70,6 @@ func NewService(repository Repository, settings Settings, gateway Gateway, publi
 	return &Service{repository: repository, settings: settings, gateway: gateway, publicURL: publicURL, returnKey: append([]byte(nil), returnKey...), now: time.Now}
 }
 
-// CreateOrder computes authoritative pricing, persists the attempt, then requests checkout data.
-func (s *Service) CreateOrder(ctx context.Context, user model.User, methodID string, txbMinor int64) (model.PaymentOrder, error) {
-	order, err := s.prepareOrder(ctx, user, methodID, txbMinor)
-	if err != nil {
-		return model.PaymentOrder{}, err
-	}
-	order, err = s.repository.CreatePaymentOrder(ctx, order)
-	if err != nil {
-		return model.PaymentOrder{}, err
-	}
-	return s.createCheckout(ctx, user, order)
-}
-
 func (s *Service) prepareOrder(ctx context.Context, user model.User, methodID string, txbMinor int64) (model.PaymentOrder, error) {
 	provider, profileID, rail, err := ParseMethodSelection(methodID)
 	if err != nil {
@@ -100,7 +81,7 @@ func (s *Service) prepareOrder(ctx context.Context, user model.User, methodID st
 	if err := s.validateAddTXBAmount(ctx, txbMinor); err != nil {
 		return model.PaymentOrder{}, err
 	}
-	providerEnabled, settingsErr := s.providerMethodEnabled(ctx, provider, profileID, rail)
+	profileID, providerEnabled, settingsErr := s.providerMethodSelection(ctx, provider, profileID, rail)
 	if settingsErr != nil {
 		return model.PaymentOrder{}, settingsErr
 	}

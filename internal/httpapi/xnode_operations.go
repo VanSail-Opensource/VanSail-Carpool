@@ -48,16 +48,16 @@ func (s *Server) xnodeCertificateOperation(w http.ResponseWriter, r *http.Reques
 	writeJSON(w, http.StatusOK, operation)
 }
 func (s *Server) xnodeDeleteNode(w http.ResponseWriter, r *http.Request) {
-	s.xnodeDeleteResource(w, r, s.deps.XNode.DeleteNode)
+	s.xnodeDeleteAdminResource(w, r, s.deps.XNode.DeleteNodeAs)
 }
 func (s *Server) xnodeDeleteGroup(w http.ResponseWriter, r *http.Request) {
-	s.xnodeDeleteResource(w, r, s.deps.XNode.DeleteGroup)
+	s.xnodeDeleteAdminResource(w, r, s.deps.XNode.DeleteGroupAs)
 }
 func (s *Server) xnodeDeleteEndpoint(w http.ResponseWriter, r *http.Request) {
-	s.xnodeDeleteResource(w, r, s.deps.XNode.DeleteEndpoint)
+	s.xnodeDeleteAdminResource(w, r, s.deps.XNode.DeleteEndpointAs)
 }
-func (s *Server) xnodeDeleteResource(w http.ResponseWriter, r *http.Request, remove func(context.Context, string) error) {
-	if err := remove(r.Context(), chiURLParam(r, "id")); err != nil {
+func (s *Server) xnodeDeleteAdminResource(w http.ResponseWriter, r *http.Request, remove func(context.Context, string, string) error) {
+	if err := remove(r.Context(), currentUser(r).ID, chiURLParam(r, "id")); err != nil {
 		s.xnodeError(w, r, err)
 		return
 	}

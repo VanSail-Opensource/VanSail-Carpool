@@ -78,6 +78,13 @@ func (r *connectionWorkerRepository) ConnectionScanByID(context.Context, string)
 	return r.scan, nil
 }
 
+func (r *connectionWorkerRepository) StartConnectionScan(ctx context.Context, id string, now time.Time) (providerops.ConnectionScan, error) {
+	if r.scan.Status != providerops.StatusQueued {
+		return providerops.ConnectionScan{}, errors.New("connection scan already started")
+	}
+	return r.UpdateConnectionScan(ctx, id, providerops.ConnectionScanUpdate{Status: providerops.StatusProcessing}, now)
+}
+
 func (r *connectionWorkerRepository) UpdateConnectionScan(_ context.Context, _ string, update providerops.ConnectionScanUpdate, now time.Time) (providerops.ConnectionScan, error) {
 	r.updates = append(r.updates, update)
 	r.scan.Status = update.Status

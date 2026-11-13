@@ -8,8 +8,10 @@ import (
 )
 
 func (s *Service) SaveOwnedOutbounds(ctx context.Context, user, node string, revision int64, raw json.RawMessage) (Customization, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	return s.saveOwnedOutbounds(ctx, user, node, revision, raw, "")
+}
+
+func (s *Service) saveOwnedOutbounds(ctx context.Context, user, node string, revision int64, raw json.RawMessage, actor string) (Customization, error) {
 	identity, tags, err := s.customizationIdentity(ctx, user, node)
 	if err != nil {
 		return Customization{}, err
@@ -48,6 +50,24 @@ func (s *Service) SaveOwnedOutbounds(ctx context.Context, user, node string, rev
 		out["tag"] = names[tag]
 		rewriteDependencies(out, func(tag string) string { return names[tag] })
 	}
+	// DNS validation runs on the existing queue without holding the service
+	// mutation lock. Recheck owner, access and revision before using its result.
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	current, currentTags, err := s.customizationIdentity(ctx, user, node)
+	if err != nil {
+		return item, err
+	}
+	if len(currentTags) == 0 || current.ProxyUserID != identity.ProxyUserID || current.Username != identity.Username {
+		return item, ErrConflict
+	}
+	item, err = s.customization(ctx, user, node)
+	if err != nil {
+		return item, err
+	}
+	if item.Revision != revision {
+		return item, ErrConflict
+	}
 	var rules []map[string]any
 	if item.RoutingCipher != "" {
 		if err = s.open("xnode.routing."+user+"."+node, item.RoutingCipher, &rules); err != nil {
@@ -67,9 +87,13 @@ func (s *Service) SaveOwnedOutbounds(ctx context.Context, user, node string, rev
 	if rules == nil {
 		rules = []map[string]any{}
 	}
-	return s.storeCustomization(ctx, item, outbounds, rules)
+	return s.storeCustomization(ctx, item, identity, outbounds, rules, actor)
 }
 func (s *Service) SaveOwnedRouting(ctx context.Context, user, node string, revision int64, raw json.RawMessage) (Customization, error) {
+	return s.saveOwnedRouting(ctx, user, node, revision, raw, "")
+}
+
+func (s *Service) saveOwnedRouting(ctx context.Context, user, node string, revision int64, raw json.RawMessage, actor string) (Customization, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	identity, tags, err := s.customizationIdentity(ctx, user, node)
@@ -116,51 +140,5 @@ func (s *Service) SaveOwnedRouting(ctx context.Context, user, node string, revis
 		rule["outboundTag"] = tag
 		rule["user"] = []string{userMatcher(identity.ProxyUserID)}
 	}
-	return s.storeCustomization(ctx, item, outbounds, rules)
-}
-func (s *Service) storeCustomization(ctx context.Context, item Customization, outs, rules []map[string]any) (Customization, error) {
-	raw, err := json.Marshal(map[string]any{"inbounds": []any{}, "outbounds": append([]map[string]any{{"tag": "direct", "protocol": "freedom"}}, outs...), "routing": map[string]any{"rules": rules}})
-	if err != nil {
-		return item, err
-	}
-	tags := []string{}
-	for _, out := range outs {
-		tag, _ := out["tag"].(string)
-		tags = append(tags, tag)
-	}
-	if !ValidateCompiled(wire.Config{Xray: raw, Users: []wire.User{}, MemberOutbounds: tags}).Valid {
-		return item, ErrInvalid
-	}
-	item.OutboundsCipher, err = s.seal("xnode.outbounds."+customizationOwner(item)+"."+item.NodeID, outs)
-	if err != nil {
-		return item, err
-	}
-	item.RoutingCipher, err = s.seal("xnode.routing."+customizationOwner(item)+"."+item.NodeID, rules)
-	if err != nil {
-		return item, err
-	}
-	if err = s.checkTagOwnership(ctx, item.NodeID, nil, nil, &item); err != nil {
-		return item, err
-	}
-	if _, err = s.compile(ctx, item.NodeID, nil, nil, nil, &item); err != nil {
-		return item, err
-	}
-	if err = s.repo.SaveXNodeCustomization(ctx, item); err != nil {
-		return item, err
-	}
-	return s.OwnedCustomization(ctx, customizationOwner(item), item.NodeID)
-}
-func rewriteDependencies(out map[string]any, rewrite func(string) string) {
-	if proxy, _ := out["proxySettings"].(map[string]any); proxy != nil {
-		if tag, ok := proxy["tag"].(string); ok {
-			proxy["tag"] = rewrite(tag)
-		}
-	}
-	if stream, _ := out["streamSettings"].(map[string]any); stream != nil {
-		if socket, _ := stream["sockopt"].(map[string]any); socket != nil {
-			if tag, ok := socket["dialerProxy"].(string); ok {
-				socket["dialerProxy"] = rewrite(tag)
-			}
-		}
-	}
+	return s.storeCustomization(ctx, item, identity, outbounds, rules, actor)
 }

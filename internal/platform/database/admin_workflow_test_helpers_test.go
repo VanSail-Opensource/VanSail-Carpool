@@ -10,6 +10,17 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
+func createTestAdmin(t *testing.T, store *Store, telegramID int64) model.User {
+	t.Helper()
+	user, _, err := store.UpsertTelegramUser(context.Background(), model.TelegramProfile{
+		ID: telegramID, FirstName: "Administrator", Username: fmt.Sprintf("admin%d", telegramID),
+	}, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return user
+}
+
 func createAdminWorkflowPurchase(t *testing.T, store *Store, telegramID int64, combo model.Combo,
 	now time.Time, addons ...string) (model.User, model.Purchase) {
 	t.Helper()

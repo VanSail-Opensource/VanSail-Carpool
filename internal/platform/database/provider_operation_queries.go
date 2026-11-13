@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -41,7 +40,7 @@ func (s *Store) ListProviderOperationsForOwner(ctx context.Context, ownerID stri
 		limit = 50
 	}
 	rows, err := s.db.QueryContext(ctx, providerOperationSelect+
-		` WHERE owner_user_id=$1 ORDER BY created_at DESC,id DESC LIMIT $2`, ownerID, limit)
+		` WHERE owner_user_id=$1 ORDER BY `+purchaseTimestampOrderSQL("created_at")+` DESC,id DESC LIMIT $2`, ownerID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list provider operations: %w", err)
 	}
@@ -76,12 +75,10 @@ func scanProviderOperation(row rowScanner) (providerops.Operation, error) {
 		operation.Receipt.ErrorCode = &errorCode
 	}
 	if operation.Receipt.Kind == "payment_create" && errorCode == "PAYMENT_CREATE_REJECTED" {
-		var result struct {
-			ProviderMessage string `json:"providerMessage"`
-		}
-		if json.Unmarshal([]byte(operation.ResultJSON), &result) == nil && result.ProviderMessage != "" {
-			operation.Receipt.ErrorMessage = &result.ProviderMessage
-		}
+		// Historical provider messages remain internal evidence. An upstream
+		// response may echo callback capabilities or signed request payloads.
+		message := "Payment provider rejected this checkout request."
+		operation.Receipt.ErrorMessage = &message
 	}
 	if operation.Receipt.CreatedAt, err = parseStamp(created); err != nil {
 		return providerops.Operation{}, fmt.Errorf("parse provider operation creation: %w", err)

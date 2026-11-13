@@ -93,13 +93,15 @@ func scanGrant(row rowScanner) (coupons.Grant, error) {
 	return grant, err
 }
 
-func (s *Store) redemptionByID(ctx context.Context, redemptionID string) (coupons.RedemptionResult, error) {
-	result, err := scanRedemption(s.db.QueryRowContext(ctx, redemptionSelect+` WHERE coupon_redemptions.id=$1`, redemptionID))
+// Decode the response before committing any grant or balance effect. Retained
+// result corruption must abort the financial mutation, not obscure a commit.
+func redemptionByIDTx(ctx context.Context, tx *sql.Tx, redemptionID string) (coupons.RedemptionResult, error) {
+	result, err := scanRedemption(tx.QueryRowContext(ctx, redemptionSelect+` WHERE coupon_redemptions.id=$1`, redemptionID))
 	if err != nil {
 		return coupons.RedemptionResult{}, err
 	}
 	if result.Grant != nil {
-		grant, grantErr := scanGrant(s.db.QueryRowContext(ctx, grantSelect+` WHERE coupon_grants.id=$1`, result.Grant.ID))
+		grant, grantErr := scanGrant(tx.QueryRowContext(ctx, grantSelect+` WHERE coupon_grants.id=$1`, result.Grant.ID))
 		if grantErr != nil {
 			return coupons.RedemptionResult{}, grantErr
 		}
@@ -131,50 +133,29 @@ func redemptionByKeyTx(ctx context.Context, tx *sql.Tx, userID, key string) (cou
 	return result, nil
 }
 
-func scanRedemption(row rowScanner) (coupons.RedemptionResult, error) {
-	var result coupons.RedemptionResult
-	var grantID sql.NullString
-	var created string
-	var percentCap, globalLimit, userLimit sql.NullInt64
-	var comboJSON, squadJSON string
-	var expires sql.NullString
-	var active int
-	var couponCreated, couponUpdated string
-	if err := row.Scan(&result.ID, &result.BalanceDeltaMinor, &result.BalanceAfterMinor, &result.IdempotencyKey, &created, &grantID,
-		&result.Coupon.ID, &result.Coupon.Code, &result.Coupon.Name, &result.Coupon.Kind, &result.Coupon.DiscountMode,
-		&result.Coupon.ValueMinorOrBPS, &percentCap, &comboJSON, &squadJSON, &expires, &globalLimit, &userLimit, &active, &couponCreated, &couponUpdated); err != nil {
+// A coupon definition can be renamed after redemption. Bind retries to the
+// original request recorded in its immutable grant source or balance ledger,
+// rather than treating the definition's current code as historical evidence.
+func matchRedemptionCodeTx(ctx context.Context, tx *sql.Tx, userID, canonical string, result coupons.RedemptionResult) error {
+	var originalCode string
+	if result.Grant != nil {
+		if result.Grant.UserID != userID || result.Grant.SourceType != "code" {
+			return ErrConflict
+		}
+		originalCode = result.Grant.SourceID
+	} else {
+		err := tx.QueryRowContext(ctx, `SELECT note FROM ledger_entries
+			WHERE user_id=$1 AND reference_id=$2 AND kind IN ('coupon_balance_add','coupon_balance_multiply')`, userID, result.ID).Scan(&originalCode)
 		if errors.Is(err, sql.ErrNoRows) {
-			return coupons.RedemptionResult{}, ErrNotFound
+			return ErrConflict
 		}
-		return coupons.RedemptionResult{}, fmt.Errorf("scan coupon redemption: %w", err)
-	}
-	result.Coupon.PercentCapMinor = int64Pointer(percentCap)
-	result.Coupon.GlobalUseLimit = int64Pointer(globalLimit)
-	result.Coupon.PerUserUseLimit = int64Pointer(userLimit)
-	result.Coupon.Active = active == 1
-	if grantID.Valid {
-		result.Grant = &coupons.Grant{ID: grantID.String}
-	}
-	if err := json.Unmarshal([]byte(comboJSON), &result.Coupon.EligibleComboIDs); err != nil {
-		return coupons.RedemptionResult{}, err
-	}
-	if err := json.Unmarshal([]byte(squadJSON), &result.Coupon.EligibleSquadIDs); err != nil {
-		return coupons.RedemptionResult{}, err
-	}
-	var err error
-	if result.CreatedAt, err = parseStamp(created); err != nil {
-		return coupons.RedemptionResult{}, err
-	}
-	if expires.Valid {
-		value, parseErr := parseStamp(expires.String)
-		if parseErr != nil {
-			return coupons.RedemptionResult{}, parseErr
+		if err != nil {
+			return fmt.Errorf("load original coupon redemption code: %w", err)
 		}
-		result.Coupon.ExpiresAt = &value
 	}
-	if result.Coupon.CreatedAt, err = parseStamp(couponCreated); err != nil {
-		return coupons.RedemptionResult{}, err
+	normalized, err := coupons.CanonicalCode(originalCode)
+	if err != nil || normalized != canonical {
+		return ErrConflict
 	}
-	result.Coupon.UpdatedAt, err = parseStamp(couponUpdated)
-	return result, err
+	return nil
 }

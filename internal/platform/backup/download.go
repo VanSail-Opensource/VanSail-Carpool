@@ -60,21 +60,9 @@ func (s *Service) completedBackupPath(ctx context.Context, backupID string) (str
 }
 
 func (s *Service) openStoredFile(path string) (*os.File, os.FileInfo, error) {
-	cleanDirectory, err := filepath.Abs(s.directory)
+	cleanPath, err := s.managedPath(path)
 	if err != nil {
-		return nil, nil, fmt.Errorf("resolve backup directory: %w", err)
-	}
-	cleanPath, err := filepath.Abs(filepath.Clean(path))
-	if err != nil {
-		return nil, nil, fmt.Errorf("resolve backup path: %w", err)
-	}
-	relative, err := filepath.Rel(cleanDirectory, cleanPath)
-	if err != nil || relative == "." || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) || filepath.IsAbs(relative) {
-		return nil, nil, fmt.Errorf("stored backup path is outside the backup directory")
-	}
-	name := filepath.Base(cleanPath)
-	if !strings.HasPrefix(name, "tx-carpool-") || (!strings.HasSuffix(name, ".db") && !strings.HasSuffix(name, ".dump")) {
-		return nil, nil, fmt.Errorf("stored backup filename is not recognized")
+		return nil, nil, err
 	}
 	linkInfo, err := os.Lstat(cleanPath)
 	if err != nil {

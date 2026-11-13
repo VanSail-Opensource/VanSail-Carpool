@@ -48,11 +48,11 @@ func (s *Store) retryAttempt_RecordGroupMessage(ctx context.Context, userID stri
 		return activity.GroupMessageRewardResult{}, fmt.Errorf("load group-message event: %w", lookupErr)
 	}
 
-	var subscribed int
-	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(\n\t\tSELECT 1 FROM purchases WHERE user_id=$1 AND status IN ('activating','active') AND valid_from<=$2 AND valid_until>$3\n\t))::integer", userID, stamp(now), stamp(now)).Scan(&subscribed); err != nil {
-		return activity.GroupMessageRewardResult{}, fmt.Errorf("check group-message subscription: %w", err)
+	_, subscriptionErr := activePurchaseAt(ctx, tx, userID, now)
+	if subscriptionErr != nil && !errors.Is(subscriptionErr, ErrNotFound) {
+		return activity.GroupMessageRewardResult{}, fmt.Errorf("check group-message subscription: %w", subscriptionErr)
 	}
-	counted := subscribed == 1 && boostCount > 0
+	counted := subscriptionErr == nil && boostCount > 0
 	if _, err := tx.ExecContext(ctx, `INSERT INTO activity_group_message_events(chat_id,message_id,user_id,local_date,counted,created_at) VALUES($1,$2,$3,$4,$5,$6)`,
 		chatID, messageID, userID, localDate, boolInt(counted), stamp(now)); err != nil {
 		return activity.GroupMessageRewardResult{}, fmt.Errorf("record group-message event: %w", err)
@@ -113,7 +113,8 @@ func (s *Store) retryAttempt_RecordGroupMessage(ctx context.Context, userID stri
 			return activity.GroupMessageRewardResult{}, err
 		}
 	}
-	if _, err := tx.ExecContext(ctx, `DELETE FROM activity_group_message_events WHERE created_at<$1`, stamp(now.Add(-31*24*time.Hour))); err != nil {
+	cutoff := now.Add(-31 * 24 * time.Hour)
+	if _, err := tx.ExecContext(ctx, `DELETE FROM activity_group_message_events WHERE created_at<$1 AND `+purchaseTimestampOrderSQL("created_at")+`<$2`, retentionCandidateUpperBound(cutoff), purchaseTimestampOrder(cutoff)); err != nil {
 		return activity.GroupMessageRewardResult{}, fmt.Errorf("prune group-message events: %w", err)
 	}
 	if err := tx.Commit(); err != nil {

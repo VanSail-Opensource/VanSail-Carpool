@@ -5,9 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
-
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // DueAutoRenewal identifies a currently enabled source term due for renewal.
@@ -70,23 +69,47 @@ func (s *Store) retryAttempt_SetAutoRenewal(ctx context.Context, userID, purchas
 }
 
 func (s *Store) DueAutoRenewals(ctx context.Context, now time.Time) ([]DueAutoRenewal, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT id,user_id FROM purchases WHERE auto_renew_enabled=1 AND valid_until<=$1 AND status IN ('active','activating','expired')
+	_, upper := purchaseWindowCandidateBounds(now)
+	rows, err := s.db.QueryContext(ctx, `SELECT id,user_id,valid_until FROM purchases WHERE auto_renew_enabled=1 AND valid_until<=$1 AND status IN ('active','activating','expired')
 		AND NOT EXISTS (SELECT 1 FROM purchases successor WHERE successor.auto_renew_source_purchase_id=purchases.id
-			AND successor.status IN ('queued','activating','active'))
-		ORDER BY valid_until,id`, stamp(now.UTC()))
+			AND successor.status IN ('queued','activating','active'))`, upper)
 	if err != nil {
 		return nil, fmt.Errorf("list due automatic renewals: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
-	result := make([]DueAutoRenewal, 0)
+	type candidate struct {
+		item  DueAutoRenewal
+		until time.Time
+	}
+	candidates := make([]candidate, 0)
 	for rows.Next() {
 		var item DueAutoRenewal
-		if err := rows.Scan(&item.PurchaseID, &item.UserID); err != nil {
+		var rawUntil string
+		if err := rows.Scan(&item.PurchaseID, &item.UserID, &rawUntil); err != nil {
 			return nil, err
 		}
-		result = append(result, item)
+		until, err := parseStamp(rawUntil)
+		if err != nil {
+			return nil, err
+		}
+		if !until.After(now) {
+			candidates = append(candidates, candidate{item, until})
+		}
 	}
-	return result, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	sort.Slice(candidates, func(i, j int) bool {
+		if candidates[i].until.Equal(candidates[j].until) {
+			return candidates[i].item.PurchaseID < candidates[j].item.PurchaseID
+		}
+		return candidates[i].until.Before(candidates[j].until)
+	})
+	result := make([]DueAutoRenewal, 0, len(candidates))
+	for _, item := range candidates {
+		result = append(result, item.item)
+	}
+	return result, nil
 }
 
 // MarkAutoRenewalFailed disables a due source without charging its owner.
@@ -100,8 +123,8 @@ func (s *Store) retryAttempt_MarkAutoRenewalFailed(ctx context.Context, purchase
 		return fmt.Errorf("begin automatic renewal failure: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
-	var userID string
-	err = tx.QueryRowContext(ctx, `SELECT user_id FROM purchases WHERE id=$1`, purchaseID).Scan(&userID)
+	var userID, rawUntil string
+	err = tx.QueryRowContext(ctx, `SELECT user_id,valid_until FROM purchases WHERE id=$1`, purchaseID).Scan(&userID, &rawUntil)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
@@ -121,59 +144,25 @@ func (s *Store) retryAttempt_MarkAutoRenewalFailed(ctx context.Context, purchase
 	}
 	// An older term can retain a stale preference after a later purchase has
 	// already taken over. Retire that preference without reporting a failure.
-	var superseded int
-	if err = tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases old JOIN purchases next ON next.user_id=old.user_id\n\t\tWHERE old.id=$1 AND next.id<>old.id AND next.status IN ('queued','activating','active')\n\t\tAND next.valid_until>old.valid_until))::integer", purchaseID).Scan(&superseded); err != nil {
+	until, err := parseStamp(rawUntil)
+	if err != nil {
 		return err
 	}
-	if superseded == 1 {
+	superseded, err := otherRenewalPurchaseEndsAfter(ctx, tx, userID, purchaseID, until)
+	if err != nil {
+		return err
+	}
+	if superseded {
 		if _, err = tx.ExecContext(ctx, `UPDATE purchases SET auto_renew_enabled=0,updated_at=$1 WHERE id=$2 AND auto_renew_enabled=1`, stamp(now), purchaseID); err != nil {
 			return err
 		}
 		return tx.Commit()
 	}
-	settled, err := s.failAutoRenewalTx(ctx, tx, purchaseID, userID, reason, now.UTC())
-	if err != nil {
+	if _, err := s.failAutoRenewalTx(ctx, tx, purchaseID, userID, reason, now.UTC()); err != nil {
 		return err
-	}
-	if !settled {
-		result, err := tx.ExecContext(ctx, `UPDATE purchases SET auto_renew_enabled=0,auto_renew_failure_reason=$1,auto_renew_failed_at=$2,updated_at=$3
-			WHERE id=$4 AND auto_renew_enabled=1 AND status IN ('active','activating','expired') AND valid_until<=$5`, reason, stamp(now), stamp(now), purchaseID, stamp(now.UTC()))
-		if err != nil {
-			return fmt.Errorf("record automatic renewal failure: %w", err)
-		}
-		if affected, rowsErr := result.RowsAffected(); rowsErr != nil {
-			return rowsErr
-		} else if affected == 1 {
-			if err := s.insertAutoRenewalFailureNoticeTx(ctx, tx, purchaseID, userID, reason, "", now); err != nil {
-				return err
-			}
-		}
 	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("commit automatic renewal failure: %w", err)
 	}
 	return nil
-}
-
-// AutoRenewalFailure returns the latest member-visible automatic-renewal failure.
-func (s *Store) AutoRenewalFailure(ctx context.Context, userID string) (*model.AutoRenewalFailure, error) {
-	var failure model.AutoRenewalFailure
-	var failedAt sql.NullString
-	err := s.db.QueryRowContext(ctx, `SELECT p.id,p.auto_renew_failure_reason,p.auto_renew_failed_at FROM purchases p
-		WHERE p.user_id=$1 AND p.auto_renew_failure_reason<>'' AND p.auto_renew_failed_at IS NOT NULL
-		AND NOT EXISTS (SELECT 1 FROM purchases next WHERE next.user_id=p.user_id AND next.id<>p.id
-			AND next.status IN ('queued','activating','active') AND next.valid_until>p.valid_until)
-		ORDER BY p.auto_renew_failed_at DESC LIMIT 1`, userID).Scan(&failure.PurchaseID, &failure.Reason, &failedAt)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("load automatic renewal failure: %w", err)
-	}
-	failed, err := parseStamp(failedAt.String)
-	if err != nil {
-		return nil, err
-	}
-	failure.FailedAt = failed
-	return &failure, nil
 }

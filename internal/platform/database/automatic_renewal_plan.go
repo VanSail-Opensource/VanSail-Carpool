@@ -79,11 +79,11 @@ func automaticRenewalPlanTx(ctx context.Context, tx *sql.Tx, userID, purchaseID 
 			return plan, nil
 		}
 	}
-	var queued int
-	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE user_id=$1\n\t\tAND status IN ('active','activating','queued') AND id<>$2 AND valid_until>$3))::integer", userID, purchaseID, stamp(now)).Scan(&queued); err != nil {
+	queued, err := otherRenewalPurchaseEndsAfter(ctx, tx, userID, purchaseID, now)
+	if err != nil {
 		return AutoRenewalPlan{}, fmt.Errorf("check queued purchase: %w", err)
 	}
-	if queued == 1 {
+	if queued {
 		plan.IneligibleReason = AutoRenewalReasonQueuedPurchase
 	}
 	// Owned renewal: a hidden or inactive combo stays renewable (the same
@@ -124,7 +124,10 @@ func automaticRenewalPlanTx(ctx context.Context, tx *sql.Tx, userID, purchaseID 
 	}
 	addonIDs := make([]string, 0, len(addons))
 	for _, addon := range addons {
-		plan.GrossMinor += addon.PriceTXBMinor
+		plan.GrossMinor, err = checkedPriceSum(plan.GrossMinor, addon.PriceTXBMinor)
+		if err != nil {
+			return AutoRenewalPlan{}, err
+		}
 		addonIDs = append(addonIDs, addon.GroupID)
 	}
 	if plan.rewardRenewalPrice == nil {
@@ -134,11 +137,17 @@ func automaticRenewalPlanTx(ctx context.Context, tx *sql.Tx, userID, purchaseID 
 		}
 		plan.Combo.PriceTXBMinor = plan.GrossMinor
 		for _, addon := range addons {
+			if addon.PriceTXBMinor < 0 || plan.Combo.PriceTXBMinor < addon.PriceTXBMinor {
+				return AutoRenewalPlan{}, ErrConflict
+			}
 			plan.Combo.PriceTXBMinor -= addon.PriceTXBMinor
 		}
 		if plan.Combo.PriceTXBMinor < 0 {
 			return AutoRenewalPlan{}, ErrConflict
 		}
+	}
+	if plan.GrossMinor < 0 {
+		return AutoRenewalPlan{}, ErrConflict
 	}
 	plan.NetMinor = plan.GrossMinor
 	discount := coupons.Discount{GrossMinor: plan.GrossMinor, NetMinor: plan.GrossMinor}
@@ -148,7 +157,7 @@ func automaticRenewalPlanTx(ctx context.Context, tx *sql.Tx, userID, purchaseID 
 			return plan, nil
 		}
 		discount, err = quoteAttachedRecurringDiscountTx(ctx, tx, userID, *purchase.CouponGrantID, plan.GrossMinor)
-		if errors.Is(err, ErrNotFound) || errors.Is(err, ErrConflict) {
+		if errors.Is(err, ErrNotFound) || errors.Is(err, ErrConflict) || errors.Is(err, coupons.ErrInvalidInput) {
 			plan.IneligibleReason = AutoRenewalReasonDiscountUnavailable
 			return plan, nil
 		}

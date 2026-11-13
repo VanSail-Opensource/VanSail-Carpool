@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -63,7 +62,7 @@ func TestMaintenanceUsesLegacyEmbyAttemptEvidenceBeforeRefund(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				_, receiptErr := s.ProviderOperationByID(ctx, op.Receipt.ID)
+				receipt, receiptErr := s.ProviderOperationByID(ctx, op.Receipt.ID)
 				if c.retain {
 					if record.RefundedAt != nil || record.PasswordCiphertext != "synthetic-encrypted-password" || balance.Minor != "725" || receiptErr != nil {
 						t.Fatal("legacy attempt evidence was erased/refunded", balance.Minor, receiptErr)
@@ -72,8 +71,14 @@ func TestMaintenanceUsesLegacyEmbyAttemptEvidenceBeforeRefund(t *testing.T) {
 					if err = s.DB().QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM outbox_jobs WHERE payload::jsonb->>'operationId'=$1 AND payload::jsonb->>'sealedTarget'='synthetic-encrypted-setup')`, op.Receipt.ID).Scan(&retained); err != nil || !retained {
 						t.Fatal("legacy setup lost its encrypted continuation", retained, err)
 					}
-				} else if record.RefundedAt == nil || record.PasswordCiphertext != "" || balance.Minor != "1000" || !errors.Is(receiptErr, ErrNotFound) {
-					t.Fatal("known never-started setup stopped compacting exactly", balance.Minor, receiptErr)
+				} else {
+					if record.RefundedAt == nil || record.PasswordCiphertext != "" || balance.Minor != "1000" || receiptErr != nil || receipt.Receipt.Status != "failed" {
+						t.Fatal("never-started setup did not refund once and preserve its failed receipt", balance.Minor, receipt, receiptErr)
+					}
+					var retained bool
+					if err = s.DB().QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM outbox_jobs WHERE payload::jsonb->>'operationId'=$1)`, op.Receipt.ID).Scan(&retained); err != nil || retained {
+						t.Fatal("settled setup retained encrypted continuation", retained, err)
+					}
 				}
 			}
 		})

@@ -7,6 +7,7 @@ get:
     - $ref: '../openapi.yaml#/components/parameters/UserID'
   responses:
     '200':
+      description: Current hourly enrollments and allowed administrator actions for the selected member.
       content:
         application/json:
           schema: { $ref: '../openapi.yaml#/components/schemas/AdminHourlyView' }

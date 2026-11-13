@@ -14,7 +14,11 @@ import (
 func (s *Server) continueOnboarding(w http.ResponseWriter, r *http.Request) {
 	user, err := s.deps.Accounts.BeginAgreement(r.Context(), currentUser(r))
 	if err != nil {
-		s.writeError(w, r, http.StatusConflict, "ONBOARDING_STATE_CONFLICT", "Onboarding could not be advanced.")
+		if errors.Is(err, database.ErrConflict) || errors.Is(err, database.ErrNotFound) || errors.Is(err, database.ErrAccountUnavailable) {
+			s.writeError(w, r, http.StatusConflict, "ONBOARDING_STATE_CONFLICT", "Onboarding could not be advanced.")
+		} else {
+			s.writeError(w, r, http.StatusServiceUnavailable, "ONBOARDING_UNAVAILABLE", "Onboarding is temporarily unavailable. You can safely retry.")
+		}
 		return
 	}
 	writeJSON(w, http.StatusOK, authState{Authenticated: true, User: mapUser(user)})
@@ -32,15 +36,13 @@ func (s *Server) acceptAgreement(w http.ResponseWriter, r *http.Request) {
 	current := currentUser(r)
 	user, err := s.deps.Accounts.AcceptAgreementRevision(r.Context(), current, request.Revision, request.AgreementIDs)
 	if err != nil {
-		status, code := http.StatusBadGateway, "XNODE_UNAVAILABLE"
+		status, code := http.StatusServiceUnavailable, "ONBOARDING_UNAVAILABLE"
 		switch {
 		case errors.Is(err, accounts.ErrAgreementRevisionConflict):
 			status, code = http.StatusConflict, "AGREEMENT_OUTDATED"
-		case errors.Is(err, accounts.ErrProxyIdentityConflict):
-			status, code = http.StatusConflict, "XNODE_IDENTITY_CONFLICT"
 		case errors.Is(err, accounts.ErrAgreementStateConflict):
 			status, code = http.StatusConflict, "ONBOARDING_STATE_CONFLICT"
-		case errors.Is(err, accounts.ErrUsernameUnavailable) || errors.Is(err, database.ErrConflict):
+		case errors.Is(err, database.ErrConflict):
 			status, code = http.StatusConflict, "ONBOARDING_CONFLICT"
 		}
 		s.deps.Logger.Warn("onboarding agreement rejected", "request_id", middlewareRequestID(r), "user_id", current.ID, "code", code, "error", err)
@@ -58,6 +60,8 @@ type dashboardResponse struct {
 	AutoRenewalFailure *model.AutoRenewalFailure `json:"autoRenewalFailure"`
 	Statistics         *model.Statistics         `json:"statistics"`
 	SubscriptionURL    *string                   `json:"subscriptionUrl"`
+	SubscriptionReady  bool                      `json:"subscriptionReady"`
+	ActiveSquadNames   []string                  `json:"activeSquadNames"`
 	StatisticsStale    bool                      `json:"statisticsStale"`
 	StatisticsWarning  string                    `json:"statisticsWarning"`
 	FetchedAt          time.Time                 `json:"fetchedAt"`
@@ -73,9 +77,14 @@ func (s *Server) dashboard(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, r, http.StatusBadGateway, "DASHBOARD_UNAVAILABLE", "Live account data is temporarily unavailable.")
 		return
 	}
-	writeJSON(w, http.StatusOK, dashboardResponse{User: mapUser(dashboard.User), Balance: dashboard.Balance, ActivePurchase: dashboard.ActivePurchase,
+	writeJSON(w, http.StatusOK, mapDashboardResponse(dashboard))
+}
+
+func mapDashboardResponse(dashboard model.Dashboard) dashboardResponse {
+	return dashboardResponse{User: mapUser(dashboard.User), Balance: dashboard.Balance, ActivePurchase: dashboard.ActivePurchase,
 		QueuedPurchase: dashboard.QueuedPurchase, AutoRenewalFailure: dashboard.AutoRenewalFailure, Statistics: dashboard.Statistics, SubscriptionURL: dashboard.SubscriptionURL,
-		StatisticsStale: dashboard.StatisticsStale, StatisticsWarning: dashboard.StatisticsWarning, FetchedAt: dashboard.FetchedAt})
+		SubscriptionReady: dashboard.SubscriptionReady, ActiveSquadNames: nonNilStrings(dashboard.ActiveSquadNames),
+		StatisticsStale: dashboard.StatisticsStale, StatisticsWarning: dashboard.StatisticsWarning, FetchedAt: dashboard.FetchedAt}
 }
 
 func (s *Server) catalog(w http.ResponseWriter, r *http.Request) {

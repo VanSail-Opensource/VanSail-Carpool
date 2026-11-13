@@ -1,3 +1,6 @@
+parameters:
+  - $ref: '../openapi.yaml#/components/parameters/BrowserSessionScope'
+
 get:
   security: [{ cookieSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }, { browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Authentication]
@@ -12,3 +15,9 @@ get:
             $ref: '../openapi.yaml#/components/schemas/AuthState'
     '401':
       $ref: '../openapi.yaml#/components/responses/Unauthorized'
+    '503':
+      description: The session could not be loaded because storage is temporarily unavailable (SESSION_UNAVAILABLE). Retain the current session and retry this read; do not start another Telegram exchange.
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/ApiError'

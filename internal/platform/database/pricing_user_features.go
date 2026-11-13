@@ -95,7 +95,7 @@ func (s *Store) pricingUserFeatures(ctx context.Context, user string, now time.T
 		return err
 	}
 	var renewals int64
-	if err = s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(CASE WHEN kind='automatic_renewal' THEN 1 ELSE 0 END),0) FROM ledger_entries WHERE user_id=$1 AND created_at>=$2`, user, pricingStamp(day.AddDate(0, 0, -30))).Scan(&renewals); err != nil {
+	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE user_id=$1 AND kind='automatic_renewal' AND created_at>=LEFT($2,19) AND created_at<=LEFT($3,19)||'Z' AND `+purchaseTimestampOrderSQL("created_at")+`>=$2 AND `+purchaseTimestampOrderSQL("created_at")+`<=$3`, user, purchaseTimestampOrder(day.AddDate(0, 0, -30)), purchaseTimestampOrder(now)).Scan(&renewals); err != nil {
 		return err
 	}
 	sourceRaw, e := json.Marshal(series)

@@ -90,11 +90,15 @@ func commerceFixture(t *testing.T) (*Service, model.User, *fixturePolicy, *fixtu
 	if err != nil {
 		t.Fatal(err)
 	}
+	actor, _, err := store.UpsertTelegramUser(ctx, model.TelegramProfile{ID: 9_978_000_001, FirstName: "Hourly administrator"}, true)
+	if err != nil {
+		t.Fatal(err)
+	}
 	vault, err := secret.NewVault([]byte(strings.Repeat("h", 32)))
 	if err != nil {
 		t.Fatal(err)
 	}
-	record, err := store.CompareAndSwapHourlyPolicy(ctx, user.ID, "", "opaque-policy-fixture")
+	record, err := store.CompareAndSwapHourlyPolicy(ctx, actor.ID, "", "opaque-policy-fixture")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +108,7 @@ func commerceFixture(t *testing.T) (*Service, model.User, *fixturePolicy, *fixtu
 	if err = store.SaveXNodeGroup(ctx, xnode.Group{ID: "hourly-group", Name: "Hourly", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = store.SaveHourlyOffer(ctx, user.ID, model.HourlyOffer{GroupID: "hourly-group", Enabled: true, HourlyPriceTXBMinor: 100}, 0); err != nil {
+	if _, err = store.SaveHourlyOffer(ctx, actor.ID, model.HourlyOffer{GroupID: "hourly-group", Enabled: true, HourlyPriceTXBMinor: 100}, 0); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = store.AdjustBalance(ctx, user.ID, 100000, "fixture", "fixture", time.Now()); err != nil {

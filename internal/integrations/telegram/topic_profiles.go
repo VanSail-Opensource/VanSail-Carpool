@@ -57,7 +57,7 @@ func (c *Client) EditTopicProfile(ctx context.Context, input TopicProfileRequest
 	var result Message
 	err := c.call(ctx, "editMessageText", request, &result)
 	var apiError *APIError
-	if errors.As(err, &apiError) && apiError.ErrorCode == 400 && strings.Contains(strings.ToLower(apiError.Description), "message is not modified") {
+	if errors.As(err, &apiError) && apiError.HTTPStatus == 400 && apiError.ErrorCode == 400 && apiError.RetryAfter == 0 && strings.Contains(strings.ToLower(apiError.Description), "message is not modified") {
 		return Message{}, nil
 	}
 	return result, err

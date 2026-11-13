@@ -135,8 +135,13 @@ func TestComboControlRecoveryCannotRestoreExpiredCancelledOrSupersededAccess(t *
 			if _, err := store.CompactAndPrune(ctx, now.Add(-7*24*time.Hour), now.Add(-24*time.Hour), now); err != nil {
 				t.Fatal(err)
 			}
-			if _, err := store.ProviderOperationByID(ctx, operation.Receipt.ID); !errors.Is(err, ErrNotFound) {
-				t.Fatalf("stale receipt retained: %v", err)
+			retained, err := store.ProviderOperationByID(ctx, operation.Receipt.ID)
+			if err != nil || retained.Receipt.Status != "failed" {
+				t.Fatalf("stale command lost its failed replay receipt: %+v,%v", retained, err)
+			}
+			var jobs int
+			if err := store.DB().QueryRowContext(ctx, `SELECT count(*) FROM outbox_jobs WHERE id=$1`, jobID).Scan(&jobs); err != nil || jobs != 0 {
+				t.Fatalf("stale access retained a dispatchable job: %d,%v", jobs, err)
 			}
 		})
 	}

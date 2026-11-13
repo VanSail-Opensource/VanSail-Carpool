@@ -10,10 +10,12 @@ import (
 )
 
 type userOperationRepositoryStub struct {
-	operation providerops.Operation
-	items     []providerops.Item
-	users     map[string]model.User
-	desired   map[string]*model.Purchase
+	operation  providerops.Operation
+	items      []providerops.Item
+	users      map[string]model.User
+	desired    map[string]*model.Purchase
+	userErr    error
+	desiredErr error
 }
 
 func (r *userOperationRepositoryStub) BeginProviderOperationAttempt(_ context.Context, _ string, now time.Time) (providerops.Operation, error) {
@@ -66,6 +68,9 @@ func (r *userOperationRepositoryStub) CompleteProviderOperationItem(_ context.Co
 }
 
 func (r *userOperationRepositoryStub) UserByID(_ context.Context, id string) (model.User, error) {
+	if r.userErr != nil {
+		return model.User{}, r.userErr
+	}
 	user, ok := r.users[id]
 	if !ok {
 		return model.User{}, errors.New("user missing")
@@ -74,6 +79,9 @@ func (r *userOperationRepositoryStub) UserByID(_ context.Context, id string) (mo
 }
 
 func (r *userOperationRepositoryStub) DesiredEntitlement(_ context.Context, id string, _ time.Time) (*model.Purchase, error) {
+	if r.desiredErr != nil {
+		return nil, r.desiredErr
+	}
 	desired, ok := r.desired[id]
 	if !ok {
 		return nil, errors.New("desired state missing")
@@ -86,13 +94,7 @@ type entitlementRemoteStub struct {
 	failures   map[string]error
 }
 
-func (r *entitlementRemoteStub) ApplyEntitlement(_ context.Context, remoteID string, _ int64, _ string,
-	_ []string, _ time.Time) error {
-	r.applyCalls = append(r.applyCalls, remoteID)
-	return r.failures[remoteID]
-}
-
-func (r *entitlementRemoteStub) RemoveEntitlement(_ context.Context, remoteID string) error {
-	r.applyCalls = append(r.applyCalls, remoteID)
-	return r.failures[remoteID]
+func (r *entitlementRemoteStub) SyncAdminUserEntitlement(_ context.Context, user model.User, _ *model.Purchase) error {
+	r.applyCalls = append(r.applyCalls, user.ID)
+	return r.failures[user.ID]
 }

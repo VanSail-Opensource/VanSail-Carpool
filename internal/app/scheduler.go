@@ -34,6 +34,7 @@ func (a *Application) runScheduler(ctx context.Context, startupComplete chan<- s
 	defer maintenanceTimer.Stop()
 	a.configureTelegram(ctx)
 	startupNow := time.Now().UTC()
+	a.enqueueStarsReconciliation(ctx, startupNow)
 	a.enqueueHourly(ctx, startupNow)
 	a.enqueueAccountCleanup(ctx, startupNow)
 	if err := a.store.EnqueueAccountPurges(ctx, startupNow); err != nil {
@@ -139,7 +140,7 @@ func (a *Application) runScheduler(ctx context.Context, startupComplete chan<- s
 		case <-maintenanceTicker.C:
 			a.configureTelegram(ctx)
 		case <-starsTicker.C:
-			a.reconcileStars(ctx)
+			a.enqueueStarsReconciliation(ctx, time.Now().UTC())
 		case <-maintenanceTimer.C:
 			maintenanceCtx, cancel := context.WithTimeout(ctx, maintenance.RunTimeout)
 			maintenanceNow := time.Now().UTC()

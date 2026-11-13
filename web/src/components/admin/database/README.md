@@ -15,3 +15,12 @@ The browser workspace uses a table on every viewport with contained horizontal s
 - Query filters, result/empty handoff, record-editor stages, field geometry, and table selection own local Motion feedback; table data remains stable during edits.
 
 Reviewed CRUD uses server table/column capabilities. Protected fields show localized reasons; insertable keys differ from immutable existing keys, generated defaults may be omitted, and protected tables disable mutation actions. Exact strings continue through review/apply; backup, replay and optimistic checks are server-owned.
+
+The panel captures editor table metadata and row identity, clears table-specific
+filter drafts on selection changes, and keeps pending review/apply controls
+locked. The editor keeps its form mounted during pending work, requires fresh
+typed confirmation for each replacement review, and serializes nullable BOOLEAN
+fields cleared from NULL as actual false values, including columns with defaults.
+`DatabaseRecordEditor.test.ts` covers these pending and value/consent boundaries.
+The server remains authoritative for capability, review digest, expiry, rescue
+backup and single-use apply checks.

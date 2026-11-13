@@ -33,15 +33,25 @@ func paidPricingAddonTermsTx(ctx context.Context, tx *sql.Tx, purchase string) (
 	return out, rows.Err()
 }
 
-func currentPricingContractGross(c renewal.Contract, addons []model.SquadProduct) int64 {
+func currentPricingContractGross(c renewal.Contract, addons []model.SquadProduct) (int64, error) {
 	gross := c.Price
 	for _, a := range c.Addons {
+		if a.Price < 0 || gross < a.Price {
+			return 0, ErrConflict
+		}
 		gross -= a.Price
 	}
 	for _, a := range addons {
-		gross += a.PriceTXBMinor
+		var err error
+		gross, err = checkedPriceSum(gross, a.PriceTXBMinor)
+		if err != nil {
+			return 0, err
+		}
 	}
-	return gross
+	if gross < 0 {
+		return 0, ErrConflict
+	}
+	return gross, nil
 }
 
 func pricingAddonTermsMatch(c renewal.Contract, addons []model.SquadProduct) bool {

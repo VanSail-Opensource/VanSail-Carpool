@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onMounted, reactive, shallowRef } from 'vue'
+import { onMounted, onScopeDispose, reactive, shallowRef } from 'vue'
 import { embyConnectionApi, type EmbyConnection } from '@/api/embyConnection'
 import { ApiError } from '@/api/http'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import { localizedError, useI18n } from '@/i18n'
+import { createLatestRequest } from '@/utils/latestRequest'
 
 const { t } = useI18n()
 const current = shallowRef<EmbyConnection | null>(null)
@@ -11,15 +12,22 @@ const loading = shallowRef(true)
 const busy = shallowRef(false)
 const error = shallowRef<string | null>(null)
 const draft = reactive({ baseURL: '', apiToken: '' })
+const latest = createLatestRequest()
+let disposed = false
 async function load(): Promise<void> {
+  if (disposed || busy.value) return
+  const ticket = latest.begin()
   loading.value = true
   error.value = null
-  try { current.value = await embyConnectionApi.get() }
-  catch (caught) { error.value = localizedError(caught, 'errors.adminLoad') }
-  finally { loading.value = false }
+  try {
+    const response = await embyConnectionApi.get()
+    if (latest.isCurrent(ticket)) current.value = response
+  }
+  catch (caught) { if (latest.isCurrent(ticket)) error.value = localizedError(caught, 'errors.adminLoad') }
+  finally { if (latest.isCurrent(ticket)) loading.value = false }
 }
 async function save(): Promise<boolean> {
-  if (busy.value || loading.value || !current.value) return false
+  if (disposed || busy.value || loading.value || !current.value) return false
   if (!draft.baseURL.trim() && !draft.apiToken.trim()) return true
   error.value = null
   if (draft.baseURL.trim() && !draft.apiToken.trim()) {
@@ -27,21 +35,32 @@ async function save(): Promise<boolean> {
     return false
   }
   busy.value = true
+  const ticket = latest.begin()
   const input = { version: current.value.version, baseURL: draft.baseURL.trim(), apiToken: draft.apiToken.trim() }
   try {
-    current.value = await embyConnectionApi.save(input)
+    const response = await embyConnectionApi.save(input)
+    if (!latest.isCurrent(ticket)) return false
+    current.value = response
     if (draft.baseURL.trim() === input.baseURL) draft.baseURL = ''
     if (draft.apiToken.trim() === input.apiToken) draft.apiToken = ''
     return true
   } catch (caught) {
+    if (!latest.isCurrent(ticket)) return false
     error.value = caught instanceof ApiError && caught.code === 'EMBY_FRESH_TOKEN_REQUIRED'
       ? t('adminEmbyConnection.freshToken')
       : caught instanceof ApiError && caught.code === 'EMBY_CONNECTION_CHANGED'
         ? t('adminEmbyConnection.changed') : localizedError(caught, 'errors.adminAction')
     return false
-  } finally { busy.value = false }
+  } finally { if (latest.isCurrent(ticket)) busy.value = false }
 }
 onMounted(() => void load())
+onScopeDispose(() => {
+  disposed = true
+  latest.dispose()
+  draft.baseURL = ''
+  draft.apiToken = ''
+  current.value = null
+})
 defineExpose({ save, loading })
 </script>
 

@@ -9,7 +9,7 @@ import { api } from '@/api/client'
 import { preferencesApi, type GroupMemberTag, type UserPreferences } from '@/api/preferences'
 import { memberOperationsApi } from '@/api/memberOperations'
 import { ApiError } from '@/api/http'
-import type { ComboControls, EarlyActivationQuote, OperationReceipt, Purchase } from '@/api/types'
+import type { ComboControls, EarlyActivationQuote, OperationReceipt, Purchase, Session } from '@/api/types'
 import { useSessionStore } from '@/stores/session'
 import { usePreferencesStore } from '@/stores/preferences'
 import { setLocale, t } from '@/i18n'
@@ -43,15 +43,16 @@ const active = purchase('current', at(-5 * day), at(25 * day))
 const queued = { ...purchase('queued', at(25 * day), at(32 * day)), status: 'queued' as const }
 let controls: ComboControls = { activePurchase: params.has('inactive') ? null : active, queuedPurchase: params.has('inactive') || params.has('noqueued') ? null : queued, squads: params.has('inactive') ? [] : squads, mutable: !params.has('inactive') && !params.has('blocked'), operation: null }
 const receipts = new Map<string, OperationReceipt>()
-const state = { loads: 0, additions: 0, additionKeys: [] as string[], switches: 0, activations: 0, polls: 0, forfeited: null as Purchase | null }
+const state = { loads: 0, additions: 0, additionKeys: [] as string[], switches: 0, activations: 0, polls: 0, forfeited: null as Purchase | null,
+  recover: false, tagWrites: [] as string[], activationTargets: [] as { current: string; queued: string }[] }
 let preferences: UserPreferences = { paygEnabled: true, paygSquads: {}, activeCombo: !params.has('inactive'), notifications: { combos: true, traffic: true, money: true, activity: true, account: true }, showAroundTx: true, showActivity: true, includeNodePrices: true, showReferralUsername: true }
-let tag: GroupMemberTag = { groupJoined: true, editable: true, tag: 'Traveler', reasonCode: null }
+let tag: GroupMemberTag = { groupJoined: true, editable: true, tag: 'Traveler', reasonCode: '' }
 async function pause(): Promise<void> {
   if (params.has('slow')) await new Promise(resolve => setTimeout(resolve, Number(params.get('slow')) || 2500))
   if (params.has('error')) throw new Error('Constructed settings load failure')
 }
-comboControlsApi.get = async () => { state.loads++; await pause(); if (params.has('blocked') && state.loads > 1) controls = { ...controls, mutable: true }; return controls }
-comboControlsApi.quoteActivation = async (): Promise<EarlyActivationQuote> => ({ currentPurchaseId: active.id, queuedPurchaseId: queued.id, eligible: controls.mutable, currentValidUntil: active.validUntil, newValidFrom: at(0), newValidUntil: at(7 * day) })
+comboControlsApi.get = async () => { state.loads++; await pause(); if (params.has('blocked') && state.loads > 1) controls = { ...controls, mutable: true }; return structuredClone(controls) }
+comboControlsApi.quoteActivation = async (): Promise<EarlyActivationQuote> => ({ currentPurchaseId: controls.activePurchase?.id ?? active.id, queuedPurchaseId: controls.queuedPurchase?.id ?? queued.id, eligible: controls.mutable, currentValidUntil: controls.activePurchase?.validUntil ?? active.validUntil, newValidFrom: at(0), newValidUntil: at(7 * day) })
 function receipt(kind: string): OperationReceipt {
   state.polls = 0
   const value: OperationReceipt = { id: 'audit-operation-' + (state.switches + state.activations), kind, status: 'queued', createdAt: at(0), updatedAt: at(0) }
@@ -68,11 +69,13 @@ comboControlsApi.switchSquad = async (_purchaseId, uuid, enabled) => {
   for (const squad of squads) squad.canDisable = squad.enabled && squads.filter(s => s.enabled).length > 1
   return receipt('member_squad_switch')
 }
-comboControlsApi.activate = async (_queuedId, _currentId, confirmation) => {
+comboControlsApi.activate = async (queuedId, currentId, confirmation) => {
   if (!['ACTIVATE NEXT COMBO', '启用下一套餐'].includes(confirmation.trim())) throw new Error('Constructed confirmation refusal')
+  if (controls.activePurchase?.id !== currentId || controls.queuedPurchase?.id !== queuedId) throw new ApiError(409, { code: 'EARLY_ACTIVATION_CONFLICT', message: '' })
   state.activations++
-  state.forfeited = { ...active, status: 'cancelled', validUntil: at(0) }
-  controls = { ...controls, activePurchase: { ...queued, status: 'activating', validFrom: at(0), validUntil: at(7 * day) }, queuedPurchase: null }
+  state.activationTargets.push({ current: currentId, queued: queuedId })
+  state.forfeited = { ...controls.activePurchase, status: 'cancelled', validUntil: at(0) }
+  controls = { ...controls, activePurchase: { ...controls.queuedPurchase, status: 'activating', validFrom: at(0), validUntil: at(7 * day) }, queuedPurchase: null }
   return receipt('member_early_activation')
 }
 memberOperationsApi.getOperation = async id => {
@@ -92,8 +95,8 @@ paygApi.get = async () => {
 }
 preferencesApi.get = async () => preferences
 preferencesApi.update = async body => { if (params.has('save-error')) throw new Error('Constructed save failure'); preferences = { ...preferences, ...body, paygSquads: { ...preferences.paygSquads, ...body.paygSquads }, notifications: { ...preferences.notifications, ...body.notifications } }; return preferences }
-preferencesApi.getTag = async () => { await pause(); return tag }
-preferencesApi.updateTag = async value => { if (params.has('save-error')) throw new Error('Constructed tag save failure'); tag = { ...tag, tag: value }; return tag }
+preferencesApi.getTag = async () => { await pause(); return structuredClone(tag) }
+preferencesApi.updateTag = async value => { state.tagWrites.push(value); if (params.has('save-error') && !state.recover) throw new Error('Constructed tag save failure'); tag = { ...tag, tag: value }; return structuredClone(tag) }
 memberOperationsApi.getPurchaseRefundQuote = async () => ({ purchaseId: active.id, eligible: true, reasonCode: null, refund: active.price, quotedAt: at(0), eligibilityExpiresAt: at(day) })
 memberOperationsApi.refundPurchase = async () => receipt('purchase_member_refund')
 api.getAutoRenewal = async () => ({ enabled: false, canEnable: true, ineligibleReason: null, purchaseId: active.id, quotedAt: at(0) }) as never
@@ -106,7 +109,6 @@ api.getCatalog = async () => {
   if (params.has('addonerror')) throw new Error('Constructed catalog load failure')
   return { combos: [], addons: params.has('addonempty') ? [] : optionalSquads, nodes: [] } as never
 }
-api.getStatistics = async () => ({ database: { squadByCombo: [{ id: 'current', label: 'Standard', segments: optionalSquads.map((squad, index) => ({ id: squad.id, label: squad.name, value: index ? 20 : 70 })) }] } }) as never
 api.quotePurchaseAddons = async (purchaseId, ids) => {
  if (params.has('addonoverride')) throw new ApiError(409, { code: 'SQUAD_ADDITION_OVERRIDDEN', message: '' })
  return ({ purchaseId, addonSquadUuids: ids, price: { currency: 'TXB', minor: '250', display: '2.50 TXB' }, effectiveAt: at(0), expiresAt: active.validUntil }) as never
@@ -130,7 +132,16 @@ const app = createApp(SettingsAudit, { purchase: active })
 app.config.globalProperties.$t = t
 app.use(createPinia())
 usePreferencesStore().bind('audit-user')
-if (params.has('admin')) useSessionStore().session = { user: { id: 'audit-user', role: 'admin', onboardingState: 'complete' } } as never
+const session = useSessionStore()
+const owner = (id: string): Session => ({ authenticated: true, user: { id, telegramId: '42', firstName: 'Audit', lastName: '',
+  telegramUsername: '', displayName: 'Audit', username: null, role: params.has('admin') ? 'admin' : 'user', onboardingState: 'complete',
+  groupJoined: true, channelJoined: true, policyAcceptedAt: at(0), agreementRevision: 1, recoveryReason: '', displayCurrency: 'TXB', createdAt: at(0), updatedAt: at(0) } })
+session.session = owner('audit-user'); session.status = 'ready'
+Object.assign(state, { replaceOwner: () => {
+  controls = { ...controls, activePurchase: { ...active, id: 'replacement-current' }, queuedPurchase: { ...queued, id: 'replacement-queued' }, operation: null }
+  session.session = owner('replacement-user')
+  usePreferencesStore().bind('replacement-user')
+} })
 const operationLoader = memberOperationsApi.getOperation
 const routePreview = xnodeMemberApi.previewRouting
 const router = createRouter({ history: createWebHistory(), routes: [
@@ -139,11 +150,12 @@ const router = createRouter({ history: createWebHistory(), routes: [
   { path: '/settings/diy', component: () => import('@/views/DIYView.vue'), beforeEnter: () => {
     const trace = { calls: [] as string[], keys: [] as string[], writes: [] as unknown[] }
     installDIYAudit(params, trace, async () => ({ plan: { revision: 0, phase: 'active', choices: [] }, nodes: [], endpoints: [], templates: [], paths: [] }))
-    xnodeMemberApi.previewRouting = async () => ({ paths: [] })
+    xnodeMemberApi.previewRouting = async () => ({ paths: [], trace: null })
     Object.assign(window, { __diyNavigationAudit: trace })
   } },
 ] })
 router.afterEach(to => { if (to.path !== '/settings/diy') { memberOperationsApi.getOperation = operationLoader; xnodeMemberApi.previewRouting = routePreview } })
 app.use(router)
 app.use(ui)
+await router.isReady()
 app.mount('#app')

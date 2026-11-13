@@ -27,7 +27,7 @@ func New(repo Repository, admins []int64) *Service {
 }
 
 func (s *Service) isAdmin(user model.User) bool {
-	return user.Role == "admin" && s.admins[user.TelegramID]
+	return user.Role == "admin" && user.AccountStatus == "active" && !user.BotBlocked && s.admins[user.TelegramID]
 }
 
 func (s *Service) Create(ctx context.Context, user model.User, input CreateInput) (Issued, error) {

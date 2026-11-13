@@ -29,7 +29,7 @@ func (s *Store) retryAttempt_UpdateConnectionScan(ctx context.Context, scanID st
 		return providerops.ConnectionScan{}, fmt.Errorf("begin connection scan update: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
-	current, err := scanConnectionScan(tx.QueryRowContext(ctx, connectionScanSelect+` WHERE id=$1`, scanID))
+	current, err := scanConnectionScan(tx.QueryRowContext(ctx, connectionScanSelect+` WHERE id=$1 FOR UPDATE`, scanID))
 	if err != nil {
 		return providerops.ConnectionScan{}, err
 	}

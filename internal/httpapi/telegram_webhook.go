@@ -26,12 +26,12 @@ func (s *Server) telegramWebhook(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		s.writeError(w, r, http.StatusBadRequest, "INVALID_TELEGRAM_UPDATE", "Telegram update IS NOT DISTINCT FROM invalid.")
+		s.writeError(w, r, http.StatusBadRequest, "INVALID_TELEGRAM_UPDATE", "Telegram update is invalid.")
 		return
 	}
 	var update telegram.Update
 	if err := json.Unmarshal(body, &update); err != nil {
-		s.writeError(w, r, http.StatusBadRequest, "INVALID_TELEGRAM_UPDATE", "Telegram update IS NOT DISTINCT FROM invalid.")
+		s.writeError(w, r, http.StatusBadRequest, "INVALID_TELEGRAM_UPDATE", "Telegram update is invalid.")
 		return
 	}
 	if err := s.processTelegramBotStatus(r.Context(), update); err != nil {
@@ -88,7 +88,9 @@ func (s *Server) telegramWebhook(w http.ResponseWriter, r *http.Request) {
 		payment := message.RefundedPayment
 		event := billing.ProviderEvent{Provider: "stars", OrderID: payment.InvoicePayload, TradeID: payment.TelegramPaymentChargeID,
 			PayableAmount: strconv.FormatInt(payment.TotalAmount, 10), PayableCurrency: payment.Currency}
-		if _, err := s.deps.Billing.ValidateEvent(r.Context(), event); err != nil {
+		order, err := s.deps.Billing.ValidateEvent(r.Context(), event)
+		if err != nil || event.TradeID == "" || order.ProviderTradeID == nil || *order.ProviderTradeID != event.TradeID ||
+			(order.Status != "paid" && order.Status != "refunded") {
 			s.writeError(w, r, http.StatusConflict, "REFUND_MISMATCH", "Telegram refund did not match the stored order.")
 			return
 		}
@@ -99,12 +101,14 @@ func (s *Server) telegramWebhook(w http.ResponseWriter, r *http.Request) {
 		if err := s.deps.Store.ResolvePaymentRefundOperation(r.Context(), payment.InvoicePayload,
 			payment.TelegramPaymentChargeID, time.Now().UTC()); err != nil {
 			s.deps.Logger.Error("resolve Stars refund operation", "request_id", middlewareRequestID(r), "error", err)
+			s.writeError(w, r, http.StatusServiceUnavailable, "REFUND_RECONCILIATION_PENDING", "The refund is recorded, but its operation receipt could not be reconciled. Please retry.")
+			return
 		}
 	}
 	pmHandled, pmErr := s.processTelegramPM(r.Context(), update)
 	if pmErr != nil {
 		if errors.Is(pmErr, telegrampm.ErrInvalidUpdate) {
-			s.writeError(w, r, http.StatusBadRequest, "INVALID_PM_UPDATE", "Private message update IS NOT DISTINCT FROM invalid.")
+			s.writeError(w, r, http.StatusBadRequest, "INVALID_PM_UPDATE", "Private message update is invalid.")
 			return
 		}
 		s.deps.Logger.Warn("queue Telegram private message", "update_id", update.UpdateID, "error", pmErr)

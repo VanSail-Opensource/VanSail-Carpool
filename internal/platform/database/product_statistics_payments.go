@@ -2,12 +2,13 @@ package database
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
-func (s *Store) paymentStatusShares(ctx context.Context) ([]model.NamedShare, error) {
-	rows, err := s.db.QueryContext(ctx, `WITH payment_facts(provider,terminal,order_count) AS (
+func paymentStatusSharesTx(ctx context.Context, tx *sql.Tx) ([]model.NamedShare, error) {
+	rows, err := tx.QueryContext(ctx, `WITH payment_facts(provider,terminal,order_count) AS (
 		SELECT provider,CASE
 			WHEN status='refunded' THEN 'refunded'
 			WHEN status='failed' THEN 'failed'

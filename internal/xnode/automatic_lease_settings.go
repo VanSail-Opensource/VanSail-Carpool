@@ -8,10 +8,19 @@ import "context"
 func (s *Service) SaveAutomaticWhitelist(ctx context.Context, actor string, settings AutomaticWhitelistConfig) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	next, err := s.Global(ctx)
+	previous, err := s.Global(ctx)
 	if err != nil {
 		return err
 	}
+	next := cloneGlobal(previous)
 	next.AutomaticWhitelist = &settings
-	return s.saveGlobalLocked(ctx, actor, next)
+	next, err = prepareGlobalChange(previous, next)
+	if err != nil {
+		return err
+	}
+	fence, err := s.captureGlobalWrite(ctx)
+	if err != nil {
+		return err
+	}
+	return s.commitGlobalLocked(ctx, actor, previous, next, fence)
 }

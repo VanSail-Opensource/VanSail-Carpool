@@ -54,6 +54,9 @@ type Master struct {
 }
 
 func NewMaster(service *Service, logger *slog.Logger) *Master {
+	if logger == nil {
+		logger = slog.New(slog.DiscardHandler)
+	}
 	m := &Master{service: service, logger: logger, peers: map[string]*agentPeer{}, live: map[string]liveSnapshot{}, globalBlocks: map[int]bool{}, automaticLeases: newAutomaticLeaseManager(rand.Text())}
 	m.compute = newComputePool(m)
 	if m.hourlyCreditSupported() {

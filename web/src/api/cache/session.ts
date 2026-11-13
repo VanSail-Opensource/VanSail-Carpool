@@ -5,8 +5,11 @@ const maximumEntries = 256
 let bytes = 0
 let owner: string | null = null
 let generation = 0
+let identityGeneration = 0
 
 export function cacheGeneration(): number { return generation }
+// Identity changes retire authentication effects; ordinary writes only expire snapshots.
+export function cacheIdentityGeneration(): number { return identityGeneration }
 export function hasCacheSession(): boolean { return owner !== null }
 
 export function removeResponseCache(key: string): void {
@@ -23,6 +26,7 @@ export function clearResponseCache(): void {
 export function setCacheSession(identity: string | null): boolean {
   if (identity === owner) return false
   owner = identity
+  identityGeneration += 1
   clearResponseCache()
   return true
 }

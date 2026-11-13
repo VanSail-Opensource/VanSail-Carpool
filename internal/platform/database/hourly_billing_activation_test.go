@@ -43,7 +43,7 @@ func TestHourlyPreparationIsUnpaidAndConcurrentCommitReplays(t *testing.T) {
 	if !a.Enrollment.ActivatedAt.Equal(a.Settlement.ChargedFrom) || !a.Enrollment.PaidThrough.Equal(a.Settlement.PaidUntil) {
 		t.Fatal("native paid boundary differs from immutable receipt")
 	}
-	if _, err := s.CompareAndSwapHourlyPolicy(ctx, input.OwnerID, policy.Version, "changed-policy-cipher"); err != nil {
+	if _, err := s.CompareAndSwapHourlyPolicy(ctx, hourlyBillingAdmin(t, s), policy.Version, "changed-policy-cipher"); err != nil {
 		t.Fatal(err)
 	}
 	replay, err := s.CommitHourlyActivation(ctx, prepared, policy, time.Now())

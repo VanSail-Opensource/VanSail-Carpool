@@ -11,7 +11,7 @@ func TestAddTXBBoundsReadUpdateAndAudit(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	store := newTestStore(t)
-	actor := createTestUser(t, store, 50_003)
+	actor := createTestAdmin(t, store, 50_003)
 	now := time.Date(2026, 8, 18, 10, 0, 0, 0, time.UTC)
 
 	defaults, err := store.AddTXBBounds(ctx)

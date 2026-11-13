@@ -37,3 +37,16 @@ Unpaid queued reset receipts fail without native mutation; uncertain attempted
 commands remain under review. Refund quotes, purchased scheduled quota cadence,
 initial period setup and renewal accounting remain separate. No new preference,
 quote or reset-debit producer remains.
+
+Terminal combo-control items recover their recorded status, provider reference,
+error and result before consulting mutable purchases or invoking synchronization
+again. A successful quiesce request authorizes no refund until the final
+purchase-scoped state confirms closure; unconfirmed closure remains under review.
+
+- `combo_control_recovery_test.go` covers all terminal outcomes and recovery after a receipt-write failure without another synchronization.
+- `refund_quiescence_test.go` covers confirmed closure, ambiguous admission, usage restoration and unknown settlement outcomes.
+- `refund_quiescence_test_helpers_test.go` supplies focused durable-receipt and provider-state fixtures for those regressions.
+- `worker_terminal_recovery_test.go` verifies exact replay of every terminal
+  refund/reset item, including partial outcomes, after a parent receipt write
+  failure. Recovery preserves the provider reference and numeric result evidence
+  without reading a retired purchase or issuing another mutation.

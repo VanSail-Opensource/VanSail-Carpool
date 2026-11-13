@@ -59,6 +59,9 @@ covers a blocked readiness call beside a healthy squad and unexhausted dependenc
 waits. These suites run in hosted CI, not locally.
 `generation_test.go` verifies queued and processing commands terminate after a
 known account-generation change without touching the current wallet or access.
+`terminal_recovery_test.go` verifies that an already recorded terminal item
+completes its parent receipt before decrypting input or reloading mutable owner
+state. Its reference, result and error survive interrupted receipt writes exactly.
 `legacy_test.go` covers active/accepted zero-price queued fixed-term conflicts
 and preservation of transient repository errors in disable admission.
 `capacity_test.go` confirms global owner-capacity rejection uses the same
@@ -101,5 +104,10 @@ when current policy cannot be decrypted. Neither path buys traffic itself.
 `admin.go` queues and applies the administrator-only disable through the same
 provider-operation lane with a distinct actor and a sealed administrative
 target; the paid hour is retained and no member cooldown is created.
+Fresh administrator admission uses the explicit transactional
+`CreateAdminHourlyDisableOperation` repository entry point, which locks current
+active, unblocked administrator authority before queueing. The shared operation
+kind does not grant administrative authority to member commands. Accepted
+replays and execution retain the original intent after later actor demotion.
 `commands_test.go` covers the actor/owner split, immutable replay, and the
 administrator path without weakening member authorization.

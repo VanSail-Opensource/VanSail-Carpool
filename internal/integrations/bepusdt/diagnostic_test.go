@@ -46,14 +46,14 @@ func TestLiveCreateCancelDiagnostic(t *testing.T) {
 	if err != nil {
 		var apiError *APIError
 		if errors.As(err, &apiError) {
-			t.Fatalf("live create rejected (http=%d api=%d request_id_present=%t message=%q)", apiError.HTTPStatus, apiError.StatusCode, apiError.RequestID != "", apiError.Message)
+			t.Fatalf("live create rejected (http=%d api=%d request_id_present=%t)", apiError.HTTPStatus, apiError.StatusCode, apiError.RequestID != "")
 		}
 		t.Fatalf("live create failed: %T", err)
 	}
 	if err := client.CancelTransaction(ctx, transaction.TradeID); err != nil {
 		var apiError *APIError
 		if errors.As(err, &apiError) {
-			t.Fatalf("live cancel rejected (http=%d api=%d request_id_present=%t message=%q)", apiError.HTTPStatus, apiError.StatusCode, apiError.RequestID != "", apiError.Message)
+			t.Fatalf("live cancel rejected (http=%d api=%d request_id_present=%t)", apiError.HTTPStatus, apiError.StatusCode, apiError.RequestID != "")
 		}
 		t.Fatalf("live cancel failed: %T", err)
 	}

@@ -5,7 +5,7 @@ exact amount: network fees are additional and must not reduce the received amoun
 
 - `BalancePaymentSheet.vue` resumes valid pending orders before provider selection and drives coupon funding plus the durable provider-operation lifecycle from Home.
 - `BalancePaymentConfiguration.vue` is the billing flow entrypoint. It keeps provider selection, channel selection, coupon redemption, and order actions coordinated without changing the payment API contract.
-- `PaymentProviderStep.vue` renders the first Add TXB step, choosing one stable provider-account profile or the coupon funding source.
+- `PaymentProviderStep.vue` renders the first Add TXB step, choosing one stable provider-account profile or the coupon funding source. An empty provider list explains that funding is unavailable and omits the unusable next-step action; the sheet's labelled close control remains available.
 - `PaymentChannelStep.vue` renders the second Add TXB step with a range-aware Nuxt UI slider and an exact two-decimal amount field in the member's display currency. The field shows the selected-currency suffix and range while the flow keeps one canonical TXB-minor amount for limits, reissue/pending hydration, and order creation; a localized approximation line states the TXB credit when the display currency is not TXB. A persisted display currency whose stored rate is unavailable falls back to TXB entry instead of pricing through a missing rate. It then starts or rechecks the provider operation without overlapping controls.
 - `PaymentCryptoChannelPicker.vue` splits BEPUSDT selection into white-logo currency and network controls backed by discovered rails.
 - `CryptoPaymentInstructions.vue` renders the compact exact crypto amount, address QR, copy action, countdown, explicit replacement, and user cancellation without exposing a provider URL.
@@ -15,6 +15,22 @@ exact amount: network fees are additional and must not reduce the received amoun
 Receipt access denial clears details and stops polling through `usePaymentReturn`.
 The shared receipt exposes a native Telegram entrance link when owner
 authentication is needed; it never imports browser-admin initialization into the Mini App.
-- `BalancePaymentSheet.test.ts` verifies provider labels stay distinct from provider-owned payment channels, such as EZPay and Alipay, and verifies the two-step transition.
+- Coupon redemption retains an attempt key per normalized code after ambiguous failures and retires it after confirmed success, matching the server's uppercase/trimmed code contract.
+- `BalancePaymentSheet.test.ts` verifies provider labels stay distinct from provider-owned payment channels, such as EZPay and Alipay, the two-step transition, and safe coupon redemption retries.
 
 Provider and channel changes use semantic selection feedback with a 140ms Motion check reveal and an opacity-only reduced-motion path; navigation is soft, order confirmation is rigid, retries are light, and order cancellation is heavy.
+
+`PaymentCryptoChannelPicker.vue` keeps a currency available when any of its networks is available, even if its first listed network is disabled.
+
+`PaymentReceiptDetails.test.ts` verifies that only a server-paid receipt claims
+credited balance. Pending and terminal receipts identify the order value, and
+crypto amounts use a neutral label rather than implying settlement.
+`CryptoPaymentInstructions.vue` resets address/amount copy feedback when the
+order or payment target changes.
+
+Closing the funding sheet suspends both order and operation observers and retires
+any pending receipt/QR presentation or delayed paid callback. Reopening prepares
+a fresh authoritative view while unresolved create keys remain reusable. Coupon
+entry is locked during submission and late responses from a retired configuration
+cannot publish a grant into another sheet. `BalancePaymentSheet.test.ts` covers
+this coupon lifecycle; the payment composable tests cover closed-sheet recovery.

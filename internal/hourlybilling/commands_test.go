@@ -13,7 +13,7 @@ import (
 func TestDisableForAdminQueuesDistinctActorAndStopsWithoutCooldown(t *testing.T) {
 	s, user, policy, _ := commerceFixture(t)
 	ctx := context.Background()
-	admin, _, err := s.store.UpsertTelegramUser(ctx, model.TelegramProfile{ID: 97_825, FirstName: "Admin"}, false)
+	admin, _, err := s.store.UpsertTelegramUser(ctx, model.TelegramProfile{ID: 97_825, FirstName: "Admin"}, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,6 +32,9 @@ func TestDisableForAdminQueuesDistinctActorAndStopsWithoutCooldown(t *testing.T)
 	if _, err := s.Disable(ctx, attacker, enrollment.ID, policy.snapshot.Version, "member-stop"); !errors.Is(err, database.ErrNotFound) {
 		t.Fatalf("member stop for another owner = %v", err)
 	}
+	if _, err := s.DisableForAdmin(ctx, attacker.ID, user.ID, enrollment.ID, policy.snapshot.Version, "forged-admin-stop"); !errors.Is(err, database.ErrConflict) {
+		t.Fatalf("nonadministrator stop for another owner = %v", err)
+	}
 
 	receipt, err := s.DisableForAdmin(ctx, admin.ID, user.ID, enrollment.ID, policy.snapshot.Version, "admin-stop")
 	if err != nil {
@@ -44,6 +47,12 @@ func TestDisableForAdminQueuesDistinctActorAndStopsWithoutCooldown(t *testing.T)
 	if queued.ActorUserID != admin.ID || queued.OwnerUserID != user.ID ||
 		queued.Receipt.Kind != DisableOperation || queued.Receipt.Status != "queued" {
 		t.Fatalf("admin operation = %+v", queued)
+	}
+	if _, err := s.store.DB().ExecContext(ctx, `UPDATE users SET role='user' WHERE id=$1`, admin.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.DisableForAdmin(ctx, admin.ID, user.ID, enrollment.ID, policy.snapshot.Version, "fresh-after-demotion"); !errors.Is(err, database.ErrConflict) {
+		t.Fatalf("demoted administrator admitted a fresh stop = %v", err)
 	}
 	replay, err := s.DisableForAdmin(ctx, admin.ID, user.ID, enrollment.ID, policy.snapshot.Version, "admin-stop")
 	if err != nil || replay.ID != receipt.ID {

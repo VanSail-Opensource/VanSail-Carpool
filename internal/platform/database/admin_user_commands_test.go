@@ -15,7 +15,7 @@ func TestAdminCouponGrantAndDiscardAreIdempotentAndHistorical(t *testing.T) {
 	ctx := context.Background()
 	store := newTestStore(t)
 	now := time.Now().UTC()
-	actor, user := createTestUser(t, store, 48_201), createTestUser(t, store, 48_202)
+	actor, user := createTestAdmin(t, store, 48_201), createTestUser(t, store, 48_202)
 	coupon, err := store.SaveCoupon(ctx, coupons.CouponInput{Code: "ADMIN25", Name: "Admin", Kind: coupons.KindPurchaseOnce,
 		DiscountMode: coupons.DiscountFixed, ValueMinorOrBPS: 25, Active: true}, now)
 	if err != nil {
@@ -60,7 +60,7 @@ func TestAdminRefundBoundsAndReplay(t *testing.T) {
 	ctx := context.Background()
 	store := newTestStore(t)
 	now := time.Now().UTC()
-	actor := createTestUser(t, store, 48_211)
+	actor := createTestAdmin(t, store, 48_211)
 	combo := saveTestCombo(t, store, "admin-refund-bounds", 900, 30)
 	user, purchase := createAdminWorkflowPurchase(t, store, 48_212, combo, now)
 	bad := AdminEntitlementRefundInput{ActorUserID: actor.ID, UserID: user.ID, PurchaseID: purchase.ID,
@@ -90,7 +90,7 @@ func TestTemporaryBanRestorationWaitsForSuccessfulBanAndPreservesOverlap(t *test
 	ctx := context.Background()
 	store := newTestStore(t)
 	now := time.Now().UTC()
-	actor, user := createTestUser(t, store, 48_221), createTestUser(t, store, 48_222)
+	actor, user := createTestAdmin(t, store, 48_221), createTestUser(t, store, 48_222)
 	ban, err := store.CreateAdminTemporaryBan(ctx, AdminTemporaryBanInput{ActorUserID: actor.ID, UserID: user.ID,
 		IdempotencyKey: "ban-key", RequestFingerprint: "ban-command-fingerprint", Reason: "investigation", DurationMinutes: 1}, now)
 	if err != nil {
@@ -116,7 +116,7 @@ func TestTemporaryBanRestorationWaitsForSuccessfulBanAndPreservesOverlap(t *test
 	if err != nil || active == nil || active.UnbanOperationID == "" {
 		t.Fatalf("scheduled restoration = (%+v, %v)", active, err)
 	}
-	if err = store.CompleteAdminTemporaryUnban(ctx, user.ID, now.Add(3*time.Minute)); err != nil {
+	if err = store.CompleteAdminTemporaryUnban(ctx, user.ID, active.UnbanOperationID, now.Add(3*time.Minute)); err != nil {
 		t.Fatal(err)
 	}
 	if active, err = store.ActiveAdminTemporaryBan(ctx, user.ID); err != nil || active != nil {

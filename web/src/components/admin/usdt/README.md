@@ -29,6 +29,9 @@ remain shared billing components. Composables guard stale responses after unmoun
 
 Command failures remain visible beside transfer-credit inputs in the evidence
 side panel. Browser administration does not load Telegram controls or haptics.
+The teleported evidence panel owns its layout styles instead of depending on a
+page ancestor. Empty review copy sits outside the horizontally scrollable table,
+so dismissing the final transfer cannot retain an off-screen empty message.
 
 Each network has independent USDT/USDC switches; USDC is hidden on TRON/BSC/TON.
 Legacy global modes populate missing network switches once. Explicit empty lists
@@ -39,6 +42,10 @@ Loads abort on replacement/disposal, generations guard responses, and failed loa
 disable Save until retry succeeds. All transport retains shared request signing.
 
 `useUSDTAdmin.test.ts` covers aborted/superseded loads, disabled writes after failed loads, successful retry and disposal guards in hosted CI.
+Probe feedback is bound to the token rail actually checked. Replacing or saving
+configuration retires pending probes; switching rails cannot display another
+rail's verification result. Disposal also clears private drafts and prevents new
+actions. The composable and hosted browser regressions cover these boundaries.
 
 Token orders share the USD billing rate. This module has no separate rate control.
 

@@ -126,12 +126,13 @@ watch(
 
 ```vue
 <script setup>
-import { computed, useAttrs } from 'vue'
+import { useAttrs } from 'vue'
 
 const attrs = useAttrs()
 
-const hasTestId = computed(() => 'data-testid' in attrs)
-const ariaLabel = computed(() => attrs['aria-label'] ?? 'Default label')
+// Call these getters during rendering; computed() would cache nonreactive attrs.
+const hasTestId = () => 'data-testid' in attrs
+const ariaLabel = () => attrs['aria-label'] ?? 'Default label'
 </script>
 ```
 

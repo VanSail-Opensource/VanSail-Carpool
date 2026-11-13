@@ -20,7 +20,7 @@ func TestAffiliateSettlementUsesPreUpgradeTierOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = store.SaveAffiliateConfig(ctx, inviter.ID, affiliates.ConfigInput{ExpectedVersion: 1, Tiers: []affiliates.Tier{
+	_, err = store.SaveAffiliateConfig(ctx, createTestAdmin(t, store, 705).ID, affiliates.ConfigInput{ExpectedVersion: 1, Tiers: []affiliates.Tier{
 		{Name: "Starter", Threshold: 0, Enabled: true, CommissionEnabled: true, CommissionBPS: 1000, Reward: affiliates.Reward{Kind: "none"}},
 		{Name: "Partner", Threshold: 1, Enabled: true, CommissionEnabled: true, CommissionBPS: 2000, Reward: affiliates.Reward{Kind: "txb", TXBMinor: 500}},
 	}}, time.Now().UTC())

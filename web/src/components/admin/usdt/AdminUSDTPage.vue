@@ -57,7 +57,7 @@ const progress = computed(() => {
             </div>
             <div class="usdt-status" aria-live="polite"><span>{{ t(`adminUsdt.connections.${currentStatus?.connection || 'none'}`) }}</span><span>{{ t('adminUsdt.progress') }} <code>{{ progress }}</code></span><time v-if="currentStatus?.updatedAt">{{ formatDateTime(currentStatus.updatedAt) }}</time><UButton color="neutral" variant="ghost" icon="i-ph-arrows-clockwise" :aria-label="t('common.refresh')" @click="refresh" /></div>
             <InlineNotice v-if="currentStatus?.errorCode" tone="warning">{{ t(`errors.api.${currentStatus.errorCode}`) }}</InlineNotice>
-            <InlineNotice v-if="probe" tone="info">{{ probe }}</InlineNotice>
+            <InlineNotice v-if="probe?.rail === rail" tone="info">{{ probe.text }}</InlineNotice>
             <USDTNetworkSettings v-if="network" v-model="network" :index="index" />
           </section>
         </fieldset>
@@ -82,9 +82,5 @@ const progress = computed(() => {
 .usdt-status code { overflow-wrap: anywhere; }
 .usdt-admin :deep(.usdt-review) { border-top: 1px solid var(--line); padding: 1rem; display: grid; gap: .7rem; }
 .usdt-admin :deep(.usdt-review h3) { margin: 0; font-size: .95rem; }
-.usdt-admin :deep(.usdt-review-item) { border-top: 1px solid var(--line); padding-top: .9rem; display: grid; gap: .65rem; }
-.usdt-admin :deep(.usdt-evidence) { margin: 0; display: grid; gap: .4rem; font-size: .75rem; }
-.usdt-admin :deep(.usdt-evidence dt) { color: var(--text-muted); }
-.usdt-admin :deep(.usdt-evidence dd) { margin: 0; overflow-wrap: anywhere; }
 @media (min-width: 640px) { .usdt-admin :deep(.usdt-form-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 </style>

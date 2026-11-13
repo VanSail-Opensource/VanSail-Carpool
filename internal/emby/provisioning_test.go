@@ -43,9 +43,9 @@ func TestPasswordErrorsCannotPersistOrReturnEchoedPlaintext(t *testing.T) {
 	for _, test := range []struct {
 		name       string
 		cause      error
-		wantRefund bool
+		wantReview bool
 	}{
-		{name: "terminal", cause: fmt.Errorf("%w: rejected temporary", terminalServiceError), wantRefund: true},
+		{name: "terminal", cause: fmt.Errorf("%w: rejected temporary", terminalServiceError), wantReview: true},
 		{name: "transient", cause: fmt.Errorf("%w: rejected temporary", transientServiceError)},
 	} {
 		test := test
@@ -58,8 +58,8 @@ func TestPasswordErrorsCannotPersistOrReturnEchoedPlaintext(t *testing.T) {
 			remote.passwordErr = test.cause
 			service := NewService(repository, remote, fixedPrice(100), &serviceSecrets{})
 			err := service.Provision(context.Background(), "account")
-			if test.wantRefund {
-				if err != nil || repository.refundCalls != 1 || repository.retryCalls != 0 {
+			if test.wantReview {
+				if !errors.Is(err, ErrPendingReview) || repository.refundCalls != 0 || repository.retryCalls != 0 {
 					t.Fatalf("Provision() error=%v refund=%d retry=%d", err, repository.refundCalls, repository.retryCalls)
 				}
 			} else if !errors.Is(err, transientServiceError) || repository.retryCalls != 1 || repository.refundCalls != 0 {
@@ -150,13 +150,6 @@ func TestProvisionReconcilesCommittedCreateTimeout(t *testing.T) {
 
 func TestSetupAndLinkedValidationBranches(t *testing.T) {
 	t.Parallel()
-	activeRepository := &serviceRepository{record: ProvisioningRecord{Account: Account{ID: "existing", UserID: "user", Status: StatusActive}}}
-	activeRemote := newServiceRemote()
-	service := NewService(activeRepository, activeRemote, fixedPrice(100), &serviceSecrets{})
-	if account, created, err := service.Setup(context.Background(), "user", "password", Preferences{}); err != nil || created || account.ID != "existing" {
-		t.Fatalf("Setup(existing) = (%+v, %v, %v)", account, created, err)
-	}
-
 	validationRepository := &serviceRepository{baseUsername: "ada"}
 	validationService := NewService(validationRepository, newServiceRemote(), fixedPrice(100), &serviceSecrets{})
 	tests := []struct {
@@ -171,8 +164,8 @@ func TestSetupAndLinkedValidationBranches(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			if _, _, err := validationService.Setup(context.Background(), "user", test.password, test.preferences); err == nil {
-				t.Fatal("Setup() error = nil")
+			if _, err := validationService.prepareSetup(context.Background(), "user", test.password, test.preferences); err == nil {
+				t.Fatal("prepareSetup() error = nil")
 			}
 		})
 	}

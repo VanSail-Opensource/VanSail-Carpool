@@ -57,9 +57,6 @@ func TestCoreChangePreservesCustomTermsAndTrafficRewardLifetimes(t *testing.T) {
 	}
 }
 
-// A pending rollover snapshot can survive a term extension. Create it explicitly:
-// the normal purchase constructor does not create rollovers before expiry.
-
 func TestOrdinaryCoreChangeStillAdoptsTargetDefaults(t *testing.T) {
 	t.Parallel()
 	ctx, store, now := context.Background(), newTestStore(t), time.Now().UTC()

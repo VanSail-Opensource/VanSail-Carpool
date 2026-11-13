@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, shallowRef, watch } from 'vue'
+import { computed, onScopeDispose, shallowRef, watch } from 'vue'
 
 import type { CouponRedemption, FeaturePaymentMethod } from '@/api/features'
 import { featuresApi } from '@/api/features'
@@ -39,6 +39,8 @@ const { t } = useI18n()
 const couponCode = shallowRef('')
 const couponBusy = shallowRef(false)
 const couponError = shallowRef<string | null>(null)
+const couponAttempts = new Map<string, string>()
+let disposed = false
 
 const externalMethods = computed(() => props.methods.filter((method) => method.mode === 'order'))
 const selectedMethod = computed(() => props.methods.find((method) => method.id === props.selectedMethodId) ?? null)
@@ -100,7 +102,7 @@ function providerIcon(provider: PaymentProvider): string {
 }
 
 function chooseProfile(key: string | undefined): void {
-  if (!key) return
+  if (disposed || couponBusy.value || props.stage !== 'configure' || !key) return
   if (key === 'coupon') {
     emit('chooseMethod', 'coupon')
     couponError.value = null
@@ -115,7 +117,7 @@ function chooseProfile(key: string | undefined): void {
 }
 
 function continueToChannel(): void {
-  if (canContinue.value) paymentStep.value = 'channel'
+  if (!disposed && !couponBusy.value && canContinue.value) paymentStep.value = 'channel'
 }
 
 function methodNote(method: FeaturePaymentMethod): string {
@@ -123,18 +125,24 @@ function methodNote(method: FeaturePaymentMethod): string {
 }
 
 async function redeemCoupon(): Promise<void> {
-  if (!couponCode.value.trim() || couponBusy.value) return
+  const code = couponCode.value.trim().toUpperCase()
+  if (disposed || !code || couponBusy.value) return
   couponBusy.value = true
   couponError.value = null
   try {
-    const redemption = await featuresApi.redeemCoupon(couponCode.value, createUuid())
+    const key = couponAttempts.get(code) ?? createUuid()
+    couponAttempts.set(code, key)
+    const redemption = await featuresApi.redeemCoupon(code, key)
+    if (disposed) return
+    couponAttempts.delete(code)
     emit('couponRedeemed', redemption)
   } catch (caught) {
-    couponError.value = localizedError(caught, 'errors.couponRedeem')
+    if (!disposed) couponError.value = localizedError(caught, 'errors.couponRedeem')
   } finally {
-    couponBusy.value = false
+    if (!disposed) couponBusy.value = false
   }
 }
+onScopeDispose(() => { disposed = true; couponAttempts.clear(); couponCode.value = ''; couponError.value = null })
 
 // Preserve the selected channel across create progress, remounts, and rejected creates.
 watch(() => props.stage, (stage, previousStage) => {
@@ -151,13 +159,14 @@ watch(() => props.stage, (stage, previousStage) => {
     v-if="paymentStep === 'provider'"
     :options="providerItems"
     :selected-value="selectedProfileKey"
-    :can-continue="canContinue"
+    :can-continue="canContinue && !couponBusy && stage === 'configure'"
+    :disabled="couponBusy || stage !== 'configure'"
     @choose="chooseProfile"
     @continue="continueToChannel"
   />
   <div v-if="paymentStep === 'provider' && selectedProvider === 'coupon'" class="coupon-redemption">
     <div class="coupon-redemption__form">
-      <UInput v-model="couponCode" :placeholder="$t('payment.couponCode')" :aria-label="$t('payment.couponCode')" />
+      <UInput v-model="couponCode" :disabled="couponBusy" :placeholder="$t('payment.couponCode')" :aria-label="$t('payment.couponCode')" />
       <UButton block :disabled="!couponCode.trim() || couponBusy" :loading="couponBusy" :label="$t('payment.redeemCoupon')" data-haptic="action" @click="redeemCoupon" />
     </div>
     <UAlert v-if="couponError" color="error" variant="soft" :description="couponError" />

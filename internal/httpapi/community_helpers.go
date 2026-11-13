@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"errors"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -10,7 +9,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 )
 
 func (s *Server) requireIdempotencyKey(w http.ResponseWriter, r *http.Request) (string, bool) {
@@ -20,66 +18,6 @@ func (s *Server) requireIdempotencyKey(w http.ResponseWriter, r *http.Request) (
 		return "", false
 	}
 	return value, true
-}
-
-func optionalOrGeneratedIdempotencyKey(w http.ResponseWriter, r *http.Request) (string, error) {
-	value := strings.TrimSpace(r.Header.Get("Idempotency-Key"))
-	if len(value) > 128 {
-		return "", errors.New("idempotency key is too long")
-	}
-	if value != "" {
-		return value, nil
-	}
-	generated, err := ids.New()
-	if err != nil {
-		return "", err
-	}
-	w.Header().Set("Idempotency-Key", generated)
-	w.Header().Set("Idempotency-Key-Generated", "true")
-	return generated, nil
-}
-
-func boundedMultipartFile(w http.ResponseWriter, r *http.Request, fieldName string, maxBytes int64) ([]byte, error) {
-	if maxBytes <= 0 {
-		return nil, errors.New("invalid upload bound")
-	}
-	r.Body = http.MaxBytesReader(w, r.Body, maxBytes+maxMultipartOverhead)
-	reader, err := r.MultipartReader()
-	if err != nil {
-		return nil, err
-	}
-	var result []byte
-	found := false
-	for {
-		part, nextErr := reader.NextPart()
-		if errors.Is(nextErr, io.EOF) {
-			break
-		}
-		if nextErr != nil {
-			return nil, nextErr
-		}
-		if part.FormName() != fieldName || part.FileName() == "" || found {
-			_ = part.Close()
-			return nil, errors.New("multipart upload must contain exactly one file field")
-		}
-		content, readErr := io.ReadAll(io.LimitReader(part, maxBytes+1))
-		closeErr := part.Close()
-		if readErr != nil {
-			return nil, readErr
-		}
-		if closeErr != nil {
-			return nil, closeErr
-		}
-		if int64(len(content)) > maxBytes {
-			return nil, errors.New("uploaded file exceeds bound")
-		}
-		result = content
-		found = true
-	}
-	if !found {
-		return nil, errors.New("multipart file is missing")
-	}
-	return result, nil
 }
 
 func parseMinorString(value string, allowZero bool) (int64, error) {
@@ -96,22 +34,6 @@ func parseMinorString(value string, allowZero bool) (int64, error) {
 		return 0, errors.New("minor amount is outside its allowed range")
 	}
 	return minor, nil
-}
-
-func parseSignedDecimalInt64(value string) (int64, error) {
-	if value == "" || strings.TrimSpace(value) != value || value == "-" {
-		return 0, errors.New("signed amount must be a canonical decimal integer")
-	}
-	digits := value
-	if strings.HasPrefix(digits, "-") {
-		digits = strings.TrimPrefix(digits, "-")
-	}
-	for _, character := range digits {
-		if character < '0' || character > '9' {
-			return 0, errors.New("signed amount must contain decimal digits only")
-		}
-	}
-	return strconv.ParseInt(value, 10, 64)
 }
 
 func txbMajorString(minor int64) string {

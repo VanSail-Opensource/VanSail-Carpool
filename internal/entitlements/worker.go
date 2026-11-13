@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	queueoutbox "github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/accounts"
@@ -15,8 +14,6 @@ import (
 
 // Repository is the durable outbox and entitlement query surface.
 type Repository interface {
-	ClaimOutboxJob(context.Context, time.Time) (*model.OutboxJob, error)
-	CompleteOutboxClaim(context.Context, model.OutboxJob, error, time.Time) error
 	PurchaseByID(context.Context, string) (model.Purchase, error)
 	UserForPurchase(context.Context, string) (model.User, error)
 	UserByID(context.Context, string) (model.User, error)
@@ -55,34 +52,13 @@ func NewWorker(repository Repository, provider ProxyClient, identity ...Identity
 	return worker
 }
 
-// Drain processes up to limit ready jobs and returns the first infrastructure error.
-func (w *Worker) Drain(ctx context.Context, limit int) error {
-	if limit <= 0 {
-		limit = 20
-	}
-	for range limit {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		job, err := w.repository.ClaimOutboxJob(ctx, w.now().UTC())
-		if err != nil {
-			return err
-		}
-		if job == nil {
-			return nil
-		}
-		jobErr := w.HandleOutbox(ctx, *job)
-		if err := queueoutbox.CompleteClaim(ctx, w.repository, *job, jobErr, w.now().UTC()); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // HandleOutbox implements the shared kind-specific dispatcher contract.
 func (w *Worker) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
 	jobErr := w.process(ctx, job)
 	if jobErr != nil && job.Attempts >= 10 && job.Kind == "xnode_apply_entitlement" {
+		if _, native := w.provider.(memberPurchaseActivator); native {
+			return w.markNativeActivationFailure(ctx, jobErr)
+		}
 		purchaseID, targetErr := outbox.TargetID(job, "purchaseId")
 		if targetErr != nil {
 			return errors.Join(jobErr, targetErr)
@@ -116,6 +92,9 @@ func (w *Worker) process(ctx context.Context, job model.OutboxJob) error {
 		user, err := w.repository.UserForPurchase(ctx, purchase.ID)
 		if err != nil {
 			return err
+		}
+		if native, ok := w.provider.(memberPurchaseActivator); ok {
+			return w.applyNativePurchase(ctx, native, user, purchase.ID)
 		}
 		user, err = w.ensureIdentity(ctx, user)
 		if errors.Is(err, accounts.ErrProxyIdentityConflict) {
@@ -163,45 +142,7 @@ func (w *Worker) process(ctx context.Context, job model.OutboxJob) error {
 		if err != nil {
 			return err
 		}
-		user, err := w.repository.UserByID(ctx, userID)
-		if err != nil {
-			return err
-		}
-		if user.OnboardingState != "complete" {
-			return nil
-		}
-		if repository, ok := w.repository.(provisioningRepository); ok {
-			purchased, err := repository.HasProvisionablePurchase(ctx, userID, w.now().UTC())
-			if err != nil {
-				return err
-			}
-			if purchased {
-				user, err = w.ensureIdentity(ctx, user)
-				if errors.Is(err, accounts.ErrProxyIdentityConflict) {
-					return w.resolveIdentityConflict(ctx, user)
-				}
-				if err != nil {
-					return err
-				}
-			}
-		}
-		if user.ProxyUserID == nil {
-			return w.releaseUserSyncNotifications(ctx, userID)
-		}
-		desired, err := w.repository.DesiredEntitlement(ctx, user.ID, w.now().UTC())
-		if err != nil {
-			return err
-		}
-		if desired == nil {
-			if err := w.provider.RemoveEntitlement(ctx, *user.ProxyUserID); err != nil {
-				return w.repairMissingIdentity(ctx, user, err)
-			}
-			return w.releaseUserSyncNotifications(ctx, userID)
-		}
-		if err := w.provider.ApplyEntitlement(ctx, *user.ProxyUserID, desired.TrafficLimitBytes, desired.ResetStrategy, desired.SquadUUIDs, desired.ValidUntil); err != nil {
-			return w.repairMissingIdentity(ctx, user, err)
-		}
-		return w.releaseUserSyncNotifications(ctx, userID)
+		return w.syncUser(ctx, userID)
 	default:
 		return fmt.Errorf("unknown outbox job kind %q", job.Kind)
 	}

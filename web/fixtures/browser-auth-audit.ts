@@ -2,13 +2,14 @@ import { createApp, h } from 'vue'
 import { createPinia } from 'pinia'
 import { createRouter, createWebHistory, RouterView } from 'vue-router'
 import ui from '@nuxt/ui/vue-plugin'
-import { browserAccessApi, type BrowserSession } from '@/api/browserAccess'
+import { browserAccessApi, type AdminAccessLink, type BrowserSession } from '@/api/browserAccess'
 import { ApiError } from '@/api/http'
 import { api } from '@/api/client'
 import { setExperience } from '@/utils/experience'
 import { initializeBrowserTheme } from '@/browser/theme'
 import { setLocale, t } from '@/i18n'
 import BrowserAuthAudit from './BrowserAuthAudit.vue'
+import { useSessionStore } from '@/stores/session'
 import '@/browser/styles.css'
 
 const params = new URLSearchParams(location.search)
@@ -16,10 +17,16 @@ setExperience(params.has('link') || params.has('recovery') ? 'miniapp' : 'browse
 if (params.has('link') || params.has('recovery')) await import('@/styles/main.css')
 else initializeBrowserTheme()
 setLocale(params.has('zh') ? 'zh-CN' : 'en')
-const state = { configReads: 0, links: 0, exchanges: 0, copied: '', usedTokens: [] as string[] }
+const state = { configReads: 0, sessionReads: 0, links: 0, exchanges: 0, copied: '', usedTokens: [] as string[], recoverLink: false }
+const pendingLinks: Array<() => void> = []
+let shownLink: AdminAccessLink | null = null
 if (params.has('recovery')) {
   window.Telegram = { WebApp: { initData: 'synthetic-verified-sign-in', platform: 'web' } } as typeof window.Telegram
-  api.getMe = async () => { throw new ApiError(401, { code: 'UNAUTHENTICATED', message: '' }) }
+  api.getMe = async () => {
+    state.sessionReads++
+    if (params.has('session-unavailable')) throw new ApiError(503, { code: 'SESSION_UNAVAILABLE', message: '' })
+    throw new ApiError(401, { code: 'UNAUTHENTICATED', message: '' })
+  }
   api.authTelegram = async () => {
     state.exchanges++
     if (params.has('recoveryslow')) await new Promise(resolve => setTimeout(resolve, Math.min(5000, Math.max(0, Number(params.get('recoveryslow')) || 1500))))
@@ -45,15 +52,18 @@ browserAccessApi.session = async () => params.has('console') ? admin : ({ authen
 browserAccessApi.renew = async () => admin
 browserAccessApi.logout = async () => undefined
 browserAccessApi.createLink = async () => {
-  state.links++
+  const attempt = ++state.links
+  if (params.has('defer-link')) await new Promise<void>(resolve => { pendingLinks.push(resolve) })
   await pause()
-  if (params.has('error') && state.links === 1) throw new ApiError(503, { code: 'BROWSER_LINK_FAILED', message: '' })
-  return { url: `https://panel.example/admin/access#token=audit-link-${state.links}`,
-    expiresAt: new Date(Date.now() + (params.has('expired') && state.links === 1 ? -1000 : 300000)).toISOString() }
+  if ((params.has('error') && attempt === 1) || (params.has('link-refresh-error') && attempt > 1 && !state.recoverLink)) throw new ApiError(503, { code: 'BROWSER_LINK_FAILED', message: '' })
+  shownLink = { url: `https://panel.example/admin/access#token=audit-link-${attempt}`,
+    expiresAt: new Date(Date.now() + (params.has('expired') && attempt === 1 ? -1000 : 300000)).toISOString() }
+  return shownLink
 }
 browserAccessApi.exchange = async token => {
   state.exchanges++
   await pause()
+  if (params.has('unavailable') && state.exchanges === 1) throw new ApiError(503, { code: 'BROWSER_SESSION_UNAVAILABLE', message: '' })
   if (params.has('invalid') || state.usedTokens.includes(token)) throw new ApiError(401, { code: 'BROWSER_LINK_INVALID', message: '' })
   state.usedTokens.push(token)
   return { ...admin, returnTo: '/audit-complete' }
@@ -66,4 +76,14 @@ const router = createRouter({ history: createWebHistory(), routes: [
 ] })
 const app = createApp({ render: () => h(RouterView) })
 app.config.globalProperties.$t = t
-app.use(createPinia()).use(router).use(ui).mount('#app')
+app.use(createPinia()).use(router).use(ui)
+const member = useSessionStore()
+if (params.has('link')) { member.session = admin; member.status = 'ready' }
+Object.assign(state, {
+  releaseLink: () => pendingLinks.shift()?.(),
+  expireLink: () => { if (shownLink) shownLink.expiresAt = new Date(Date.now() - 1).toISOString() },
+  replaceOwner: () => { member.session = { ...admin, user: { ...admin.user, id: 'replacement-admin' } } },
+  logoutMember: () => member.clear(),
+})
+await router.isReady()
+app.mount('#app')

@@ -41,15 +41,15 @@ watch(() => [open.value, props.item?.id, props.item?.userId], () => {
           </dl>
           <p v-if="refundQuote.quote.value?.suggestedRefund" class="text-sm text-muted">{{ t('adminRefundQuote.hint') }}</p>
           <InlineNotice v-if="refundQuote.error.value" tone="warning">{{ refundQuote.error.value }}<UButton variant="link" :label="t('common.tryAgain')" :disabled="refundQuote.loading.value" @click="refundQuote.retry()" /></InlineNotice>
-          <TxbAmountField id="admin-entitlement-refund" v-model="amount" :label="t('adminUserProfile.refundAmount')" min-minor="1" :max-minor="maximum" required />
-          <UFormField name="reason" :label="t('adminReason.reason')" required><UTextarea v-model.trim="reason" :rows="3" :minlength="4" :maxlength="300" :placeholder="t('adminReason.placeholder')" /></UFormField>
+          <TxbAmountField id="admin-entitlement-refund" v-model="amount" :label="t('adminUserProfile.refundAmount')" min-minor="1" :max-minor="maximum" :disabled="busy" required />
+          <UFormField name="reason" :label="t('adminReason.reason')" required><UTextarea v-model.trim="reason" :rows="3" :minlength="4" :maxlength="300" :disabled="busy" :placeholder="t('adminReason.placeholder')" /></UFormField>
           <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
         </motion.div>
       </AnimatePresence>
     </template>
     <template #footer="{ close }">
       <UButton color="neutral" variant="outline" :label="t('common.cancel')" :disabled="busy" @click="close" />
-      <UButton color="warning" :label="t('adminUserProfile.issueRefund')" :disabled="!valid || busy" :loading="busy" @click="amountMinor && emit('refund', { reason, amountTxbMinor: amountMinor })" />
+      <UButton color="warning" :label="t('adminUserProfile.issueRefund')" :disabled="!valid || busy" :loading="busy" @click="!busy && valid && amountMinor && emit('refund', { reason, amountTxbMinor: amountMinor })" />
     </template>
   </UModal>
 </template>

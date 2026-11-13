@@ -27,6 +27,7 @@
     "backToEntrance": "Back to entrance",
     "loadFailed": "Could not load the entrance. Please retry.",
     "signingIn": "Signing you in",
+    "signInUnavailable": "Sign-in is temporarily unavailable. Please try again.",
     "loadingWorkspace": "Loading your workspace.",
     "loadingWorkspaceSlow": "Still loading your workspace.",
     "startupFailed": "Could not load your workspace.",

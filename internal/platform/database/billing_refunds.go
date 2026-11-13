@@ -47,7 +47,7 @@ func (s *Store) retryAttempt_RefundPayment(ctx context.Context, actorID *string,
 	}
 	rows, err := tx.QueryContext(ctx, `SELECT purchases.id,purchases.charged_txb_minor,purchases.status,combos.name
 		FROM purchases JOIN combos ON combos.id=purchases.combo_id WHERE purchases.user_id=$1
-		AND purchases.status IN ('queued','activating','active') ORDER BY CASE purchases.status WHEN 'queued' THEN 0 ELSE 1 END,purchases.created_at DESC`, order.UserID)
+		AND purchases.status IN ('queued','activating','active') ORDER BY CASE purchases.status WHEN 'queued' THEN 0 ELSE 1 END,`+purchaseTimestampOrderSQL("purchases.created_at")+` DESC,purchases.id DESC`, order.UserID)
 	if err != nil {
 		return model.PaymentOrder{}, err
 	}
@@ -139,7 +139,7 @@ func (s *Store) ListRefunds(ctx context.Context, limit int) ([]model.Refund, err
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT id,payment_order_id,actor_user_id,txb_minor,reason,status,created_at FROM refunds ORDER BY created_at DESC LIMIT $1`, limit)
+	rows, err := s.db.QueryContext(ctx, `SELECT id,payment_order_id,actor_user_id,txb_minor,reason,status,created_at FROM refunds ORDER BY `+purchaseTimestampOrderSQL("created_at")+` DESC,id DESC LIMIT $1`, limit)
 	if err != nil {
 		return nil, err
 	}

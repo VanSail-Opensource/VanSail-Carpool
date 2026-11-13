@@ -30,6 +30,15 @@ function mountEditor() {
 }
 
 describe('AdminSquadEditor', () => {
+  it('locks the reviewed fields and ignores another submit while the save is pending', async () => {
+    const wrapper = mountEditor()
+    await wrapper.setProps({ busy: true })
+    expect(wrapper.get('fieldset.squad-editor__fields').attributes('disabled')).toBeDefined()
+    await wrapper.get('form').trigger('submit')
+    expect(wrapper.emitted('save')).toBeUndefined()
+    wrapper.unmount()
+  })
+
   it('hides the legacy description and preserves it while omitting untouched features', async () => {
     const wrapper = mountEditor()
     expect(wrapper.text()).not.toContain('Existing legacy text')

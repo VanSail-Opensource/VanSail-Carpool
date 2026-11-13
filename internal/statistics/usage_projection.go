@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strconv"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usageaccounting"
@@ -39,7 +40,11 @@ func (s *Service) usageProjectionStatistics(ctx context.Context, now time.Time) 
 	}
 	result := usageProjectionStatistics{}
 	if count > 0 {
-		result.monthlyAverageUsageBPS = int(math.Round(total / float64(count)))
+		average := math.Round(total / float64(count))
+		if math.IsNaN(average) || math.IsInf(average, 0) || average < 0 || average >= math.Ldexp(1, strconv.IntSize-1) {
+			return usageProjectionStatistics{}, fmt.Errorf("average usage exceeds supported integer range")
+		}
+		result.monthlyAverageUsageBPS = int(average)
 	}
 	return result, nil
 }

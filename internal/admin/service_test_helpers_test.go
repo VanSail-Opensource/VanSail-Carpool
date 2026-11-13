@@ -25,15 +25,14 @@ type adminCatalogRepository struct {
 	squadInput        database.SquadProductInput
 	savedSquadInputs  []database.SquadProductInput
 	saveSquadErr      error
-	markedMissing     bool
-	markMissingErr    error
-	importedSquads    []database.ImportedSquad
-	refreshErr        error
 	listedSquads      []model.SquadProduct
 	listSquadsErr     error
 	adjustedEntry     model.LedgerEntry
 	adjustDelta       int64
 	adjustReference   string
+	adjustActor       string
+	adjustUser        string
+	adjustReason      string
 	adjustErr         error
 	paymentOrder      model.PaymentOrder
 	paymentOrderErr   error
@@ -47,34 +46,15 @@ type adminCatalogRepository struct {
 	courtesyErr       error
 	cancelledPurchase model.Purchase
 	cancelledID       string
+	cancelActor       string
+	cancelReason      string
 	cancelErr         error
-	retriedJobID      string
-	retryErr          error
 	audits            []adminAuditCall
 	auditErr          error
 }
 
-func (r *adminCatalogRepository) SaveCombo(_ context.Context, input database.ComboInput) (model.Combo, error) {
-	r.comboInput = input
-	return r.savedCombo, r.saveComboErr
-}
-func (r *adminCatalogRepository) DeleteCombo(_ context.Context, id string) error {
-	r.deletedComboID = id
-	return r.deleteComboErr
-}
 func (r *adminCatalogRepository) ListCombos(context.Context, bool) ([]model.Combo, error) {
 	return nil, nil
-}
-func (r *adminCatalogRepository) SaveSquadProduct(_ context.Context, input database.SquadProductInput) (model.SquadProduct, error) {
-	r.squadInput = input
-	r.savedSquadInputs = append(r.savedSquadInputs, input)
-	if r.saveSquadErr != nil {
-		return model.SquadProduct{}, r.saveSquadErr
-	}
-	if r.savedSquad.ID != "" {
-		return r.savedSquad, nil
-	}
-	return model.SquadProduct{ID: input.GroupID, Name: input.Name}, nil
 }
 func (r *adminCatalogRepository) SquadProductByID(_ context.Context, id string) (model.SquadProduct, error) {
 	if r.squadLookupErr != nil {
@@ -97,25 +77,25 @@ func (r *adminCatalogRepository) SquadProductByGroupID(_ context.Context, uuid s
 func (r *adminCatalogRepository) ListSquadProducts(context.Context, bool) ([]model.SquadProduct, error) {
 	return r.listedSquads, r.listSquadsErr
 }
-func (r *adminCatalogRepository) MarkAllSquadsMissing(context.Context) error {
-	r.markedMissing = true
-	return r.markMissingErr
-}
-func (r *adminCatalogRepository) RefreshImportedSquads(_ context.Context, squads []database.ImportedSquad) error {
-	r.importedSquads = append([]database.ImportedSquad(nil), squads...)
-	return r.refreshErr
-}
 func (r *adminCatalogRepository) ListUsers(context.Context, int) ([]model.User, error) {
 	return nil, nil
 }
-func (r *adminCatalogRepository) AdjustBalance(_ context.Context, _ string, delta int64, reference, _ string, _ time.Time) (model.LedgerEntry, error) {
+func (r *adminCatalogRepository) AdjustAdminBalance(_ context.Context, actorID, userID string, delta int64, reference, reason string, _ time.Time) (model.LedgerEntry, error) {
+	r.adjustActor, r.adjustUser, r.adjustReason = actorID, userID, reason
 	r.adjustDelta, r.adjustReference = delta, reference
-	return r.adjustedEntry, r.adjustErr
+	if r.adjustErr != nil {
+		return model.LedgerEntry{}, r.adjustErr
+	}
+	return r.adjustedEntry, r.auditErr
 }
 
-func (r *adminCatalogRepository) DeductBalance(_ context.Context, _ string, amount int64, reference, _ string, _ time.Time) (model.LedgerEntry, error) {
+func (r *adminCatalogRepository) DeductAdminBalance(_ context.Context, actorID, userID string, amount int64, reference, reason string, _ time.Time) (model.LedgerEntry, error) {
+	r.adjustActor, r.adjustUser, r.adjustReason = actorID, userID, reason
 	r.adjustDelta, r.adjustReference = -amount, reference
-	return r.adjustedEntry, r.adjustErr
+	if r.adjustErr != nil {
+		return model.LedgerEntry{}, r.adjustErr
+	}
+	return r.adjustedEntry, r.auditErr
 }
 func (r *adminCatalogRepository) ListPaymentOrders(context.Context, string, int) ([]model.PaymentOrder, error) {
 	return nil, nil
@@ -137,19 +117,18 @@ func (r *adminCatalogRepository) ListRefunds(context.Context, int) ([]model.Refu
 func (r *adminCatalogRepository) ListAllPurchases(context.Context, int) ([]model.Purchase, error) {
 	return nil, nil
 }
-func (r *adminCatalogRepository) CancelPurchase(_ context.Context, id, _ string, _ time.Time) (model.Purchase, error) {
-	r.cancelledID = id
-	return r.cancelledPurchase, r.cancelErr
+func (r *adminCatalogRepository) CancelAdminPurchase(_ context.Context, actorID, id, reason string, _ time.Time) (model.Purchase, error) {
+	r.cancelActor, r.cancelledID, r.cancelReason = actorID, id, reason
+	if r.cancelErr != nil {
+		return model.Purchase{}, r.cancelErr
+	}
+	return r.cancelledPurchase, r.auditErr
 }
 func (r *adminCatalogRepository) ListBackupRuns(context.Context, int) ([]model.BackupRun, error) {
 	return nil, nil
 }
 func (r *adminCatalogRepository) ListOutboxJobs(context.Context, int) ([]model.OutboxJob, error) {
 	return nil, nil
-}
-func (r *adminCatalogRepository) RetryOutboxJob(_ context.Context, id string, _ time.Time) error {
-	r.retriedJobID = id
-	return r.retryErr
 }
 func (r *adminCatalogRepository) ListAuditEvents(context.Context, int) ([]model.AuditEvent, error) {
 	return nil, nil
@@ -169,11 +148,15 @@ func (i *adminSquadImporter) ListInternalSquads(context.Context) ([]UpstreamSqua
 }
 
 type adminBackupRunner struct {
-	run model.BackupRun
-	err error
+	run   model.BackupRun
+	err   error
+	actor string
 }
 
-func (b *adminBackupRunner) Run(context.Context) (model.BackupRun, error) { return b.run, b.err }
+func (b *adminBackupRunner) RunForActor(_ context.Context, actorID string) (model.BackupRun, error) {
+	b.actor = actorID
+	return b.run, b.err
+}
 
 type adminRefunder struct {
 	calls int

@@ -36,6 +36,9 @@ func settleAffiliateTx(ctx context.Context, tx *sql.Tx, orderID, invitedUserID s
 	if err != nil {
 		return err
 	}
+	if err := affiliates.ValidateTiers(config.Tiers); err != nil {
+		return err
+	}
 	var successCount int
 	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM affiliate_settlements WHERE inviter_user_id=$1`, inviterID).Scan(&successCount); err != nil {
 		return err
@@ -50,13 +53,14 @@ func settleAffiliateTx(ctx context.Context, tx *sql.Tx, orderID, invitedUserID s
 	if err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO affiliate_settlements(id,invited_user_id,inviter_user_id,payment_order_id,config_id,tier_id,tier_name,
-		commission_bps,topup_txb_minor,commission_txb_minor,settled_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, settlementID, invitedUserID, inviterID,
+	result, err := tx.ExecContext(ctx, `INSERT INTO affiliate_settlements(id,invited_user_id,inviter_user_id,payment_order_id,config_id,tier_id,tier_name,
+		commission_bps,topup_txb_minor,commission_txb_minor,settled_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+		ON CONFLICT(invited_user_id) DO NOTHING`, settlementID, invitedUserID, inviterID,
 		orderID, config.ID, current.ID, current.Name, bps, amount, commission, stamp(now))
 	if err != nil {
-		if isUniqueConstraint(err) {
-			return nil
-		}
+		return err
+	}
+	if affected, err := result.RowsAffected(); err != nil || affected == 0 {
 		return err
 	}
 	if commission > 0 {

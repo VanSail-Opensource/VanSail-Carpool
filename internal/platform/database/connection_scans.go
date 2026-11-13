@@ -2,12 +2,14 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connections"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
@@ -15,9 +17,13 @@ import (
 // CreateConnectionScan persists or replays metadata and queues the provider request atomically.
 func (s *Store) retryAttempt_CreateConnectionScan(ctx context.Context, input providerops.ConnectionScanInput, now time.Time) (providerops.ConnectionScan, bool, error) {
 	input.UserID = strings.TrimSpace(input.UserID)
+	input.ActorUserID = strings.TrimSpace(input.ActorUserID)
 	input.IdempotencyKey = strings.TrimSpace(input.IdempotencyKey)
 	input.RequestFingerprint = strings.TrimSpace(input.RequestFingerprint)
 	input.ProviderJobID = strings.TrimSpace(input.ProviderJobID)
+	if input.ActorUserID == "" || input.ActorAccountGeneration < 0 {
+		return providerops.ConnectionScan{}, false, connections.ErrScanForbidden
+	}
 	if input.UserID == "" || input.IdempotencyKey == "" || len(input.IdempotencyKey) > 128 ||
 		len(input.RequestFingerprint) < 16 || len(input.RequestFingerprint) > 128 || !input.ExpiresAt.After(now) {
 		return providerops.ConnectionScan{}, false, ErrConflict
@@ -40,6 +46,20 @@ func (s *Store) retryAttempt_CreateConnectionScan(ctx context.Context, input pro
 	if !errors.Is(loadErr, ErrNotFound) {
 		return providerops.ConnectionScan{}, false, loadErr
 	}
+	if err := lockProviderOperationAccountsTx(ctx, tx, input.ActorUserID, input.UserID); err != nil {
+		return providerops.ConnectionScan{}, false, err
+	}
+	var role, status string
+	var generation int64
+	var blocked bool
+	err = tx.QueryRowContext(ctx, `SELECT role,account_status,account_generation,bot_blocked=1 FROM users WHERE id=$1 FOR SHARE`, input.ActorUserID).
+		Scan(&role, &status, &generation, &blocked)
+	if errors.Is(err, sql.ErrNoRows) || err == nil && (role != "admin" || status != "active" || blocked || generation != input.ActorAccountGeneration) {
+		return providerops.ConnectionScan{}, false, connections.ErrScanForbidden
+	}
+	if err != nil {
+		return providerops.ConnectionScan{}, false, err
+	}
 	scanID, err := ids.New()
 	if err != nil {
 		return providerops.ConnectionScan{}, false, err
@@ -56,6 +76,10 @@ func (s *Store) retryAttempt_CreateConnectionScan(ctx context.Context, input pro
 		return providerops.ConnectionScan{}, false, fmt.Errorf("encode connection scan job: %w", err)
 	}
 	if err := insertOutboxTx(ctx, tx, "connection_scan_request", string(payload), now, now); err != nil {
+		return providerops.ConnectionScan{}, false, err
+	}
+	if err := catalogAdminAuditTx(ctx, tx, input.ActorUserID, "connection_scan.create", "connection_scan", scanID,
+		map[string]any{"userId": input.UserID, "actorGeneration": input.ActorAccountGeneration}, now); err != nil {
 		return providerops.ConnectionScan{}, false, err
 	}
 	scan, err := scanConnectionScan(tx.QueryRowContext(ctx, connectionScanSelect+` WHERE id=$1`, scanID))
@@ -80,6 +104,10 @@ func (s *Store) ConnectionScanByID(ctx context.Context, scanID string) (provider
 
 // ConnectionScanForUser returns an owner-scoped scan without raw result data.
 func (s *Store) ConnectionScanForUser(ctx context.Context, scanID, userID string) (providerops.ConnectionScan, error) {
-	return scanConnectionScan(s.db.QueryRowContext(ctx, connectionScanSelect+
+	scan, err := scanConnectionScan(s.db.QueryRowContext(ctx, connectionScanSelect+
 		` WHERE id=$1 AND user_id=$2`, scanID, userID))
+	if errors.Is(err, ErrNotFound) {
+		return scan, errors.Join(ErrNotFound, connections.ErrScanNotFound)
+	}
+	return scan, err
 }

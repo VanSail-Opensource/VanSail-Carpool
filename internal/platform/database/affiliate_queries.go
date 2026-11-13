@@ -34,6 +34,9 @@ func (s *Store) AffiliateOverview(ctx context.Context, userID, botUsername strin
 	if err != nil {
 		return result, err
 	}
+	if err := affiliates.ValidateTiers(config.Tiers); err != nil {
+		return result, err
+	}
 	result.TierProgress = progressFor(config.Tiers, result.SuccessfulCount)
 	return result, nil
 }
@@ -76,6 +79,9 @@ func (s *Store) AffiliateReferrals(ctx context.Context, userID string, page int)
 		return result, err
 	}
 	result.TotalPages = (result.Total + affiliates.PageSize - 1) / affiliates.PageSize
+	if result.Total == 0 || page > result.TotalPages {
+		return result, nil
+	}
 	rows, err := s.db.QueryContext(ctx, `SELECT COALESCE(i.telegram_first_name,''),COALESCE(i.telegram_last_name,''),i.created_at,
 		a.settled_at,a.commission_txb_minor FROM users i LEFT JOIN affiliate_settlements a ON a.invited_user_id=i.id
 		WHERE i.inviter_id=$1 ORDER BY i.created_at DESC,i.id DESC LIMIT $2 OFFSET $3`, telegramID, affiliates.PageSize, (page-1)*affiliates.PageSize)

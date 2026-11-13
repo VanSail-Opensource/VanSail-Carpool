@@ -3,9 +3,10 @@ post:
   tags: [Admin]
   operationId: adjustAdminUserBalance
   summary: Append an audited manual TXB adjustment
-  description: Never edits or deletes an existing ledger row. A non-empty reason is required.
+  description: Never edits or deletes an existing ledger row. A non-empty reason and actor-scoped idempotency key are required. Retrying the same member, amount and reason replays the original ledger entry; reusing the key with changed financial input conflicts.
   parameters:
     - $ref: '../openapi.yaml#/components/parameters/ResourceID'
+    - $ref: '../openapi.yaml#/components/parameters/IdempotencyKey'
   requestBody:
     required: true
     content:
@@ -27,5 +28,7 @@ post:
       $ref: '../openapi.yaml#/components/responses/Forbidden'
     '404':
       $ref: '../openapi.yaml#/components/responses/NotFound'
+    '409':
+      $ref: '../openapi.yaml#/components/responses/Conflict'
     '422':
       $ref: '../openapi.yaml#/components/responses/Unprocessable'

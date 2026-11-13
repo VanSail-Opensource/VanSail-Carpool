@@ -4,78 +4,11 @@ import (
 	"context"
 	"errors"
 	"strings"
-	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
-
-// AdminEntitlementCreate describes one zero-charge, administrator-owned manual
-// fixed-term grant. It never debits the wallet or creates ledger debt.
-type AdminEntitlementCreate struct {
-	Reason            string
-	ComboID           string
-	ValidFrom         time.Time
-	ValidUntil        time.Time
-	TrafficLimitBytes int64
-	ResetStrategy     string
-	SquadUUIDs        []string
-}
-
-// adminEntitlementCreator is the narrow store command used by manual grants.
-type adminEntitlementCreator interface {
-	CreateAdminEntitlement(context.Context, database.AdminEntitlementCreateInput, time.Time) (model.Purchase, error)
-}
-
-// CreateEntitlement validates a manual grant and inserts it as one audited,
-// queued, zero-charge purchase. Omitted squads inherit the combo's included
-// squads; every squad must exist upstream.
-func (s *UserWorkflows) CreateEntitlement(ctx context.Context, actorID, userID, key string, grant AdminEntitlementCreate) (model.Purchase, error) {
-	grant.Reason = strings.TrimSpace(grant.Reason)
-	if !validCommand(actorID, key, grant.Reason) || userID == "" || strings.TrimSpace(grant.ComboID) == "" ||
-		grant.ValidUntil.Sub(grant.ValidFrom) < time.Second || grant.TrafficLimitBytes <= 0 || !validResetStrategy(grant.ResetStrategy) {
-		return model.Purchase{}, errors.New("invalid entitlement grant")
-	}
-	squads, err := normalizeUUIDs(grant.SquadUUIDs)
-	if err != nil {
-		return model.Purchase{}, err
-	}
-	grant.ComboID = strings.TrimSpace(grant.ComboID)
-	combo, err := s.repository.ComboByID(ctx, grant.ComboID, true)
-	if err != nil {
-		return model.Purchase{}, err
-	}
-	if len(squads) == 0 {
-		for _, included := range combo.IncludedSquads {
-			squads = append(squads, included.GroupID)
-		}
-		if squads, err = normalizeUUIDs(squads); err != nil {
-			return model.Purchase{}, err
-		}
-	}
-	if err := s.validateImportedSquads(ctx, squads); err != nil {
-		return model.Purchase{}, err
-	}
-	grant.SquadUUIDs = squads
-	grant.ValidFrom, grant.ValidUntil = grant.ValidFrom.UTC(), grant.ValidUntil.UTC()
-	fingerprint, err := commandFingerprint(struct {
-		ActorID, UserID, Key string
-		Grant                AdminEntitlementCreate
-	}{actorID, userID, strings.TrimSpace(key), grant})
-	if err != nil {
-		return model.Purchase{}, err
-	}
-	creator, ok := s.repository.(adminEntitlementCreator)
-	if !ok {
-		return model.Purchase{}, errors.New("entitlement creation is unavailable")
-	}
-	return creator.CreateAdminEntitlement(ctx, database.AdminEntitlementCreateInput{
-		ActorUserID: actorID, UserID: userID, IdempotencyKey: strings.TrimSpace(key),
-		RequestFingerprint: fingerprint, Reason: grant.Reason, ComboID: grant.ComboID,
-		ValidFrom: grant.ValidFrom, ValidUntil: grant.ValidUntil, TrafficLimitBytes: grant.TrafficLimitBytes,
-		ResetStrategy: grant.ResetStrategy, SquadUUIDs: grant.SquadUUIDs,
-	}, s.now().UTC())
-}
 
 // EditEntitlement validates and atomically queues one optimistic full edit.
 func (s *UserWorkflows) EditEntitlement(ctx context.Context, actorID, userID, purchaseID, key string, edit EntitlementEdit) (model.Purchase, error) {
@@ -90,9 +23,6 @@ func (s *UserWorkflows) EditEntitlement(ctx context.Context, actorID, userID, pu
 		return model.Purchase{}, err
 	}
 	edit.ComboID = strings.TrimSpace(edit.ComboID)
-	if err := s.validateComboAndSquads(ctx, edit.ComboID, edit.SquadUUIDs); err != nil {
-		return model.Purchase{}, err
-	}
 	edit.ValidFrom, edit.ValidUntil, edit.Version = edit.ValidFrom.UTC(), edit.ValidUntil.UTC(), edit.Version.UTC()
 	fingerprint, err := commandFingerprint(struct {
 		UserID, PurchaseID, Key string
@@ -100,6 +30,14 @@ func (s *UserWorkflows) EditEntitlement(ctx context.Context, actorID, userID, pu
 	}{userID, purchaseID, strings.TrimSpace(key), edit})
 	if err != nil {
 		return model.Purchase{}, err
+	}
+	if _, found, err := s.repository.ProviderOperationForActorKey(ctx, actorID, providerops.KindAdminEntitlementEdit,
+		strings.TrimSpace(key), fingerprint); err != nil {
+		return model.Purchase{}, err
+	} else if !found {
+		if err := s.validateComboAndSquads(ctx, edit.ComboID, edit.SquadUUIDs); err != nil {
+			return model.Purchase{}, err
+		}
 	}
 	return s.repository.EditAdminEntitlement(ctx, database.AdminEntitlementEditInput{
 		ActorUserID: actorID, UserID: userID, PurchaseID: purchaseID, IdempotencyKey: strings.TrimSpace(key),
@@ -125,35 +63,6 @@ func (s *UserWorkflows) RefundEntitlement(ctx context.Context, actorID, userID, 
 	return s.repository.RefundAdminEntitlement(ctx, database.AdminEntitlementRefundInput{
 		ActorUserID: actorID, UserID: userID, PurchaseID: purchaseID, IdempotencyKey: strings.TrimSpace(key),
 		RequestFingerprint: fingerprint, Reason: reason, AmountTXBMinor: amountTXBMinor,
-	}, s.now().UTC())
-}
-
-// ReplaceCombo queues a no-charge active configuration replacement.
-func (s *UserWorkflows) ReplaceCombo(ctx context.Context, actorID, userID, key string, replacement ComboReplacement) (model.OperationReceipt, error) {
-	replacement.Reason = strings.TrimSpace(replacement.Reason)
-	if !validCommand(actorID, key, replacement.Reason) || userID == "" {
-		return model.OperationReceipt{}, errors.New("invalid combo replacement")
-	}
-	var err error
-	replacement.AddonSquadUUIDs, err = normalizeUUIDs(replacement.AddonSquadUUIDs)
-	if err != nil {
-		return model.OperationReceipt{}, err
-	}
-	replacement.ComboID = strings.TrimSpace(replacement.ComboID)
-	if err := s.validateComboAndSquads(ctx, replacement.ComboID, replacement.AddonSquadUUIDs); err != nil {
-		return model.OperationReceipt{}, err
-	}
-	fingerprint, err := commandFingerprint(struct {
-		UserID      string
-		Replacement ComboReplacement
-	}{userID, replacement})
-	if err != nil {
-		return model.OperationReceipt{}, err
-	}
-	return s.repository.ReplaceAdminCombo(ctx, database.AdminComboReplacementInput{
-		ActorUserID: actorID, UserID: userID, ComboID: replacement.ComboID,
-		IdempotencyKey: strings.TrimSpace(key), RequestFingerprint: fingerprint,
-		Reason: replacement.Reason, AddonSquadUUIDs: replacement.AddonSquadUUIDs,
 	}, s.now().UTC())
 }
 

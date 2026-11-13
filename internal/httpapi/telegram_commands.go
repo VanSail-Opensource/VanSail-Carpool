@@ -16,10 +16,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/telegrampm"
 )
 
-func (s *Server) processTelegramGroupMessage(ctx context.Context, message *telegram.Message) {
-	s.processTelegramGroupMessageUpdate(ctx, 0, message)
-}
-
 func (s *Server) processTelegramGroupMessageUpdate(ctx context.Context, updateID int64, message *telegram.Message) {
 	if message == nil || message.From == nil || message.From.IsBot || message.Chat.ID == 0 {
 		return
@@ -71,7 +67,7 @@ func (s *Server) processTelegramGroupMessageUpdate(ctx context.Context, updateID
 		return
 	}
 	now := time.Now().UTC()
-	config, configErr := s.activityConfig(ctx)
+	config, configErr := s.deps.Settings.ActivityConfig(ctx)
 	localDate := telegramGroupMessageDate(config.Timezone, configErr, now)
 	if err := s.deps.Store.BufferGroupMessageFact(message.Chat.ID, message.MessageID, localDate, now); err != nil {
 		s.deps.Logger.Warn("buffer raw Telegram group message", "chat_id", message.Chat.ID, "message_id", message.MessageID, "error", err)
@@ -155,19 +151,19 @@ func (s *Server) processTelegramCommand(ctx context.Context, message *telegram.M
 		s.sendTelegramReply(ctx, message, botcommands.FormatUnavailable(copy))
 		return
 	}
-	formatMoney := s.telegramDisplayFormatter(ctx, user)
 	var reply string
 	switch command.Name {
 	case botcommands.Balance:
 		money, balanceErr := s.deps.Store.Balance(ctx, user.ID)
 		if balanceErr == nil {
-			reply = botcommands.FormatBalance(copy, formatMoney(money))
+			reply = botcommands.FormatBalance(copy, s.telegramDisplayFormatter(ctx, user)(money))
 		}
 	case botcommands.SignIn:
-		config, configErr := s.activityConfig(ctx)
+		config, configErr := s.deps.Settings.ActivityConfig(ctx)
 		if configErr == nil {
 			result, checkInErr := s.deps.Activity.CheckIn(ctx, user.ID, config)
 			if checkInErr == nil {
+				formatMoney := s.telegramDisplayFormatter(ctx, user)
 				reply = botcommands.FormatCheckInWithMoney(copy, result, s.telegramCheckInAverage(ctx), formatMoney(model.TXBMoney(result.RewardMinor)), formatMoney(model.TXBMoney(result.BalanceAfterMinor)))
 			} else if errors.Is(checkInErr, activity.ErrGroupBoostRequired) {
 				reply = botcommands.FormatGroupBoostRequired(copy)
@@ -178,7 +174,7 @@ func (s *Server) processTelegramCommand(ctx context.Context, message *telegram.M
 	case botcommands.Sub:
 		reply = s.telegramSubscriptionReply(ctx, user, copy)
 	case botcommands.MyCombo:
-		reply = s.telegramComboReply(ctx, user, copy, formatMoney)
+		reply = s.telegramComboReply(ctx, user, copy)
 	}
 	if strings.TrimSpace(reply) == "" {
 		reply = botcommands.FormatUnavailable(copy)

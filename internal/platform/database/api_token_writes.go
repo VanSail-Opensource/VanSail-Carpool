@@ -2,7 +2,9 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/apitoken"
@@ -16,11 +18,17 @@ func (s *Store) retryAttempt_CreateAdminAPIToken(ctx context.Context, item apito
 		return err
 	}
 	defer tx.Rollback()
-	var active int
-	if err = tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM admin_api_tokens WHERE user_id=$1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at>$2)`, item.UserID, stamp(item.CreatedAt)).Scan(&active); err != nil {
+	if err := catalogAdminActorTx(ctx, tx, item.UserID); err != nil {
+		if errors.Is(err, ErrConflict) {
+			return apitoken.ErrUnauthorized
+		}
 		return err
 	}
-	if active >= 50 {
+	limited, err := adminAPITokenLimitReachedTx(ctx, tx, item.UserID, item.CreatedAt)
+	if err != nil {
+		return err
+	}
+	if limited {
 		return apitoken.ErrLimit
 	}
 	scopes, err := json.Marshal(item.Scopes)
@@ -55,6 +63,12 @@ func (s *Store) retryAttempt_RevokeAdminAPIToken(ctx context.Context, id, userID
 		return err
 	}
 	defer tx.Rollback()
+	if err := catalogAdminActorTx(ctx, tx, userID); err != nil {
+		if errors.Is(err, ErrConflict) {
+			return apitoken.ErrUnauthorized
+		}
+		return err
+	}
 	var exists bool
 	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM admin_api_tokens WHERE id=$1 AND user_id=$2) OR EXISTS(SELECT 1 FROM audit_events WHERE target_type='api_token' AND target_id=$3 AND actor_user_id=$4 AND action='api_token.revoked')`, id, userID, id, userID).Scan(&exists); err != nil {
 		return err
@@ -80,4 +94,34 @@ func (s *Store) retryAttempt_RevokeAdminAPIToken(ctx context.Context, id, userID
 		}
 	}
 	return tx.Commit()
+}
+
+// Candidate selection includes the entire current second. RFC3339Nano strings
+// do not sort chronologically when one instant has no fractional component.
+func adminAPITokenLimitReachedTx(ctx context.Context, tx *sql.Tx, userID string, now time.Time) (bool, error) {
+	lower := now.UTC().Truncate(time.Second).Add(-time.Second)
+	rows, err := tx.QueryContext(ctx, `SELECT expires_at FROM admin_api_tokens
+		WHERE user_id=$1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at>$2)`, userID, stamp(lower))
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+	active := 0
+	for rows.Next() {
+		var raw sql.NullString
+		if err = rows.Scan(&raw); err != nil {
+			return false, err
+		}
+		expires, err := parseOptionalStamp(raw)
+		if err != nil {
+			return false, err
+		}
+		if expires == nil || expires.After(now) {
+			active++
+			if active >= 50 {
+				return true, nil
+			}
+		}
+	}
+	return false, rows.Err()
 }

@@ -166,6 +166,7 @@
     "disabled": "Disabled",
     "empty": "No service users.",
     "subscription": "Subscription link",
+    "subscriptionFor": "Subscription link for {name}",
     "rotate": "Rotate subscription link"
   }
 }

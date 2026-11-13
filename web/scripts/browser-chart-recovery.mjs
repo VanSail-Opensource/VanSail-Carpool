@@ -1,0 +1,37 @@
+import assert from 'node:assert/strict'
+
+export async function chartPrecisionScenarios(scenario, size) {
+  await scenario(size, 'chart-byte-precision', 'pricing-audit.html?view=charts&exact', async (page, capture) => {
+    const traffic = page.locator('[data-test="traffic-precision"]')
+    await traffic.getByRole('button', { name: 'Next point', exact: true }).click()
+    assert.match(await traffic.locator('output').innerText(), /9007199254740993 B/)
+    assert.doesNotMatch(await traffic.locator('output').innerText(), /9007199254740992 B/)
+    await capture('accounting')
+    const metric = page.locator('[data-test="metric-precision"]')
+    await metric.getByRole('button', { name: 'Next point', exact: true }).click()
+    assert.doesNotMatch(await metric.locator('output').innerText(), / · /)
+    await metric.getByRole('button', { name: 'Next point', exact: true }).click()
+    assert.match(await metric.locator('output').innerText(), / · 10000 B/)
+    const plot = metric.getByRole('group', { name: 'Lifetime traffic', exact: true })
+    await plot.focus()
+    await plot.press('Home')
+    assert.doesNotMatch(await metric.locator('output').innerText(), / · /)
+    await plot.press('End')
+    assert.match(await metric.locator('output').innerText(), / · 10000 B/)
+    assert.deepEqual(await page.evaluate(() => globalThis.pricingAuditCalls), [])
+  })
+  await scenario(size, 'chart-unavailable-buckets', 'pricing-audit.html?view=charts&exact&invalid', async (page, capture) => {
+    const traffic = page.locator('[data-test="traffic-precision"]')
+    const next = traffic.getByRole('button', { name: 'Next point', exact: true })
+    await next.click()
+    assert.match(await traffic.locator('output').innerText(), /Not available/)
+    assert.doesNotMatch(await traffic.locator('output').innerText(), /0 B/)
+    await capture('invalid')
+    await next.click()
+    assert.match(await traffic.locator('output').innerText(), / · 1 B/)
+    await next.click()
+    assert.match(await traffic.locator('output').innerText(), /Not available/)
+    assert.doesNotMatch(await traffic.locator('output').innerText(), /0 B/)
+    assert.deepEqual(await page.evaluate(() => globalThis.pricingAuditCalls), [])
+  })
+}

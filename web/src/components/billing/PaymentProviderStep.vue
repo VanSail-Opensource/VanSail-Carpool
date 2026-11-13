@@ -10,6 +10,7 @@ const props = defineProps<{
   options: readonly PaymentProviderOption[]
   selectedValue: string | undefined
   canContinue: boolean
+  disabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -21,14 +22,15 @@ const { t } = useI18n()
 const { reducedMotion } = useMotionPreferences()
 
 function choose(value: string): void {
-  if (value === props.selectedValue) return
+  if (props.disabled || value === props.selectedValue) return
   selectionHaptic()
   emit('choose', value)
 }
 </script>
 
 <template>
-  <fieldset class="provider-picker">
+  <p v-if="!options.length" role="status" class="field-hint">{{ t('payment.noMethods') }}</p>
+  <fieldset v-else class="provider-picker">
     <legend>{{ t('payment.chooseProvider') }}</legend>
     <UButton
       v-for="item in options"
@@ -37,7 +39,7 @@ function choose(value: string): void {
       :class="{ 'provider-option--selected': selectedValue === item.value }"
       color="neutral"
       variant="ghost"
-      :disabled="!item.available"
+      :disabled="disabled || !item.available"
       :aria-pressed="selectedValue === item.value"
       @click="choose(item.value)"
     >
@@ -59,9 +61,9 @@ function choose(value: string): void {
     </UButton>
   </fieldset>
   <UButton
-    v-if="selectedValue !== 'coupon'"
+    v-if="options.length && selectedValue !== 'coupon'"
     block
-    :disabled="!canContinue"
+    :disabled="disabled || !canContinue"
     :label="t('payment.continueToChannel')"
     data-test="choose-channel"
     data-haptic="navigate"

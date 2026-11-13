@@ -2,9 +2,41 @@ package database
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 )
+
+func TestCommunityMembershipUpdatesOnlyObservedSpace(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	store := newTestStore(t)
+	user := createTestUser(t, store, 22005)
+	for _, step := range []struct {
+		space                  string
+		joined, group, channel bool
+	}{
+		{space: "group", joined: true, group: true},
+		{space: "channel", joined: true, group: true, channel: true},
+		{space: "group", joined: false, channel: true},
+		{space: "channel", joined: false},
+	} {
+		updated, err := store.UpdateCommunityMembership(ctx, user.ID, step.space, step.joined)
+		if err != nil || updated.GroupJoined != step.group || updated.ChannelJoined != step.channel || updated.OnboardingState != "intro" {
+			t.Fatalf("UpdateCommunityMembership(%q, %t) = (%+v, %v)", step.space, step.joined, updated, err)
+		}
+	}
+	if _, err := store.UpdateCommunityMembership(ctx, user.ID, "group_joined", true); !errors.Is(err, ErrConflict) {
+		t.Fatalf("unrecognized space = %v, want conflict", err)
+	}
+	current, err := store.UserByID(ctx, user.ID)
+	if err != nil || current.GroupJoined || current.ChannelJoined || current.OnboardingState != "intro" {
+		t.Fatalf("invalid space changed membership: (%+v, %v)", current, err)
+	}
+	if _, err := store.UpdateCommunityMembership(ctx, "missing-user", "group", true); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("missing user = %v, want not found", err)
+	}
+}
 
 func TestCommunityMembershipPersistsFactsWithoutOnboardingTransition(t *testing.T) {
 	t.Parallel()

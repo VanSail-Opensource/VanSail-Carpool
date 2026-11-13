@@ -8,7 +8,6 @@ automatic paid reset controls are retired. The dashboard shows usage
 facts without purchase entrances; legacy Home add-on query links redirect to
 Settings. This keeps dashboard actions separate from subscription settings.
 
-
 - `UserHome.vue` composes Home in one balance-first flow. Ordered active squad labels arrive in its owner-scoped dashboard response, and usage summaries carry node labels and country metadata. Home no longer fetches the full Explore catalog or persists duplicate squad data. Retired traffic multiplier metadata remains constant 1 only for API compatibility and is not displayed.
 - `BalanceHero.vue` opens the real funding sheet from Home and refetches a provider-returned reissue order before prepopulating it; `SubscriptionPanel.vue` is reused on Subscription for the active URL and Connections/Revoke actions on both mobile and desktop. Home exposes the subscription entrance only when the account has a positive balance or a server-confirmed active combo; otherwise `AddBalanceGuide.vue` shows a localized animated icon guide that opens the same funding sheet, and `BalanceHero` hides its own action so the guide owns the only Add Balance button. The guide's two billing-mode rows animate in with a staggered reveal and a looping icon pulse/ring, state their advantage (no commitment for Charge by traffic; stop anytime for Charge by hour), and fall back to static rows under reduced motion. The sidebar's Subscription/Connections/Revoke children follow the same access gate.
 
@@ -18,6 +17,10 @@ Settings. This keeps dashboard actions separate from subscription settings.
 - `ComingSoonLinks.test.ts` verifies every member-tool action reaches its route while keeping the launch document URL unchanged. The retired member TX Statistics action is absent; administrator statistics stay in the browser console.
 - `UsagePanel.test.ts` verifies stale upstream data disclosure.
 - `EntitlementSummary.test.ts` covers active, queued, and absent combos.
+
+Queued cancellation consent is tied to the reviewed purchase ID. A replacement
+closes the dialog and retires older completion/error callbacks; cancellation
+failures remain visible inside the confirmation dialog for an explicit retry.
 
 Dashboard controls distinguish copy, open, navigation, retry, confirmation, and destructive intents. Automatic renewal switches emit selection feedback only when their controlled value changes.
 
@@ -40,10 +43,9 @@ offline requires complete fresh coverage reporting no open flows.
 `memberActivity.ts` projects native observation status using the server-relative lifetime from `fetchedAt` to `activityExpiresAt`, measured from request start with the browser's monotonic clock. Network time only shortens freshness; focus and visibility changes invalidate the prior observation until a new poll succeeds. `MemberLiveMetrics.vue` emits fresh activity, retires stale rates, and clears status on errors/unmount. `UserHome.vue` passes that status to `UsagePanel.vue`; the legacy onlineAt field no longer controls the native badge. `memberActivity.test.ts` and `MemberLiveMetrics.test.ts` cover expiry, failed or invalid timestamps, slow responses, and visibility invalidation.
 `useDashboard` and `EntitlementSummary.vue` revalidate cached purchases at validity boundaries and on visibility/focus refresh. Expired predecessors disappear immediately while successor discovery refreshes quietly; display state never changes settlement records.
 
-
 - `EntitlementSummary.vue` renders the active combo directly and keeps queued purchase controls; member usage forecasts are not requested.
 
-Active purchase controls and exact traffic presentation, using the shared chart primitives for quantitative visuals: `AutoRenewalControl.vue`, `PurchaseActions.vue`, `RideSummaryFace.vue`, `TrafficNodeChart.vue`, `TrafficUsageDetails.vue`.
+Active purchase controls: `AutoRenewalControl.vue`, `PurchaseActions.vue` and `RideSummaryFace.vue`. Detailed traffic and spending use `UsageBreakdownPanel.vue`; the isolated old node-usage chart/controller are retired.
 
 `UserHome.vue` composes `UsageBreakdownPanel.vue` only after the member has a
 positive balance or a server-confirmed active combo; a member with neither sees
@@ -117,3 +119,19 @@ Fresh console checks were clear; intercepted mock fetch/XHR made no actual
 failing requests. Checks interrupted by HMR were repeated after files stabilized.
 The final count guard rejected an invented Unallocated-only positive count at
 1440px/English without a chart, while valid idle cost remained 100% at 390px/Chinese.
+
+Purchase changes close a refund dialog and invalidate pending quote/renewal/operation projections. An earlier read cannot undo a confirmed automatic-renewal update.
+
+`renewalPricing.ts` projects retained contract/quote evidence for the renewal
+preview, with expiry and cross-response gross-price consistency checks.
+`renewalPricing.test.ts` covers contract binding, legacy terms, superseded quotes,
+health deferral and the exact expiry boundary. The server's gross/discount/net
+response remains intact; a gross quote is never presented as the final debit.
+`AutoRenewalControl.vue` refreshes both reads on open/retry, retires earlier
+pricing requests on close or purchase change, and expires the visible preview.
+Prepared prices describe a future preview; current settlement admission remains
+server-owned. Retired per-node Home chart and checkout-block locale keys were
+removed after verifying no source references remain.
+
+`SubscriptionPanel.test.ts` covers replacement of a subscription credential:
+old asynchronous copy feedback and open revoke consent are retired together.

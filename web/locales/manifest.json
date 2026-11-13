@@ -39,6 +39,19 @@
     "diy",
     "diy-fields",
     "payg",
-    "admin-endpoints"
+    "admin-endpoints",
+    "admin-draw",
+    "charts",
+    "firewall",
+    "host-names",
+    "hourly",
+    "member-nodes",
+    "node-admin",
+    "node-templates",
+    "predictions",
+    "public-subscription",
+    "usage-breakdown",
+    "user-prices",
+    "xnode"
   ]
 }

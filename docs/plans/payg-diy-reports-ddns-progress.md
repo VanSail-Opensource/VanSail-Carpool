@@ -1,5 +1,11 @@
 # PAYG, DIY, reporting and DDNS delivery
 
+Historical implementation and validation record. Version pins, schema numbers,
+UI behavior and pending checks below describe that work at its recorded
+revisions; they are not the current release status. Current dependencies are
+declared in `go.mod` and `web/package.json`, and current operations use the
+PostgreSQL deployment and recovery runbooks.
+
 Implement and audit each item in order. Browser checks are required for affected
 views; automated regressions run only on hosted CI. A checkbox means implementation
 and the applicable validation are complete, not merely that code was written.

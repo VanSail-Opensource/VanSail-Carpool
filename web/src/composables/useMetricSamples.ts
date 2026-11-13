@@ -7,10 +7,13 @@ export const metricSampleLimit = 300
 export function useMetricSamples() {
   const series = shallowRef<Record<string, MetricSample[]>>({})
   let retired = false
+  let suspended = false
   function clear(): void { series.value = {} }
   function retire(): void { retired = true; clear() }
+  function suspend(): void { suspended = true; clear() }
+  function restore(): void { if (!retired) suspended = false }
   function append(at: number, values: Record<string, number>): void {
-    if (retired || !Number.isFinite(at)) return
+    if (retired || suspended || !Number.isFinite(at)) return
     const next: Record<string, MetricSample[]> = {}
     for (const [key, value] of Object.entries(values)) {
       if (!Number.isFinite(value) || value < 0) continue
@@ -21,11 +24,13 @@ export function useMetricSamples() {
     series.value = next
   }
   window.addEventListener('txc:session-cleared', retire)
-  window.addEventListener('txc:browser-session-expired', retire)
+  window.addEventListener('txc:browser-session-expired', suspend)
+  window.addEventListener('txc:browser-session-restored', restore)
   onScopeDispose(() => {
     retire()
     window.removeEventListener('txc:session-cleared', retire)
-    window.removeEventListener('txc:browser-session-expired', retire)
+    window.removeEventListener('txc:browser-session-expired', suspend)
+    window.removeEventListener('txc:browser-session-restored', restore)
   })
   return { series, append, clear }
 }

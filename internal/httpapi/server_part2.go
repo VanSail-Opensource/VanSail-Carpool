@@ -2,12 +2,14 @@ package httpapi
 
 import (
 	"context"
+	"errors"
 	"io/fs"
 	"net/http"
 	"runtime/debug"
 	"strings"
 	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/accounts"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -33,7 +35,11 @@ func (s *Server) requireSession(next http.Handler) http.Handler {
 		}
 		user, err := s.deps.Accounts.UserBySession(r.Context(), cookie.Value)
 		if err != nil {
-			s.writeError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "Your session has expired. Open the Mini App again.")
+			if errors.Is(err, accounts.ErrInvalidAuthentication) {
+				s.writeError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "Your session has expired. Open the Mini App again.")
+			} else {
+				s.writeError(w, r, http.StatusServiceUnavailable, "SESSION_UNAVAILABLE", "Your session could not be checked. Please retry.")
+			}
 			return
 		}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), userContextKey, user)))
@@ -113,6 +119,11 @@ func redactedRequestPath(path string) string {
 func spaHandler(content fs.FS) http.Handler {
 	files := http.FileServer(http.FS(content))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api" || strings.HasPrefix(r.URL.Path, "/api/") {
+			w.Header().Set("Cache-Control", "no-store")
+			http.NotFound(w, r)
+			return
+		}
 		path := strings.TrimPrefix(r.URL.Path, "/")
 		if path == "" {
 			path = "index.html"

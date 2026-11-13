@@ -6,7 +6,7 @@ name: remna-user-panel
 
 services:
   vansail-carpool:
-    image: ghcr.io/txyyddss/remna-user-panel:latest
+    image: ${VANSAIL_IMAGE:-ghcr.io/vansail-opensource/vansail-carpool:latest}
     hostname: vansail-carpool
     restart: unless-stopped
     stop_grace_period: 90s

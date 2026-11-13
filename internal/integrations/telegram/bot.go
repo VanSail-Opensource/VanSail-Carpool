@@ -147,7 +147,7 @@ func (c *Client) EditMarkdownV2Message(ctx context.Context, chatID, messageID in
 
 func isEntityParseError(err error) bool {
 	var apiErr *APIError
-	if !errors.As(err, &apiErr) || apiErr.ErrorCode != 400 {
+	if !errors.As(err, &apiErr) || apiErr.HTTPStatus != 400 || apiErr.ErrorCode != 400 || apiErr.RetryAfter != 0 {
 		return false
 	}
 	description := strings.ToLower(apiErr.Description)

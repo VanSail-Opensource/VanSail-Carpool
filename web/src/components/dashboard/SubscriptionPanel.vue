@@ -15,9 +15,13 @@ const props = defineProps<{
 
 const emit = defineEmits<{ revoke: []; revokeRequestConsumed: [] }>()
 const confirmOpen = shallowRef(false)
-const { copied, copy } = useClipboard()
+const { copied, copy, reset } = useClipboard()
 const router = useRouter()
 
+watch(() => props.subscriptionUrl, () => {
+  reset()
+  confirmOpen.value = false
+}, { flush: 'sync' })
 watch(() => props.revoking, (next, previous) => {
   if (previous && !next) confirmOpen.value = false
 })
@@ -35,6 +39,10 @@ watch(confirmOpen, (open, wasOpen) => {
 
 function copyLink(): void {
   if (props.subscriptionUrl) void copy(props.subscriptionUrl)
+}
+
+function confirmRevoke(): void {
+  if (confirmOpen.value && props.subscriptionUrl && !props.revokeBlocked && !props.revoking) emit('revoke')
 }
 
 function openConnections(): void {
@@ -100,7 +108,7 @@ function openConnections(): void {
       :show-close="false"
       centered
       danger
-      @confirm="emit('revoke')"
+      @confirm="confirmRevoke"
     />
   </section>
 </template>

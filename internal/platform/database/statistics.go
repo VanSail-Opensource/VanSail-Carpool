@@ -23,10 +23,15 @@ type statisticEvent struct {
 // remains live through the referenced combo record.
 
 func (s *Store) ComboStatistics(ctx context.Context, comboID string, from, to time.Time, bucket string, location *time.Location) (model.AdminStatistics, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT p.user_id,p.charged_txb_minor,p.coupon_discount_txb_minor,
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
+	if err != nil {
+		return model.AdminStatistics{}, err
+	}
+	defer tx.Rollback()
+	rows, err := tx.QueryContext(ctx, `SELECT p.user_id,p.charged_txb_minor,p.coupon_discount_txb_minor,
 		COALESCE((SELECT SUM(charged_txb_minor) FROM purchase_addons WHERE purchase_id=p.id),0),p.created_at
-		FROM purchases p WHERE p.combo_id=$1 AND p.status NOT IN ('cancelled','failed') AND p.created_at>=$2 AND p.created_at<$3 ORDER BY p.created_at`,
-		comboID, stamp(from), stamp(to))
+		FROM purchases p WHERE p.combo_id=$1 AND p.status NOT IN ('cancelled','failed') AND `+statisticTimeRangeSQL("p.created_at", "$2", "$3")+` ORDER BY p.created_at`,
+		comboID, purchaseTimestampOrder(from), purchaseTimestampOrder(to))
 	if err != nil {
 		return model.AdminStatistics{}, err
 	}
@@ -42,23 +47,31 @@ func (s *Store) ComboStatistics(ctx context.Context, comboID string, from, to ti
 	if err != nil {
 		return model.AdminStatistics{}, err
 	}
-	distribution, err := s.catalogSquadDistribution(ctx, comboID, "", from, to)
+	distribution, err := catalogSquadDistributionTx(ctx, tx, comboID, "", from, to)
 	if err != nil {
 		return model.AdminStatistics{}, err
 	}
-	return aggregateStatistics(comboID, from, to, bucket, location, events, distribution), nil
+	if err = tx.Commit(); err != nil {
+		return model.AdminStatistics{}, err
+	}
+	return aggregateStatistics(comboID, from, to, bucket, location, events, distribution)
 }
 
 // SquadStatistics reports included-versus-addon selection usage for one live
 // Proxy internal squad UUID.
 
 func (s *Store) SquadStatistics(ctx context.Context, squadUUID string, from, to time.Time, bucket string, location *time.Location) (model.AdminStatistics, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT p.user_id,p.charged_txb_minor,p.coupon_discount_txb_minor,
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
+	if err != nil {
+		return model.AdminStatistics{}, err
+	}
+	defer tx.Rollback()
+	rows, err := tx.QueryContext(ctx, `SELECT p.user_id,p.charged_txb_minor,p.coupon_discount_txb_minor,
 		COALESCE((SELECT SUM(charged_txb_minor) FROM purchase_addons WHERE purchase_id=p.id AND group_id=$1),0),p.created_at
 		FROM purchases p JOIN combos c ON c.id=p.combo_id
-		WHERE p.status NOT IN ('cancelled','failed') AND p.created_at>=$2 AND p.created_at<$3 AND
+		WHERE p.status NOT IN ('cancelled','failed') AND `+statisticTimeRangeSQL("p.created_at", "$2", "$3")+` AND
 		(EXISTS (SELECT 1 FROM jsonb_array_elements_text((c.included_squad_uuids)::jsonb) WHERE value=$4) OR EXISTS (SELECT 1 FROM purchase_addons WHERE purchase_id=p.id AND group_id=$5))
-		ORDER BY p.created_at`, squadUUID, stamp(from), stamp(to), squadUUID, squadUUID)
+		ORDER BY p.created_at`, squadUUID, purchaseTimestampOrder(from), purchaseTimestampOrder(to), squadUUID, squadUUID)
 	if err != nil {
 		return model.AdminStatistics{}, err
 	}
@@ -74,28 +87,31 @@ func (s *Store) SquadStatistics(ctx context.Context, squadUUID string, from, to 
 	if err != nil {
 		return model.AdminStatistics{}, err
 	}
-	distribution, err := s.catalogSquadDistribution(ctx, "", squadUUID, from, to)
+	distribution, err := catalogSquadDistributionTx(ctx, tx, "", squadUUID, from, to)
 	if err != nil {
 		return model.AdminStatistics{}, err
 	}
-	return aggregateStatistics(squadUUID, from, to, bucket, location, events, distribution), nil
+	if err = tx.Commit(); err != nil {
+		return model.AdminStatistics{}, err
+	}
+	return aggregateStatistics(squadUUID, from, to, bucket, location, events, distribution)
 }
 
-func (s *Store) catalogSquadDistribution(ctx context.Context, comboID, squadUUID string, from, to time.Time) ([]model.StatisticSlice, error) {
+func catalogSquadDistributionTx(ctx context.Context, tx *sql.Tx, comboID, squadUUID string, from, to time.Time) ([]model.StatisticSlice, error) {
 	query := `SELECT kind,uuid,COUNT(*) FROM (
 		SELECT 'included' AS kind,j.value AS uuid FROM purchases p JOIN combos c ON c.id=p.combo_id, jsonb_array_elements_text((c.included_squad_uuids)::jsonb) j
-		WHERE p.status NOT IN ('cancelled','failed') AND p.created_at>=$1 AND p.created_at<$2
+		WHERE p.status NOT IN ('cancelled','failed') AND ` + statisticTimeRangeSQL("p.created_at", "$1", "$2") + `
 		UNION ALL
 		SELECT 'addon',a.group_id FROM purchases p JOIN purchase_addons a ON a.purchase_id=p.id
-		WHERE p.status NOT IN ('cancelled','failed') AND p.created_at>=$3 AND p.created_at<$4) usage WHERE 1=1`
-	args := []any{stamp(from), stamp(to), stamp(from), stamp(to)}
+		WHERE p.status NOT IN ('cancelled','failed') AND ` + statisticTimeRangeSQL("p.created_at", "$3", "$4") + `) usage WHERE 1=1`
+	args := []any{purchaseTimestampOrder(from), purchaseTimestampOrder(to), purchaseTimestampOrder(from), purchaseTimestampOrder(to)}
 	if comboID != "" {
 		query = `SELECT kind,uuid,COUNT(*) FROM (
 			SELECT 'included' AS kind,j.value AS uuid FROM purchases p JOIN combos c ON c.id=p.combo_id, jsonb_array_elements_text((c.included_squad_uuids)::jsonb) j
-			WHERE p.combo_id=$1 AND p.status NOT IN ('cancelled','failed') AND p.created_at>=$2 AND p.created_at<$3
+			WHERE p.combo_id=$1 AND p.status NOT IN ('cancelled','failed') AND ` + statisticTimeRangeSQL("p.created_at", "$2", "$3") + `
 			UNION ALL SELECT 'addon',a.group_id FROM purchases p JOIN purchase_addons a ON a.purchase_id=p.id
-			WHERE p.combo_id=$4 AND p.status NOT IN ('cancelled','failed') AND p.created_at>=$5 AND p.created_at<$6) usage WHERE 1=1`
-		args = []any{comboID, stamp(from), stamp(to), comboID, stamp(from), stamp(to)}
+			WHERE p.combo_id=$4 AND p.status NOT IN ('cancelled','failed') AND ` + statisticTimeRangeSQL("p.created_at", "$5", "$6") + `) usage WHERE 1=1`
+		args = []any{comboID, purchaseTimestampOrder(from), purchaseTimestampOrder(to), comboID, purchaseTimestampOrder(from), purchaseTimestampOrder(to)}
 	}
 	if squadUUID != "" {
 		query += fmt.Sprintf(" AND uuid=$%d", len(args)+1)
@@ -103,7 +119,7 @@ func (s *Store) catalogSquadDistribution(ctx context.Context, comboID, squadUUID
 		args = append(args, squadUUID)
 	}
 	query += ` GROUP BY kind,uuid ORDER BY kind,uuid`
-	rows, err := s.db.QueryContext(ctx, query, args...)
+	rows, err := tx.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +137,7 @@ func (s *Store) catalogSquadDistribution(ctx context.Context, comboID, squadUUID
 }
 
 func (s *Store) ActivityGameStatistics(ctx context.Context, gameID string, from, to time.Time, bucket string, location *time.Location) (model.AdminStatistics, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT user_id,stake_minor,payout_minor,won,created_at FROM activity_bets WHERE game_id=$1 AND created_at>=$2 AND created_at<$3 ORDER BY created_at`, gameID, stamp(from), stamp(to))
+	rows, err := s.db.QueryContext(ctx, `SELECT user_id,stake_minor,payout_minor,won,created_at FROM activity_bets WHERE game_id=$1 AND `+statisticTimeRangeSQL("created_at", "$2", "$3")+` ORDER BY created_at`, gameID, purchaseTimestampOrder(from), purchaseTimestampOrder(to))
 	if err != nil {
 		return model.AdminStatistics{}, err
 	}
@@ -140,7 +156,10 @@ func (s *Store) ActivityGameStatistics(ctx context.Context, gameID string, from,
 	if err != nil {
 		return model.AdminStatistics{}, err
 	}
-	stats := aggregateStatistics(gameID, from, to, bucket, location, events, nil)
+	stats, err := aggregateStatistics(gameID, from, to, bucket, location, events, nil)
+	if err != nil {
+		return model.AdminStatistics{}, err
+	}
 	stats.Distribution = []model.StatisticSlice{{ID: "win", Label: "win", Count: stats.Wins}, {ID: "loss", Label: "loss", Count: stats.Losses}}
 	return stats, nil
 }

@@ -15,8 +15,8 @@ function toggle(scope: PanelAPITokenWrite['scopes'][number], checked: boolean): 
 }
 const expiry = computed(() => [7, 30, 90, 365, 0].map(value => ({ value, label: value ? t('apiTokens.days', { days: value }) : t('apiTokens.never') })))
 const presets = computed(() => [
-  { label: t('apiTokens.readOnly'), scopes: ['admin:read'] },
-  { label: t('apiTokens.fullAccess'), scopes: ['admin:write'] },
+  { label: t('apiTokens.readOnly'), scopes: ['admin:read', 'xnode:read'] },
+  { label: t('apiTokens.fullAccess'), scopes: ['admin:write', 'xnode:write'] },
 ] satisfies { label: string; scopes: PanelAPITokenWrite['scopes'] }[])
 function submit(): void {
   const result = schema.value.safeParse(draft)

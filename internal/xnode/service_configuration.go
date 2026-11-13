@@ -19,12 +19,16 @@ type ValidationResult struct {
 }
 
 func (s *Service) SaveConfiguration(ctx context.Context, config Configuration) (Configuration, error) {
+	return s.saveConfiguration(ctx, config, "")
+}
+
+func (s *Service) saveConfiguration(ctx context.Context, config Configuration, actor string) (Configuration, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if strings.TrimSpace(config.Name) == "" || len(config.Name) > 128 || len(config.Document) > 1<<20 || validation.JSONDocument(config.Document) != nil {
 		return config, ErrInvalid
 	}
-	if saved, handled, err := s.saveConfigurationMetadata(ctx, config); handled {
+	if saved, handled, err := s.saveConfigurationMetadata(ctx, config, actor); handled {
 		return saved, err
 	}
 	result := s.validateDocumentCached("configuration:"+config.ID, config.Document)
@@ -55,12 +59,13 @@ func (s *Service) SaveConfiguration(ctx context.Context, config Configuration) (
 	if err = s.validateAffected(ctx, &config, nil, nil); err != nil {
 		return config, err
 	}
-	if err = s.repo.SaveXNodeConfiguration(ctx, config); err != nil {
-		return config, err
-	}
-	return s.repo.XNodeConfiguration(ctx, config.ID)
+	return s.persistConfiguration(ctx, actor, config)
 }
 func (s *Service) SaveSnippet(ctx context.Context, item Snippet) (Snippet, error) {
+	return s.saveSnippet(ctx, item, "")
+}
+
+func (s *Service) saveSnippet(ctx context.Context, item Snippet, actor string) (Snippet, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if !wire.ValidName(item.Name) || (item.Kind != "outbound" && item.Kind != "routing") || len(item.Document) > 256<<10 || validation.JSONDocument(item.Document) != nil {
@@ -70,7 +75,7 @@ func (s *Service) SaveSnippet(ctx context.Context, item Snippet) (Snippet, error
 	if json.Unmarshal(item.Document, &objects) != nil || len(objects) > 256 {
 		return item, ErrInvalid
 	}
-	if saved, handled, err := s.saveSnippetMetadata(ctx, item); handled {
+	if saved, handled, err := s.saveSnippetMetadata(ctx, item, actor); handled {
 		return saved, err
 	}
 	if item.ID == "" {
@@ -102,10 +107,7 @@ func (s *Service) SaveSnippet(ctx context.Context, item Snippet) (Snippet, error
 	if err = s.validateAffected(ctx, nil, &item, nil); err != nil {
 		return item, err
 	}
-	if err = s.repo.SaveXNodeSnippet(ctx, item); err != nil {
-		return item, err
-	}
-	return s.repo.XNodeSnippet(ctx, item.ID)
+	return s.persistSnippet(ctx, actor, item)
 }
 
 func (s *Service) DeleteConfiguration(ctx context.Context, id string) error {

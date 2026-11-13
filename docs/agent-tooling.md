@@ -104,7 +104,8 @@ args = ["/c", "npx", "-y", "chrome-devtools-mcp@latest"]
 startup_timeout_ms = 20_000
 ```
 
-On macOS/Linux, the equivalent is `command = "npx"` with the same arguments.
+On macOS/Linux, use `command = "npx"` and
+`args = ["-y", "chrome-devtools-mcp@latest"]`; omit the Windows `cmd /c` wrapper.
 
 ## When to use MCP
 

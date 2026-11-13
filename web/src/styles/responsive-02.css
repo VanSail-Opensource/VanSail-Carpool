@@ -40,28 +40,6 @@
   .page-header h1,
   .error-state h1 { font-size: 2.75rem; }
 
-  .combo-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
-  }
-
-  .combo-option:last-child:nth-child(odd) {
-    grid-column: 1 / -1;
-  }
-
-  .squad-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
-  }
-
-  .squad-nodes__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .catalog-action {
-    bottom: 1rem;
-  }
-
   .dialog-content {
     top: 50%;
     right: auto;

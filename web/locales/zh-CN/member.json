@@ -10,7 +10,7 @@
     "noActiveCombo": "暂无活跃订阅",
     "choosePlan": "选择按流量计费或按小时计费来开始连接。",
     "subscriptionLink": "订阅链接",
-    "subscriptionHint": "请将此 URL 视为密码，拥有它的人都可使用你的节点。。",
+    "subscriptionHint": "请将此 URL 视为密码，拥有它的人都可使用你的节点。",
     "copySubscription": "复制订阅链接",
     "noActiveLink": "暂无活跃链接",
     "linkAfterActivation": "启用符合条件的权益后，将显示订阅 URL。",

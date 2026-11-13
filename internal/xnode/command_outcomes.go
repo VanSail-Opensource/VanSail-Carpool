@@ -47,6 +47,17 @@ func commandDeadline(name string) time.Duration {
 	}
 }
 
+// The durable claim must outlive every supported command's execution window.
+// Reserve the separate preflight and delivery windows plus publication overhead;
+// an outer timeout must not turn a still-valid native upgrade into uncertainty.
+func providerOperationDeadline() time.Duration {
+	var execution time.Duration
+	for _, name := range wire.CommandNames() {
+		execution = max(execution, commandDeadline(name))
+	}
+	return execution + 90*time.Second
+}
+
 func waitCommand(ctx context.Context, peer *agentPeer, pending <-chan wire.Message, id, name string, delivery <-chan time.Time) (json.RawMessage, error) {
 	var execution <-chan time.Time
 	var timer *time.Timer

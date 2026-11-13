@@ -166,6 +166,7 @@
     "disabled": "已禁用",
     "empty": "暂无服务用户。",
     "subscription": "订阅链接",
+    "subscriptionFor": "{name} 的订阅链接",
     "rotate": "更换订阅链接"
   }
 }

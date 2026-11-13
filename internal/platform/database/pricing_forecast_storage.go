@@ -14,17 +14,21 @@ import (
 func (s *Store) retryAttempt_saveNormalizedPricingForecast(ctx context.Context, f pricing.Forecast) error {
 	f.ID = pricingForecastID(f.ID)
 
-	tx, err := s.db.BeginTx(ctx, nil)
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
+	if err = lockPricingValidationSourceTx(ctx, tx); err != nil {
+		return err
+	}
 	if err = savePricingForecastTx(ctx, tx, f); err != nil {
 		return err
 	}
 	return tx.Commit()
 }
 
+// Callers hold the validation source gate before any feature or forecast write.
 func savePricingForecastTx(ctx context.Context, tx *sql.Tx, f pricing.Forecast) error {
 	f.ID = pricingForecastID(f.ID)
 	var err error
@@ -49,7 +53,8 @@ func savePricingForecastTx(ctx context.Context, tx *sql.Tx, f pricing.Forecast) 
 	if err = tx.QueryRowContext(ctx, `SELECT feature_key FROM pricing_features WHERE snapshot_hash=$1 AND watermark=$2 AND entity_type=$3 AND entity_id=$4 ORDER BY feature_key LIMIT 1`, f.SnapshotHash, pricingStamp(f.Watermark), featureType, featureID).Scan(&feature); err != nil {
 		return err
 	}
-	if _, err = tx.ExecContext(ctx, `INSERT INTO pricing_forecast_values(forecast_id,entity_key,batch_key,feature_key,predicted_p10,predicted_p50,predicted_p90,predicted_mean,data_coverage_bps) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT DO NOTHING`, f.ID, entity, batch, feature, f.P10, f.P50, f.P90, f.Mean, f.CoverageBPS); err != nil {
+	result, err := tx.ExecContext(ctx, `INSERT INTO pricing_forecast_values(forecast_id,entity_key,batch_key,feature_key,predicted_p10,predicted_p50,predicted_p90,predicted_mean,data_coverage_bps) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT DO NOTHING`, f.ID, entity, batch, feature, f.P10, f.P50, f.P90, f.Mean, f.CoverageBPS)
+	if err != nil {
 		return err
 	}
 	var originalEntity, originalBatch int64
@@ -58,6 +63,14 @@ func savePricingForecastTx(ctx context.Context, tx *sql.Tx, f pricing.Forecast) 
 	}
 	if originalEntity != entity || originalBatch != batch {
 		return ErrConflict
+	}
+	inserted, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if inserted > 0 {
+		_, err = tx.ExecContext(ctx, `UPDATE pricing_model_validation_daily SET dirty=NOT sealed,stale=stale OR sealed WHERE day=$1 AND model_version=$2 AND metric=$3 AND horizon_seconds=$4 AND (NOT sealed AND NOT dirty OR sealed AND NOT stale)`, f.TargetFrom.UTC().Format("2006-01-02"), f.ModelVersion, f.Metric, f.HorizonSeconds)
+		return err
 	}
 	return nil
 }

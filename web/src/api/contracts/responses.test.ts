@@ -31,6 +31,23 @@ describe('rendering snapshot compatibility', () => {
     expect(isResponseCompatible('/api/v1/future-resource', 'GET', { any: 'shape' })).toBe(true)
   })
 
+  it('accepts issued ledger categories and retained financial evidence', () => {
+    const money = { currency: 'TXB', minor: '100', display: '1.00' }
+    const entry = { id: 'ledger', delta: money, balanceAfter: money, referenceId: 'operation', note: '', createdAt: '2026-11-13T00:00:00Z' }
+    const kinds = [
+      'purchase_addon_debit', 'telegram_deduct', 'admin_entitlement_refund', 'member_refund_credit',
+      'traffic_reset_debit', 'traffic_reset_compensation', 'activity_group_message_reward',
+      'activity_raffle_fee', 'activity_raffle_reserve', 'activity_raffle_reserve_adjust',
+      'activity_raffle_reserve_release', 'activity_raffle_refund', 'affiliate_commission',
+      'affiliate_tier_reward', 'ip_lookup', 'ip_lookup_refresh', 'ip_lookup_refund',
+      'questionnaire_reward',
+    ]
+    for (const kind of kinds) {
+      expect(isResponseCompatible('/api/v1/ledger', 'GET', { items: [{ ...entry, kind }] }), kind).toBe(true)
+    }
+    expect(isResponseCompatible('/api/v1/ledger', 'GET', { items: [{ ...entry, kind: 'not_a_ledger_kind' }] })).toBe(false)
+  })
+
   it('accepts only the retired constant multiplier in current node response contracts', () => {
     const node = { id: 'node', name: 'Amsterdam', enabled: true, configId: 'config', multiplier: 1 }
     expect(isResponseCompatible('/api/v1/admin/xnode/nodes', 'GET', { items: [node] })).toBe(true)

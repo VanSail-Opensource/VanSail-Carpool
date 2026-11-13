@@ -15,7 +15,7 @@ func TestUserOperationWorkerLeavesAmbiguousOutcomePendingReview(t *testing.T) {
 	repository := newUserOperationRepositoryStub([]string{"user-1"})
 	repository.users["user-1"] = model.User{ID: "user-1", ProxyUserID: &remoteID}
 	repository.desired["user-1"] = desiredAdminPurchase()
-	remote := &entitlementRemoteStub{failures: map[string]error{remoteID: errors.New("connection closed")}}
+	remote := &entitlementRemoteStub{failures: map[string]error{"user-1": errors.New("connection closed")}}
 	worker := NewUserOperationWorker(repository, remote)
 	worker.now = func() time.Time { return time.Date(2026, 8, 18, 13, 0, 0, 0, time.UTC) }
 
@@ -38,7 +38,7 @@ func TestUserOperationWorkerSummarizesMixedTargetsAsPartial(t *testing.T) {
 	repository.users["remote-user"] = model.User{ID: "remote-user", ProxyUserID: &remoteID}
 	repository.desired["local-only"] = desiredAdminPurchase()
 	repository.desired["remote-user"] = desiredAdminPurchase()
-	remote := &entitlementRemoteStub{failures: map[string]error{remoteID: errors.New("timeout")}}
+	remote := &entitlementRemoteStub{failures: map[string]error{"remote-user": errors.New("timeout")}}
 	worker := NewUserOperationWorker(repository, remote)
 
 	if err := worker.HandleProviderOperation(context.Background(), repository.operation, model.OutboxJob{}); err != nil {

@@ -40,6 +40,22 @@
       },
       "403": {
         "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      },
+      "404": {
+        "$ref": "../openapi.yaml#/components/responses/NotFound"
+      },
+      "422": {
+        "$ref": "../openapi.yaml#/components/responses/Unprocessable"
+      },
+      "503": {
+        "description": "Native credential or service dependencies are temporarily unavailable (XNODE_UNAVAILABLE); this does not establish that the standalone identity is absent.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/ApiError"
+            }
+          }
+        }
       }
     },
     "parameters": [

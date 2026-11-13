@@ -19,18 +19,19 @@ func purchaseExpiry(store *database.Store, native *xnode.Service) func(context.C
 		if err != nil {
 			return err
 		}
+		now := time.Now().UTC()
 		p, err := store.PurchaseByID(ctx, id)
-		if err != nil || p.ValidUntil.After(time.Now()) || p.Status == "cancelled" {
+		if err != nil || p.ValidUntil.After(now) || p.Status == "cancelled" {
 			return err
 		}
 		user, err := store.UserForPurchase(ctx, id)
 		if err != nil {
 			return err
 		}
-		closeErr := native.ClosePurchasePeriods(ctx, user, p)
+		closeErr := native.CloseExpiredPurchasePeriods(ctx, user, p, now)
 		if errors.Is(closeErr, xnode.ErrNotFound) {
 			closeErr = nil
 		}
-		return errors.Join(closeErr, store.ExpireDuePurchase(ctx, id, time.Now().UTC()))
+		return errors.Join(closeErr, store.ExpireDuePurchase(ctx, id, now))
 	}
 }

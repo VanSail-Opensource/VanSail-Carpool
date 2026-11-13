@@ -42,12 +42,15 @@ func (s *Store) retryAttempt_PlayLuckyDraw(ctx context.Context, userID, drawID, 
 	if err != nil {
 		return activity.DrawResult{}, err
 	}
-	draw.Prizes, err = luckyPrizes(ctx, tx, drawID, false)
+	draw.Prizes, err = luckyPrizes(ctx, tx, drawID)
 	if err != nil {
 		return activity.DrawResult{}, err
 	}
 	if len(draw.Prizes) == 0 || hasRetiredResetReward(draw) {
 		return activity.DrawResult{}, ErrConflict
+	}
+	if err := draw.LuckyDrawInput.Validate(); err != nil {
+		return activity.DrawResult{}, err
 	}
 	maxLoss := draw.MaximumPrizeDeduction()
 	if maxLoss > math.MaxInt64-draw.FeeMinor {

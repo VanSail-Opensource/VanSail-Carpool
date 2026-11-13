@@ -38,30 +38,6 @@ func (s *Store) UserDisabledSquads(ctx context.Context, userID string) ([]string
 	return disabledSquadsFrom(ctx, s.db, userID)
 }
 
-// EnabledSquadsForRemote applies account preferences immediately before provider execution.
-// A new term whose owned squads are all disabled clears the stable first preference.
-func (s *Store) retryAttempt_EnabledSquadsForRemote(ctx context.Context, remoteID string, owned []string) ([]string, error) {
-
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = tx.Rollback() }()
-	var userID string
-	err = tx.QueryRowContext(ctx, `SELECT id FROM users WHERE proxy_user_id=$1`, remoteID).Scan(&userID)
-	if errors.Is(err, sql.ErrNoRows) {
-		return append([]string{}, owned...), nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	enabled, err := enabledSquadsTx(ctx, tx, userID, owned)
-	if err != nil {
-		return nil, err
-	}
-	return enabled, tx.Commit()
-}
-
 // BeginSquadSwitch checks ownership and access under the shared write transaction.
 func (s *Store) retryAttempt_BeginSquadSwitch(ctx context.Context, input providerops.CreateInput, purchaseID, uuid string, enabled bool, now time.Time) (providerops.Operation, error) {
 	input, err := providerops.NormalizeCreate(input)
@@ -127,10 +103,18 @@ func (s *Store) retryAttempt_BeginSquadSwitch(ctx context.Context, input provide
 	return operation, tx.Commit()
 }
 
-// LatestComboControl resumes pending/review/failed member commands after a reload.
+// LatestComboControl resumes unresolved commands and failures that still affect access.
 func (s *Store) LatestComboControl(ctx context.Context, userID string) (*model.OperationReceipt, error) {
-	operation, err := scanProviderOperation(s.db.QueryRowContext(ctx, providerOperationSelect+` WHERE owner_user_id=$1 AND kind IN ($2,$3)
- AND status IN ('queued','processing','failed','pending_review','partial') ORDER BY created_at DESC,id DESC LIMIT 1`, userID, purchaseops.OperationSquadSwitch, purchaseops.OperationEarlyActivation))
+	now := stamp(time.Now().UTC())
+	operation, err := scanProviderOperation(s.db.QueryRowContext(ctx, providerOperationSelect+` operation
+ WHERE operation.owner_user_id=$1 AND operation.kind IN ($2,$3)
+ AND (operation.status IN ('queued','processing','pending_review','partial') OR
+ (operation.status='failed' AND (`+liveComboControlPredicate(4)+`)
+ AND NOT EXISTS (SELECT 1 FROM provider_operations newer WHERE newer.owner_user_id=operation.owner_user_id
+ AND newer.kind IN ($2,$3) AND newer.status IN ('succeeded','compensated')
+ AND newer.record_order>operation.record_order)))
+ ORDER BY CASE WHEN operation.status='failed' THEN 1 ELSE 0 END,operation.record_order DESC LIMIT 1`,
+		userID, purchaseops.OperationSquadSwitch, purchaseops.OperationEarlyActivation, now, now, now, now))
 	if errors.Is(err, ErrNotFound) {
 		return nil, nil
 	}

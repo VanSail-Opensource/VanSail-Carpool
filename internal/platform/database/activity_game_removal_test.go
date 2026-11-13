@@ -22,6 +22,9 @@ func newGameRemovalFixture(t *testing.T) gameRemovalFixture {
 	t.Helper()
 	f := gameRemovalFixture{store: newTestStore(t), now: time.Now().UTC()}
 	f.actor = createTestUser(t, f.store, 398101)
+	if _, err := f.store.DB().ExecContext(context.Background(), `UPDATE users SET role='admin' WHERE id=$1`, f.actor.ID); err != nil {
+		t.Fatal(err)
+	}
 	f.bettor = createTestUser(t, f.store, 398102)
 	if _, err := f.store.AdjustBalance(context.Background(), f.bettor.ID, 1000, "game-removal-seed", "fixture", f.now); err != nil {
 		t.Fatal(err)

@@ -10,6 +10,7 @@ import { paymentCurrencyLogo, paymentNetworkLogo, type PaymentChannelOption } fr
 const props = defineProps<{
   channels: readonly PaymentChannelOption[]
   selectedMethodId: string | null
+  disabled?: boolean
 }>()
 const emit = defineEmits<{ choose: [id: string] }>()
 const { t } = useI18n()
@@ -21,14 +22,17 @@ const currencies = computed(() => {
     if (!channel.cryptoCurrency || seen.has(channel.cryptoCurrency)) return false
     seen.add(channel.cryptoCurrency)
     return true
-  })
+  }).map(channel => ({
+    ...channel,
+    disabled: !props.channels.some(candidate => candidate.cryptoCurrency === channel.cryptoCurrency && !candidate.disabled),
+  }))
 })
 const selectedCurrency = computed(() => props.channels.find((item) => item.value === props.selectedMethodId)?.cryptoCurrency
   ?? currencies.value[0]?.cryptoCurrency)
 const networks = computed(() => props.channels.filter((channel) => channel.cryptoCurrency === selectedCurrency.value))
 
 function choose(id: string): void {
-  if (id === props.selectedMethodId) return
+  if (props.disabled || id === props.selectedMethodId) return
   selectionHaptic()
   emit('choose', id)
 }
@@ -50,7 +54,7 @@ function chooseCurrency(currency: 'USDT' | 'USDC'): void {
         :class="{ 'crypto-currency--selected': selectedCurrency === item.cryptoCurrency }"
         color="neutral"
         variant="ghost"
-        :disabled="item.disabled"
+        :disabled="disabled || item.disabled"
         :aria-pressed="selectedCurrency === item.cryptoCurrency"
         @click="item.cryptoCurrency && chooseCurrency(item.cryptoCurrency)"
       >
@@ -82,7 +86,7 @@ function chooseCurrency(currency: 'USDT' | 'USDC'): void {
         :class="{ 'provider-option--selected': selectedMethodId === item.value }"
         color="neutral"
         variant="ghost"
-        :disabled="item.disabled"
+        :disabled="disabled || item.disabled"
         :aria-pressed="selectedMethodId === item.value"
         @click="choose(item.value)"
       >

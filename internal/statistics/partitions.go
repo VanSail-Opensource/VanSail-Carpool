@@ -18,34 +18,46 @@ func (s *Service) loadLastGood(ctx context.Context) error {
 	}
 	remoteBytes, remoteAt, remoteErr := s.repository.LoadStatisticsPartition(ctx, remotePartition)
 	databaseBytes, databaseAt, databaseErr := s.repository.LoadStatisticsPartition(ctx, databasePartition)
-	if remoteErr != nil && !errors.Is(remoteErr, ErrPartitionNotFound) {
-		return remoteErr
+	remoteMissing := errors.Is(remoteErr, ErrPartitionNotFound)
+	databaseMissing := errors.Is(databaseErr, ErrPartitionNotFound)
+	var remote model.RemoteStatistics
+	var database model.DatabaseStatistics
+	if remoteErr == nil {
+		remote, remoteErr = decodePartition[model.RemoteStatistics](remoteBytes)
 	}
-	if databaseErr != nil && !errors.Is(databaseErr, ErrPartitionNotFound) {
-		return databaseErr
+	if databaseErr == nil {
+		database, databaseErr = decodePartition[model.DatabaseStatistics](databaseBytes)
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	// Another first-load or refresh may have published while storage was read.
+	// Its newer values also supersede errors from this delayed cache read.
+	if !s.snapshot.RemoteGeneratedAt.IsZero() || !s.snapshot.DatabaseGeneratedAt.IsZero() {
+		return nil
+	}
 	if remoteErr == nil {
-		remote, err := decodePartition[model.RemoteStatistics](remoteBytes)
-		if err != nil {
-			return err
-		}
 		s.snapshot.Remote, s.snapshot.RemoteGeneratedAt = remote, remoteAt
 	}
 	if databaseErr == nil {
-		database, err := decodePartition[model.DatabaseStatistics](databaseBytes)
-		if err != nil {
-			return err
-		}
 		s.snapshot.Database, s.snapshot.DatabaseGeneratedAt = database, databaseAt
 	}
-	if remoteAt.After(databaseAt) {
-		s.snapshot.GeneratedAt = remoteAt
-	} else {
-		s.snapshot.GeneratedAt = databaseAt
+	s.snapshot.GeneratedAt = s.snapshot.DatabaseGeneratedAt
+	if s.snapshot.RemoteGeneratedAt.After(s.snapshot.GeneratedAt) {
+		s.snapshot.GeneratedAt = s.snapshot.RemoteGeneratedAt
 	}
-	return nil
+	s.snapshot.StalePartitions = stalePartitions(remoteErr, databaseErr)
+	if !s.snapshot.RemoteGeneratedAt.IsZero() || !s.snapshot.DatabaseGeneratedAt.IsZero() {
+		return nil
+	}
+	// Absence before the first refresh is normal; corrupt or unreadable caches
+	// still report an error when neither partition can be served.
+	if remoteMissing {
+		remoteErr = nil
+	}
+	if databaseMissing {
+		databaseErr = nil
+	}
+	return errors.Join(remoteErr, databaseErr)
 }
 
 func (s *Service) saveRemote(ctx context.Context, value model.RemoteStatistics, now time.Time) error {

@@ -36,8 +36,7 @@ forms preserve their drafts so an administrator can correct or retry the action.
 - `AdminCatalogPanel.vue` manages combos and squads.
 - `AdminCouponsPanel.vue` manages coupon definitions.
 - `AdminDatabasePanel.vue` browses protected database tables.
-- `AdminEmbyPanel.vue` monitors Emby provisioning.
-- `AdminEntitlementsPanel.vue` manages entitlements.
+- `AdminEntitlementsPanel.vue` is a legacy inventory retained only by the validity audit fixture; production entitlement management lives in user profiles.
 - `AdminOnboardingPanel.vue` loads, saves, and publishes visual onboarding drafts.
 - `onboarding/` contains bilingual content indexes with focused editors and text previews.
 - `AdminPaymentProfiles.vue` lists and edits masked provider accounts, keeps BEPUSDT channels discovery-owned, deletes profiles through a protected confirmation, and contributes remaining drafts to the parent settings save.
@@ -57,7 +56,6 @@ and mobile-safe backup controls. Balance adjustments use the shared audited
 admin endpoint for both credits and deductions.
 - `AdminSectionState.vue` is the shared loading/error/content presence boundary. Panel roots stay still; focused child workflows own their local Motion state.
 
-
 Combo editing accepts the API-supported empty description and zero price. Its Zod submission schema enforces exact decimal money/traffic bounds, validity and quotas, with visible localized feedback for invalid drafts. Busy or failed saves retain the draft.
 
 `AdminSquadEditor.vue` edits automatic PAYG mode and exact positive per-GB pricing alongside the existing Combo fields. Stock, visibility and activation-code controls apply to Combo; conversion preserves existing paid terms and excludes future renewals. Browser editor state and theme remain independent of Mini App initialization.
@@ -67,3 +65,50 @@ Combo editing accepts the API-supported empty description and zero price. Its Zo
 The retired outage workspace, navigation and review controls are removed. Generic historical entitlement operations remain available through existing audit tools.
 
 `AdminEmbyConnection.vue` provides private URL/token drafts, configuration presence, local fresh-token guidance and localized load/save/conflict errors. `AdminSettingsPanel.vue` excludes these keys from generic writes and coordinates its exposed save/loading interface with the existing Save action. Failed connection saves do not produce a global success message.
+
+`AdminSettingsPanel.vue` requires an explicit successful result from every child save before announcing completion. `AdminBillingAmountLimits.vue` reports invalid/failed writes; `AdminPaymentProfiles.vue` stops a batch at its first failure and keeps the failed draft/error. The localized partial-save notice explains that earlier successful changes remain applied. `AdminSettingsPanel.test.ts` and `AdminPaymentProfiles.test.ts` cover failure propagation and batch stopping.
+
+`AdminOnboardingPanel.vue` fences responses by active load/action, preserves edits made during a save, and saves the current draft before publishing its returned revision. `AdminOnboardingPanel.test.ts` covers publishing current edits and switching tabs during delayed loads. `AdminStatisticsPanel.vue` is keyed by resource identity in catalog/activity workspaces, so selecting a new record reloads its own statistics; disposed reads cannot repopulate old panels.
+
+Payment profile, Add TXB limit and activity-setting reads are retired when a
+write starts. Delayed cached-refresh success or failure cannot replace confirmed
+writes or resurrect a removed provider. Reads and writes also retire on disposal.
+`AdminBillingAmountLimits.test.ts`, `AdminPaymentProfiles.test.ts` and
+`AdminSettingsPanel.test.ts` cover these ordering and retained-draft boundaries.
+
+`AdminBackupsPanel.vue` snapshots confirmed delete targets, locks repeated
+submissions and dismissal while deletion is pending, and retains failed actions
+for explicit retry. Disposing the owner workspace retires action completion and
+prevents late archive responses from triggering a browser download.
+`AdminBackupsPanel.test.ts` covers target stability, refusal recovery and retired downloads.
+
+Activity editors lock pending writes and retain confirmed server records if the
+subsequent inventory refresh fails. The workspace exposes explicit Refresh, and
+draw forecasts retire replaced requests and expose their own retry control.
+
+`useAdminCoupons.ts` owns the coupon inventory, editor and option lifecycle. It
+retires older reads when a mutation starts, captures one pending target, preserves
+failed drafts and projects successful save/deactivation effects before refreshing.
+Unchanged expiry timestamps remain exact and existing definitions send only
+changed fields, so unrelated saves do not replace newer financial settings.
+The bilingual editor explains which changes affect attached recurring discounts;
+kind and discount mode remain fixed. `useAdminCoupons.test.ts` covers ordering,
+retained success, explicit retry, exact amounts/expiry and disposed workspaces.
+
+`couponDraft.ts` converts exact coupon amounts, dates and positive use limits,
+and computes changed-field writes independently from request and editor state.
+
+Catalog combo/squad editors disable pending fields and retain the reviewed target
+until save or hide returns. The workspace blocks replacement, dismissal and
+duplicate submission during writes. `AdminCatalogPanel.test.ts` and
+`AdminSquadEditor.test.ts` cover these boundaries. Audited reason controls also
+freeze the submitted reason while their action is pending.
+
+Every staged generic settings write rechecks workspace ownership before dispatch,
+so a delayed configuration response cannot enable an integration after its
+administrator leaves. Disposal clears private drafts and suppresses aggregate
+success feedback. The Emby connection editor also retires delayed load/save
+responses and erases URL/token drafts on teardown; its dedicated test covers
+completion after disposal.
+
+`AdminEmbyConnection.test.ts` covers private connection draft disposal and prevents a late save from reporting success after its editor is removed.

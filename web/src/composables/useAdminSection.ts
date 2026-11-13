@@ -21,8 +21,10 @@ export function useAdminSection<T>(resource: AdminResource, options: { immediate
   const latestLoad = createLatestRequest()
 	type Query = Record<string, QueryValue>
   let lastQuery: Query = {}
+  let disposed = false
 
   async function load(query?: Query, options: { append?: boolean } = {}): Promise<void> {
+    if (disposed) return
     const append = options.append === true
     if (append && !nextCursor.value) return
     const requestQuery = append
@@ -54,17 +56,20 @@ export function useAdminSection<T>(resource: AdminResource, options: { immediate
   }
 
   async function perform(task: () => Promise<unknown>): Promise<boolean> {
+    if (disposed || busy.value) return false
+    latestLoad.invalidate()
     busy.value = true
     error.value = null
     try {
       await task()
+      if (disposed) return false
       await load(lastQuery)
-      return true
+      return !disposed
     } catch (caught) {
-      error.value = localizedError(caught, 'errors.adminAction')
+      if (!disposed) error.value = localizedError(caught, 'errors.adminAction')
       return false
     } finally {
-      busy.value = false
+      if (!disposed) busy.value = false
     }
   }
 
@@ -81,7 +86,7 @@ export function useAdminSection<T>(resource: AdminResource, options: { immediate
   }
 
   if (options.immediate !== false) onMounted(() => void load())
-  onScopeDispose(latestLoad.dispose)
+  onScopeDispose(() => { disposed = true; latestLoad.dispose() })
 
   return {
     items: readonly(items),

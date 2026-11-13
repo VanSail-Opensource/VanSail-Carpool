@@ -15,7 +15,7 @@ regressions cover this bootstrap-to-cookie contract.
 
 `memory.go` derives GOMEMLIMIT from the container and resolves protected process
 scratch under DATA_DIR/tmp. Explicit runtime limits remain authoritative.
-`memory_cgroup.go` reads container/ancestor limits. `config_test.go`,
+`memory.go` reads container/ancestor limits. `config_test.go`,
 `database_test.go` and `memory_test.go` cover these bootstrap contracts in hosted
 CI. Scratch remains available for assets/decoders. No database file path or upload cap is configured.
 

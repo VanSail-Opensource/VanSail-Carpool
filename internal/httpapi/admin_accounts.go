@@ -53,10 +53,7 @@ func (s *Server) adminUsers(w http.ResponseWriter, r *http.Request) {
 	items := make([]adminUser, 0, len(users))
 	for _, record := range users {
 		user := record.User
-		status := "not_provisioned"
-		if user.ProxyUserID != nil {
-			status = "synchronized"
-		}
+		status := record.Synchronization.Status
 		items = append(items, adminUser{User: mapUser(user), Balance: record.Balance, CreatedAt: user.CreatedAt, Synchronization: synchronization{Status: status}})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"items": items, "page": map[string]any{"nextCursor": nextCursor}})
@@ -103,6 +100,10 @@ func (s *Server) adminUnblockIP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) adminBalanceAdjustment(w http.ResponseWriter, r *http.Request) {
+	key, ok := s.requireIdempotencyKey(w, r)
+	if !ok {
+		return
+	}
 	var request struct {
 		DeltaTXBMinor string `json:"deltaTxbMinor"`
 		Reason        string `json:"reason"`
@@ -116,7 +117,9 @@ func (s *Server) adminBalanceAdjustment(w http.ResponseWriter, r *http.Request) 
 		s.writeError(w, r, http.StatusUnprocessableEntity, "INVALID_AMOUNT", "Adjustment must be integer hundredths of TXB.")
 		return
 	}
-	entry, err := s.deps.Admin.AdjustBalance(r.Context(), currentUser(r).ID, chiURLParam(r, "id"), delta, request.Reason)
+	actorID := currentUser(r).ID
+	entry, err := s.deps.Admin.AdjustBalanceWithReference(r.Context(), actorID, chiURLParam(r, "id"), delta,
+		"admin-balance:"+actorID+":"+key, request.Reason)
 	if err != nil {
 		s.adminFailure(w, r, err)
 		return

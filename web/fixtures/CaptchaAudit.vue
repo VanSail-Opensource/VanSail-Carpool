@@ -14,6 +14,6 @@ const challenge = { required: true, siteKey: params.has('missing') ? '' : '1x000
   <UApp>
     <AdminSettingsPanel v-if="params.has('admin')" />
     <CaptchaGate v-else-if="!verified" :challenge="challenge" @verified="verified = $event" />
-    <main v-else class="auth-screen"><h1>{{ $t('onboarding.usernameTitle') }}</h1><UButton :label="$t('captcha.retry')" @click="api.getMe().then(() => verified = null)" /></main>
+    <main v-else class="auth-screen"><h1>{{ $t('onboarding.agreementTitle') }}</h1><UButton :label="$t('captcha.retry')" @click="api.getMe().then(() => verified = null)" /></main>
   </UApp>
 </template>

@@ -24,7 +24,7 @@ USDTNetworkConfig:
   properties:
     network: { $ref: '#/USDTNetworkID' }
     enabled: { type: boolean }
-    currencies: { type: array, nullable: true, maxItems: 2, uniqueItems: true, items: { type: string, enum: [USDT, USDC] }, description: 'Authoritative per-network new-quote switches. Only registered native tokens are allowed. Missing or null inherits legacy mode; an empty list disables both. Issued quotes remain monitored.' }
+    currencies: { type: [array, 'null'], maxItems: 2, uniqueItems: true, items: { type: string, enum: [USDT, USDC] }, description: 'Authoritative per-network new-quote switches. Only registered native tokens are allowed. Missing or null inherits legacy mode; an empty list disables both. Issued quotes remain monitored.' }
     addresses: { type: array, maxItems: 128, items: { type: string } }
     endpoints: { type: array, maxItems: 8, items: { $ref: '#/USDTEndpoint' } }
 USDTConfig:

@@ -2,49 +2,11 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 	"time"
 )
-
-func (s *Store) retryAttempt_CreatePaymentOrder(ctx context.Context, order model.PaymentOrder) (model.PaymentOrder, error) {
-
-	if order.ID == "" {
-		var err error
-		order.ID, err = ids.New()
-		if err != nil {
-			return model.PaymentOrder{}, err
-		}
-	}
-	now := time.Now().UTC()
-	if order.Status == "" {
-		order.Status = "creating"
-	}
-	if order.RateDirection == "" {
-		order.RateDirection = "currency_per_txb"
-	}
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return model.PaymentOrder{}, fmt.Errorf("begin payment order retention: %w", err)
-	}
-	defer func() { _ = tx.Rollback() }()
-	if _, err := tx.ExecContext(ctx, `UPDATE payment_orders SET status='expired',provider_payload='{}',payment_url=NULL,
-		qr_payload=CASE WHEN receiving_address IS NOT NULL THEN NULL ELSE qr_payload END,updated_at=$1
-		WHERE provider<>'bepusdt' AND status IN ('creating','pending') AND cancelled_at IS NULL AND expires_at<=$2`, stamp(now), stamp(now)); err != nil {
-		return model.PaymentOrder{}, fmt.Errorf("expire stale payment orders before insert: %w", err)
-	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO payment_orders(id,user_id,provider,method_id,provider_rail,status,txb_minor,payable_amount,payable_currency,rate_snapshot,rate_direction,provider_payload,expires_at,created_at,updated_at)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'{}',$12,$13,$14)`, order.ID, order.UserID, order.Provider, order.MethodID, order.ProviderRail, order.Status, order.TXBMinor, order.PayableAmount,
-		order.PayableCurrency, order.RateSnapshot, order.RateDirection, stamp(order.ExpiresAt), stamp(now), stamp(now))
-	if err != nil {
-		return model.PaymentOrder{}, fmt.Errorf("create payment order: %w", err)
-	}
-	if err := tx.Commit(); err != nil {
-		return model.PaymentOrder{}, fmt.Errorf("commit payment order: %w", err)
-	}
-	return s.PaymentOrderByID(ctx, order.ID)
-}
 
 // UpdatePaymentCheckout stores the provider response without changing the requested TXB amount.
 
@@ -95,13 +57,10 @@ func (s *Store) ExpirePaymentOrder(ctx context.Context, orderID, provider string
 // ExpireStalePaymentOrders closes locally expired attempts without crediting them.
 
 func (s *Store) ExpireStalePaymentOrders(ctx context.Context, now time.Time) error {
-	_, err := s.db.ExecContext(ctx, `UPDATE payment_orders SET status='expired',provider_payload='{}',payment_url=NULL,
-		qr_payload=CASE WHEN receiving_address IS NOT NULL THEN NULL ELSE qr_payload END,updated_at=$1
-		WHERE provider<>'bepusdt' AND status IN ('creating','pending') AND cancelled_at IS NULL AND expires_at<=$2`, stamp(now), stamp(now))
-	if err != nil {
-		return fmt.Errorf("expire stale payment orders: %w", err)
-	}
-	return nil
+	_, err := hourlyCreditTransaction(ctx, s, func(tx *sql.Tx) (struct{}, error) {
+		return struct{}{}, expireStalePaymentsTx(ctx, tx, now)
+	})
+	return err
 }
 
 // PaymentOrderByID loads one payment order.

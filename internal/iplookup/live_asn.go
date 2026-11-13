@@ -55,7 +55,7 @@ func (s *LiveService) asn(ctx context.Context, id uint32, c Config) ASNDetails {
 		}
 		data, err = s.liveHTTP(ctx, "routeviews", "/asn/"+asnText(id), url.Values{"af": {family}}, nil, "")
 		var prefixes []string
-		if err == nil && json.Unmarshal(data, &prefixes) == nil {
+		if err == nil && json.Unmarshal(data, &prefixes) == nil && prefixes != nil {
 			n := len(prefixes)
 			*target = &n
 			a.Sources["ipv"+family+"Prefixes"] = LiveMeta{Status: "success", Source: "routeviews", ObservedAt: s.now().UTC().Format(time.RFC3339)}

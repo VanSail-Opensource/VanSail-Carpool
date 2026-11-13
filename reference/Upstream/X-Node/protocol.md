@@ -127,13 +127,13 @@ User source IPs are omitted by default. Request a one-time report with `users.ac
 
 Per-user `users.status[userID]` reports `limited: true/false`, `reason`, and `scope`. A full active-IP quota has scope `new_ip`: existing IPs can still create streams when the connection quota allows it. `block_new` and connection quotas have scope `new_connection`. Each rejected admission also emits `admission.rejected` with `user_id`, `limited: true`, `reason` and `scope`; `source_ip` appears only when periodic IP reporting is enabled. Reasons include `ineligible`, `block_new`, `torrent_ban`, `ip_temp_block`, `blocked_port`, `connection_limit`, `active_ip_limit`, and `storage_backpressure`.
 
-`traffic.report` contains `{id, traffic}`, with `traffic[userID] = [upload_bytes, download_bytes]`. The batch ID is stable across retries and process restarts. Deduplicate it before billing, then send:
+`traffic.report` contains `{id, traffic}`, with `traffic[userID] = [upload_bytes, download_bytes]`. New reports also carry the authenticated boot `stream_id` and use `agent_id:boot_id:sequence` IDs. They remain stable across retries and same-process reconnects, but new uncommitted usage is memory-only and does not survive process restart. Historical persisted `agent_id:sequence` batches drain first under their original identities. Commit usage, financial effects, sequence and digest together before acknowledging the exact received ID:
 
 ```json
-{"v":1,"type":"traffic.ack","data":{"id":"agent-id:sequence"}}
+{"v":1,"type":"traffic.ack","data":{"id":"agent-id:22222222222222222222222222222222:17"}}
 ```
 
-Only the matching pending batch is retired. Status and logs are disposable snapshots; traffic is acknowledged durable data. `logs.report` supplies timestamped entries and a dropped-entry count. Secrets are redacted before console, file forwarding and remote report serialization.
+Only the matching pending batch is retired. Traffic becomes durable when the master commits it; restart or bounded-memory overflow can lose uncommitted usage. See **Volatile boot traffic streams** below for negotiation, loss observations and settlement rules. Status and logs are disposable snapshots. `logs.report` supplies timestamped entries and a dropped-entry count. Secrets are redacted before console, file forwarding and remote report serialization.
 
 ## Commands
 

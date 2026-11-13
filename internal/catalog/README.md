@@ -11,6 +11,13 @@ freshly after shared metadata. `topology_test.go` covers this projection boundar
 and 8 MiB. TTL and entitlement validity checks retain their existing behavior;
 financial state and permissions precede cache lookup. `dashboard_cache_test.go`
 covers owner isolation, eviction, invalidation budget and oversized snapshots.
+Queued subscription rotation uses the same invalidator as entitlement changes,
+releasing both the owner entry and its byte budget after credential replacement.
+Invalidation retires in-flight reads and stale fallbacks as well. Cache entries
+bind the account generation and legacy identity; a replacement account cannot
+reuse an earlier generation's bearer. `dashboard_invalidation_test.go` covers
+rotation during a successful or failed read, newer-cache preservation and both
+identity boundaries.
 
 Dashboard includes optional ordered `activeSquadNames` resolved from local squad
 references for its active term. This avoids fetching the full purchasable catalog
@@ -23,11 +30,12 @@ ends at expiry and applies equally to administrators using member commerce.
 
 This package builds the live catalog, validates purchase selections against current X-Node squads, and serves member purchase and dashboard workflows.
 
-- `service.go` defines repository/provider contracts and coordinates quotes, purchases, process-local dashboard caching, and subscription revocation without durable bearer storage.
+- `service.go` defines production repository/provider contracts and coordinates owned commerce and process-local dashboard caching.
+- `legacy_commerce_fixture_test.go` retains closed new-purchase quote/commit and direct subscription rotation helpers only as historical regression fixtures. Production member checkout supports exact historical replay, and credential rotation uses durable provider operations.
 - `catalog.go` hydrates sparse local merchandising and typed squad profiles with live X-Node squad identities and one read-only node snapshot.
 - `automatic_renewal_test.go` covers catalog blocking and enablement eligibility without running provider calls.
-- `renewals.go` retains the internal legacy batch implementation only; manual renewal is no longer a public member flow.
-- `renewal_catalog.go` hydrates owned renewal selections independently of storefront visibility while verifying every retained squad against the queued live provider. Billing mode is merchandising state for new sales, so a purchased included squad or add-on stays in the owned selection after its product is re-marked PAYG; storefront hydration still hides PAYG standalone add-ons. The store mirrors that rule in `renewalComboTx` and `renewalAddonsTx`. Owned quote hydration resolves the same store-owned combo through `RenewalCombo`, so a retired (inactive) combo row stays renewable and a later live-bundle edit cannot change the validated selection or its nodes.
+- `legacy_renewal_fixture_test.go` retains historical manual batch quote/commit behavior only for regression fixtures. Manual renewal has no production service or public member entry point.
+- `renewal_catalog.go` hydrates owned renewal selections independently of storefront visibility while verifying every retained squad against the queued live provider. Billing mode is merchandising state for new sales, so a purchased included squad or add-on stays in the owned selection after its product is re-marked PAYG; storefront hydration still hides PAYG standalone add-ons. The store mirrors that rule in `renewalComboTx` and `renewalAddonsTx`. Historical manual quote fixtures resolve the same store-owned combo through `RenewalCombo`, preserving coverage of inactive combos and immutable owned bundles without a production manual wrapper.
 - Automatic renewal hydrates the store plan's effective combo, including persisted full-squad overrides from draw rewards and the purchase's recorded base bundle, instead of reloading the live bundle's default squads. A retired (`active=0`) combo row stays renewable because visibility is merchandising state for new sales; a missing combo row still fails closed with `combo_unavailable`, and missing awarded squads or disabled nodes still block renewal.
 - `automatic_renewal_reward_test.go` exercises draw awards, custom-then-core-change ordering, enablement, one-time charging, successor entitlement/cadence preservation, and unavailable awarded squads against isolated PostgreSQL with a mock provider.
 - `renewal_catalog_test.go` covers repriced hidden-squad enablement and processing, current-price balance checks, missing-upstream exclusion, retained owned squads after PAYG edits, storefront isolation, PAYG add-on exclusion from new sales, hidden-combo owned quote/commit hydration and fail-closed missing combos.
@@ -38,11 +46,15 @@ This package builds the live catalog, validates purchase selections against curr
 - `dashboard.go` composes current balance and entitlement data with cached or live upstream statistics and handles subscription URL revocation.
 - `revoke_operations.go` stores credential-rotation intent with only a hash of the prior subscription URL.
 - `revoke_worker.go` performs one queued rotation and reconciles ambiguous provider outcomes.
+- `revoke_recovery_test.go` verifies that a terminal rotation item recovers its exact parent receipt without another provider call, transient owner lookup errors stay retryable, and missing credentials cannot prove a successful rotation.
+- `revoke_member_test.go` verifies that admission and execution use the authenticated owner without a legacy proxy pointer. New queued targets capture the account generation; historical targets without that field remain valid only for generation zero. Superseded commands terminate before credential reads or mutations, while completed items retain their original outcomes.
+- `revoke_generation_reconcile_test.go` verifies that an atomic generation rejection and generation changes during credential reads terminate the retired command without attributing a replacement account's token to it.
 - `revoke_lifecycle.go` owns the single-item receipt lifecycle and dashboard-cache invalidation.
 - `nodes.go` queries accessibility once per unique live squad, filters disabled nodes, attaches deterministic node groups to each product, and derives the authoritative quote union from that hydrated snapshot. Node assignments are never persisted.
 - `node_selection.go` normalizes combo and add-on squad selection for quote node unioning.
 - `catalog_node_groups_test.go`, `nodes_test.go`, `node_projection_test.go`, and `node_selection_test.go` verify grouping, filtering, deterministic ordering, node/selection deduplication, quote reuse, and provider failure handling.
 - `usage.go` validates a member-selected UTC range and projects live, bounded per-node traffic through the optional queued provider reader.
+- Native usage resolves the authenticated member's own identity through `NodeUsageForMember`; a stale legacy identity cannot select another owner's counters. The native adapter retains exact decimal totals even when combined daily usage exceeds signed 64-bit range.
 - `service_test.go` verifies forwarding, validation errors, dashboard freshness, and subscription revocation behavior.
 - `live_catalog_test.go` verifies missing live squads are rejected during catalog hydration and purchase validation.
 - `usage_quote_test.go` verifies bounded node-usage ranges, quote selection validation, and purchase-history forwarding.
@@ -80,6 +92,6 @@ refused.
 Automatic-renewal eligibility and preference selection independent of wallet sufficiency: `automatic_renewal.go`, `automatic_renewal_selection.go`.
 Unexpected quote or settlement errors remain retryable and are reported to the scheduler; only established business outcomes produce terminal member failure notices. Failure recording serializes with settlement, checks for a successor and retires stale preferences on superseded terms without sending a failure notice. The member failure projection hides failures from terms superseded by a later live entitlement.
 
-`legacy_sales.go` admits only exact historical member checkout replay after new fixed-term sales close. Internal rewards and owned manual/automatic renewals retain their existing coupon and accounting behavior. New storefront sales use independent hourly offers.
+`legacy_sales.go` admits only exact historical member checkout replay after new fixed-term sales close. Internal rewards and owned automatic renewals retain their existing coupon and accounting behavior. Historical manual batches remain covered by database and catalog fixtures. New storefront sales use independent hourly offers.
 
 `legacy_sales_test.go` verifies owner-bound immutable replay, conflict preservation, and denial of new member fixed-term purchases.

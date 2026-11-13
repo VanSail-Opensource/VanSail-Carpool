@@ -22,7 +22,7 @@ function format(value: number): string { return props.unit === 'percent' ? `${va
 function detail(row: ChartDatum, key: string): string {
  const value = Number(row[key])
  const formatted = format(value)
- if (props.unit && props.unit !== 'bytes') return formatted
+ if ((props.unit && props.unit !== 'bytes') || !Number.isSafeInteger(value) || value < 0) return formatted
  const raw = t('adminNative.exactBytes', { bytes: String(value) })
  return `${formatted} · ${props.unit === 'bytes' ? raw : t('statistics.perSecond', { value: raw })}`
 }

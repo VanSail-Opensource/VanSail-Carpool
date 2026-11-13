@@ -32,7 +32,7 @@ func (s *Store) ListLuckyDraws(ctx context.Context, enabledOnly bool) ([]activit
 	}
 	visible := draws[:0]
 	for index := range draws {
-		draws[index].Prizes, err = luckyPrizes(ctx, s.db, draws[index].ID, false)
+		draws[index].Prizes, err = luckyPrizes(ctx, s.db, draws[index].ID)
 		if err != nil {
 			return nil, err
 		}

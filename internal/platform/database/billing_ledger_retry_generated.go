@@ -15,12 +15,3 @@ func (s *Store) AdjustBalance(ctx context.Context, userID string, delta int64, r
 		}
 	}
 }
-
-func (s *Store) DeductBalance(ctx context.Context, userID string, amount int64, referenceID, note string, now time.Time) (model.LedgerEntry, error) {
-	for retryIndex := 0; ; retryIndex++ {
-		r0, r1 := s.retryAttempt_DeductBalance(ctx, userID, amount, referenceID, note, now)
-		if !s.retryTransaction(ctx, r1, retryIndex) {
-			return r0, r1
-		}
-	}
-}

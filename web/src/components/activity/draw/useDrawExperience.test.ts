@@ -40,6 +40,21 @@ afterEach(() => {
 })
 
 describe('draw experience', () => {
+  it('does not restore a prize or error after its presentation is disposed', async () => {
+    let resolve!: (value: ActivityResult) => void
+    const play = vi.fn(() => new Promise<ActivityResult>(done => { resolve = done }))
+    const { wrapper, experience } = harness(play)
+    experience.begin(draw, 'wheel')
+    wrapper.unmount()
+    resolve(result)
+    await flushPromises()
+    expect(experience.draw.value).toBeNull()
+    expect(experience.result.value).toBeNull()
+    expect(experience.error.value).toBeNull()
+    experience.begin(draw, 'simple')
+    expect(play).toHaveBeenCalledTimes(1)
+  })
+
   it('waits for the authoritative result and can reveal or reset it', async () => {
     let resolve!: (value: ActivityResult) => void
     const play = vi.fn(() => new Promise<ActivityResult>((done) => { resolve = done }))

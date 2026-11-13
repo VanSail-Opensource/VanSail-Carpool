@@ -12,3 +12,11 @@ administrator eligibility; logout revokes only that browser device.
 
 `service_test.go` covers handoff authorization, destination confinement and
 allowlist changes. HTTP integration scenarios live beside the transport.
+
+Exchange returns the user read and authorized while the one-use handoff is
+locked in the same database transaction. The current role, deployment allowlist,
+account availability, and destination are checked before creating the session.
+Storage failures retain their error identity and roll back the link consumption;
+only absent, expired, or unauthorized handoffs become `ErrUnauthorized`.
+`exchange_recovery_test.go` covers owner-read/session-insert failures, retry of
+the same link after repair, and authorization changes before exchange.

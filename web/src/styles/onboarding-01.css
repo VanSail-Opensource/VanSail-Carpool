@@ -149,11 +149,6 @@
   line-height: 1.55;
 }
 
-.invite-list {
-  display: grid;
-  gap: 0.65rem;
-}
-
 @media (min-width: 720px) {
   .auth-screen__copy h1 { font-size: 2.75rem; }
   .intro-sequence__center h1 { font-size: 4rem; }

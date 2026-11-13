@@ -23,9 +23,21 @@ func (s *flexibleString) UnmarshalJSON(data []byte) error {
 type flexibleInt int64
 
 func (i *flexibleInt) UnmarshalJSON(data []byte) error {
-	value, err := scalarString(data)
-	if err != nil {
-		return err
+	// Integer metadata must retain its original decimal digits. The float64
+	// canonicalization used by callback signatures can round values or emit
+	// scientific notation and is not a numeric field decoder.
+	trimmed := bytes.TrimSpace(data)
+	var value string
+	if len(trimmed) > 0 && trimmed[0] == '"' {
+		if err := json.Unmarshal(trimmed, &value); err != nil {
+			return err
+		}
+	} else {
+		var number json.Number
+		if err := json.Unmarshal(trimmed, &number); err != nil {
+			return err
+		}
+		value = number.String()
 	}
 	parsed, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {

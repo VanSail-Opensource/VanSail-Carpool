@@ -15,25 +15,37 @@ const params = new URLSearchParams(location.search)
 if (params.has('zh')) setLocale('zh-CN')
 const now = new Date().toISOString()
 const initial: Session = { authenticated: true, user: { id: '99101', telegramId: '99101', firstName: 'Mira', lastName: 'Chen', telegramUsername: params.has('nickname') ? '' : 'mirachen', displayName: params.has('nickname') ? 'Mira Chen' : '@mirachen', username: params.has('nickname') ? 'Mira Chen' : '@mirachen', role: 'user', onboardingState: params.has('intro') ? 'intro' : params.has('legacy') ? 'agreement' : 'agreement', groupJoined: false, channelJoined: false, policyAcceptedAt: null, agreementRevision: 0, recoveryReason: '', displayCurrency: 'TXB', createdAt: now, updatedAt: now } }
-const trace = { calls: [] as string[], fail: params.has('error'), writes: [] as unknown[] }
-Object.assign(window, { __onboardingAudit: trace })
+const trace = { calls: [] as string[], fail: params.has('error'), failAdvance: params.has('advance-error'), revision: 2, writes: [] as unknown[] }
+let releaseAdvance: (() => void) | undefined
 const pause = () => new Promise(resolve => setTimeout(resolve, params.has('slow') ? 1800 : 30))
 featuresApi.getPublishedOnboarding = async locale => {
   trace.calls.push('content'); await pause()
   if (trace.fail) throw new ApiError(503, { code: 'ONBOARDING_CONTENT_UNAVAILABLE', message: '' })
-  return { locale, welcomeRevision: 1, agreementRevision: 2, welcome: [{ id: 'welcome', text: t('diy.title'), durationMs: 100 }], agreements: params.has('empty') ? [] : [{ id: 'terms', icon: 'shield-check', title: t('onboarding.agreementTitle'), body: t('onboarding.agreementTitle') }] } satisfies PublishedOnboarding
+  return { locale: locale === 'zh-CN' ? 'zh-CN' : 'en', welcomeRevision: 1, agreementRevision: trace.revision, welcome: [{ id: 'welcome', text: t('diy.title'), durationMs: 100 }], agreements: params.has('empty') ? [] : [{ id: 'terms', icon: 'shield-check', title: t('onboarding.agreementTitle'), body: t('onboarding.agreementTitle') }] } satisfies PublishedOnboarding
 }
 const pinia = createPinia()
 const session = useSessionStore(pinia)
 session.session = initial; session.status = 'ready'
 session.updateSession = value => { session.session = value; session.status = 'ready' }
-api.continueOnboarding = async () => { trace.calls.push('continue'); await pause(); return { ...initial, user: { ...initial.user, onboardingState: 'agreement' } } }
+api.continueOnboarding = async () => {
+  trace.calls.push('continue'); await pause()
+  if (trace.failAdvance) { trace.failAdvance = false; throw new Error('Constructed advancement failure') }
+  if (params.has('defer-advance')) await new Promise<void>(resolve => { releaseAdvance = resolve })
+  return { ...initial, user: { ...initial.user, onboardingState: 'agreement' } }
+}
 api.acceptAgreement = async (revision, agreementIds) => {
   trace.calls.push('agreement'); trace.writes.push({ revision, agreementIds }); await pause()
   if (params.has('save-error')) throw new ApiError(409, { code: 'ONBOARDING_STATE_CONFLICT', message: '' })
   return { ...initial, user: { ...initial.user, onboardingState: 'complete' } }
 }
 api.getMe = async () => session.session!
+Object.assign(window, { __onboardingAudit: Object.assign(trace, {
+  clearOwner: () => session.clear(),
+  releaseAdvance: () => releaseAdvance?.(),
+  advancePending: () => Boolean(releaseAdvance),
+  user: () => session.user?.id ?? null,
+  locale: setLocale,
+}) })
 const router = createRouter({ history: createWebHistory(), routes: [{ path: '/fixtures/onboarding-audit.html', component: OnboardingFlow }, { path: '/home', component: defineComponent(() => () => h('div', t('onboarding.finish'))) }] })
 const app = createApp(OnboardingAudit)
 app.config.globalProperties.$t = t

@@ -28,7 +28,7 @@ func accountPurgeIPControlsReadyTx(ctx context.Context, tx *sql.Tx, owner string
  AND j.kind='account_purge' AND j.payload::jsonb->>'userId'=$1 AND j.payload::jsonb->>'generation'=$2
  AND a.detail::jsonb->>'generation'=$2 AND a.detail::jsonb->>'ownerId'=$1
  AND a.detail::jsonb->>'nodeId'=b.node_uuid AND a.detail::jsonb->>'agentId'=n.agent_id
- AND a.detail::jsonb->>'ipDigest'=b.ip_digest AND (a.detail::jsonb->>'expiresAt')::timestamptz=b.expires_at::timestamptz
+ AND a.detail::jsonb->>'ipDigest'=b.ip_digest AND `+purchaseTimestampOrderSQL("(a.detail::jsonb->>'expiresAt')")+`=`+purchaseTimestampOrderSQL("b.expires_at")+`
  AND a.detail::jsonb->>'proof'='positive_subject_unblock'
  AND a.detail::jsonb->'principals'=(SELECT COALESCE(jsonb_agg(i.proxy_user_id ORDER BY i.proxy_user_id),'[]'::jsonb)
  FROM xnode_identities i WHERE i.user_id=$1

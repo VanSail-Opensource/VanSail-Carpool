@@ -27,19 +27,18 @@ commands. Its mutable state and quotes always bypass response snapshots.
 
 - `adminBilling.ts` owns the atomic administrator update for global Add TXB bounds.
 - `browserAccess.ts` owns browser identity, access-link exchange, renewal/logout, and one-use Mini App handoffs with separate signing cookies and scope.
-- `adminOperations.ts` owns aggregate user profiles, facet filtering, coupon wallet actions, exact entitlement refunds, queued provider-account actions, transient connection scans, bulk extensions, operation resolution, and streamed backup upload.
-- `client.ts` exposes typed member and administrator API operations, including idempotent payment, subscription-revoke, refund, outbox-retry, and manual-maintenance commands, connection scans, renewal batches, payment profiles, dashboard usage, and cached product statistics.
+- `adminOperations.ts` owns aggregate user profiles and metrics, coupon grants/discards, entitlement and hourly controls, audited account actions, payment interventions, bulk extensions and operation resolution.
+- `client.ts` exposes typed member and administrator API operations, including idempotent payment, subscription-revoke, refund, outbox-retry, and manual-maintenance commands, owned renewal controls, payment profiles, dashboard usage, and cached product statistics.
 - `client.test.ts` covers client request behavior.
 - `features.test.ts` verifies feature request construction.
 - `generated.ts` contains the compact generated OpenAPI contract.
 - `http.ts` provides authenticated HTTP and error handling primitives and records eligible responses through the session cache.
+- HTTP expiry and onboarding notifications are bound to the identity that began the request. A delayed rejection from a previous account still reaches its caller but cannot suspend the current account's observers; snapshot invalidation alone does not suppress current authentication failures.
 - `cache/README.md` specifies session isolation, snapshot restoration, invalidation, and member/admin preload coverage.
-- `memberOperations.ts` exposes generated-type connection scans, signed-handle blocks, active block listing/removal, the account-wide reset automation resource, reset/refund quotes, and durable operation receipts.
+- `memberOperations.ts` exposes owner-scoped refund quotes, idempotent refund requests and durable operation receipt reads.
 - `request-signing.ts` signs every protected request with Web Crypto or the audited pure-JS HMAC/SHA-256 fallback; it never sends an unsigned fallback.
 - `request-signing.test.ts` covers signing, nonce behavior, and missing-Web-Crypto behavior.
-- `types.ts` exports stable aliases over generated schema types, including payment-operation envelopes, connection scans, durable operation receipts, reset automation, statistics snapshots, member mutation quotes, and typed squad profile read/write unions.
-- `catalog-normalization.ts` normalizes catalog and purchase-quote payloads by coercing missing or null `combos`, `addons`, `nodes`, `includedSquads`, and `accessibleNodes` values into empty arrays so downstream UI code can safely iterate them.
-- `catalog-normalization.test.ts` verifies recursive catalog and quote normalization for nullable or omitted nested collections, ensuring null API fields are converted into safe empty arrays.
+- `types.ts` exports stable aliases over generated schema types, including payment-operation envelopes, compatibility connection snapshots, durable operation receipts, statistics snapshots, member mutation quotes, and typed squad profile read/write unions.
 
 `preferences.ts` provides typed account preference and live group-tag clients.
 
@@ -47,21 +46,21 @@ commands. Its mutable state and quotes always bypass response snapshots.
 
 `pm.ts` exposes typed admin moderation, topic repair and reference-only delivery reads, using existing signed requests and idempotency headers.
 
-
 `subscription.ts` exposes live authenticated member subscription and native import links. These endpoints are excluded from persistent rendering snapshots; neither test-account credentials nor raw resolved configurations are returned.
 - `ipLookup.ts` provides generated typed IP Lookup clients with fresh capability/receipt reads and quote-only cached report previews. Submission explicitly selects the signed action fields and excludes preview metadata; `ipLookup.test.ts` covers this strict transport shape for hosted CI.
 
 - `ipLookupStream.ts` decodes bounded UTF-8 SSE frames through the ordinary signed request transport, supports JSON fallback and requires explicit completion.
+- Both JSON fallback and completed SSE details must identify the requested IP before entering page state or triggering completion callbacks.
 - `ipLookupStream.test.ts` covers split Unicode frames, refresh, JSON fallback, address mismatch and truncated streams in hosted CI.
 
 - `usdt.ts` ? Typed dedicated admin endpoints using the existing signed request client.
 
 `xnode.ts` exposes typed node administration and live metrics with nonpersistent secret/realtime reads.
+Node command callers must supply their retained idempotency key explicitly; the transport cannot generate a new attempt during an ambiguous retry.
 
 - `xnodeMember.ts` provides typed member metrics, routing and subscription APIs plus cookie-free public bearer metadata reads.
 
 `adminAPITokens.ts` provides typed no-store browser management of administrator API credentials.
-
 
 `firewall.ts` owns typed shared-ban reads and idempotent paid exact-IP exemptions. It preserves browser/member session separation through the existing request client.
 
@@ -87,6 +86,12 @@ large exact values. Older PAYG history remains a separate compatibility read.
 - `forecasts.ts`: Administrator-scoped user forecast projection and cursor-paginated per-user pricing contracts.
 
 Generated API compatibility regression: `openapiContract.test.ts`.
+`openapiInputBoundaries.test.ts` validates source-contract callback composition,
+provider-owned rails, exact amount limits, nullable values, partial settings,
+receipt authentication and error recovery, and required response descriptions.
+Its bounded schema helper evaluates `allOf`, `anyOf`, and `oneOf` branches
+independently against the original input so Zod's object-intersection merging
+cannot suppress an `additionalProperties: false` rejection.
 
 - `pricingReads.ts`: Bounds concurrent optional analytical dataset reads to three, with abortable admission; commerce requests keep their independent transport.
 
@@ -99,3 +104,13 @@ Generated API compatibility regression: `openapiContract.test.ts`.
 `embyConnection.ts` uses generated OpenAPI types for the atomic write-only administrator connection resource. It sends both fields and the expected version together; no credentials appear in read responses.
 
 `hourly.ts` uses generated OpenAPI schemas for owner-only hourly enrollment, explicit extra-credit consent, and independent browser administrator policy/offer CAS requests. Large integer units remain decimal strings.
+
+`xnodeMember.test.ts` covers cookie-free public bearer reads, status-preserving
+errors without session-expiry events, caller cancellation and the 30-second
+transport/body deadline. Public reads never enter the signed session transport.
+
+Public metadata uses `contracts/responses.ts` before returning any 2xx body.
+Malformed required shapes become a retryable read failure without entering Vue
+state; validation stores neither bearer tokens nor response payloads.
+
+`httpIdentity.test.ts` verifies that late JSON, blob, stream and response errors from a previous session cannot expire or redirect the current account.

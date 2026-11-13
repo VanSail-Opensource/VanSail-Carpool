@@ -10,12 +10,14 @@ theme integration. Public URLs begin with `/fonts/`.
 | `NotoSansSC-variable.ttf` | Noto Sans SC 2.004, upright variable weight 100–900 | Unmodified Google Fonts file at commit `a85815a42757630ce188fdad368c2dfc444d4773` |
 | `Geist-license.json` | Complete SIL OFL 1.1 notice and font metadata | Preserves the original `../landing/Geist-OFL.txt` text |
 | `NotoSansSC-license.json` | Complete SIL OFL 1.1 notice and font metadata | Preserves the downloaded `NotoSansSC-OFL.txt` text |
-| `NotoSansSC-OFL.txt` | Original upstream license | Downloaded unchanged from the same official Google Fonts family |
+| `NotoSansSC-OFL.txt` | Upstream license notice | Same official Google Fonts notice with one trailing space normalized |
 
 The license JSON files contain source URLs, SHA-256 hashes, concrete font files,
 actual weight ranges, consuming blueprint sections, and acquisition evidence.
 Both fonts serve `admin_entry` and `member_entrance`. Approved interface weights
 are 400, 500, 600 and 700. No italic variant is approved or supplied.
+For Noto Sans SC, `licenseSource.sha256` identifies the exact upstream notice
+preserved in `licenseText`; `localSha256` identifies the standalone text file.
 
 ## Verification and integration limits
 

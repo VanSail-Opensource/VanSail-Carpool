@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, shallowRef, watch } from 'vue'
 
-import type { DatabaseMutationInput, DatabaseQueryInput, DatabaseRow, DatabaseValue } from '@/api/features'
+import type { DatabaseMutationInput, DatabaseQueryInput, DatabaseRow, DatabaseTable, DatabaseValue } from '@/api/features'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import { useAdminDatabase } from '@/composables/useAdminDatabase'
 import { useI18n } from '@/i18n'
@@ -16,7 +16,7 @@ const {
   review, lastRescueBackupId, loadTables, queryRows, selectTable,
   reviewMutation, applyMutation, clearReview,
 } = useAdminDatabase()
-type EditorState = { action: 'insert' | 'update' | 'delete'; row?: DatabaseRow }
+type EditorState = { table: DatabaseTable; action: 'insert' | 'update' | 'delete'; row?: DatabaseRow }
 type EditorPayload = { action: EditorState['action']; row?: DatabaseRow; values: Record<string, DatabaseValue>; reason: string }
 type DisplayRow = { record: DatabaseRow; display: Record<string, string> }
 
@@ -46,12 +46,14 @@ const tableColumns = computed(() => [
   { id: 'actions', header: t('adminDatabase.actions') },
 ])
 let debounceTimer: ReturnType<typeof globalThis.setTimeout> | undefined
+let resettingQuery = false
 
 function queryInput(): DatabaseQueryInput {
   return { search: search.value.trim() || undefined, filters: filters.value.map((filter) => ({ ...filter })), limit: 50 }
 }
 
 function scheduleQuery(): void {
+  if (resettingQuery) return
   if (debounceTimer) globalThis.clearTimeout(debounceTimer)
   debounceTimer = globalThis.setTimeout(() => { if (selectedTableName.value) void queryRows(selectedTableName.value, queryInput()) }, 280)
 }
@@ -59,8 +61,9 @@ function scheduleQuery(): void {
 function updateSearch(value: string): void { search.value = value }
 function updateFilters(value: TextDatabaseFilter[]): void { filters.value = value }
 
-watch(search, scheduleQuery)
-watch(filters, scheduleQuery, { deep: true })
+watch(search, scheduleQuery, { flush: 'sync' })
+watch(filters, scheduleQuery, { deep: true, flush: 'sync' })
+watch(selectedTableName, () => { editing.value = null; clearReview(); resetControls() }, { flush: 'sync' })
 onBeforeUnmount(() => { if (debounceTimer) globalThis.clearTimeout(debounceTimer) })
 
 function displayValue(value: DatabaseValue): string {
@@ -69,19 +72,42 @@ function displayValue(value: DatabaseValue): string {
   return String(value)
 }
 
-function mutationInput(payload: EditorPayload): DatabaseMutationInput {
-  return { action: payload.action, table: selectedTable.value!.name, key: payload.row?.key, values: payload.action === 'delete' ? undefined : payload.values, recordHash: payload.row?.recordHash, reason: payload.reason }
+function mutationInput(payload: EditorPayload): DatabaseMutationInput | null {
+  const target = editing.value
+  if (!target || target.table.name !== selectedTableName.value || payload.action !== target.action || payload.row?.recordHash !== target.row?.recordHash) return null
+  return { action: target.action, table: target.table.name, key: target.row?.key, values: target.action === 'delete' ? undefined : payload.values, recordHash: target.row?.recordHash, reason: payload.reason }
 }
-
-async function requestReview(payload: EditorPayload): Promise<void> { await reviewMutation(mutationInput(payload)) }
-
+async function requestReview(payload: EditorPayload): Promise<void> {
+  const input = mutationInput(payload)
+  if (input) await reviewMutation(input)
+}
 async function apply(payload: EditorPayload & { confirmation: string }): Promise<void> {
-  if (await applyMutation(mutationInput(payload), payload.confirmation)) editing.value = null
+  const target = editing.value
+  const input = mutationInput(payload)
+  if (input && await applyMutation(input, payload.confirmation) && editing.value === target) editing.value = null
 }
-
-function closeEditor(): void { editing.value = null; clearReview() }
-function openEditor(action: EditorState['action'], row?: DatabaseRow): void { clearReview(); editing.value = { action, row } }
-async function chooseTable(name: string): Promise<void> { closeEditor(); search.value = ''; filters.value = []; await selectTable(name) }
+function closeEditor(): void { if (!busy.value) { editing.value = null; clearReview() } }
+function openEditor(action: EditorState['action'], row?: DatabaseRow): void {
+  const table = selectedTable.value
+  if (busy.value || loading.value || !table || (action !== 'insert' && !row)) return
+  if ((action === 'insert' && table.allowInsert === false) || (action === 'update' && table.allowUpdate === false) || (action === 'delete' && table.allowDelete === false)) return
+  clearReview()
+  editing.value = { action, row, table: { ...table, columns: table.columns.map(column => ({ ...column })) } }
+}
+function resetControls(): void {
+  if (debounceTimer) globalThis.clearTimeout(debounceTimer)
+  debounceTimer = undefined
+  resettingQuery = true
+  search.value = ''
+  filters.value = []
+  resettingQuery = false
+}
+async function chooseTable(name: string): Promise<void> {
+  if (busy.value) return
+  closeEditor()
+  resetControls()
+  await selectTable(name)
+}
 
 </script>
 <template>
@@ -93,7 +119,7 @@ async function chooseTable(name: string): Promise<void> { closeEditor(); search.
       <div class="database-workspace">
         <DatabaseTablePicker :tables="tables" :selected="selectedTableName" :busy="busy" @select="chooseTable" /><section class="database-data" :aria-label="t('adminDatabase.rows')">
           <p v-if="selectedTable?.protectionReason" class="text-sm text-muted">{{ t(`databaseProtection.${selectedTable.protectionReason}`) }}</p>
-          <DatabaseQueryControls :search="search" :filters="filters" :column-items="columnItems" :operators="operators" @update:search="updateSearch" @update:filters="updateFilters" />
+          <DatabaseQueryControls :key="selectedTableName ?? ''" :search="search" :filters="filters" :column-items="columnItems" :operators="operators" @update:search="updateSearch" @update:filters="updateFilters" />
           <UTable :data="tableData" :columns="tableColumns" :loading="busy" class="admin-table">
             <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :disabled="busy || selectedTable?.allowUpdate === false" :aria-label="t('adminDatabase.editRow')" @click="openEditor('update', row.original.record)" /><UButton color="error" variant="ghost" icon="i-ph-trash" :disabled="busy || selectedTable?.allowDelete === false" :aria-label="t('adminDatabase.deleteRow')" @click="openEditor('delete', row.original.record)" /></div></template>
             <template #loading><AdminSectionState :loading="true" :error="null" /></template>
@@ -103,7 +129,7 @@ async function chooseTable(name: string): Promise<void> { closeEditor(); search.
         </section>
       </div>
     </AdminSectionState>
-    <DatabaseRecordEditor v-if="editing && selectedTable" :table="selectedTable" :action="editing.action" :row="editing.row" :review="review" :busy="busy" :error="error" @cancel="closeEditor" @invalidate="clearReview" @review="requestReview" @apply="apply" />
+    <DatabaseRecordEditor v-if="editing" :table="editing.table" :action="editing.action" :row="editing.row" :review="review" :busy="busy" :error="error" @cancel="closeEditor" @invalidate="clearReview" @review="requestReview" @apply="apply" />
   </section>
 </template>
 <style scoped>

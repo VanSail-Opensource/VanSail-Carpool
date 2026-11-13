@@ -75,7 +75,10 @@ func (s *Store) quotePurchaseTx(ctx context.Context, tx *sql.Tx, input PurchaseI
 		}
 		includedUUIDs[product.GroupID] = struct{}{}
 		addonRows = append(addonRows, product)
-		addonPrice += product.PriceTXBMinor
+		addonPrice, err = checkedPriceSum(addonPrice, product.PriceTXBMinor)
+		if err != nil {
+			return model.PurchaseQuote{}, model.Combo{}, nil, err
+		}
 	}
 	if originalSquads > 0 && len(includedUUIDs) == 0 {
 		return model.PurchaseQuote{}, model.Combo{}, nil, ErrConflict
@@ -103,7 +106,10 @@ func (s *Store) quotePurchaseTx(ctx context.Context, tx *sql.Tx, input PurchaseI
 		return model.PurchaseQuote{}, model.Combo{}, nil, err
 	}
 	combo.PriceTXBMinor = publicPrice
-	grossMinor := combo.PriceTXBMinor + addonPrice
+	grossMinor, err := checkedPriceSum(combo.PriceTXBMinor, addonPrice)
+	if err != nil {
+		return model.PurchaseQuote{}, model.Combo{}, nil, err
+	}
 	discount := coupons.Discount{GrossMinor: grossMinor, NetMinor: grossMinor}
 	addonUUIDs := make([]string, 0, len(addonRows))
 	for _, addon := range addonRows {

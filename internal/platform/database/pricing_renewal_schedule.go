@@ -11,7 +11,10 @@ import (
 
 // DuePricingRenewals bounds preparation work to contracts with sufficient notice.
 func (s *Store) DuePricingRenewals(ctx context.Context, now time.Time) ([]string, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT p.id FROM purchases p JOIN pricing_product_settings policy ON policy.product_type='combo' AND policy.product_id=p.combo_id WHERE policy.dynamic_enabled=1 AND policy.renewal_pricing_mode='DYNAMIC' AND p.status IN ('active','activating','queued') AND p.valid_until<=$1 AND p.valid_until>$2 AND NOT EXISTS(SELECT 1 FROM pricing_renewal_quotes q WHERE q.purchase_id=p.id AND q.state NOT IN ('CANCELLED','EXPIRED')) ORDER BY p.valid_until,p.id LIMIT 32`, pricingStamp(now.Add(7*24*time.Hour)), pricingStamp(now.Add(-72*time.Hour)))
+	from, through := now.Add(-72*time.Hour), now.Add(7*24*time.Hour)
+	// The coarse indexed bounds include every retained precision within the
+	// boundary seconds; exact comparisons decide the actual preparation window.
+	rows, err := s.db.QueryContext(ctx, `SELECT p.id FROM purchases p JOIN pricing_product_settings policy ON policy.product_type='combo' AND policy.product_id=p.combo_id WHERE policy.dynamic_enabled=1 AND policy.renewal_pricing_mode='DYNAMIC' AND p.status IN ('active','activating','queued') AND p.valid_until>=$1 AND p.valid_until<$2 AND `+purchaseTimestampOrderSQL("p.valid_until")+`<=$3 AND `+purchaseTimestampOrderSQL("p.valid_until")+`>$4 AND NOT EXISTS(SELECT 1 FROM pricing_renewal_quotes q WHERE q.purchase_id=p.id AND q.state NOT IN ('CANCELLED','EXPIRED')) ORDER BY `+purchaseTimestampOrderSQL("p.valid_until")+`,p.id LIMIT 32`, from.UTC().Format("2006-01-02T15:04:05"), through.Add(time.Second).UTC().Format("2006-01-02T15:04:05"), purchaseTimestampOrder(through), purchaseTimestampOrder(from))
 	if err != nil {
 		return nil, err
 	}

@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"encoding/json"
+	"sort"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
@@ -72,6 +73,7 @@ func (s *Store) XNodeCompileMembers(ctx context.Context, ids []string) (xnode.Co
 		return input, err
 	}
 	for id, purchases := range input.Purchases {
+		sort.Slice(purchases, func(i, j int) bool { return moreRecentPurchase(purchases[i], purchases[j]) })
 		for i := range purchases {
 			purchases[i].SquadUUIDs = groups[purchases[i].ID]
 		}

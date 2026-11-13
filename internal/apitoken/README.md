@@ -1,7 +1,7 @@
 # Administrator API tokens
 
 `service.go` issues 256-bit opaque `vsc_` credentials, checks expiry and the
-owner's current role/administrator allowlist, and loads metadata for browser
+owner's current active/unblocked state, role and administrator allowlist, and loads metadata for browser
 administrators. `types.go` defines repository contracts and secret-free metadata.
 Only the creation response contains a secret; PostgreSQL retains a SHA-256 digest.
 
@@ -11,6 +11,12 @@ resource only. General administrator scopes never authorize native X-Node
 reads, enrollment credentials, mutations or operation receipts. Credential
 management and the retired detector are excluded from bearer authorization.
 Operation receipt reads also check resource scope and actor/owner identity.
+
+The generic database editor and full backup APIs span both resources. Reads,
+including the read-only database `POST .../query`, require both `admin:read`
+and `xnode:read` (or each resource's write scope). Mutations require both
+`admin:write` and `xnode:write`. This also protects the compatibility database
+update route and backup downloads from bypassing native control scope.
 
 Tokens default to 30-day absolute expiry. Creation accepts 0–365 days; zero
 explicitly selects no expiry. Each administrator may hold 50 active tokens.
@@ -24,4 +30,13 @@ does not create cookies or browser/Mini App sessions. See [API usage](../../api/
 
 `scopes_test.go` covers resource separation, unsafe paths and credential-management exclusions.
 
+`cross_domain_scopes_test.go` covers database and backup resource combinations,
+read-only queries, and mutation paths that must never inherit read access.
+
 `hourly_scopes_test.go` verifies hourly policy, pricing and operation-receipt scopes, and excludes API tokens from owner commerce.
+
+`eligibility_test.go` covers demoted, blocked, purging and unknown-status owners
+across authentication and management, including restoration without rewriting
+retained credentials. Credential creation and revocation also lock and recheck
+the current administrator in the database transaction, so a stale request snapshot
+cannot bypass a concurrent eligibility change.

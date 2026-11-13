@@ -36,7 +36,8 @@
       "baseURL": {
         "type": "string",
         "maxLength": 2048,
-        "description": "HTTPS address, write-only; blank keeps the current address. Any changed value requires a fresh token."
+        "description": "HTTPS address, write-only; blank keeps the current address. Any changed value requires a fresh token.",
+        "writeOnly": true
       },
       "apiToken": {
         "type": "string",

@@ -1,5 +1,11 @@
 # Panel improvements and DIY Center
 
+Historical implementation and validation record. Version pins, schema numbers,
+UI behavior and pending checks below describe that work at its recorded
+revisions; they are not the current release status. Current dependencies are
+declared in `go.mod` and `web/package.json`, and current operations use the
+PostgreSQL deployment and recovery runbooks.
+
 Panel-only work; retain the pinned X-Node protocol and agent. Complete each group
 and its audit/browser evidence before proceeding. No local automated suites.
 

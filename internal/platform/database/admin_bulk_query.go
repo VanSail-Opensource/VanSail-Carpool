@@ -24,11 +24,11 @@ func adminBulkTargets(ctx context.Context, queryer adminBulkQueryer, filter Admi
 	if err != nil {
 		return nil, AdminBulkExtensionPreview{}, err
 	}
-	queryArgs := []any{stamp(now), stamp(now)}
+	queryArgs := []any{purchaseTimestampOrder(now), purchaseTimestampOrder(now)}
 	queryArgs = append(queryArgs, args...)
 	rows, err := queryer.QueryContext(ctx, `SELECT purchases.id,purchases.user_id FROM purchases
-		WHERE purchases.status='active' AND purchases.valid_from<=$1 AND purchases.valid_until>$2 AND (`+clause+`)
-		ORDER BY purchases.user_id,purchases.valid_until,purchases.id`, queryArgs...)
+		WHERE purchases.status='active' AND `+purchaseTimestampOrderSQL("purchases.valid_from")+`<=$1 AND `+purchaseTimestampOrderSQL("purchases.valid_until")+`>$2 AND (`+clause+`)
+		ORDER BY purchases.user_id,`+purchaseTimestampOrderSQL("purchases.valid_until")+`,purchases.id`, queryArgs...)
 	if err != nil {
 		return nil, AdminBulkExtensionPreview{}, err
 	}

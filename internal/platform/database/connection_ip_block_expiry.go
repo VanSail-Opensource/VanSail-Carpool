@@ -68,6 +68,15 @@ func resolveBlockOperationAtExpiryTx(ctx context.Context, tx *sql.Tx, operationI
 
 func resolveLinkedIPOperationTx(ctx context.Context, tx *sql.Tx, operationID, kind string,
 	status providerops.Status, code string, now time.Time) error {
+	var current string
+	if err := tx.QueryRowContext(ctx, `SELECT status FROM provider_operations WHERE id=$1 AND kind=$2 FOR UPDATE`, operationID, kind).Scan(&current); err != nil {
+		return err
+	}
+	// A retained terminal command describes its own attempt. Confirmed expiry
+	// cleanup is a separate action: preserve that receipt and still scrub the IP.
+	if current == "succeeded" || current == "failed" || current == "compensated" {
+		return nil
+	}
 	result, err := tx.ExecContext(ctx, `UPDATE provider_operation_items SET status=$1,error_code=$2,result_json='{}',
 		attempt_started_at=COALESCE(attempt_started_at,$3),completed_at=$4,updated_at=$5
 		WHERE operation_id=$6 AND target_type='connection_ip_hmac' AND status IN ('queued','processing','pending_review')`,

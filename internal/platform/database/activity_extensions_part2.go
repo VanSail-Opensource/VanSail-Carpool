@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
+	"math"
 	"math/big"
 	"time"
 )
@@ -38,57 +39,13 @@ func applyPendingExtensionsToActivationTx(ctx context.Context, tx *sql.Tx, purch
 	} else if affected != 1 {
 		return ErrConflict
 	}
-	rows, err := tx.QueryContext(ctx, `SELECT id,valid_from,valid_until FROM purchases
-		WHERE user_id=$1 AND id<>$2 AND status='queued' AND valid_from>=$3 ORDER BY valid_from,id`, userID, purchaseID, validUntilRaw)
-	if err != nil {
-		return err
-	}
-	type queuedTerm struct{ id, from, until string }
-	queued := make([]queuedTerm, 0)
-	for rows.Next() {
-		var term queuedTerm
-		if err := rows.Scan(&term.id, &term.from, &term.until); err != nil {
-			_ = rows.Close()
-			return err
-		}
-		queued = append(queued, term)
-	}
-	if err := rows.Err(); err != nil {
-		_ = rows.Close()
-		return err
-	}
-	_ = rows.Close()
-	for _, term := range queued {
-		from, parseErr := parseStamp(term.from)
-		if parseErr != nil {
-			return parseErr
-		}
-		until, parseErr := parseStamp(term.until)
-		if parseErr != nil {
-			return parseErr
-		}
-		shiftedFrom, shiftErr := addSubscriptionHours(from, hours)
-		if shiftErr != nil {
-			return shiftErr
-		}
-		shiftedUntil, shiftErr := addSubscriptionHours(until, hours)
-		if shiftErr != nil {
-			return shiftErr
-		}
-		result, updateErr := tx.ExecContext(ctx, `UPDATE purchases SET valid_from=$1,valid_until=$2,updated_at=$3 WHERE id=$4 AND status='queued'`, stamp(shiftedFrom), stamp(shiftedUntil), stamp(now), term.id)
-		if updateErr != nil {
-			return updateErr
-		}
-		if affected, rowsErr := result.RowsAffected(); rowsErr != nil {
-			return rowsErr
-		} else if affected != 1 {
-			return ErrConflict
-		}
-	}
-	return nil
+	return shiftExtensionQueueTx(ctx, tx, userID, purchaseID, validUntil, hours, now)
 }
 
 func addSubscriptionHours(value time.Time, hours int) (time.Time, error) {
+	if hours <= 0 || int64(hours) > math.MaxInt64/int64(time.Hour) {
+		return time.Time{}, activity.ErrInvalidInput
+	}
 	shifted := value.Add(time.Duration(hours) * time.Hour)
 	if shifted.Year() < 1 || shifted.Year() > 9999 || !shifted.After(value) {
 		return time.Time{}, activity.ErrInvalidInput

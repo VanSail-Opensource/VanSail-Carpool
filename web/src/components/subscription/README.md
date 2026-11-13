@@ -89,3 +89,8 @@ Routing selectors retain stable IDs and refreshed unavailable labels. Refresh
 never substitutes endpoints using names, addresses or current list ordering.
 
 Managed routing endpoint selectors display localized billing mode and address/port so identities on the same listener remain distinguishable. A dependency review reason marks the graph as needing review even when its older durable phase remains active; route testing stays disabled. The routing audit fixture supports `billing` and `stale-plan`.
+
+Host-name writes capture the host ID and submitted draft. Replacing the row or
+disposing it invalidates previous name/copy feedback and closes obsolete dialogs.
+`HostLinkRow.test.ts` covers a late success or failure while a replacement host's
+draft is open. Busy name edits cannot be dismissed or resubmitted.

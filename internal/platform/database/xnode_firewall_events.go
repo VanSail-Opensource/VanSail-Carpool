@@ -32,6 +32,9 @@ func (s *Store) RecordFirewallEvents(ctx context.Context, node, namespace string
 		}
 	}
 	result := s.firewallWrite(ctx, func(tx *sql.Tx) error {
+		// SQL retries must start from committed memory, just as their event cursor
+		// and ban writes start from committed rows. Failed attempts publish none.
+		clear(staged)
 		var before uint64
 		if err := tx.QueryRowContext(ctx, `SELECT version FROM xnode_firewall_clock WHERE singleton=1`).Scan(&before); err != nil {
 			return err

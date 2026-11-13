@@ -94,20 +94,37 @@ LedgerKind:
     - payment_courtesy_credit
     - payment_reversal
     - purchase_debit
+    - purchase_addon_debit
     - automatic_renewal
     - purchase_cancellation
     - admin_adjustment
+    - telegram_deduct
     - admin_entitlement_cancellation
+    - admin_entitlement_refund
+    - member_refund_credit
+    - traffic_reset_debit
+    - traffic_reset_compensation
     - activity_bet_stake
     - activity_bet_payout
     - activity_daily_checkin
+    - activity_group_message_reward
     - activity_draw_fee
     - activity_draw_reward
+    - activity_raffle_fee
+    - activity_raffle_reserve
+    - activity_raffle_reserve_adjust
+    - activity_raffle_reserve_release
+    - activity_raffle_refund
+    - affiliate_commission
+    - affiliate_tier_reward
     - coupon_balance_add
     - coupon_balance_multiply
     - questionnaire_reward
     - emby_setup_debit
     - emby_setup_refund
+    - ip_lookup
+    - ip_lookup_refresh
+    - ip_lookup_refund
     - payg_gb
 
 LedgerEntry:
@@ -158,6 +175,7 @@ PaymentMethodID:
       enum:
         - ezpay:alipay
         - ezpay:wxpay
+        - ezpay:wechat
         - ezpay:qqpay
         - ezpay:bank
         - ezpay:jdpay
@@ -183,7 +201,8 @@ PaymentMethodID:
         - stars
         - coupon
     - type: string
-      pattern: '^(ezpay|bepusdt):[^:]+:(alipay|wxpay|qqpay|bank|jdpay|usdt\.trc20|usdt\.erc20|usdt\.polygon|usdt\.bep20|usdt\.aptos|usdt\.solana|usdt\.xlayer|usdt\.arbitrum|usdt\.plasma|usdt\.ton|usdc\.trc20|usdc\.erc20|usdc\.polygon|usdc\.bep20|usdc\.aptos|usdc\.solana|usdc\.xlayer|usdc\.arbitrum|usdc\.base)$'
+      description: Profile-qualified provider rail; wechat is retained only for persisted EZPay profiles.
+      pattern: '^(?:ezpay:[^:]+:(?:alipay|wxpay|wechat|qqpay|bank|jdpay)|bepusdt:[^:]+:(?:usdt\.trc20|usdt\.erc20|usdt\.polygon|usdt\.bep20|usdt\.aptos|usdt\.solana|usdt\.xlayer|usdt\.arbitrum|usdt\.plasma|usdt\.ton|usdc\.trc20|usdc\.erc20|usdc\.polygon|usdc\.bep20|usdc\.aptos|usdc\.solana|usdc\.xlayer|usdc\.arbitrum|usdc\.base))$'
 
 PaymentOrderMethodID:
   description: Stable method ID for new orders; legacy pending snapshots may expose an empty value or provider alias.

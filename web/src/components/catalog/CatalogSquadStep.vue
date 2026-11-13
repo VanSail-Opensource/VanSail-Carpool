@@ -6,7 +6,6 @@ defineProps<{
   squads: readonly SquadProduct[]
   selectedIds: readonly string[]
   includedIds: readonly string[]
-  featuredIds: readonly string[]
   orderedIds: readonly string[]
   hiddenIds?: readonly string[]
 }>()
@@ -19,7 +18,6 @@ const emit = defineEmits<{ toggle: [id: string] }>()
     :squads="squads"
     :selected-ids="selectedIds"
     :included-ids="includedIds"
-    :featured-ids="featuredIds"
     :ordered-ids="orderedIds"
     :hidden-ids="hiddenIds"
     @toggle="emit('toggle', $event)"

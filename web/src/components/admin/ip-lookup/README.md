@@ -5,3 +5,9 @@
 The source inventory, custom resolver and active probe tabs, request helpers and diagnostics are retired. Existing settings decode without those fields. No background inventory job or scan is launched by administration.
 
 Feature implementation and contracts: `AdminIPLookupPage.vue`, `ComboQuotas.vue`, `ProviderOrder.vue`, `ProviderSettings.vue`, `RetrySettings.vue`, `useAdminIPLookup.ts`.
+
+All configuration fields are locked while an atomic save is pending. Saves use
+a snapshot of the reviewed settings, load/save admission is exclusive, and owner
+changes or workspace disposal clear credential drafts and retire pending replies.
+
+`useAdminIPLookup.test.ts` covers immutable save snapshots, read/write admission, owner changes and disposal of private provider drafts.

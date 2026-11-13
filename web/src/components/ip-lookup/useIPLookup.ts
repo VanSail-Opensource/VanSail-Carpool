@@ -27,17 +27,21 @@ export function useIPLookup() {
   const errorCode = shallowRef('')
   const validIP = computed(() => ipSchema.safeParse(ip.value.trim()).success)
   const { activeRun, checking, reloadProgress, progressUnavailable } = useSharedIPProgress(() => state.value?.enabled && validIP.value ? ip.value.trim() : '', () => {
-    busy.value = false
-    if (check.value?.operation.id) void poll(check.value.operation.id, ownerSnapshot())
-    else { void load(); void updateQuote() }
+    if (activeCheck) void poll(activeCheck.id, activeCheck.owner, activeCheck.scope)
+    else if (!busy.value) { void load(); void updateQuote() }
   })
   const displayBusy = computed(() => busy.value || checking.value)
   let disposed = false
   let revision = 0
   let sessionRevision = 0
+  let scopeRevision = 0
+  let stateRevision = 0
+  let pollRevision = 0
   let quoteTimer: ReturnType<typeof setTimeout> | undefined
   let pollTimer: ReturnType<typeof setTimeout> | undefined
-  let pendingSubmission: { quote: IPLookupQuote; key: string } | null = null
+  const pendingSubmissions = new Map<string, { quote: IPLookupQuote; key: string }>()
+  const acceptedChecks = new Map<string, string>()
+  let activeCheck: { id: string; owner: ReturnType<typeof ownerSnapshot>; scope: number } | null = null
   const ownerSnapshot = () => ({ id: session.user?.id, version: sessionRevision })
   const isCurrent = (owner: ReturnType<typeof ownerSnapshot>) => !disposed && owner.id === session.user?.id && owner.version === sessionRevision
   const report = computed(() => check.value?.report ?? quote.value?.cachedReport ?? previousReport.value)
@@ -47,10 +51,11 @@ export function useIPLookup() {
   const setError = (error: unknown) => { errorCode.value = error instanceof ApiError ? error.code : 'IP_LOOKUP_FAILED' }
 
   async function load(): Promise<void> {
-    const owner = ownerSnapshot()
-    try { const value = await ipLookupApi.state(); if (isCurrent(owner)) state.value = value }
-    catch (error) { if (isCurrent(owner)) setError(error) }
-    finally { if (isCurrent(owner)) loading.value = false }
+    const owner = ownerSnapshot(), ticket = ++stateRevision
+    const current = () => isCurrent(owner) && ticket === stateRevision
+    try { const value = await ipLookupApi.state(); if (current()) state.value = value }
+    catch (error) { if (current()) setError(error) }
+    finally { if (current()) loading.value = false }
   }
 
   async function updateQuote(): Promise<void> {
@@ -70,70 +75,96 @@ export function useIPLookup() {
     } catch (error) { if (version === revision && isCurrent(owner)) setError(error) }
   }
 
-  async function poll(id: string, owner: ReturnType<typeof ownerSnapshot>): Promise<void> {
-    const viewIP = ip.value.trim()
+  async function poll(id: string, owner: ReturnType<typeof ownerSnapshot>, scope = scopeRevision): Promise<void> {
+    if (!isCurrent(owner) || scope !== scopeRevision) return
+    activeCheck = { id, owner, scope }
+    const viewIP = ip.value.trim(), ticket = ++pollRevision
+    const current = () => isCurrent(owner) && scope === scopeRevision && ticket === pollRevision && (!viewIP || ip.value.trim() === viewIP)
+    clearTimeout(pollTimer)
+    if (document.hidden) return
+    const schedule = () => { pollTimer = setTimeout(() => void poll(id, owner, scope), 5000) }
     try {
       const value = await ipLookupApi.check(id)
-      if (!isCurrent(owner) || (viewIP && ip.value.trim() !== viewIP)) return
+      if (!current()) return
       check.value = value
-      if (!ip.value) ip.value = value.requestedIP || value.report?.ip || ''
+      const address = value.requestedIP || value.report?.ip || viewIP
+      if (address) acceptedChecks.set(address, id)
+      if (!ip.value) ip.value = address
       if (terminal.has(value.operation.status)) {
+        activeCheck = null
         busy.value = false
         errorCode.value = value.operation.errorCode ?? ''
         await load()
-        if (isCurrent(owner)) await updateQuote()
-      } else pollTimer = setTimeout(() => { if (!document.hidden) void poll(id, owner) }, 5000)
+        if (current()) await updateQuote()
+      } else schedule()
     } catch (error) {
-      if (!isCurrent(owner)) return
+      if (!current()) return
       setError(error)
-      if (error instanceof ApiError && error.status < 500 && error.status !== 429) { busy.value = false; return }
-      pollTimer = setTimeout(() => { if (!document.hidden) void poll(id, owner) }, 5000)
+      if (error instanceof ApiError && error.status < 500 && error.status !== 429) { activeCheck = null; busy.value = false; return }
+      schedule()
     }
   }
 
   async function submit(refresh = false): Promise<void> {
     if (busy.value || checking.value) return
-    const selected = refresh ? refreshQuote.value : quote.value
+    const address = ip.value.trim()
+    const retained = pendingSubmissions.get(address)
+    const selected = retained?.quote ?? (refresh ? refreshQuote.value : quote.value)
     if (!selected || (!refresh && selected.cachedReport) || !validIP.value) return
-    if (pendingSubmission && pendingSubmission.quote.refresh !== refresh) return
-    if (!pendingSubmission && selected.expiresAt <= Math.floor(Date.now() / 1000)) { await updateQuote(); return }
+    if (retained && retained.quote.refresh !== refresh) return
+    if (!retained && selected.expiresAt <= Math.floor(Date.now() / 1000)) { await updateQuote(); return }
     if (refresh) { previousReport.value = report.value; previousCacheMatch.value = cacheMatch.value }
     busy.value = true
     errorCode.value = ''
-    const owner = ownerSnapshot()
-    pendingSubmission ??= { quote: selected, key: createUuid() }
+    const owner = ownerSnapshot(), scope = scopeRevision
+    const current = () => isCurrent(owner) && scope === scopeRevision && address === ip.value.trim()
+    const attempt = retained ?? { quote: selected, key: createUuid() }
+    pendingSubmissions.set(address, attempt)
     try {
-      const operation = await ipLookupApi.submit(pendingSubmission.quote, pendingSubmission.key)
+      const operation = await ipLookupApi.submit(attempt.quote, attempt.key)
       if (!isCurrent(owner)) return
-      pendingSubmission = null
+      // Acceptance is durable even if the member has already entered another IP.
+      acceptedChecks.set(address, operation.id)
+      if (pendingSubmissions.get(address) === attempt) pendingSubmissions.delete(address)
+      if (!current()) return
       void reloadProgress()
       void router.replace({ query: { ...route.query, check: operation.id } }).catch(() => undefined)
-      await poll(operation.id, owner)
+      await poll(operation.id, owner, scope)
     } catch (error) {
       if (!isCurrent(owner)) return
+      if (error instanceof ApiError && error.status < 500 && error.status !== 429 && pendingSubmissions.get(address) === attempt) pendingSubmissions.delete(address)
+      if (!current()) return
       busy.value = false
       setError(error)
-      if (error instanceof ApiError && error.status < 500) pendingSubmission = null
-      if (!pendingSubmission) { await load(); if (isCurrent(owner)) await updateQuote() }
+      if (!pendingSubmissions.has(address)) { await load(); if (current()) await updateQuote() }
     }
   }
 
   watch(ip, () => {
     if (check.value?.requestedIP === ip.value.trim()) return
     revision++
+    scopeRevision++
+    pollRevision++
+    activeCheck = null
     quote.value = null
     refreshQuote.value = null
     previousReport.value = null
     previousCacheMatch.value = 'none'
-    if (!busy.value) { errorCode.value = ''; pendingSubmission = null; check.value = null }
+    errorCode.value = ''
     clearTimeout(quoteTimer)
     clearTimeout(pollTimer)
-    if (check.value?.requestedIP !== ip.value.trim()) { busy.value = false; check.value = null; pendingSubmission = null }
-    quoteTimer = setTimeout(() => void updateQuote(), 350)
-  })
+    busy.value = false
+    check.value = null
+    const accepted = acceptedChecks.get(ip.value.trim())
+    if (accepted) { busy.value = true; void poll(accepted, ownerSnapshot()) }
+    else quoteTimer = setTimeout(() => void updateQuote(), 350)
+  }, { flush: 'sync' })
   watch(() => session.user?.id, () => {
     revision++
     sessionRevision++
+    scopeRevision++
+    pollRevision++
+    activeCheck = null
     clearTimeout(quoteTimer)
     clearTimeout(pollTimer)
     state.value = quote.value = check.value = null
@@ -142,7 +173,8 @@ export function useIPLookup() {
     previousCacheMatch.value = 'none'
     ip.value = ''
     errorCode.value = ''
-    pendingSubmission = null
+    pendingSubmissions.clear()
+    acceptedChecks.clear()
     busy.value = false
     loading.value = true
     void load()
@@ -150,7 +182,12 @@ export function useIPLookup() {
       busy.value = true
       void poll(route.query.check, ownerSnapshot())
     }
-  }, { immediate: true })
-  onScopeDispose(() => { disposed = true; revision++; clearTimeout(quoteTimer); clearTimeout(pollTimer) })
+  }, { immediate: true, flush: 'sync' })
+  const onVisibility = () => {
+    clearTimeout(pollTimer)
+    if (!document.hidden && activeCheck) void poll(activeCheck.id, activeCheck.owner, activeCheck.scope)
+  }
+  document.addEventListener('visibilitychange', onVisibility)
+  onScopeDispose(() => { disposed = true; revision++; pollRevision++; activeCheck = null; pendingSubmissions.clear(); acceptedChecks.clear(); clearTimeout(quoteTimer); clearTimeout(pollTimer); document.removeEventListener('visibilitychange', onVisibility) })
   return { ip, state, quote, refreshQuote, check, displayCheck, report, requestedIP, cacheMatch, loading, busy: displayBusy, activeRun, progressUnavailable, errorCode, validIP, submit, load }
 }

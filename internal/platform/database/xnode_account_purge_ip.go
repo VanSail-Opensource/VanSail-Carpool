@@ -9,11 +9,11 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
-const accountPurgeIPUnproven = `user_id=$1 AND NOT EXISTS(SELECT 1 FROM audit_events a
+var accountPurgeIPUnproven = `user_id=$1 AND NOT EXISTS(SELECT 1 FROM audit_events a
  WHERE a.action='account.purge_ip_cleared' AND a.target_type='connection_ip_block' AND a.target_id=connection_ip_blocks.id
  AND a.detail::jsonb->>'jobId'=$2 AND a.detail::jsonb->>'generation'=$3
  AND a.detail::jsonb->>'ownerId'=user_id AND a.detail::jsonb->>'nodeId'=node_uuid
- AND a.detail::jsonb->>'ipDigest'=ip_digest AND (a.detail::jsonb->>'expiresAt')::timestamptz=expires_at::timestamptz)`
+ AND a.detail::jsonb->>'ipDigest'=ip_digest AND ` + purchaseTimestampOrderSQL("(a.detail::jsonb->>'expiresAt')") + `=` + purchaseTimestampOrderSQL("expires_at") + `)`
 
 // AccountPurgeIPControls retains all encrypted rows. Only an exact durable
 // generation-bound receipt removes a row from this barrier's pending view.

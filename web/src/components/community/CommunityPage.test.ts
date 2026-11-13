@@ -3,10 +3,13 @@ import { createPinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { CommunityMembership } from '@/api/types'
+import { useSessionStore } from '@/stores/session'
 import CommunityPage from './CommunityPage.vue'
 
 const api = vi.hoisted(() => ({ checkCommunityMembership: vi.fn(), createCommunityInvite: vi.fn() }))
-vi.mock('@/api/client', () => ({ api }))
+vi.mock('@/api/client', async () => ({ api, ApiError: (await import('@/api/http')).ApiError }))
+vi.mock('@/api/cache/preload', () => ({ preloadSession: vi.fn(), stopSessionPreload: vi.fn() }))
+vi.mock('@/api/cache/restore', () => ({ restoreRef: () => false }))
 vi.mock('@/utils/telegram', () => ({ getTelegramWebApp: () => undefined, notifyHaptic: vi.fn(), openExternalLink: vi.fn() }))
 
 const access: CommunityMembership = {
@@ -19,9 +22,11 @@ const access: CommunityMembership = {
 }
 
 function mountPage() {
+  const pinia = createPinia()
+  useSessionStore(pinia).session = { authenticated: true, user: access.user }
   return mount(CommunityPage, {
     global: {
-      plugins: [createPinia()],
+      plugins: [pinia],
       stubs: {
         InlineNotice: { template: '<div class="notice"><slot /></div>' }, SkeletonBlock: { template: '<div class="skeleton" />' },
         CommunityMembershipRows: { props: ['activeCombo', 'groupJoined', 'channelJoined'], template: '<output data-testid="rows" :data-group="String(groupJoined)" :data-active="String(activeCombo)" />' },

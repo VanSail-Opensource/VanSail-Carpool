@@ -24,6 +24,7 @@ This package contains the Telegram Bot API and Mini App authentication surface u
 - `doc.go` supplies the package documentation.
 - `client_test.go` covers Bot API wire methods, sanitized errors, update decoding, and webhook verification.
 - `bot_test.go` verifies MarkdownV2 send-message payloads and successful Message result decoding.
+- Markdown fallback and unchanged-profile recovery require consistent HTTP/API400 responses without throttling metadata. Contradictory or transient responses retain their errors; `bot_test.go` and `forum_test.go` cover this boundary without repeating ambiguous sends.
 - `redirect_test.go` verifies provider redirects cannot receive the bot token or request body.
 - `initdata_test.go` covers init-data signatures, time bounds, token validation, and optional Telegram signature fields.
 - `README.md` documents the package layout and security boundary.

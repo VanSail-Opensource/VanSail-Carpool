@@ -37,7 +37,7 @@ func purgeAccountOperationalTx(ctx context.Context, tx *sql.Tx, user string, now
 		`DELETE FROM xnode_payg_minutes WHERE user_id=$1`,
 		`DELETE FROM account_cleanup_checks WHERE user_id=$1`,
 		`UPDATE xnode_identities SET credentials_cipher='',subscription_cipher='',subscription_hash=NULL,
- current_period_id=NULL,access_disabled=1 WHERE proxy_user_id IN(` + accountNativePrincipals + `)`,
+ current_period_id=NULL,access_disabled=1,first_synced_at=NULL WHERE proxy_user_id IN(` + accountNativePrincipals + `)`,
 	}
 	for _, query := range queries {
 		if _, err := tx.ExecContext(ctx, query, user); err != nil {

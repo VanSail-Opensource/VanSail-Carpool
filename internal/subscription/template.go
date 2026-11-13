@@ -51,6 +51,7 @@ func RenderTemplate(template Template, proxies []Proxy) ([]byte, error) {
 	}
 	if template.Format == "xray" {
 		configs := []any{}
+		expandedBudget := 2 // The outer selectable-profile array.
 		for _, proxy := range proxies {
 			if proxy.Tuning == nil {
 				proxy.Tuning = &ConnectionOverrides{}
@@ -75,7 +76,18 @@ func RenderTemplate(template Template, proxies []Proxy) ([]byte, error) {
 			if budget > 8<<20 {
 				return nil, errors.New("rendered subscription exceeds 8 MiB")
 			}
-			value, err := expandTemplate(root, []any{out}, []any{proxy.Tag()}, 0)
+			remarks, err := json.Marshal(proxy.Name)
+			if err != nil {
+				return nil, err
+			}
+			values, names := []any{out}, []any{proxy.Tag()}
+			profileOverhead := len(remarks) + 16 // remarks key, colon and separators.
+			size, err := templateExpansionSize(root, values, names, (8<<20)-expandedBudget-profileOverhead)
+			if err != nil {
+				return nil, err
+			}
+			expandedBudget += size + profileOverhead
+			value, err := expandTemplate(root, values, names, 0)
 			if err != nil {
 				return nil, err
 			}
@@ -122,6 +134,9 @@ func RenderTemplate(template Template, proxies []Proxy) ([]byte, error) {
 	}
 	names, err := templateProxyNames(template.Format, root, proxies, values)
 	if err != nil {
+		return nil, err
+	}
+	if _, err = templateExpansionSize(root, values, names, 8<<20); err != nil {
 		return nil, err
 	}
 	value, err := expandTemplate(root, values, names, 0)

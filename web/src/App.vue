@@ -27,9 +27,8 @@ const uiLocale = computed(() => locale.value === 'zh-CN' ? zh_cn : en)
 watch(() => sessionStore.onboardingComplete ? sessionStore.user?.id ?? null : null, id => preferences.bind(id), { immediate: true })
 
 watch(() => sessionStore.user?.id, (userID) => {
-  if (!userID) return
   displayCurrency.hydrate(sessionStore.user?.displayCurrency)
-  void displayCurrency.refresh()
+  if (userID) void displayCurrency.refresh()
 }, { immediate: true })
 
 let refreshingOnboarding = false
@@ -67,12 +66,12 @@ onUnmounted(() => globalThis.removeEventListener(onboardingRequiredEvent, onOnbo
           :code="sessionStore.errorCode ?? undefined"
           @retry="sessionStore.bootstrap(true)"
         />
-        <CaptchaGate v-else-if="sessionStore.session?.captcha?.required" :challenge="sessionStore.session.captcha" @verified="sessionStore.updateSession" />
+        <CaptchaGate v-else-if="sessionStore.session?.captcha?.required" :key="sessionStore.user?.id" :challenge="sessionStore.session.captcha" @verified="sessionStore.updateSession" />
         <template v-else>
           <RouterView v-if="immersive" v-slot="{ Component, route: currentRoute }">
-            <component :is="Component" :key="currentRoute.fullPath" />
+            <component :is="Component" :key="`${sessionStore.user?.id ?? ''}:${currentRoute.fullPath}`" />
           </RouterView>
-          <AppShell v-else>
+          <AppShell v-else :key="sessionStore.user?.id">
             <RouterView v-slot="{ Component, route: currentRoute }">
               <component :is="Component" :key="currentRoute.fullPath" />
             </RouterView>

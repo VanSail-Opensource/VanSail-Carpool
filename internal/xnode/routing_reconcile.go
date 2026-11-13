@@ -39,6 +39,7 @@ func (s *Service) reconcileRoutingPlans(ctx context.Context) (result error) {
 		return err
 	}
 	requests := []routingRefreshRequest{}
+	var deferred error
 	for _, plan := range plans {
 		if strings.HasPrefix(plan.Reason, routingRemovalPending) {
 			continue
@@ -71,16 +72,20 @@ func (s *Service) reconcileRoutingPlans(ctx context.Context) (result error) {
 			continue
 		}
 		input, validationErr := s.routingInput(ctx, identity, doc.Choices)
+		if validationErr != nil {
+			deferred = errors.Join(deferred, fmt.Errorf("routing validation for %d: %w", plan.ProxyUserID, validationErr))
+			continue
+		}
 		if !routingRefreshDue(plan, doc, input.dependencies, validationErr) {
 			continue
 		}
 		requests = append(requests, routingRefreshRequest{plan: plan, identity: identity, document: doc, dependencies: input.dependencies})
 	}
-	return routingRefreshAll(requests, func(request routingRefreshRequest) error {
+	return errors.Join(deferred, routingRefreshAll(requests, func(request routingRefreshRequest) error {
 		key := sha256.Sum256([]byte(fmt.Sprintf("%d:%d:%s", request.plan.ProxyUserID, request.plan.Revision, request.dependencies)))
 		_, err := s.QueueOwnedRouting(ctx, request.identity.UserID, fmt.Sprintf("routing-refresh-%x", key[:20]), request.plan.Revision, request.document.Choices)
 		return err
-	})
+	}))
 }
 
 // routingRefreshRequest is one member generation that reconcile must re-prepare.

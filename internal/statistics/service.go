@@ -1,6 +1,7 @@
 package statistics
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -46,9 +47,9 @@ func (s *Service) Refresh(ctx context.Context, now time.Time) error {
 	s.refreshMu.Lock()
 	defer s.refreshMu.Unlock()
 	now = normalizedNow(now)
-	if err := s.loadLastGood(ctx); err != nil {
-		return err
-	}
+	// Persisted partitions are an optional recovery cache. A missing or corrupt
+	// cache must not prevent fresh authoritative reads from repairing it.
+	_ = s.loadLastGood(ctx)
 	remote, remoteErr := s.refreshRemote(ctx, now)
 	if remoteErr == nil {
 		remoteErr = s.saveRemote(ctx, remote, now)
@@ -150,7 +151,7 @@ var ErrPartitionNotFound = errors.New("statistics partition is unavailable")
 
 func decodePartition[T any](payload []byte) (T, error) {
 	var result T
-	if len(payload) == 0 || json.Unmarshal(payload, &result) != nil {
+	if len(payload) == 0 || bytes.Equal(bytes.TrimSpace(payload), []byte("null")) || json.Unmarshal(payload, &result) != nil {
 		return result, fmt.Errorf("%w: invalid partition", ErrPartitionNotFound)
 	}
 	return result, nil

@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // TableDigest covers every authoritative column, including exact ciphertext/payloads.
@@ -23,12 +24,13 @@ type TableDigest struct {
 
 // Report is deterministic evidence, without plaintext rows or credentials.
 type Report struct {
-	Sequences           map[string]int64 `json:"sequences"`
-	Tables              []TableDigest    `json:"tables"`
-	Hash                string           `json:"sha256"`
-	ProcessingJobs      int64            `json:"processingJobs"`
-	ProcessingProviders int64            `json:"processingProviders"`
-	FinancialMismatches int64            `json:"financialMismatches"`
+	Sequences           map[string]int64         `json:"sequences"`
+	SequenceStates      map[string]SequenceState `json:"sequenceStates"`
+	Tables              []TableDigest            `json:"tables"`
+	Hash                string                   `json:"sha256"`
+	ProcessingJobs      int64                    `json:"processingJobs"`
+	ProcessingProviders int64                    `json:"processingProviders"`
+	FinancialMismatches int64                    `json:"financialMismatches"`
 }
 
 type queryer interface {
@@ -44,6 +46,10 @@ func inspect(ctx context.Context, q queryer, tables []TableContract) (Report, er
 	report := Report{Tables: make([]TableDigest, 0, len(tables))}
 	var err error
 	report.Sequences, err = readSequences(ctx, q)
+	if err != nil {
+		return report, err
+	}
+	report.SequenceStates, err = readSequenceStates(ctx, q, tables)
 	if err != nil {
 		return report, err
 	}
@@ -150,6 +156,12 @@ func hashValue(h hash.Hash, value any) error {
 	case []byte:
 		kind = "b"
 		text = hex.EncodeToString(v)
+	case time.Time:
+		// Native DATE/TIMESTAMPTZ values arrive through pgx as time.Time.
+		// Canonical UTC removes driver/session location differences while
+		// preserving all stored precision and a distinct scalar type.
+		kind = "d"
+		text = v.UTC().Format(time.RFC3339Nano)
 	default:
 		return fmt.Errorf("unsupported recovery value type %T", value)
 	}

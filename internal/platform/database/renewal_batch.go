@@ -2,6 +2,8 @@ package database
 
 import (
 	"context"
+	"errors"
+
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
@@ -16,17 +18,26 @@ func (s *Store) loadRenewalBatch(ctx context.Context, batchID string) (model.Ren
 	if err != nil {
 		return batch, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
+	var purchaseIDs []string
 	for rows.Next() {
 		var id string
 		if err := rows.Scan(&id); err != nil {
 			return batch, err
 		}
+		purchaseIDs = append(purchaseIDs, id)
+	}
+	// Release the result's connection before hydrating each purchase. A nested
+	// query here otherwise stalls even a single-request pool with one connection.
+	if err := errors.Join(rows.Err(), rows.Close()); err != nil {
+		return batch, err
+	}
+	for _, id := range purchaseIDs {
 		purchase, err := s.PurchaseByID(ctx, id)
 		if err != nil {
 			return batch, err
 		}
 		batch.Purchases = append(batch.Purchases, purchase)
 	}
-	return batch, rows.Err()
+	return batch, nil
 }

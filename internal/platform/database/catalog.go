@@ -49,17 +49,25 @@ type SquadProductInput struct {
 	ActivationCode     string
 }
 
-// ImportedSquad is retained as a compatibility DTO. Upstream squads are no
-// longer persisted by refresh operations.
-type ImportedSquad struct {
-	UUID string
-	Name string
-}
-
 // SaveCombo creates or updates one stable live combo and schedules affected
 // active users for upstream re-synchronization after an edit.
 func (s *Store) retryAttempt_SaveCombo(ctx context.Context, input ComboInput) (model.Combo, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return model.Combo{}, fmt.Errorf("begin save combo: %w", err)
+	}
+	defer tx.Rollback()
+	combo, err := saveComboTx(ctx, tx, input, time.Now().UTC())
+	if err != nil {
+		return model.Combo{}, err
+	}
+	if err = tx.Commit(); err != nil {
+		return model.Combo{}, fmt.Errorf("commit combo: %w", err)
+	}
+	return combo, nil
+}
 
+func saveComboTx(ctx context.Context, tx *sql.Tx, input ComboInput, now time.Time) (model.Combo, error) {
 	creating := input.ID == ""
 	if creating {
 		var err error
@@ -85,12 +93,6 @@ func (s *Store) retryAttempt_SaveCombo(ctx context.Context, input ComboInput) (m
 		}
 		featuresJSON = string(encoded)
 	}
-	now := time.Now().UTC()
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return model.Combo{}, fmt.Errorf("begin save combo: %w", err)
-	}
-	defer func() { _ = tx.Rollback() }()
 	if err := saveComboIPQuotaTx(ctx, tx, input, creating); err != nil {
 		return model.Combo{}, err
 	}
@@ -152,10 +154,7 @@ func (s *Store) retryAttempt_SaveCombo(ctx context.Context, input ComboInput) (m
 			}
 		}
 	}
-	if err := tx.Commit(); err != nil {
-		return model.Combo{}, fmt.Errorf("commit combo: %w", err)
-	}
-	return s.ComboByID(ctx, input.ID, false)
+	return scanCombo(tx.QueryRowContext(ctx, comboSelect+` WHERE id=$1`, input.ID))
 }
 
 // DeleteCombo hides a combo without invalidating purchases that reference it.
@@ -164,7 +163,9 @@ func (s *Store) DeleteCombo(ctx context.Context, comboID string) error {
 	if err != nil {
 		return fmt.Errorf("hide combo: %w", err)
 	}
-	if affected, _ := result.RowsAffected(); affected == 0 {
+	if affected, rowsErr := result.RowsAffected(); rowsErr != nil {
+		return rowsErr
+	} else if affected != 1 {
 		return ErrNotFound
 	}
 	return nil

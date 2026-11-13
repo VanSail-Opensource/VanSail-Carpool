@@ -128,7 +128,7 @@ func (s *Service) HandleProviderOperation(ctx context.Context, operation provide
 	if operation.Receipt.Kind == DDNSOperationKind {
 		return s.master.deferOperation(job, 2*time.Minute, func(ctx context.Context) error { return s.runDDNSOperation(ctx, operation) })
 	}
-	return s.master.deferOperation(job, 12*time.Minute, func(ctx context.Context) error { return s.runProviderOperation(ctx, operation, job) })
+	return s.master.deferOperation(job, providerOperationDeadline(), func(ctx context.Context) error { return s.runProviderOperation(ctx, operation, job) })
 }
 
 func (s *Service) DeleteNode(ctx context.Context, id string) error {

@@ -1,10 +1,8 @@
 package httpapi
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 
@@ -86,53 +84,6 @@ func TestRequireIdempotencyKey(t *testing.T) {
 	}
 }
 
-func TestBoundedMultipartFile(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name      string
-		fieldName string
-		content   string
-		maxBytes  int64
-		want      string
-		wantErr   bool
-	}{
-		{name: "one bounded file", fieldName: "file", content: "code\nTXQ-ABC\n", maxBytes: 64, want: "code\nTXQ-ABC\n"},
-		{name: "wrong field", fieldName: "upload", content: "code\nTXQ-ABC\n", maxBytes: 64, wantErr: true},
-		{name: "file too large", fieldName: "file", content: strings.Repeat("x", 65), maxBytes: 64, wantErr: true},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
-			var body bytes.Buffer
-			writer := multipart.NewWriter(&body)
-			part, err := writer.CreateFormFile(test.fieldName, "results.csv")
-			if err != nil {
-				t.Fatalf("CreateFormFile(): %v", err)
-			}
-			if _, err := part.Write([]byte(test.content)); err != nil {
-				t.Fatalf("write multipart file: %v", err)
-			}
-			if err := writer.Close(); err != nil {
-				t.Fatalf("close multipart writer: %v", err)
-			}
-			request := httptest.NewRequest(http.MethodPost, "/", &body)
-			request.Header.Set("Content-Type", writer.FormDataContentType())
-			response := httptest.NewRecorder()
-			got, err := boundedMultipartFile(response, request, "file", test.maxBytes)
-			if test.wantErr && err == nil {
-				t.Fatal("boundedMultipartFile() unexpectedly succeeded")
-			}
-			if !test.wantErr && err != nil {
-				t.Fatalf("boundedMultipartFile(): %v", err)
-			}
-			if string(got) != test.want {
-				t.Fatalf("boundedMultipartFile() = %q, want %q", string(got), test.want)
-			}
-		})
-	}
-}
-
 func TestActivityDescriptionResponseMapping(t *testing.T) {
 	t.Parallel()
 
@@ -174,9 +125,12 @@ func TestCouponUpdateDistinguishesOmittedFieldsFromNull(t *testing.T) {
 	if err := json.Unmarshal([]byte(`{"name":"Preserved"}`), &omitted); err != nil {
 		t.Fatalf("decode omitted request: %v", err)
 	}
-	preserved, err := server.couponInput(ctx, created.ID, omitted)
+	preserved, preservedRevision, err := server.couponInput(ctx, created.ID, omitted)
 	if err != nil {
 		t.Fatalf("couponInput(omitted): %v", err)
+	}
+	if !preservedRevision.Equal(created.UpdatedAt) {
+		t.Fatal("partial update lost the definition revision it merged")
 	}
 	if preserved.PercentCapMinor == nil || preserved.ExpiresAt == nil || preserved.GlobalUseLimit == nil || preserved.PerUserUseLimit == nil {
 		t.Fatalf("omitted nullable fields were cleared: %+v", preserved)
@@ -186,9 +140,12 @@ func TestCouponUpdateDistinguishesOmittedFieldsFromNull(t *testing.T) {
 	if err := json.Unmarshal([]byte(`{"percentCapMinor":null,"expiresAt":null,"globalUseLimit":null,"perUserUseLimit":null}`), &cleared); err != nil {
 		t.Fatalf("decode null request: %v", err)
 	}
-	input, err := server.couponInput(ctx, created.ID, cleared)
+	input, clearedRevision, err := server.couponInput(ctx, created.ID, cleared)
 	if err != nil {
 		t.Fatalf("couponInput(null): %v", err)
+	}
+	if !clearedRevision.Equal(created.UpdatedAt) {
+		t.Fatal("explicit-null update lost the definition revision it merged")
 	}
 	if input.PercentCapMinor != nil || input.ExpiresAt != nil || input.GlobalUseLimit != nil || input.PerUserUseLimit != nil {
 		t.Fatalf("explicit null did not clear nullable fields: %+v", input)

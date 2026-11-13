@@ -1,6 +1,12 @@
 # Historical custom Combo repair notes
 
-This document explains immutable pre-106 upgrade repairs. It is historical evidence, not a description of current operational credit tables or supported runtime APIs. SQLite 106/PostgreSQL 18 retire those tables and cancel unsettled credits without wallet changes. Current purchase/refund behavior is documented in `docs/modules/catalog-entitlements.md`. Historical tests explicitly recreate the old schema before replaying an old migration.
+This document records the former SQLite custom-term repairs. These scripts are
+historical context, not current runtime APIs or deployment instructions. The
+current PostgreSQL forward chain preserves the resulting historical evidence;
+PostgreSQL migration 18 retires rollover tables and cancels unsettled credits
+without wallet changes. Current purchase/refund behavior is documented in
+`docs/modules/catalog-entitlements.md`. Retired SQLite repair fixtures are no
+longer part of the hosted suite and must not be presented as current coverage.
 
 # Custom combo and core-change rewards
 
@@ -63,9 +69,9 @@ award existed before the core change, the latest-award guard also excludes that
 older award. For separately timed rewards, a core change before the latest custom
 award cannot authorize recovery even if the newer overrides are missing.
 
-`activity_reward_combo_order_test.go` exercises these sequences through actual
-reward settlement and compares all mutable entitlement fields before and after
-the migration, alongside balances, recovery audit events and outbox job counts.
+The former migration's safety boundary required preserving these later awards.
+The current `activity_reward_combo_test.go` checks settlement ordering and
+preservation of custom terms; it does not replay the historical repair script.
 
 ## Ordered recovery in migration 055
 
@@ -96,10 +102,9 @@ Recovery uses the existing audit event and deduplicated provider-sync job with
 squads come from the selected custom award; the new base combo and current expiry
 remain unchanged. No stored result is rerolled and no renewal switch is enabled.
 
-`activity_reward_ordered_recovery_test.go` settles real constructed raffles,
-reproduces the former core-reset writes, and checks restoration and exclusions.
-It checks current versus renewal traffic, newer-award protection, zero prices,
-pending rollover metadata, unchanged balances and safe repeated execution.
+These were the historical ordered-repair conditions. The old SQLite migration
+test suite and its unused fixture helpers have been retired; current native
+upgrade tests verify retained evidence through the PostgreSQL forward chain.
 
 ## Reset cadence recovery in migration 056
 
@@ -130,20 +135,15 @@ not change. Provider sync applies the cadence without issuing a traffic reset.
 
 `activity_reward_combo_test.go` checks both reward orders, zero-price custom
 terms, ordinary core behavior, and separate temporary/recurring traffic values.
+`activity_reward_cadence_test.go` checks explicit and inherited reset cadence.
 `internal/catalog/automatic_renewal_reward_test.go` checks custom-then-core-change
-enablement, charging and successor renewal. The migration tests check eligible
-restoration, exclusions, unchanged balances/switches and safe reapplication.
-Tests run in hosted CI; local automated tests are prohibited by `AGENTS.md`.
+enablement, charging and successor renewal. Tests run in hosted CI; local
+automated tests are prohibited by `AGENTS.md`.
 
-Rollover fixtures must create their row explicitly. Normal active purchases have
-no rollover row until expiry is enqueued. The fixtures assert that snapshot
-creation affects one row and reconstruct the historical processing state for the processing
-state, so a missing row cannot silently turn a protection test into an eligible
-recovery case. Pending metadata refresh and processing-state preservation are
-checked separately.
-
-Deploy/restart the new image to apply migrations 054 through 056. Review
-`activity.custom_combo_recovered` audit entries and the corresponding
-`activity.custom_combo_cadence_recovered` entries and `xnode_sync_user` jobs,
-then reopen the renewal dialog. CI success confirms the
-constructed cases, not that a particular production purchase was repaired.
+Current deployment applies only the numbered PostgreSQL forward chain. Do not
+recreate retired rollover tables or execute the old SQLite scripts against a
+current database. For an individual historical purchase, inspect retained
+`activity.custom_combo_recovered` and `activity.custom_combo_cadence_recovered`
+audit entries alongside immutable draw and financial evidence. Missing evidence
+requires individual review; a successful restart or CI run does not establish
+that a particular historical purchase was repaired.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/catalog"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/google/uuid"
 )
 
@@ -21,6 +22,10 @@ func (a proxyProvider) RevokeSubscription(ctx context.Context, id string) (strin
 		return "", err
 	}
 	return a.native.RevokeSubscription(ctx, id)
+}
+
+func (a proxyProvider) RevokeSubscriptionForMember(ctx context.Context, user model.User) (string, error) {
+	return a.native.RevokeSubscriptionForMember(ctx, user)
 }
 func (a proxyProvider) ListInternalSquads(ctx context.Context) ([]admin.UpstreamSquad, error) {
 	groups, err := a.native.Groups(ctx)

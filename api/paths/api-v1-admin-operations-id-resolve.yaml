@@ -2,7 +2,17 @@ post:
   security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin, Operations]
   operationId: resolveAdminOperation
-  summary: Resolve a genuinely ambiguous provider operation with an audit reason
+  summary: Repair a supported administrative parent receipt from retained terminal evidence
+  description: >-
+    Repairs only admin_entitlement_edit, admin_entitlement_refund,
+    admin_combo_replacement, admin_bulk_extension and historical node_compensation
+    parent receipts in pending_review or partial state. Every user-targeted item
+    must have recorded attempt and completion evidence. Uniform terminal item
+    outcomes must match the requested resolution; mixed terminal outcomes require
+    partial. This operation does not change items, provider state, money, holds or
+    notification gates. Payment, member, native, hourly, Emby and restriction
+    workflows require their owning domain reconciliation. Missing or inconsistent
+    evidence returns 409 OPERATION_RECONCILIATION_REQUIRED.
   parameters:
     - $ref: '../openapi.yaml#/components/parameters/OperationID'
     - $ref: '../openapi.yaml#/components/parameters/IdempotencyKey'
@@ -13,6 +23,7 @@ post:
         schema: { $ref: '../openapi.yaml#/components/schemas/OperationResolutionRequest' }
   responses:
     '200':
+      description: Parent receipt repaired from matching retained item evidence with an audited reason.
       content:
         application/json:
           schema: { $ref: '../openapi.yaml#/components/schemas/OperationReceipt' }

@@ -14,10 +14,11 @@ export function useUSDTAdmin() {
   const resolving = shallowRef<string | null>(null)
   const error = shallowRef<string | null>(null)
   const saved = shallowRef(false)
-  const probe = shallowRef<string | null>(null)
+  const probe = shallowRef<{ rail: string; text: string } | null>(null)
   const latest = createLatestRequest()
   const statusLatest = createLatestRequest()
   const reviewLatest = createLatestRequest()
+  const probeLatest = createLatestRequest()
   const loaded = shallowRef(false)
   let loadController: AbortController | undefined
   let statusController: AbortController | undefined
@@ -25,7 +26,12 @@ export function useUSDTAdmin() {
   let active = true
   let timer: ReturnType<typeof setTimeout> | undefined
 
+  function invalidateProbe(): void {
+    probeLatest.invalidate(); probe.value = null; checking.value = null
+  }
   async function load(): Promise<void> {
+    if (!active || busy.value) return
+    invalidateProbe()
     loadController?.abort(); statusController?.abort(); reviewController?.abort()
     statusLatest.invalidate(); reviewLatest.invalidate()
     loadController = new AbortController()
@@ -44,6 +50,7 @@ export function useUSDTAdmin() {
     loading.value = false
   }
   async function refresh(): Promise<void> {
+    if (!active) return
     statusController?.abort(); statusController = new AbortController()
     const generation = statusLatest.begin()
     try { const value = await usdtApi.status(statusController.signal); if (active && statusLatest.isCurrent(generation)) status.value = value }
@@ -56,8 +63,9 @@ export function useUSDTAdmin() {
     }, 15000)
   }
   async function save(): Promise<void> {
-    if (!draft.value || busy.value || loading.value || !loaded.value) return
+    if (!active || !draft.value || busy.value || loading.value || !loaded.value) return
     const generation = latest.begin()
+    invalidateProbe()
     busy.value = true; error.value = null; saved.value = false
     try {
       const value = await usdtApi.save(draft.value)
@@ -66,13 +74,18 @@ export function useUSDTAdmin() {
     finally { if (active) busy.value = false }
   }
   async function check(network: USDTNetworkID, rail?: string): Promise<void> {
-    if (checking.value) return
-    checking.value = rail ?? network; probe.value = null
-    try { const result = await usdtApi.check(network, rail); if (active) probe.value = result.success ? t('adminUsdt.checkOK') : t(`errors.api.${result.errorCode}`) }
-    catch (caught) { if (active) probe.value = localizedError(caught, 'errors.adminAction') }
-    finally { if (active) checking.value = null }
+    if (!active || checking.value || busy.value || loading.value || !loaded.value) return
+    const key = rail ?? network
+    const generation = probeLatest.begin()
+    checking.value = key; probe.value = null
+    try {
+      const result = await usdtApi.check(network, rail)
+      if (active && probeLatest.isCurrent(generation)) probe.value = { rail: key, text: result.success ? t('adminUsdt.checkOK') : t(`errors.api.${result.errorCode}`) }
+    } catch (caught) { if (active && probeLatest.isCurrent(generation)) probe.value = { rail: key, text: localizedError(caught, 'errors.adminAction') } }
+    finally { if (active && probeLatest.isCurrent(generation)) checking.value = null }
   }
   async function loadReview(more = false): Promise<void> {
+    if (!active) return
     reviewController?.abort(); reviewController = new AbortController()
     const generation = reviewLatest.begin()
     try {
@@ -81,13 +94,18 @@ export function useUSDTAdmin() {
     } catch (caught) { if (active && reviewLatest.isCurrent(generation)) error.value = localizedError(caught, 'errors.adminLoad') }
   }
   async function dismiss(id: string, reason: string): Promise<void> {
-    if (resolving.value) return
+    if (!active || resolving.value) return
     resolving.value = id; error.value = null
     try { await usdtApi.dismiss(id, reason); if (active) { await loadReview(); } }
     catch (caught) { if (active) error.value = localizedError(caught, 'errors.adminAction') }
     finally { if (active) resolving.value = null }
   }
   onMounted(() => { void load(); schedule() })
-  onScopeDispose(() => { active = false; latest.dispose(); statusLatest.dispose(); reviewLatest.dispose(); loadController?.abort(); statusController?.abort(); reviewController?.abort(); if (timer !== undefined) clearTimeout(timer) })
+  onScopeDispose(() => {
+    active = false; latest.dispose(); statusLatest.dispose(); reviewLatest.dispose(); probeLatest.dispose()
+    loadController?.abort(); statusController?.abort(); reviewController?.abort()
+    if (timer !== undefined) clearTimeout(timer)
+    draft.value = null; probe.value = null; checking.value = null
+  })
   return { draft, status, review, loading, loaded, busy, checking, resolving, error, saved, probe, load, refresh, save, check, loadReview, dismiss }
 }

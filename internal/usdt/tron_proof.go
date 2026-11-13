@@ -26,8 +26,25 @@ func decodeTronReceipt(spec NetworkSpec, r tronReceipt, hash string, addresses [
 	if r.ID != hash || len(hash) != 64 || r.BlockNumber <= 0 || r.Timestamp <= 0 {
 		return nil, ErrProof
 	}
-	if r.Receipt.Result != "SUCCESS" || (r.Result != "" && r.Result != "SUCCESS") {
+	// TransactionInfo.result defaults to SUCESS=0 and may be omitted; the
+	// contract receipt defaults to DEFAULT=0, while executed SUCCESS is 1.
+	switch r.Result {
+	case "", "SUCESS", "SUCCESS", "FAILED":
+	default:
+		return nil, ErrProof
+	}
+	switch r.Receipt.Result {
+	case "SUCCESS":
+		if r.Result == "FAILED" {
+			return result, nil
+		}
+	case "REVERT", "BAD_JUMP_DESTINATION", "OUT_OF_MEMORY", "PRECOMPILED_CONTRACT",
+		"STACK_TOO_SMALL", "STACK_TOO_LARGE", "ILLEGAL_OPERATION", "STACK_OVERFLOW",
+		"OUT_OF_ENERGY", "OUT_OF_TIME", "JVM_STACK_OVER_FLOW", "UNKNOWN",
+		"TRANSFER_FAILED", "INVALID_CODE":
 		return result, nil
+	default:
+		return nil, ErrProof
 	}
 	for index, log := range r.Logs {
 		contract, err := tronHexAddress(log.Address)
@@ -62,5 +79,3 @@ func decodeTronReceipt(spec NetworkSpec, r tronReceipt, hash string, addresses [
 	}
 	return result, nil
 }
-
-func timeNowMinusThirty() int64 { return time.Now().UTC().Add(-30 * time.Second).Unix() }

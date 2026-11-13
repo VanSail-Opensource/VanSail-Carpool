@@ -82,7 +82,10 @@ func renewalQuoteTx(ctx context.Context, tx *sql.Tx, userID, purchaseID string, 
 	}
 	addonIDs := make([]string, 0, len(addons))
 	for _, addon := range addons {
-		grossPerTerm += addon.PriceTXBMinor
+		grossPerTerm, err = checkedPriceSum(grossPerTerm, addon.PriceTXBMinor)
+		if err != nil {
+			return model.RenewalQuote{}, model.Combo{}, nil, err
+		}
 		addonIDs = append(addonIDs, addon.GroupID)
 	}
 	if !customPrice.Valid {
@@ -92,6 +95,9 @@ func renewalQuoteTx(ctx context.Context, tx *sql.Tx, userID, purchaseID string, 
 		}
 		combo.PriceTXBMinor = grossPerTerm
 		for _, addon := range addons {
+			if addon.PriceTXBMinor < 0 || combo.PriceTXBMinor < addon.PriceTXBMinor {
+				return model.RenewalQuote{}, model.Combo{}, nil, ErrConflict
+			}
 			combo.PriceTXBMinor -= addon.PriceTXBMinor
 		}
 		if combo.PriceTXBMinor < 0 {
@@ -112,6 +118,10 @@ func renewalQuoteTx(ctx context.Context, tx *sql.Tx, userID, purchaseID string, 
 	if discount.Recurring && discount.GrantID != "" {
 		couponGrantID = &discount.GrantID
 	}
-	return model.RenewalQuote{PurchaseID: purchaseID, ComboID: combo.ID, TermCount: termCount, GrossPrice: model.TXBMoney(grossPerTerm), Discount: model.TXBMoney(discount.DiscountMinor), PricePerTerm: model.TXBMoney(discount.NetMinor), TotalPrice: model.TXBMoney(discount.NetMinor * int64(termCount)), CouponGrantID: couponGrantID, EffectiveAt: start,
+	totalPrice, err := checkedPriceTotal(discount.NetMinor, termCount)
+	if err != nil {
+		return model.RenewalQuote{}, model.Combo{}, nil, err
+	}
+	return model.RenewalQuote{PurchaseID: purchaseID, ComboID: combo.ID, TermCount: termCount, GrossPrice: model.TXBMoney(grossPerTerm), Discount: model.TXBMoney(discount.DiscountMinor), PricePerTerm: model.TXBMoney(discount.NetMinor), TotalPrice: model.TXBMoney(totalPrice), CouponGrantID: couponGrantID, EffectiveAt: start,
 		ExpiresAt: start.AddDate(0, 0, combo.ValidityDays*termCount), AddonSquadUUIDs: addonIDs}, combo, addons, nil
 }

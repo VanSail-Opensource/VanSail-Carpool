@@ -27,11 +27,12 @@ delete:
   security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin, Activity]
   operationId: deleteAdminActivityGame
-  summary: Hard-delete a betting game and feature-linked records
+  summary: Remove a betting game from active configuration
+  description: Disables the game and retains a removal tombstone, settled bets, immutable outcomes, ledger entries and original idempotency bindings. Retained evidence supports recovery and prevents removed games or old action keys from creating new bets.
   parameters:
     - $ref: '../openapi.yaml#/components/parameters/ResourceID'
   responses:
-    '204': { description: Game data removed; settled balance outcomes are unchanged. }
+    '204': { description: Active game configuration removed with settlement and recovery evidence retained. }
     '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
     '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
     '404': { $ref: '../openapi.yaml#/components/responses/NotFound' }

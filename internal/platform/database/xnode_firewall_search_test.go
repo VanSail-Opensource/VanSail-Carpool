@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/netip"
+	"slices"
 	"testing"
 	"time"
 
@@ -64,5 +65,48 @@ func TestFirewallSearchScansBeyondFirstPageAndMatchesIPv6Overlap(t *testing.T) {
 		if err != nil || len(page.Items) != 1 {
 			t.Fatal("IPv6 overlap", query, page, err)
 		}
+	}
+}
+
+func TestFirewallSearchUsesExactChronologyAcrossFractionalWidths(t *testing.T) {
+	s, _, _ := xnodeTrafficFixture(t)
+	ctx := context.Background()
+	now := time.Date(2030, 1, 2, 3, 4, 5, 0, time.UTC)
+	for i, value := range []struct{ id, at string }{
+		{"whole", stamp(now)},
+		{"fraction-b", stamp(now.Add(500 * time.Millisecond))},
+		{"fraction-a", now.Add(500 * time.Millisecond).Format("2006-01-02T15:04:05.000000000Z")},
+		{"latest", stamp(now.Add(500*time.Millisecond + time.Nanosecond))},
+	} {
+		ip := fmt.Sprintf("8.8.8.%d", i+1)
+		if _, err := s.db.ExecContext(ctx, `INSERT INTO xnode_firewall_bans(generation,prefix,ip,rule,detected_count,detected_at,until_at,refresh_seconds,issued_version,participants,expired)
+ VALUES($1,$2,$3,'closed_port','1',$4,$5,60,1,$6,$6)`, value.id, ip+"/32", ip, value.at, stamp(now.Add(time.Hour)), []byte{}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	want := []string{"latest", "fraction-b", "fraction-a", "whole"}
+	bans, err := s.FirewallBans(ctx, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, ban := range bans {
+		got = append(got, ban.Generation)
+	}
+	if !slices.Equal(got, want) {
+		t.Fatal("ban list sorted timestamp spelling", got, want)
+	}
+	got = nil
+	cursor := ""
+	for range len(want) {
+		page, err := s.SearchFirewallBans(ctx, netip.Prefix{}, cursor, 1)
+		if err != nil || len(page.Items) != 1 {
+			t.Fatal("timestamp cursor skipped a generation", page, err)
+		}
+		got = append(got, page.Items[0].Generation)
+		cursor = page.NextCursor
+	}
+	if !slices.Equal(got, want) || cursor != "" {
+		t.Fatal("exact chronological pagination", got, cursor)
 	}
 }

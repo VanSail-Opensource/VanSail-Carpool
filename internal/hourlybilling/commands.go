@@ -77,9 +77,14 @@ func (s *Service) queue(ctx context.Context, actorID, ownerID, kind, key string,
 	if receipt, found, err := s.store.ProviderOperationForActorKey(ctx, actorID, kind, scopedKey, fingerprint); found || err != nil {
 		return receipt, err
 	}
-	operation, _, err := s.store.CreateProviderOperation(ctx, providerops.CreateInput{ActorUserID: actorID, OwnerUserID: ownerID,
+	input := providerops.CreateInput{ActorUserID: actorID, OwnerUserID: ownerID,
 		Kind: kind, IdempotencyKey: scopedKey, RequestFingerprint: fingerprint, SealedTarget: sealed,
-		Items: []providerops.ItemInput{{Key: "hourly", TargetType: "hourly_squad", TargetID: target.GroupID}}}, s.now().UTC())
+		Items: []providerops.ItemInput{{Key: "hourly", TargetType: "hourly_squad", TargetID: target.GroupID}}}
+	create := s.store.CreateProviderOperation
+	if target.Admin {
+		create = s.store.CreateAdminHourlyDisableOperation
+	}
+	operation, _, err := create(ctx, input, s.now().UTC())
 	return operation.Receipt, err
 }
 

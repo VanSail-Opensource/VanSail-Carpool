@@ -28,7 +28,7 @@ func (s *Store) retryAttempt_PreparePurchasePricing(ctx context.Context, input P
 		squads = append(squads, g.GroupID)
 	}
 	var current string
-	err = tx.QueryRowContext(ctx, `SELECT id FROM purchases WHERE user_id=$1 AND status IN ('active','activating') AND valid_until>$2 ORDER BY valid_until DESC,id LIMIT 1`, input.UserID, pricingStamp(now)).Scan(&current)
+	err = tx.QueryRowContext(ctx, `SELECT id FROM purchases WHERE user_id=$1 AND status IN ('active','activating') AND `+purchaseTimestampOrderSQL("valid_until")+`>$2 ORDER BY `+purchaseTimestampOrderSQL("valid_until")+` DESC,id LIMIT 1`, input.UserID, purchaseTimestampOrder(now)).Scan(&current)
 	tx.Rollback()
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return err
@@ -75,7 +75,7 @@ func (s *Store) CreatePurchase(ctx context.Context, input PurchaseInput, now tim
 
 func (s *Store) queuedRenewalDecisionTx(ctx context.Context, tx *sql.Tx, user string, now time.Time) (*model.PricingDecision, error) {
 	var current, product string
-	err := tx.QueryRowContext(ctx, `SELECT id,combo_id FROM purchases WHERE user_id=$1 AND status IN ('active','activating') AND valid_until>$2 ORDER BY valid_until DESC,id LIMIT 1`, user, pricingStamp(now)).Scan(&current, &product)
+	err := tx.QueryRowContext(ctx, `SELECT id,combo_id FROM purchases WHERE user_id=$1 AND status IN ('active','activating') AND `+purchaseTimestampOrderSQL("valid_until")+`>$2 ORDER BY `+purchaseTimestampOrderSQL("valid_until")+` DESC,id LIMIT 1`, user, purchaseTimestampOrder(now)).Scan(&current, &product)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}

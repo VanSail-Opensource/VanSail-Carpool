@@ -44,6 +44,9 @@ func (s *Store) retryAttempt_adminBalanceChange(ctx context.Context, actorID, us
 		return model.LedgerEntry{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
+	if err := catalogAdminActorTx(ctx, tx, actorID); err != nil {
+		return model.LedgerEntry{}, err
+	}
 	var existingID, existingUserID, existingNote string
 	var existingDelta int64
 	if err := tx.QueryRowContext(ctx, `SELECT id,user_id,delta_txb_minor,note FROM ledger_entries WHERE kind=$1 AND reference_id=$2`, ledgerKind, referenceID).
@@ -51,10 +54,14 @@ func (s *Store) retryAttempt_adminBalanceChange(ctx context.Context, actorID, us
 		if existingUserID != userID || existingDelta != delta || existingNote != reason {
 			return model.LedgerEntry{}, ErrConflict
 		}
+		entry, err := scanLedger(tx.QueryRowContext(ctx, ledgerSelect+` WHERE id=$1`, existingID))
+		if err != nil {
+			return model.LedgerEntry{}, err
+		}
 		if err := tx.Commit(); err != nil {
 			return model.LedgerEntry{}, err
 		}
-		return s.LedgerEntryByID(ctx, existingID)
+		return entry, nil
 	} else if !errors.Is(err, sql.ErrNoRows) {
 		return model.LedgerEntry{}, err
 	}
@@ -87,10 +94,14 @@ func (s *Store) retryAttempt_adminBalanceChange(ctx context.Context, actorID, us
 	if err != nil {
 		return model.LedgerEntry{}, err
 	}
+	entry, err := scanLedger(tx.QueryRowContext(ctx, ledgerSelect+` WHERE id=$1`, entryID))
+	if err != nil {
+		return model.LedgerEntry{}, err
+	}
 	if err := tx.Commit(); err != nil {
 		return model.LedgerEntry{}, err
 	}
-	return s.LedgerEntryByID(ctx, entryID)
+	return entry, nil
 }
 
 func adminFinanceFacts(change string, amount, balance int64, reason string, now time.Time) map[string]string {

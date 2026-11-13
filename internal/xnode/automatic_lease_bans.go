@@ -20,7 +20,11 @@ func (m *Master) releaseAutomaticLeaseBans(ctx context.Context) (bool, error) {
 	if len(items) == 0 {
 		return false, nil
 	}
-	if err := repo.ReleaseAutomaticLeaseBans(ctx, items, m.service.Now()); err != nil {
+	grants := make([]AutomaticLeaseGrant, len(items))
+	for i, item := range items {
+		grants[i] = item.grant
+	}
+	if err := repo.ReleaseAutomaticLeaseBans(ctx, grants, m.service.Now()); err != nil {
 		return false, err
 	}
 	m.automaticLeases.acknowledgeBanReleases(items)
@@ -43,7 +47,7 @@ func (m *automaticLeaseManager) protectedEventIPs(events []wire.FirewallEvent, n
 		if lease := m.leases[ip]; lease != nil && lease.until.After(now) {
 			ips[ip.String()] = true
 			if recheck {
-				m.pendingBans[ip] = lease.generation
+				m.queueBanReleaseLocked(lease)
 			}
 		}
 	}
@@ -52,4 +56,11 @@ func (m *automaticLeaseManager) protectedEventIPs(events []wire.FirewallEvent, n
 		result = append(result, ip)
 	}
 	return result
+}
+
+// A late event can need another release without renewing the lease itself.
+// Each immutable intent therefore has its own identity, independent of the
+// delivery generation, so an older SQL completion cannot erase newer work.
+func (m *automaticLeaseManager) queueBanReleaseLocked(item *automaticLease) {
+	m.pendingBans[item.ip] = &automaticBanRelease{grant: AutomaticLeaseGrant{IP: item.ip.String(), Generation: item.generation, Until: item.until}}
 }

@@ -1,5 +1,4 @@
 import { createApp } from 'vue'
-import { installPricingCheckout } from './pricing-checkout'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import ui from '@nuxt/ui/vue-plugin'
 import { setExperience } from '@/utils/experience'
@@ -12,7 +11,7 @@ import PricingAudit from './PricingAudit.vue'
 import '@/styles/main.css'
 import '@/browser/styles.css'
 
-setExperience(new URLSearchParams(location.search).get('view') === 'checkout' ? 'miniapp' : 'browser')
+setExperience('browser')
 initializeBrowserTheme()
 const params = new URLSearchParams(location.search)
 if (params.has('light')) setBrowserTheme('light')
@@ -95,7 +94,6 @@ const router = createRouter({ history: createMemoryHistory(), routes: [
   { path: '/admin/users/:userId/pricing', component: PricingAudit, meta: { pricingMode: 'user' } },
 ] })
 await router.push(view === 'product' ? '/admin/pricing/products/combo:audit-combo' : view === 'user' ? '/admin/users/99101/pricing' : view === 'operations' || view === 'exports' ? `/admin/pricing/${view}` : '/admin/pricing')
-if (view === 'checkout') installPricingCheckout(params)
 const app=createApp(PricingAudit, { view }).use(createPinia()).use(router).use(ui)
 app.config.globalProperties.$t=t
 app.mount('#app')

@@ -72,7 +72,7 @@ func TestIPLookupRefreshConsumesConfiguredUnitsAndRefundsOnce(t *testing.T) {
 	}
 	finishIP(t, store, op.ID, false)
 	c.RefreshQuotaCost = 3
-	if err := store.SaveIPLookupSettings(ctx, user, c, nil, nil); err != nil {
+	if err := store.SaveIPLookupSettings(ctx, createTestAdmin(t, store, ipLookupAdminTelegramID).ID, c, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	q, err := service.Quote(ctx, user, "8.8.8.8", true)
@@ -100,7 +100,7 @@ func TestIPLookupRefreshConsumesConfiguredUnitsAndRefundsOnce(t *testing.T) {
 		t.Fatalf("receipt %+v %v", check, err)
 	}
 	c.RefreshQuotaCost = 8
-	if err := store.SaveIPLookupSettings(ctx, user, c, nil, nil); err != nil {
+	if err := store.SaveIPLookupSettings(ctx, createTestAdmin(t, store, ipLookupAdminTelegramID).ID, c, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	q, err = service.Quote(ctx, user, "8.8.8.8", true)

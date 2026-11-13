@@ -9,7 +9,7 @@ const routerMock = vi.hoisted(() => ({ push: vi.fn() }))
 
 vi.mock('@/composables/useSquadAddition', () => squadAdditionMock)
 vi.mock('@/components/catalog/useCatalogSquadPresentation', () => ({
-  useCatalogSquadPresentation: () => ({ featuredIds: shallowRef([]), orderedIds: shallowRef([]) }),
+  useCatalogSquadPresentation: () => ({ orderedIds: shallowRef([]) }),
 }))
 vi.mock('vue-router', async (importOriginal) => ({
   ...await importOriginal<typeof import('vue-router')>(),
@@ -17,6 +17,7 @@ vi.mock('vue-router', async (importOriginal) => ({
 }))
 
 import SquadAdditionDialog from './SquadAdditionDialog.vue'
+import SquadAdditionCheckout from './SquadAdditionCheckout.vue'
 
 const active = {
   id: 'purchase-1',
@@ -85,5 +86,25 @@ describe('SquadAdditionDialog', () => {
       'completed',
       'active',
     ])
+    wrapper.unmount()
+  })
+
+  it('keeps the submitted selection locked while an add-on purchase is pending', async () => {
+    const wrapper = mountDialog()
+    const controller = squadAdditionMock.useSquadAddition.mock.results.at(-1)!.value
+    await wrapper.get('[data-haptic="confirm"]').trigger('click')
+    controller.purchasing.value = true
+    await wrapper.vm.$nextTick()
+    const checkout = wrapper.getComponent(SquadAdditionCheckout)
+    expect(checkout.props('purchasing')).toBe(true)
+    checkout.vm.$emit('back')
+    await wrapper.vm.$nextTick()
+    expect(wrapper.findAll('[data-slot="item"]').map(item => item.attributes('data-state'))).toEqual(['completed', 'active'])
+    controller.purchasing.value = false
+    await wrapper.vm.$nextTick()
+    checkout.vm.$emit('back')
+    await wrapper.vm.$nextTick()
+    expect(wrapper.findAll('[data-slot="item"]').map(item => item.attributes('data-state'))).toEqual(['active', 'inactive'])
+    wrapper.unmount()
   })
 })

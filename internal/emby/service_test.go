@@ -45,22 +45,22 @@ func TestHardenPolicyPreservesRemoteAccessAndForcesRestrictions(t *testing.T) {
 	}
 }
 
-func TestSetupUsesServerPriceAndProvisioningContext(t *testing.T) {
+func TestSetupPreparationUsesServerPriceAndProvisioningContext(t *testing.T) {
 	t.Parallel()
 	repository := &serviceRepository{baseUsername: "ada"}
 	remote := newServiceRemote()
 	secrets := &serviceSecrets{}
 	service := NewService(repository, remote, fixedPrice(275), secrets)
 	rating := int32(13)
-	account, created, err := service.Setup(context.Background(), "user-1", "private password", Preferences{MaxParentalRating: &rating, DisabledLibraryIDs: []string{"movies", "movies"}})
-	if err != nil || !created || account.SetupPriceTXBMinor != 275 {
-		t.Fatalf("Setup() = (%+v, %v, %v)", account, created, err)
+	input, err := service.prepareSetup(context.Background(), "user-1", "private password", Preferences{MaxParentalRating: &rating, DisabledLibraryIDs: []string{"movies", "movies"}})
+	if err != nil || input.SetupPriceTXBMinor != 275 || input.ID == "" || input.PasswordCiphertext == "" {
+		t.Fatalf("prepareSetup() = (%+v, %v)", input, err)
 	}
 	if secrets.context != "emby.provisioning.password:user-1" || secrets.plaintext != "private password" {
 		t.Fatalf("sealed secret = context %q plaintext %q", secrets.context, secrets.plaintext)
 	}
-	if repository.record.BaseUsername != "ada" || repository.record.SetupPriceTXBMinor != 275 || !reflect.DeepEqual(repository.record.Preferences.DisabledLibraryIDs, []string{"movies"}) {
-		t.Fatalf("queued record = %+v", repository.record)
+	if input.BaseUsername != "ada" || input.SetupPriceTXBMinor != 275 || !reflect.DeepEqual(input.Preferences.DisabledLibraryIDs, []string{"movies"}) {
+		t.Fatalf("prepared input = %+v", input)
 	}
 }
 
@@ -151,10 +151,6 @@ func TestLinkedPreferencesAndPasswordNeverPersistPlaintext(t *testing.T) {
 	accounts, err := service.ListAccounts(context.Background(), 10)
 	if err != nil || len(accounts) != 1 || accounts[0].ID != "account" {
 		t.Fatalf("ListAccounts() = (%+v, %v)", accounts, err)
-	}
-	retried, err := service.RetryProvisioning(context.Background(), "account")
-	if err != nil || retried.ID != "account" {
-		t.Fatalf("RetryProvisioning() = (%+v, %v)", retried, err)
 	}
 }
 

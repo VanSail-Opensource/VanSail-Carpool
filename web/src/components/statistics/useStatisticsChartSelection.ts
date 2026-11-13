@@ -12,7 +12,6 @@ export function useStatisticsChartSelection<T extends StatisticsChartSelectable>
     const activeId = hoveredId.value ?? selectedId.value
     return items.value.find((item) => item.interactionId === activeId)
   })
-  const hasActive = computed(() => explicitActiveItem.value !== undefined)
   const activeItem = computed(() => explicitActiveItem.value ?? items.value[0])
 
   function activate(interactionId: string): void {
@@ -27,13 +26,9 @@ export function useStatisticsChartSelection<T extends StatisticsChartSelectable>
     selectedId.value = selectedId.value === interactionId ? undefined : interactionId
   }
 
-  function isActive(interactionId: string): boolean {
-    return activeItem.value?.interactionId === interactionId
-  }
-
   function isSelected(interactionId: string): boolean {
     return selectedId.value === interactionId
   }
 
-  return { activeItem, hasActive, activate, deactivate, select, isActive, isSelected }
+  return { activeItem, activate, deactivate, select, isSelected }
 }

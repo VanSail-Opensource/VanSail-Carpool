@@ -36,6 +36,19 @@ describe('response cache transport', () => {
     expect(send).toHaveBeenCalledTimes(2)
   })
 
+  it('neither retains nor shares explicit no-store responses', async () => {
+    const first = deferred<number>()
+    const second = deferred<number>()
+    const send = vi.fn().mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise)
+    const firstRead = cachedTransport(path, { cache: 'no-store' }, send)
+    const secondRead = cachedTransport(path, { cache: 'no-store' }, send)
+    expect(send).toHaveBeenCalledTimes(2)
+    first.resolve(1)
+    second.resolve(2)
+    expect(await Promise.all([firstRead, secondRead])).toEqual([1, 2])
+    expect(readResponseCache(key)).toBeUndefined()
+  })
+
   it('does not overwrite a newer snapshot with a slower previous read', async () => {
     const old = deferred<number>()
     const request = cachedTransport(path, { signal: new AbortController().signal }, () => old.promise)

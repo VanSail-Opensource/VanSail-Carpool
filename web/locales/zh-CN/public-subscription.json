@@ -8,6 +8,7 @@
     "title": "订阅",
     "unavailable": "此订阅链接不可用。",
     "unavailableHint": "链接可能已过期或被替换，请从小程序获取当前链接。",
+    "refreshFailed": "无法刷新订阅，当前显示的信息可能已过期。请重试后再使用订阅链接。",
     "account": "账号",
     "usage": "已用流量",
     "unlimited": "不限量",

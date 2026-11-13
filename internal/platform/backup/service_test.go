@@ -20,11 +20,15 @@ func TestRemoveExpiredCleansPublishedAndCrashTemporaryFiles(t *testing.T) {
 	now := time.Now().UTC()
 	old := now.Add(-8 * 24 * time.Hour)
 	files := map[string]bool{
-		"tx-carpool-old.dump":      true,
-		".tx-carpool-old.dump.tmp": true,
-		"tx-carpool-new.dump":      false,
-		".tx-carpool-new.dump.tmp": false,
-		"unrelated-old.dump":       false,
+		"tx-carpool-old.dump":              true,
+		".tx-carpool-old.dump.tmp":         true,
+		"tx-carpool-new.dump":              false,
+		".tx-carpool-new.dump.tmp":         false,
+		"unrelated-old.dump":               false,
+		"tx-carpool-old.dump.deleting-id":  true,
+		".tx-carpool-old.dump.deleting-id": true,
+		"tx-carpool-new.dump.deleting-id":  false,
+		"unrelated-old.dump.deleting-id":   false,
 	}
 	for name, remove := range files {
 		path := filepath.Join(directory, name)
@@ -50,6 +54,43 @@ func TestRemoveExpiredCleansPublishedAndCrashTemporaryFiles(t *testing.T) {
 		if !removed && err != nil {
 			t.Fatalf("%s was removed: %v", name, err)
 		}
+	}
+}
+
+func TestDeletionStageRetainsHistoricalRestoreProtection(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	db, err := testdatabase.Open(ctx, t)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+	directory := t.TempDir()
+	now := time.Now().UTC()
+	old := now.Add(-8 * 24 * time.Hour)
+	path := filepath.Join(directory, "tx-carpool-protected.dump")
+	staged := path + ".deleting-protected"
+	if err := os.WriteFile(staged, []byte("recovery evidence"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chtimes(staged, old, old); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.ExecContext(ctx, `INSERT INTO backup_runs(id,path,status,created_at,completed_at)
+		VALUES('protected',$1,'complete',$2,$2)`, path, old.Format(time.RFC3339Nano)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.ExecContext(ctx, `INSERT INTO restore_jobs(id,backup_run_id,status,staged_path,rescue_path,source_sha256,created_at,updated_at)
+		VALUES('protected-restore','protected','ready','stage','rescue','hash',$1,$1)`, old.Format(time.RFC3339Nano)); err != nil {
+		t.Fatal(err)
+	}
+	service := NewService(db, nil, directory, 7*24*time.Hour)
+	service.now = func() time.Time { return now }
+	if err := service.RemoveExpired(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(staged); err != nil {
+		t.Fatal("retention deleted protected recovery evidence", err)
 	}
 }
 

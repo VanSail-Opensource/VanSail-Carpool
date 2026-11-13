@@ -1,5 +1,5 @@
 import { effectScope, shallowRef } from 'vue'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AutoRenewal } from '@/api/types'
 
@@ -25,6 +25,7 @@ const ineligibleRenewal: AutoRenewal = {
 }
 
 describe('useAutoRenewal', () => {
+  beforeEach(() => { getAutoRenewal.mockReset(); setAutoRenewal.mockReset() })
   it('keeps an ineligible automatic-renewal toggle disabled', async () => {
     getAutoRenewal.mockResolvedValue(ineligibleRenewal)
     const purchaseID = shallowRef('purchase-1')
@@ -37,6 +38,38 @@ describe('useAutoRenewal', () => {
     expect(state.ineligibleReason.value).toBe('INSUFFICIENT_BALANCE')
     expect(await state.setEnabled(true)).toBe(false)
     expect(setAutoRenewal).not.toHaveBeenCalled()
+    scope.stop()
+  })
+
+  it('ignores a completed update after the purchase changes', async () => {
+    let finish!: (value: AutoRenewal) => void
+    setAutoRenewal.mockReturnValue(new Promise<AutoRenewal>(resolve => { finish = resolve }))
+    const purchaseID = shallowRef('purchase-1')
+    const scope = effectScope()
+    const state = scope.run(() => useAutoRenewal(() => purchaseID.value, () => true))!
+    const pending = state.setEnabled(false)
+    purchaseID.value = 'purchase-2'
+    state.reset()
+    finish(ineligibleRenewal)
+    expect(await pending).toBe(false)
+    expect(state.renewal.value).toBeNull()
+    expect(state.enabled.value).toBe(true)
+    expect(state.updating.value).toBe(false)
+    scope.stop()
+  })
+
+  it('does not let an earlier read undo a confirmed update', async () => {
+    let finish!: (value: AutoRenewal) => void
+    getAutoRenewal.mockReturnValue(new Promise<AutoRenewal>(resolve => { finish = resolve }))
+    setAutoRenewal.mockResolvedValue(ineligibleRenewal)
+    const scope = effectScope()
+    const state = scope.run(() => useAutoRenewal(() => 'purchase-1', () => true))!
+    const pending = state.load()
+    expect(await state.setEnabled(false)).toBe(true)
+    finish({ ...ineligibleRenewal, enabled: true })
+    await pending
+    expect(state.enabled.value).toBe(false)
+    expect(state.loading.value).toBe(false)
     scope.stop()
   })
 })

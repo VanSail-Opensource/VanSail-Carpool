@@ -17,6 +17,7 @@ type compiledState struct {
 	until        time.Time
 	config       wire.Config
 	fingerprint  [32]byte
+	firstSync    map[int64]FirstSyncSubject
 }
 
 type compileFailure struct {
@@ -31,13 +32,23 @@ type compileFailure struct {
 func (m *Master) cachedConfiguration(ctx context.Context, peer *agentPeer, _ bool) (wire.Config, error) {
 	repo, supported := m.service.repo.(compileVersionRepository)
 	if !supported {
-		return m.service.Compile(ctx, peer.nodeID)
+		config, subjects, err := m.service.compileWithFirstSync(ctx, peer.nodeID)
+		if err == nil {
+			peer.compiled = &compiledState{config: config, firstSync: subjects}
+		}
+		return config, err
 	}
 	now := m.service.now()
 	localVersion := m.service.localCompileRevision.Load()
 	version, next, err := repo.XNodeCompileVersion(ctx, now)
 	if err != nil {
 		return wire.Config{}, err
+	}
+	// The epoch lookup itself may wait on storage across an access boundary.
+	// Neither a cached candidate nor a fresh compile may reuse that old window.
+	now = m.service.now()
+	if !next.IsZero() && !now.Before(next) {
+		return wire.Config{}, ErrConflict
 	}
 	// A full-state resend does not change the authoritative inputs. Reuse the
 	// candidate even when the agent requests a baseline after a reconnect gap.
@@ -49,7 +60,7 @@ func (m *Master) cachedConfiguration(ctx context.Context, peer *agentPeer, _ boo
 	if sameFailure && now.Before(failed.at) {
 		return wire.Config{}, failed.err
 	}
-	config, err := m.service.Compile(ctx, peer.nodeID)
+	config, subjects, err := m.service.compileWithFirstSync(ctx, peer.nodeID)
 	if err != nil {
 		if m.compileMayBackoff() {
 			delay := time.Second
@@ -77,11 +88,11 @@ func (m *Master) cachedConfiguration(ctx context.Context, peer *agentPeer, _ boo
 		next = refresh
 	}
 	// Never publish a candidate compiled across a concurrently committed change.
-	after, _, err := repo.XNodeCompileVersion(ctx, now)
+	after, _, err := repo.XNodeCompileVersion(ctx, m.service.now())
 	if err != nil {
 		return wire.Config{}, err
 	}
-	if after != version || m.service.localCompileRevision.Load() != localVersion {
+	if after != version || m.service.localCompileRevision.Load() != localVersion || !next.IsZero() && !m.service.now().Before(next) {
 		return wire.Config{}, ErrConflict
 	}
 	fingerprint := compiledFingerprint(config)
@@ -89,10 +100,11 @@ func (m *Master) cachedConfiguration(ctx context.Context, peer *agentPeer, _ boo
 		// A coarse database epoch changed, but this node's effective dependencies
 		// did not. Preserve the prepared wire candidate and native proof.
 		saved.version, saved.localVersion, saved.until = version, localVersion, next
+		saved.firstSync = subjects
 		peer.compileFailure = nil
 		return saved.config, nil
 	}
-	peer.compiled = &compiledState{version: version, localVersion: localVersion, until: next, config: config, fingerprint: fingerprint}
+	peer.compiled = &compiledState{version: version, localVersion: localVersion, until: next, config: config, fingerprint: fingerprint, firstSync: subjects}
 	peer.compileFailure = nil
 	return config, nil
 }

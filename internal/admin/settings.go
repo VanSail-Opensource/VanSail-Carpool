@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/billing"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
@@ -54,10 +55,11 @@ var settingDefinitions = map[string]SettingDefinition{
 	"activity.group_message_reward_txb":      {Validate: validateNonnegativeTXB},
 }
 
-// SettingsRepository stores encrypted or plain values without interpreting them.
+// SettingsRepository atomically stores encrypted/plain administrative values and
+// their sanitized mutation audit, without interpreting the values.
 
 type SettingsRepository interface {
-	PutSetting(context.Context, string, string, bool, *string) error
+	PutAdminSetting(context.Context, string, string, bool, string, time.Time) error
 	GetSetting(context.Context, string) (database.Setting, error)
 	ListSettings(context.Context) ([]database.Setting, error)
 }
@@ -111,6 +113,9 @@ func (s *SettingsService) Put(ctx context.Context, actorID, key, value string) e
 	return s.put(ctx, actorID, key, value)
 }
 func (s *SettingsService) put(ctx context.Context, actorID, key, value string) error {
+	if strings.HasPrefix(key, "activity.") {
+		return errors.New("activity settings require the dedicated atomic interface")
+	}
 	if key == database.EmbyURLSetting || key == database.EmbyTokenSetting {
 		return errors.New("Emby connection settings require the dedicated atomic interface")
 	}
@@ -119,6 +124,9 @@ func (s *SettingsService) put(ctx context.Context, actorID, key, value string) e
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if err := s.validateLegacyPaymentSettingWrite(ctx, key); err != nil {
+		return err
+	}
 	definition, ok := settingDefinitions[key]
 	if !ok {
 		return fmt.Errorf("unknown setting %q", key)
@@ -132,11 +140,6 @@ func (s *SettingsService) put(ctx context.Context, actorID, key, value string) e
 	if definition.Validate != nil {
 		if err := definition.Validate(value); err != nil {
 			return fmt.Errorf("%s: %w", key, err)
-		}
-	}
-	if key == "activity.daily_reward_min_txb" || key == "activity.daily_reward_max_txb" {
-		if err := s.validateActivityRewardRange(ctx, key, value); err != nil {
-			return err
 		}
 	}
 	if err := s.validateTurnstileSettings(ctx, key, value); err != nil {
@@ -155,37 +158,7 @@ func (s *SettingsService) put(ctx context.Context, actorID, key, value string) e
 			return err
 		}
 	}
-	if err := s.repository.PutSetting(ctx, key, stored, definition.Secret, &actorID); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *SettingsService) validateActivityRewardRange(ctx context.Context, key, value string) error {
-	proposed, err := billing.ParseTXBMajor(value)
-	if err != nil {
-		return fmt.Errorf("%s: invalid TXB amount", key)
-	}
-	otherKey := "activity.daily_reward_max_txb"
-	if key == otherKey {
-		otherKey = "activity.daily_reward_min_txb"
-	}
-	otherValue, err := s.Optional(ctx, otherKey)
-	if err != nil || strings.TrimSpace(otherValue) == "" {
-		return err
-	}
-	other, err := billing.ParseTXBMajor(otherValue)
-	if err != nil {
-		return fmt.Errorf("%s: stored reward boundary is invalid", otherKey)
-	}
-	minimum, maximum := proposed, other
-	if key == "activity.daily_reward_max_txb" {
-		minimum, maximum = other, proposed
-	}
-	if minimum > maximum {
-		return errors.New("daily reward minimum cannot exceed maximum")
-	}
-	return nil
+	return s.repository.PutAdminSetting(ctx, key, stored, definition.Secret, actorID, time.Now().UTC())
 }
 
 // SafeList exposes only known keys and masks credentials as write-only.

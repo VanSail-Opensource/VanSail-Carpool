@@ -40,7 +40,7 @@ func (s *Store) ListAuditEvents(ctx context.Context, limit int) ([]model.AuditEv
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT id,actor_user_id,action,target_type,target_id,detail,created_at FROM audit_events ORDER BY created_at DESC LIMIT $1`, limit)
+	rows, err := s.db.QueryContext(ctx, `SELECT id,actor_user_id,action,target_type,target_id,detail,created_at FROM audit_events ORDER BY `+purchaseTimestampOrderSQL("created_at")+` DESC,id DESC LIMIT $1`, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (s *Store) ListUsers(ctx context.Context, limit int) ([]model.User, error) 
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
-	rows, err := s.db.QueryContext(ctx, userSelect+` ORDER BY created_at DESC LIMIT $1`, limit)
+	rows, err := s.db.QueryContext(ctx, userSelect+` ORDER BY `+purchaseTimestampOrderSQL("created_at")+` DESC,id DESC LIMIT $1`, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func (s *Store) ListBackupRuns(ctx context.Context, limit int) ([]model.BackupRu
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT id,path,size_bytes,status,error,created_at,completed_at FROM backup_runs ORDER BY created_at DESC LIMIT $1`, limit)
+	rows, err := s.db.QueryContext(ctx, `SELECT id,path,size_bytes,status,error,created_at,completed_at FROM backup_runs ORDER BY `+purchaseTimestampOrderSQL("created_at")+` DESC,id DESC LIMIT $1`, limit)
 	if err != nil {
 		return nil, err
 	}

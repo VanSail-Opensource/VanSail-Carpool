@@ -3,28 +3,30 @@ package database
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
+	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"math"
 	"sort"
 	"time"
 )
 
 func (s *Store) LuckyDrawStatistics(ctx context.Context, drawID string, from, to time.Time, bucket string, location *time.Location) (model.AdminStatistics, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT user_id,fee_minor,reward_kind,reward_payload,created_at FROM activity_draw_results WHERE draw_id=$1 AND created_at>=$2 AND created_at<$3 ORDER BY created_at`, drawID, stamp(from), stamp(to))
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
+	if err != nil {
+		return model.AdminStatistics{}, err
+	}
+	defer tx.Rollback()
+	rows, err := tx.QueryContext(ctx, `SELECT result.user_id,result.fee_minor,COALESCE(reward.delta_txb_minor,0),result.created_at
+		FROM activity_draw_results result LEFT JOIN ledger_entries reward ON reward.kind='activity_draw_reward'
+		AND reward.reference_id=result.id AND reward.user_id=result.user_id
+		WHERE result.draw_id=$1 AND `+statisticTimeRangeSQL("result.created_at", "$2", "$3")+` ORDER BY result.created_at`, drawID, purchaseTimestampOrder(from), purchaseTimestampOrder(to))
 	if err != nil {
 		return model.AdminStatistics{}, err
 	}
 	events, err := scanStatisticEvents(rows, func(rows *sql.Rows) (statisticEvent, error) {
 		var event statisticEvent
-		var kind activity.RewardKind
-		var payload, created string
-		err := rows.Scan(&event.userID, &event.input, &kind, &payload, &created)
-		if err == nil && kind == activity.RewardTXBDelta {
-			var reward activity.Reward
-			err = json.Unmarshal([]byte(payload), &reward)
-			event.output = reward.TXBDeltaMinor
-		}
+		var created string
+		err := rows.Scan(&event.userID, &event.input, &event.output, &created)
 		if err == nil {
 			event.created, err = parseStamp(created)
 		}
@@ -33,7 +35,7 @@ func (s *Store) LuckyDrawStatistics(ctx context.Context, drawID string, from, to
 	if err != nil {
 		return model.AdminStatistics{}, err
 	}
-	distributionRows, err := s.db.QueryContext(ctx, `SELECT prize_id,prize_name,COUNT(*) FROM activity_draw_results WHERE draw_id=$1 AND created_at>=$2 AND created_at<$3 GROUP BY prize_id,prize_name ORDER BY COUNT(*) DESC,prize_name`, drawID, stamp(from), stamp(to))
+	distributionRows, err := tx.QueryContext(ctx, `SELECT prize_id,prize_name,COUNT(*) FROM activity_draw_results WHERE draw_id=$1 AND `+statisticTimeRangeSQL("created_at", "$2", "$3")+` GROUP BY prize_id,prize_name ORDER BY COUNT(*) DESC,prize_name`, drawID, purchaseTimestampOrder(from), purchaseTimestampOrder(to))
 	if err != nil {
 		return model.AdminStatistics{}, err
 	}
@@ -49,7 +51,10 @@ func (s *Store) LuckyDrawStatistics(ctx context.Context, drawID string, from, to
 	if err := distributionRows.Err(); err != nil {
 		return model.AdminStatistics{}, err
 	}
-	return aggregateStatistics(drawID, from, to, bucket, location, events, distribution), nil
+	if err = tx.Commit(); err != nil {
+		return model.AdminStatistics{}, err
+	}
+	return aggregateStatistics(drawID, from, to, bucket, location, events, distribution)
 }
 
 func scanStatisticEvents(rows *sql.Rows, scan func(*sql.Rows) (statisticEvent, error)) ([]statisticEvent, error) {
@@ -65,7 +70,7 @@ func scanStatisticEvents(rows *sql.Rows, scan func(*sql.Rows) (statisticEvent, e
 	return result, rows.Err()
 }
 
-func aggregateStatistics(resourceID string, from, to time.Time, bucket string, location *time.Location, events []statisticEvent, distribution []model.StatisticSlice) model.AdminStatistics {
+func aggregateStatistics(resourceID string, from, to time.Time, bucket string, location *time.Location, events []statisticEvent, distribution []model.StatisticSlice) (model.AdminStatistics, error) {
 	if location == nil {
 		location = time.UTC
 	}
@@ -79,10 +84,6 @@ func aggregateStatistics(resourceID string, from, to time.Time, bucket string, l
 	for _, event := range events {
 		stats.Count++
 		users[event.userID] = struct{}{}
-		stats.InputMinor += event.input
-		stats.OutputMinor += event.output
-		stats.DiscountMinor += event.discount
-		stats.AddonMinor += event.addon
 		if event.outcomeSet {
 			if event.won {
 				stats.Wins++
@@ -97,12 +98,26 @@ func aggregateStatistics(resourceID string, from, to time.Time, bucket string, l
 			buckets[key] = aggregate
 		}
 		aggregate.point.Count++
-		aggregate.point.InputMinor += event.input
-		aggregate.point.OutputMinor += event.output
+		for _, change := range []struct {
+			target *int64
+			delta  int64
+		}{
+			{&stats.InputMinor, event.input}, {&stats.OutputMinor, event.output},
+			{&stats.DiscountMinor, event.discount}, {&stats.AddonMinor, event.addon},
+			{&aggregate.point.InputMinor, event.input}, {&aggregate.point.OutputMinor, event.output},
+		} {
+			if err := addStatisticAmount(change.target, change.delta); err != nil {
+				return model.AdminStatistics{}, err
+			}
+		}
 		aggregate.users[event.userID] = struct{}{}
 	}
 	stats.UniqueUsers = int64(len(users))
-	stats.NetMinor = stats.InputMinor - stats.OutputMinor
+	var err error
+	stats.NetMinor, err = statisticNetMinor(stats.InputMinor, stats.OutputMinor)
+	if err != nil {
+		return model.AdminStatistics{}, err
+	}
 	keys := make([]string, 0, len(buckets))
 	for key := range buckets {
 		keys = append(keys, key)
@@ -111,10 +126,13 @@ func aggregateStatistics(resourceID string, from, to time.Time, bucket string, l
 	for _, key := range keys {
 		point := buckets[key].point
 		point.UniqueUsers = int64(len(buckets[key].users))
-		point.NetMinor = point.InputMinor - point.OutputMinor
+		point.NetMinor, err = statisticNetMinor(point.InputMinor, point.OutputMinor)
+		if err != nil {
+			return model.AdminStatistics{}, err
+		}
 		stats.Series = append(stats.Series, point)
 	}
-	return stats
+	return stats, nil
 }
 
 func statisticBucket(value time.Time, bucket string) string {
@@ -123,4 +141,19 @@ func statisticBucket(value time.Time, bucket string) string {
 	}
 	weekday := (int(value.Weekday()) + 6) % 7
 	return time.Date(value.Year(), value.Month(), value.Day()-weekday, 0, 0, 0, 0, value.Location()).Format(time.DateOnly)
+}
+
+func addStatisticAmount(total *int64, delta int64) error {
+	if delta > 0 && *total > math.MaxInt64-delta || delta < 0 && *total < math.MinInt64-delta {
+		return fmt.Errorf("statistic amount overflow: %w", ErrConflict)
+	}
+	*total += delta
+	return nil
+}
+
+func statisticNetMinor(input, output int64) (int64, error) {
+	if output > 0 && input < math.MinInt64+output || output < 0 && input > math.MaxInt64+output {
+		return 0, fmt.Errorf("statistic net overflow: %w", ErrConflict)
+	}
+	return input - output, nil
 }

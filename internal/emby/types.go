@@ -149,11 +149,9 @@ type Remote interface {
 
 type Repository interface {
 	EmbyBaseUsername(context.Context, string) (string, error)
-	QueueEmbySetup(context.Context, QueueSetupInput, time.Time) (Account, bool, error)
 	EmbyAccountForUser(context.Context, string) (Account, error)
 	ListEmbyAccounts(context.Context, int) ([]Account, error)
 	EmbyProvisioningByID(context.Context, string) (ProvisioningRecord, error)
-	RetryEmbyProvisioning(context.Context, string, time.Time) (Account, error)
 	BeginEmbyProvisioning(context.Context, string, time.Time) (ProvisioningRecord, error)
 	SetEmbyCandidate(context.Context, string, string, time.Time) error
 	MarkEmbyCreateAttempted(context.Context, string, time.Time) error

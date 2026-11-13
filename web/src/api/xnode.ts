@@ -61,7 +61,7 @@ export const xnodeApi = {
   previewEndpoint: (body: XNodeEndpointDraft, signal?: AbortSignal) => request<XNodeEndpointPreview>(`${root}/endpoints/preview`, { method: 'POST', body, signal, cache: 'no-store' }),
   metrics: (signal?: AbortSignal) => request<XNodeMetrics>(`${root}/metrics?summary=true`, { cache: 'no-store', signal }),
   logs: (id: string, signal?: AbortSignal) => request<Schema['XNodeLogs']>(`${root}/nodes/${encodeURIComponent(id)}/logs`, { cache: 'no-store', signal }),
-  command: (id: string, body: XNodeCommand, key: string = crypto.randomUUID()) => request<Schema['OperationReceipt']>(`${root}/nodes/${encodeURIComponent(id)}/commands`, { method: 'POST', body, headers: { 'Idempotency-Key': key }, cache: 'no-store' }),
+  command: (id: string, body: XNodeCommand, key: string) => request<Schema['OperationReceipt']>(`${root}/nodes/${encodeURIComponent(id)}/commands`, { method: 'POST', body, headers: { 'Idempotency-Key': key }, cache: 'no-store' }),
   commandResult: (id: string) => request<Schema['XNodeCommandResult']>(`${root}/operations/${encodeURIComponent(id)}`, { cache: 'no-store' }),
   certificateOperation: (id: string, profileId: string, signal?: AbortSignal) => request<{ receipt: Schema['OperationReceipt'] | null; result: Record<string, unknown> }>(`${root}/nodes/${encodeURIComponent(id)}/commands?profileId=${encodeURIComponent(profileId)}`, { cache: 'no-store', signal }),
 }

@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/pricing"
 )
@@ -22,6 +23,10 @@ func TestPricingExportRetainedRegistryHashesPrivacyAndCancellation(t *testing.T)
 	ctx := context.Background()
 	secret := "private-xray-material-never-export"
 	if _, err := s.db.ExecContext(ctx, `UPDATE xnode_identities SET credentials_cipher=$1`, secret); err != nil {
+		t.Fatal(err)
+	}
+	watermark := time.Date(2030, 1, 1, 0, 0, 0, 1, time.UTC)
+	if _, err := s.db.ExecContext(ctx, `INSERT INTO xnode_traffic_streams(agent_id,stream_id,node_id,created_at,updated_at) VALUES('export-agent','stream','node',$1,$1)`, stamp(watermark)); err != nil {
 		t.Fatal(err)
 	}
 	scope := PricingExportScope{Format: "jsonl", IncludeUsers: true, IncludeFinancial: true, Pseudonymize: true, Users: []string{parent.UserID}}
@@ -53,12 +58,18 @@ func TestPricingExportRetainedRegistryHashesPrivacyAndCancellation(t *testing.T)
 	if strings.Contains(string(raw), `"`+parent.UserID+`"`) {
 		t.Fatal("manifest exposed the pseudonym reverse mapping")
 	}
-	var manifest struct{ Files []pricingExportFile }
+	var manifest struct {
+		Files           []pricingExportFile
+		SourceWatermark time.Time
+	}
 	if err = json.Unmarshal(raw, &manifest); err != nil {
 		t.Fatal(err)
 	}
 	if len(manifest.Files) != len(pricing.Datasets()) {
 		t.Fatalf("retained registry incomplete: %d/%d", len(manifest.Files), len(pricing.Datasets()))
+	}
+	if !manifest.SourceWatermark.Equal(watermark) {
+		t.Fatal("export watermark omitted durable boot-stream receipts", manifest.SourceWatermark)
 	}
 	for _, meta := range manifest.Files {
 		file := files[meta.Name]

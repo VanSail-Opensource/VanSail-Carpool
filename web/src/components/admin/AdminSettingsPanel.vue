@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { restoreRef } from '@/api/cache/restore'
-import { computed, onMounted, reactive, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, onMounted, onScopeDispose, reactive, shallowRef, useTemplateRef, watch } from 'vue'
 import type { AdminSetting } from '@/api/types'
 import type { ActivitySettings, ActivitySettingsWrite } from '@/api/features'
 import { featuresApi } from '@/api/features'
@@ -13,17 +13,20 @@ import SwitchField from '@/components/common/SwitchField.vue'
 import { useAdminSection } from '@/composables/useAdminSection'
 import { localizedError, useI18n } from '@/i18n'
 import { writeAdminSettings } from '@/utils/adminSettingWrites'
+import { createLatestRequest } from '@/utils/latestRequest'
 import AdminSectionState from './AdminSectionState.vue'
 const { items, loading, busy, error, load, perform } = useAdminSection<AdminSetting>('settings')
 const draft = reactive<Record<string, string>>({})
-const saved = reactive({ visible: false })
+const saved = reactive({ visible: false, failed: false })
 const activitySettings = shallowRef<ActivitySettings | null>(null)
+const activityLatest = createLatestRequest()
+let disposed = false
 const activityLoading = shallowRef(true)
 const activityBusy = shallowRef(false)
 const activityError = shallowRef<string | null>(null)
 const savingAll = shallowRef(false)
-type Saveable = { save: () => Promise<void | boolean>; loading: boolean }
-type PaymentProfilesSaveable = { saveAll: () => Promise<void>; loading: boolean }
+type Saveable = { save: () => Promise<boolean>; loading?: boolean }
+type PaymentProfilesSaveable = { saveAll: () => Promise<boolean>; loading: boolean }
 const embyConnectionRef = useTemplateRef<Saveable>('embyConnection')
 const embyConnectionKeys = new Set(['emby.base_url', 'emby.api_token'])
 const activitySettingsRef = useTemplateRef<Saveable>('activitySettings')
@@ -91,13 +94,17 @@ function setBoolean(key: string, value: boolean): void {
   draft[key] = value ? 'true' : 'false'
 }
 async function saveSettings(): Promise<boolean> {
+  if (disposed) return false
   const values = Object.entries(draft).filter(([key, value]) => {
     const configured = items.value.some(item => item.key === key && item.configured)
     return !embyConnectionKeys.has(key) && !activitySettingKeys.has(key) && !legacyPaymentSetting(key)
       && (value !== '' || (configured && clearableSettingKeys.has(key)))
   })
   const { api } = await import('@/api/client')
-  const success = await perform(() => writeAdminSettings(values, api.updateAdminSetting))
+  const success = await perform(() => writeAdminSettings(values, (key, value) => {
+    if (disposed) throw new Error('SETTINGS_SCOPE_DISPOSED')
+    return api.updateAdminSetting(key, value)
+  }))
   if (success) {
     for (const [key, value] of values) {
       if (items.value.some(item => item.key === key && item.encrypted) && draft[key] === value) draft[key] = ''
@@ -106,52 +113,69 @@ async function saveSettings(): Promise<boolean> {
   return success
 }
 async function saveAll(): Promise<void> {
-  if (saving.value || sectionsLoading.value) return
+  if (disposed || saving.value || sectionsLoading.value) return
   savingAll.value = true
   saved.visible = false
+  saved.failed = false
   try {
-    const results = await Promise.all([
+    const results = await Promise.allSettled([
       embyConnectionRef.value?.save() ?? Promise.resolve(false),
       saveSettings(),
-      activitySettings.value ? activitySettingsRef.value?.save() ?? Promise.resolve() : Promise.resolve(),
-      billingLimitsRef.value?.save() ?? Promise.resolve(),
-      paymentProfilesRef.value?.saveAll() ?? Promise.resolve(),
+      activitySettings.value ? activitySettingsRef.value?.save() ?? Promise.resolve(false) : Promise.resolve(false),
+      billingLimitsRef.value?.save() ?? Promise.resolve(false),
+      paymentProfilesRef.value?.saveAll() ?? Promise.resolve(false),
     ])
-    saved.visible = results.every(value => value !== false)
+    if (disposed) return
+    saved.visible = results.every(result => result.status === 'fulfilled' && result.value === true)
+    saved.failed = !saved.visible
   } finally {
-    savingAll.value = false
+    if (!disposed) savingAll.value = false
   }
 }
 async function loadActivitySettings(): Promise<void> {
+  if (disposed || activityBusy.value) return
+  const ticket = activityLatest.begin()
   activityLoading.value = !restoreRef('/api/v1/admin/activity-settings', activitySettings)
   activityError.value = null
   try {
-    activitySettings.value = await featuresApi.getAdminActivitySettings()
+    const next = await featuresApi.getAdminActivitySettings()
+    if (activityLatest.isCurrent(ticket)) activitySettings.value = next
   } catch (caught) {
-    activityError.value = localizedError(caught, 'errors.adminLoad')
+    if (activityLatest.isCurrent(ticket)) activityError.value = localizedError(caught, 'errors.adminLoad')
   } finally {
-    activityLoading.value = false
+    if (activityLatest.isCurrent(ticket)) activityLoading.value = false
   }
 }
-async function saveActivitySettings(value: ActivitySettingsWrite): Promise<void> {
-  if (activityBusy.value) return
+async function saveActivitySettings(value: ActivitySettingsWrite): Promise<boolean> {
+  if (disposed || activityBusy.value || activityLoading.value || !activitySettings.value) return false
+  const ticket = activityLatest.begin()
   activityBusy.value = true
   activityError.value = null
   try {
-    activitySettings.value = await featuresApi.saveAdminActivitySettings(value)
+    const next = await featuresApi.saveAdminActivitySettings(value)
+    if (!activityLatest.isCurrent(ticket)) return false
+    activitySettings.value = next
+    return true
   } catch (caught) {
-    activityError.value = localizedError(caught, 'errors.adminAction')
+    if (activityLatest.isCurrent(ticket)) activityError.value = localizedError(caught, 'errors.adminAction')
+    return false
   } finally {
-    activityBusy.value = false
+    if (activityLatest.isCurrent(ticket)) activityBusy.value = false
   }
 }
 onMounted(() => void loadActivitySettings())
+onScopeDispose(() => {
+  disposed = true
+  activityLatest.dispose()
+  for (const key of Object.keys(draft)) delete draft[key]
+})
 </script>
 <template>
   <section class="admin-panel">
     <div class="admin-panel__heading"><div><h2>{{ t('adminSettings.title') }}</h2><p>{{ t('adminSettings.copy') }}</p></div><UButton icon="i-ph-floppy-disk" :disabled="saving || sectionsLoading" :loading="saving" :label="saving ? t('common.saving') : t('adminSettings.save')" type="submit" form="admin-runtime-settings" @click.prevent="saveAll" /></div>
     <UTabs v-model="workspace" :items="tabs" variant="link" :content="false" class="admin-workspace-tabs" />
     <InlineNotice v-if="saved.visible" tone="success" :title="t('adminSettings.saved')">{{ t('adminSettings.savedHint') }}</InlineNotice>
+    <InlineNotice v-if="saved.failed" tone="warning">{{ t('adminSettings.partialSave') }}</InlineNotice>
     <section v-show="workspace === 'activity'" class="settings-activity"><AdminActivitySettings ref="activitySettings" :settings="activitySettings" :busy="activityBusy" :save="saveActivitySettings" /><InlineNotice v-if="activityError" tone="warning">{{ activityError }}</InlineNotice></section>
     <div v-show="workspace === 'payments'" class="settings-payment-workspace"><AdminBillingAmountLimits ref="billingLimits" /><AdminPaymentProfiles ref="paymentProfiles" /></div>
     <div v-show="workspace === 'runtime'">

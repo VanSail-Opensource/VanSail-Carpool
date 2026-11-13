@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getLocale } from '@/i18n'
 import { computed } from 'vue'
 import type { IPLookupTrafficSummary } from '@/api/ipLookup'
 import LiveSourceNote from './LiveSourceNote.vue'
@@ -15,7 +16,7 @@ const total = computed(() => segments.value.reduce((sum, item) => sum + item.val
       <span v-for="item in segments" :key="item.name" :class="`traffic-${item.name}`" :style="{ width: `${total > 100 ? item.value / total * 100 : item.value}%` }" />
     </div>
     <ul v-if="segments.length" class="traffic-legend"><li v-for="item in segments" :key="item.name"><span :class="`traffic-${item.name}`" aria-hidden="true" />{{ $t(`ipLookupLive.traffic.${item.name}`) }}<strong>{{ item.value.toFixed(1) }}%</strong></li></ul>
-    <p v-if="summary.startTime && summary.endTime" class="traffic-dates">{{ $t('ipLookupLive.traffic.range', { start: new Date(summary.startTime).toLocaleDateString(), end: new Date(summary.endTime).toLocaleDateString() }) }}</p>
+    <p v-if="summary.startTime && summary.endTime" class="traffic-dates">{{ $t('ipLookupLive.traffic.range', { start: new Date(summary.startTime).toLocaleDateString(getLocale()), end: new Date(summary.endTime).toLocaleDateString(getLocale()) }) }}</p>
     <LiveSourceNote :meta="summary" />
   </div>
 </template>

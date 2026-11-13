@@ -12,18 +12,26 @@ import (
 )
 
 type userWorkflowRepositoryStub struct {
-	user       model.User
-	balance    model.Money
-	purchases  []model.Purchase
-	account    emby.Account
-	accountErr error
-	payments   []model.PaymentOrder
-	refunds    []model.Refund
-	operations []model.OperationReceipt
+	user               model.User
+	balance            model.Money
+	purchases          []model.Purchase
+	account            emby.Account
+	accountErr         error
+	payments           []model.PaymentOrder
+	refunds            []model.Refund
+	operations         []model.OperationReceipt
+	synchronization    database.AdminUserSynchronization
+	synchronizationErr error
+	syncOwnerID        string
 }
 
 func (r *userWorkflowRepositoryStub) UserByID(context.Context, string) (model.User, error) {
 	return r.user, nil
+}
+
+func (r *userWorkflowRepositoryStub) AdminUserSynchronization(_ context.Context, userID string) (database.AdminUserSynchronization, error) {
+	r.syncOwnerID = userID
+	return r.synchronization, r.synchronizationErr
 }
 
 func (r *userWorkflowRepositoryStub) Balance(context.Context, string) (model.Money, error) {
@@ -110,4 +118,8 @@ func (*userWorkflowRepositoryStub) CreateAdminTemporaryBan(context.Context, data
 
 func (*userWorkflowRepositoryStub) CreateAdminTemporaryUnban(context.Context, string, string, string, string, string, time.Time) (model.OperationReceipt, error) {
 	return model.OperationReceipt{}, nil
+}
+
+func (*userWorkflowRepositoryStub) ProviderOperationForActorKey(context.Context, string, string, string, string) (model.OperationReceipt, bool, error) {
+	return model.OperationReceipt{}, false, nil
 }

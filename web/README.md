@@ -66,20 +66,20 @@ Each source folder has its own `README.md` file map. Start with [the source map]
 
 ## Member features
 
-- Resumable intro, reserved username, and agreement onboarding; a confirmed
-  X-Node username collision after a paid purchase shows the full-refund
-  notice and returns the member to username entry. Decisive onboarding actions
-  mirror to Telegram's native MainButton when available.
+- Resumable intro and current-revision agreement onboarding use the authenticated
+  Telegram identity. Agreement completion records local acceptance and durable
+  provisioning work; subscription readiness follows native deployment evidence.
 - Community group and channel access stays outside onboarding, shows canonical Telegram membership, and requires a currently active combo only when joining.
 - Dashboard balance, entitlement, X-Node traffic, node summaries, and subscription-link rotation.
-- A six-step catalog journey for core combos, optional squads, accessible nodes, coupon redemption, review, and idempotent purchase confirmation.
+- Explore selects Charge by traffic or Charge by hour. Existing fixed-term
+  owners retain renewal and refund controls, plus optional-squad selection,
+  coupon redemption and idempotent add-squad confirmation from Settings.
 - Provider/rail selection, exact payment instructions, QR/address rendering, cancellation, and authoritative settlement polling.
 - Provider redirects land on `/payment-result`, which verifies durable payment state: paid orders show the green confirmation, while failed or expired orders offer an owner-verified replacement handoff to Home.
 - Daily check-in, group-message progress, betting games, lucky draws, and bounded outcome history.
 - Emby account setup, retry, password change, parental rating, and library preferences.
 
 ## Administration
-
 
 Financial and destructive operations retain text labels, busy states, explicit reasons, confirmations, and localized failures. The database editor never sends raw SQL: it uses typed filters, cursors, optimistic hashes, server diff review, rescue backup, and typed confirmation.
 
@@ -95,6 +95,6 @@ Financial and destructive operations retain text labels, busy states, explicit r
 - `tsconfig.json` defines strict TypeScript/Vue compilation.
 - `vite.config.ts` configures Nuxt UI, locale parity, tests, proxying, and embedded output.
 - The draw artwork uses Lottie's local light SVG player through the Vite alias; these assets need only vector shapes.
-- `fixtures/README.md` describes the constructed lucky-draw browser fixture used for visual audits.
+- `fixtures/README.md` describes isolated constructed browser fixtures for member and administrator workflows.
 
 `subscription.html` is the isolated public bearer entry. It starts no browser-admin or Mini App session and carries no-referrer/no-store policy.

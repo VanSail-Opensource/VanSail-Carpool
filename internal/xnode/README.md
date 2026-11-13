@@ -1,5 +1,12 @@
 # X-Node control plane
 
+Member subscription rotation resolves the authenticated owner's native identity
+and commits through `RotateXNodeMemberSubscription`, which locks the exact
+account generation and compares the original token and credential material.
+`member_subscription_rotation.go` never uses a mutable legacy proxy pointer;
+`member_subscription_rotation_test.go` covers missing/stale links, lifecycle changes, and foreign/service
+identity rejection. Administrative standalone rotation remains separate.
+
 `credentials.go` supports administrator-authored VLESS reverse portals without a
 separate panel surface: an inbound document may carry `"reverseTag": "<tag>"`.
 The native validator requires that marker on a `vless` inbound, with a valid
@@ -565,7 +572,7 @@ administrator document and rejection of unrelated native-core errors.
 
 - `compiler_snippets.go`: Entry points: `expandMarker`, `appendSharedSnippet`.
 
-- `controlplane_fixture_test.go`: Hosted regression coverage: `Optional`, `PutXNodeGlobal`.
+- `controlplane_fixture_test.go`: Hosted regression coverage: `Optional`, `PutXNodeGlobalAtVersion`.
 
 - `controlplane_test.go`: Hosted regression coverage: `TestRegistrationDoesNotAuthorizeProxyAccess`, `TestPaidAccountsOwnRoutingTagsAndMatchers`, `TestSubscriptionRevocationPreservesProxyCredentials`.
 
@@ -608,7 +615,7 @@ administrator document and rejection of unrelated native-core errors.
 
 - `service_users.go`: Entry points: `AuthorizeService`.
 
-- `subscriptions.go`: Entry points: `BearerMetadata`, `OwnedSubscription`, `BearerSubscription`, `RoutingTemplates`.
+- `subscriptions.go`: Entry points: `BearerMetadata`, `OwnedSubscription`, `BearerSubscription`. The retired unmounted raw-outbound routing-template projection has been removed; member routing uses typed `OwnedRoutingPlan` metadata.
 
 - `validation_base.go`: Entry points: `ValidateConfigurationDocument`.
 
@@ -632,7 +639,7 @@ administrator document and rejection of unrelated native-core errors.
 
 `configuration_preview.go` expands saved snippets for read-only pinned-core validation. Base validation reports bounded technical core diagnostics to the administrator editor.
 
-`metric_numbers.go` preserves large unsigned telemetry integers as decimal strings at the browser boundary; `metric_numbers_test.go` guards values beyond 2^53. `subscription_templates.go` persists encrypted template documents plus native user references, validates revision/default/assignment constraints and uses synthetic previews. Xray preview validation omits the client display-only `remarks` field from the server-core validator while retaining it in rendered output. `subscription_render.go` selects subscription-specific, format-default or built-in rendering and respects enabled formats. `template_repair.go` adds missing converted per-host client templates before cutover without replacing administrator overrides.
+`metric_numbers.go` preserves large unsigned telemetry integers as decimal strings at the browser boundary; `metric_numbers_test.go` guards values beyond 2^53. `subscription_templates.go` persists encrypted template documents plus native user references, validates revision/default/assignment constraints and uses synthetic previews. Xray preview validation omits the client display-only `remarks` field from the server-core validator while retaining it in rendered output. `subscription_render.go` selects subscription-specific, format-default or built-in rendering and respects enabled formats.
 
 `subscription_templates_test.go` covers preview validation, native subscription assignments, stale revisions and dangling default rejection.
 
@@ -660,7 +667,7 @@ Task 2 pins protocol/native validation at signed X-Node v2.0.5, source commit `5
 
 Master policy extensions: `native_policy_types.go` owns country, completion-schedule and per-user node-speed contracts. `geoip_asset.go` streams verified public GeoIP data through the existing validation queue and temporary files; `geoip_decode.go` decodes bounded country messages with the pinned Xray protobuf and compacts selected prefixes without expanding addresses. `policy_assets.go` caches parsed generations across global-save validation and compiler views, with completion deadlines and bounded retries, so one save does not download the same full asset repeatedly. `geoip_delivery.go` queues country preparation durably, streams 256-prefix chunks through the per-node command queue for `source_geoip_stream_v1`, then activates a generation reference; older agents keep inline data when it fits the frame limit. `routing_preflight.go` uses that same reference when validating member route changes. `geoip_delivery_test.go`, `geoip_decode_test.go` and `native_policy_test.go` cover chunk bounds, compatibility, asset precision and selector validation. `source_listeners.go` derives country source-filter listeners from the same document with Hysteria inbounds removed, so direct Hysteria clients rely on the node's probe protection instead of the country rule; `source_listeners_test.go` covers that exclusion and preserves unrelated native sections.
 
-`live_availability.go` excludes rolled-back, stale and non-sampled agents from live activity decisions. Service identities are excluded from global connection controls; open-handler limits and exact accounting remain agent-owned. `node_decode.go` requires explicit nonnegative multipliers with at most six fractional digits. Global/node/compiler changes negotiate typed native capabilities against signed X-Node v2.0.6; byte counters remain decimal strings for browser transport.
+`live_availability.go` excludes rolled-back, stale and non-sampled agents from live activity decisions. Service identities are excluded from global connection controls; open-handler limits and exact accounting remain agent-owned. `node_decode.go` ignores retired multiplier inputs and publishes the fixed multiplier of 1. Global/node/compiler changes negotiate typed native capabilities; byte counters remain decimal strings for browser transport.
 
 `client_document_validation.go` validates administrator client subscription documents independently of the agent IP-geodata prohibition. It removes only the client display label `remarks` from the analysis copy for both DIY exports and template previews; server configurations retain their strict root schema. Client-local assets remain in the actual output; analysis-only replacements perform no downloads. Shared geosite block selectors also defer file contents to agent preflight. `client_document_validation_test.go` covers the label-only relaxation, client-local asset preflight and strict server-root rejection.
 
@@ -1097,6 +1104,11 @@ Access repair uses `access_repair.go` and `access_recovery_test.go` to reload cu
 
 `master_sync_workers_test.go` verifies bounded fleet execution. `master_controls.go` retains monotonic volatile control updates. `command_operation.go` owns receipt attempts, definite busy deferrals and terminal outcome persistence.
 
+`command_notifications.go` keeps queued acceptance evidence before a later error.
+An accepted command cannot become a definite busy rejection because its waiter
+has not yet consumed the acceptance. `command_notifications_test.go` exercises
+both outcomes through the production notification coalescer.
+
 `access_repair_fences_test.go` checks refund ownership, scheduler exclusion and stale-pointer rejection against the real store.
 
 `reporting_defaults_test.go` protects explicit saved intervals and historical omitted/zero intervals while new configurations target two seconds.
@@ -1203,6 +1215,12 @@ only leased addresses. Replayed firewall journals do not rewrite unchanged
 cursors. `automatic_lease_bans_test.go` covers zero steady release calls and late
 ban commits; `automatic_lease_socket_test.go` exercises authenticated batched
 synchronization, unchanged grants and firewall-enable acknowledgement fences.
+Ban-release requests have an immutable memory-only identity separate from the
+lease delivery generation. A completed SQL release acknowledges only its captured
+request; an event committed during that completion retains its newer release even
+when the lease itself has not renewed. `automatic_lease_bans_test.go` covers this
+ordering and verifies that the newer release finishes once without renewing the
+lease or repeating acknowledged work.
 
 Enrollment revocation removes peer authority before closing the socket; queued
 activity cannot create leases after token rotation. `master_revocation_test.go`
@@ -1248,11 +1266,47 @@ tuning, split and routing choices survive. Paid exemption creation is retired.
 
 Member subscription readiness is centralized in `subscription_readiness.go`.
 Only exact authenticated state.applied membership can stage proof. Joined master
-reconciliation persists first_synced_at once on the owner identity; no traffic
-acknowledgment waits for it. Old node-wide applied revisions cannot backfill user
-membership, so pending owners request a fresh per-node synchronization. Metadata,
+reconciliation persists first_synced_at on the owner identity; no traffic
+acknowledgment waits for it. `subscription_proof.go` privately captures the exact
+compiled principal, owner, account generation, accounting period and credential
+material hashes. These fields never enter an agent or public JSON payload. The
+confirmation transaction locks owner lifecycle and native identity rows, then
+matches the current open period and material before recording proof. Delayed
+acknowledgments cannot confirm a replacement lifecycle or same-period credential
+rotation. Purge/material retirement and native credential replacement clear old
+readiness; ordinary saves and subscription-token-only rotation preserve it.
+
+Migration 00049 conservatively clears existing member proof once because older
+evidence did not bind those sources. Master restart/reconnect publishes a fresh
+configuration, and pending owners request a forced per-node synchronization even
+when its native digest is unchanged. Offline owners wait for a fresh applied
+acknowledgment. No node-wide revision can backfill user membership. Metadata,
 Home URLs, host links and bearer exports withhold credentials until proof; normal
 export/access rules continue afterward. Service subscriptions remain independent.
+`subscription_proof_test.go` and `subscription_readiness_test.go` cover captured
+source isolation, private JSON, expired/replaced peers and unchanged-digest
+reconfirmation. Database first-sync tests cover purge/rejoin, same-period
+rotation, concurrent child material replacement and caller-supplied fake proof.
+
+Credential-bearing reads are bracketed by `BeginSubscriptionRead` and
+`CheckSubscriptionRead` in `subscription_read.go`. The private snapshots in
+`subscription_read_sources.go` bind native credentials, subscription token,
+readiness proof, period and owner generation/restriction to the database and
+local compile revisions. `subscription_publish.go` checks after metadata,
+document rendering, and browser/empty-response selection; a changed authority
+discards every partial URL or document. Member Home adapters use the same
+bracket around inventory and host links. Missing epoch support fails closed.
+Purchase and standalone access time boundaries also invalidate a slow read.
+No lock spans rendering, and unchanged PAYG/hourly inventory policies remain
+independent from this publication check. `subscription_read_test.go` covers
+lifecycle/material/epoch/expiry changes; `subscription_publish_test.go` rotates
+tokens or restricts the owner during real inventory and response-selection reads.
+`account_statistics.go` uses the same fence before returning a dashboard bearer;
+its active quota projection excludes a retained predecessor's period. Token
+rotation in `identities.go` uses an atomic token-only compare-and-update and then
+checks the current publication snapshot, preserving newer credentials, periods
+and first-sync proof. Internal probe rotation remains possible; probes still
+cannot authorize a bearer subscription.
 
 `routing_entitlements.go` prunes authoritative endpoint/entitlement loss,
 including administrator-disabled product groups. Disabled nodes/endpoints and
@@ -1261,6 +1315,14 @@ provisioning or quota pauses suspend the graph while preserving IDs.
 Dependency changes compile via the existing revoke/apply/enable queue;
 legacy node-only graphs never rebind automatically after dependency changes.
 Owner PAYG history uses the existing exact recorded 72-hour per-node repository.
+
+The compatibility direct node DELETE path is limited to disabled, never-enrolled
+nodes with no published revision, lifecycle transition, endpoint dependency or
+retained history. It locks the node against first enrollment and returns conflict
+for ineligible existing nodes; deleting an already absent node is idempotent.
+Enrolled and historical nodes use the queued removal operation below. Database
+`xnode_node_delete_test.go` covers offline enrollment, historical rows without node
+foreign keys, endpoint dependencies, lifecycle state and concurrent first bind.
 
 Node removal runs node.remove as an existing durable operation, never a wire command. It fences encrypted routing reads with the compile revision, prunes squad/service bindings and routing choices, fences new admission, waits for apply and committed quiescent traffic barriers, seals per-period evidence, then revokes the exact drained peer. Offline participants and accounting gaps remain explicit resumable dependencies. Historical nodes retain evidence behind retired_at; never-enrolled unreferenced nodes are deleted.
 
@@ -1418,3 +1480,161 @@ bounded historical-owner AAD resolver. `account_purge_ip_secret_test.go` checks
 that wrong purge owners and altered node/digest scopes fail before native
 control. Ciphertext is never resealed; current applied subject/agent proof,
 cleanup admission and acknowledged scoped removal are still required.
+
+`subscription_read_retry.go` repeats a complete subscription read at most three
+times for first-deployment proof gain or compile/time contention, retaining the
+initial credentials, token, period and owner authority across attempts.
+`subscription_read_retry_test.go` covers proof races, epoch/time contention,
+authority changes between owner and epoch reads, and the retry bound.
+
+`account_statistics_test.go` verifies subscription-token changes during statistics
+reads discard the result, and that a closed predecessor period does not supply
+the currently effective purchase's traffic limit.
+
+Purchase expiry uses `purchase_expiry.go` to admit each captured purchase period through a transaction that rechecks its owner, revision and exact due boundary. A stale job cannot close an administratively extended allowance. Generic refund, reset and replacement closure keep their existing rules. `purchase_expiry_test.go` covers unchanged-timestamp extensions, changed revisions, exact-boundary replay and an extension committed while expiry waits on the purchase lock.
+
+`frame_diagnostics.go` maps PostgreSQL SQLSTATE values to bounded diagnostic
+categories for busy, read-only, I/O and constraint failures. Retired SQLite
+numeric-code classification is removed. `frame_diagnostics_test.go` checks real
+PostgreSQL errors, wrapped causes and redaction of database error details.
+
+`member_purchase_activation.go` binds paid activation to the exact owner,
+account generation, purchase ID, revision and entitlement material. Provisioning
+uses the native owner, including retained identities whose credentials were
+cleared during an earlier account generation. `member_purchase_activation_test.go`
+checks same-looking successors, same-clock edits, missing desired state and
+owner isolation before any period change.
+
+`periods.go` restores the same purchase's retained accounting through the atomic
+store adapter. `purchase_period_admission.go` commits first/replacement admission
+with its captured predecessor fence; external journal barriers stay in existing
+accounting recovery. A stale purchase cannot close a successor before the storage
+compare, and an extension cannot replace an already-used period with fresh quota.
+
+`member_identity.go` routes all real member credential preparation through an exact-generation store adapter, including hourly/PAYG setup and compile-read wrappers. `identities.go` shares credential preparation while generic fixtures retain their existing persistence contract. Current material comparison preserves concurrent period pointers and restrictions; ordinary credential repair never lifts an administrator restriction. Purchase period admission/restoration also compares the captured generation inside its transaction.
+
+### Current administrator admission and exact write responses
+
+`admin_configuration.go`, `admin_inventory.go`, `admin_identity.go`,
+`admin_named_services.go` and `admin_customization.go` carry each authenticated
+administrator into the storage transaction that checks current role and account
+eligibility, writes desired state, and records its sanitized audit. Missing
+transactional adapters fail closed. Trusted worker and migration entry points
+retain their existing raw repository contract. Administrator responses use the
+exact committed snapshot, including the new revision and validated endpoint
+metadata; a second mutable read cannot turn a successful write into an error or
+return another administrator's update.
+
+`service_inventory.go` keeps group and endpoint validation with their shared
+persistence adapters. `customization_save.go` validates and projects the admitted
+routing document before persistence, then attaches that projection to the exact
+committed revision. Outbound DNS validation runs before acquiring the service
+mutation lock and rechecks identity, access and revision afterward.
+`customization_queue_test.go` holds a resolver request open while an independent
+snippet write completes, and verifies that unfinished validation publishes no
+routing state. `master_revocation_test.go` checks that rejected administrator
+rotation/deletion cannot disconnect a peer or delete its node. `master.go`
+normalizes an omitted diagnostic logger to a discard logger.
+
+### Global candidate validation and publication
+
+`global_validation.go` merges a private credential snapshot and performs remote
+policy, routing and asset checks outside the native writer lock.
+`global_save.go` captures the full previous document, compile epoch and next
+entitlement boundary, then rejects stale validation before publication. Its
+required settings adapter also checks the epoch and boundary inside the
+administrator transaction. `automatic_lease_settings.go` merges its local field
+under the same publication fence without downloading unchanged assets.
+The compilation view publishes a private candidate before nested routing reads,
+so every global dependency uses the proposed settings without exposing them to
+serving readers.
+
+- `global_fence_test.go` covers competing global/lease edits, changed database
+  inputs and elapsed entitlement boundaries during validation.
+- `global_queue_test.go` blocks asset DNS and verifies unrelated native writes
+  remain available while the unfinished candidate stays unpublished.
+- `global_candidate_test.go` compiles against a private candidate despite an
+  obsolete stored document and verifies no serving-cache or caller mutation.
+
+`compile_purchase_selection_test.go` keeps cached entitlement selection aligned
+with parsed purchase chronology, including fractional starts, creation-time
+ties and stable identity ordering. Unordered provider snapshots cannot make
+native access disagree with the current home or database entitlement view.
+
+`metric_totals.go` saturates validated nonnegative connection and rate aggregates at their existing numeric field limits. Across-node addition cannot wrap negative to disable connection controls or produce infinite JSON rates. Member open-connection totals use exact decimal arithmetic, matching fleet totals. `metric_totals_test.go` covers individually valid reports whose fleet sums exceed numeric bounds, exact member totals, encodable responses and clearing the limit after fresh zero snapshots. `master_socket_test.go` waits for the telemetry snapshot itself because durable traffic acknowledgements use a separate receive lane.
+
+Named standalone services reject the reserved `member-probe-`, `member-payg-`,
+`member-hourly-` and underscore namespaces case-insensitively before creating
+credentials or quota. These names belong to internal principal dispatch and
+cannot represent standalone access.
+`named_services_test.go` verifies rejection leaves principal and period counts unchanged.
+
+`route_speedtest_recovery_test.go` verifies that transient routing-plan reads,
+cancellation and unavailable dependencies leave a speedtest pair unattempted.
+Only typed invalid, conflicting or missing access closes it as access-changed;
+no failed read is treated as evidence authorizing or consuming probe traffic.
+
+Routing migration and deployment preserve admitted generations on dependency read
+failures. Compilation propagates an incomplete read instead of publishing an
+empty managed graph. Reconciliation retains each failed validation in its result
+so the existing bounded retry backoff runs even without a new configuration
+revision. Proven invalid graphs retain the existing rejection behavior.
+`routing_read_failure_fixtures_test.go` supplies isolated settings/repository
+failures; `routing_read_failure_test.go` verifies migration/deployment outcomes,
+and `routing_validation_retry_test.go` checks compilation and recovery scheduling.
+
+### Native audit recovery and publication boundaries
+
+`access_window.go` sorts a private purchase snapshot before extending an access
+window through contiguous paid successors. Provider history order cannot shorten
+an otherwise uninterrupted paid term, and the caller's snapshot is unchanged.
+`access_window_test.go` covers descending and arbitrary order, multiple successors
+and failed, cancelled or expired gaps.
+
+`command_outcomes.go` derives the deferred provider-operation deadline from the
+longest supported command deadline plus preflight and delivery allowance.
+`operation_deadline_test.go` checks the actual outbox renewal context for update
+and certificate work. A durable update can use its full native execution budget.
+
+`compile_cache.go` rechecks the captured access boundary after repository reads
+and after compilation. A slow read cannot publish or reuse authorization after
+its paid boundary; a conflict retains the last cache without a retry penalty.
+`compile_boundary_test.go` advances the injected clock across each publication
+boundary and verifies immediate recovery with a current snapshot.
+
+`profile_metrics.go` aggregates owner-principal sampled connections with exact
+decimal arithmetic. `profile_connection_totals_test.go` verifies that individually
+valid counters cannot overflow the public total or hide active connections.
+
+`endpoint_client_options.go` supplies legacy client mappers only a fresh projection
+of the current client's account and sanitized transport, plus public inbound
+tag, protocol and port. Saved native listener documents and their private server
+materials never become mapper input. `endpoint_mapper_secrets_test.go` covers
+whole transport copies for TLS and REALITY, current client credentials, public
+metadata, arbitrary server fields and unchanged source documents.
+
+`routing_context_document.go` expands saved outbound and routing snippets before
+conditional-cycle context validation and dependency hashing. Untracked shared
+fallbacks obey the same proof as base configuration fallbacks, and snippet content
+changes invalidate dependencies even when their IDs remain stable. Candidate
+configuration and snippet validation use the same private request-scoped documents
+for nested reads. `routing_context_document_test.go` checks expansion, changed
+dependency material, read failures, source isolation and candidate restoration;
+`routing_context_integration_test.go` covers shared fallbacks in cyclic and
+one-way managed graphs through real native endpoint inventory.
+
+Standalone access honors its exact half-open encrypted term: admission begins at
+`StartedAt` and stops at `ExpiresAt`. Retained future terms cannot activate early
+through either compilation or bearer exports. `service_access_boundary_test.go`
+checks nanosecond boundary behavior; `service_access_policy_test.go` exercises
+retained future terms through both public service entry points. The unused
+importer-era endpoint-template repair entry point has been removed; saved native
+client templates and encrypted historical settings remain readable.
+
+Access repair carries the captured owner account generation into the atomic
+period adapter. That transaction locks the current active lifecycle and purchase
+writer, compares closure generation, and preserves permanently retired-node
+barrier evidence while clearing live participants for the next closure.
+Stale repairs cannot reopen a purged generation or replace a newer closure.
+Paid-window selection and compile deadlines preserve nanoseconds from stored
+terms, including fractional and whole-second boundaries.

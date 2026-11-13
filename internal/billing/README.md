@@ -9,12 +9,21 @@ Payment-method discovery, exact decimal arithmetic, checkout creation, provider 
 
 ## Files
 
-- `service.go` defines settings/repository contracts, service construction, and checkout creation.
+- `service.go` defines settings/repository contracts, service construction, and immutable order pricing.
 - `checkout.go` builds server-owned provider requests and validates checkout responses before persistence.
 - `payment_operations.go` creates idempotent payment create/cancel commands with their order targets.
-- `operation_worker.go` performs each provider mutation once after its durable attempt marker.
-- `operation_worker_reconcile.go` resolves interrupted attempts from stored payment state or leaves them pending review.
-- `operation_worker_errors.go` extracts bounded provider rejection copy for member-safe failed operation receipts.
+  These are the only create/cancel application entry points. Retired synchronous
+  methods were removed; provider mutations always follow durable intent and an
+  attempt marker. An ambiguous response stays pending review for reconciliation.
+- `operation_worker.go` performs local order, owner and request reads before its durable provider attempt marker. Transient preflight failures retain the same unattempted intent; definite absence and invalid immutable input remain explicit failures.
+- `operation_worker_admission.go` binds targets to the operation owner and places exhausted local-read failures under durable review without issuing a provider request.
+- Checkout creation uses the database's atomic current-order admission after preflight. It serializes with cancellation, rechecks the immutable expiry and current account lifecycle, and preserves concurrent terminal evidence. An external processing attempt is only reconciled; only the transactional built-in quote can resume.
+- `operation_worker_current_order_test.go` covers cancellation and expiry during preflight plus exact recovery of an item completed concurrently, with no new provider call.
+- `operation_worker_reconcile.go` resolves interrupted attempts from stored payment state or leaves them pending review. Terminal item recovery preserves the exact recorded provider reference, error and result. Public rejection text comes from a fixed projection; historical provider payloads stay internal.
+- `operation_worker_preflight_test.go` covers order, owner and credential read recovery before an attempt, plus exhausted admission visibility.
+- `operation_worker_recovery_test.go` covers interrupted terminal receipt writes, cancellation preflight and settlement arriving before a queued cancellation executes.
+- `operation_worker_errors.go` classifies typed provider rejections without retaining or exposing untrusted provider messages.
+- `provider_rejection_test.go` covers reflected callback capabilities, durable rejection evidence, safe receipt projection, and replay without another provider call.
 - `payment_callback_operations.go` lets authoritative paid callbacks resolve matching checkout operations.
 - `payment_announcement.go` delivers immutable successful-payment snapshots to
   the optional standalone Telegram channel through the durable outbox.
@@ -28,20 +37,29 @@ Payment-method discovery, exact decimal arithmetic, checkout creation, provider 
   and retryable Telegram failures.
 - `gateway_contracts.go` defines the server-owned provider checkout/event contracts and gateway interfaces.
 - `payment_methods.go` builds the configured rail list, including coupon funding and independently selectable provider-account profiles.
-- `payment_channel_cache.go` stores the current process-local BEPUSDT currency/network rails discovered by queued readiness probes.
-- `events.go` validates and authorizes provider events, settles orders, exposes the narrow return receipt projection, and handles cancellation.
+- `payment_channel_cache.go` stores process-local BEPUSDT currency/network rails bound to the exact durable profile revision. A save immediately makes old discoveries ineligible; delayed probes and cleanup cannot overwrite a newer cached revision. `payment_channel_cache_test.go` covers replacement, removal, missing revisions, and snapshot isolation.
+- `events.go` validates and authorizes provider events, settles orders, and exposes the narrow return receipt projection.
 - `payment_return.go` issues checkout-only fixed-expiry v2 capabilities and owner-filtered legacy receipt reads; see `docs/payment-return-security.md`. Public navigation cannot renew access.
 - `payment_return_test.go` covers expiry, provider/order binding, old formats, retry immutability, missing keys and owner lookup.
 - `payment_profile_runtime.go` gates channels from stable-ID profiles and derives each BEPusdt callback capability from the selected account credential.
 - `methods.go` defines and validates canonical payment method identifiers.
 - `method_rails.go` owns provider rail names, ordering, and enabled-channel validation.
 - `decimal.go` parses and computes exact TXB and provider-currency amounts without floating point.
-- `service_test.go` covers checkout creation and provider failure paths.
+- `service_test.go` covers queued checkout pricing, provider request identity, return capabilities and persisted checkout details.
+- `queued_order_failures_test.go` covers admission failures before provider work,
+  immutable checkout validation, ambiguous responses and unavailable storage.
+- `queued_cancellation_test.go` covers queued cancellation, retained ambiguous
+  outcomes, unsupported providers and replay without duplicate provider writes.
+- `queued_test_helpers_test.go` exercises the production worker against durable
+  PostgreSQL state with injected provider/storage failures.
 - `events_test.go` covers event validation, authorization, settlement, and BEPUSDT compatibility.
+- `events_recovery_test.go` preserves temporary owner lookup failures as retryable
+  storage errors and accepts the same authoritative paid/refunded event after
+  recovery. Only a confirmed missing or mismatched owner is a payment conflict.
 - `service_test_helpers_test.go` contains shared billing repository, settings, and gateway doubles.
 - `methods_test.go` covers documented method identifiers and rail ordering.
 - `decimal_test.go` covers decimal parsing, equivalence, and rounding.
-- `methods_service_test.go` covers configured method availability, cancellation behavior, and BEPusdt callback capabilities.
+- `methods_service_test.go` covers configured method availability and BEPusdt callback capabilities.
 - `payment_profile_runtime_test.go` covers account-scoped BEPusdt callback capabilities.
 - `zero_coverage_test.go` covers provider channel ordering, channel validation, and EZPay/BEPusdt method-list validation.
 - `README.md` documents the package layout.
@@ -50,3 +68,12 @@ Exact TXB parsing in `decimal.go` delegates to `model.ParseTXBMajor`; this keeps
 
 - `builtin_usdt.go` ? Local built-in availability/pricing contract and deterministic create rejection.
 - `builtin_usdt_test.go` ? Hosted pricing, rail, callback exclusion and external-profile coexistence checks.
+
+New orders submitted with legacy two-part payment method IDs resolve and persist
+the selected account's three-part ID when profiles are configured. The request
+fingerprint retains the original normalized method selection, so a retry after
+default-account changes returns the original operation. Provider-specific
+credentials fail closed for explicit account lookup errors; historical unscoped
+BEPusdt callback capabilities use the original provider-named account. Empty
+historical plaintext credentials fail closed instead of authorizing an empty-key HMAC.
+`payment_profile_selection_test.go` verifies durable selection and retry behavior.

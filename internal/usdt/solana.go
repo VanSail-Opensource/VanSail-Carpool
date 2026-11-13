@@ -50,13 +50,16 @@ func (s *scanner) checkSolana(ctx context.Context) error {
 
 func (s *scanner) scanSolana(ctx context.Context, cursor Cursor, owners []string) (Batch, error) {
 	cur := solCursor{Accounts: map[string]solHistory{}}
-	if cursor.Value != "" && json.Unmarshal([]byte(cursor.Value), &cur) != nil {
-		return Batch{}, ErrProof
+	if err := decodeCursor(cursor.Value, &cur); err != nil {
+		return Batch{}, err
 	}
 	if cur.Accounts == nil {
 		cur.Accounts = map[string]solHistory{}
 	}
 	pruneSolanaOwners(&cur, owners)
+	if len(cur.Accounts) > maxSolanaCursorAccounts {
+		return Batch{}, ErrCapacity
+	}
 	if cur.Baseline == 0 {
 		if err := s.client.rpc(ctx, "getSlot", []any{map[string]string{"commitment": "finalized"}}, &cur.Baseline); err != nil {
 			return Batch{}, err
@@ -71,7 +74,10 @@ func (s *scanner) scanSolana(ctx context.Context, cursor Cursor, owners []string
 			return Batch{}, err
 		}
 		for account, owner := range accounts {
-			history := cur.Accounts[account]
+			history, exists := cur.Accounts[account]
+			if !exists && len(cur.Accounts) >= maxSolanaCursorAccounts {
+				return Batch{}, ErrCapacity
+			}
 			history.Owner = owner
 			cur.Accounts[account] = history
 		}
@@ -112,6 +118,12 @@ func (s *scanner) scanSolana(ctx context.Context, cursor Cursor, owners []string
 	batch := Batch{Transfers: []Transfer{}}
 	reachedBaseline := false
 	for _, sig := range signatures {
+		// Missing metadata is unknown execution evidence, not a failed transfer
+		// or an old-history boundary that may safely advance the cursor.
+		failed, err := solanaExecutionFailed(sig.Err)
+		if sig.Signature == "" || sig.Slot == 0 || err != nil {
+			return Batch{}, ErrProof
+		}
 		if sig.Slot <= cur.Baseline && h.Last == "" {
 			reachedBaseline = true
 			break
@@ -119,11 +131,13 @@ func (s *scanner) scanSolana(ctx context.Context, cursor Cursor, owners []string
 		if sig.Confirmation != "finalized" {
 			return Batch{}, ErrProof
 		}
-		if string(sig.Err) != "null" {
+		if failed {
 			continue
 		}
 		var tx solTransaction
-		if err := s.client.rpc(ctx, "getTransaction", []any{sig.Signature, map[string]any{"encoding": "jsonParsed", "commitment": "finalized", "maxSupportedTransactionVersion": 0}}, &tx); err != nil {
+		// v1 signatures appear in history even when an older version ceiling
+		// makes getTransaction reject their bodies and stalls the durable cursor.
+		if err := s.client.rpc(ctx, "getTransaction", []any{sig.Signature, map[string]any{"encoding": "jsonParsed", "commitment": "finalized", "maxSupportedTransactionVersion": 1}}, &tx); err != nil {
 			return Batch{}, err
 		}
 		transfers, err := decodeSolanaTransaction(s.client.spec, tx, sig.Signature, sig.Slot, owners)

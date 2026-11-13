@@ -22,6 +22,9 @@ func (s *Store) SaveHourlyOffer(ctx context.Context, actor string, next model.Ho
 		return model.HourlyOffer{}, ErrConflict
 	}
 	return hourlyCreditTransaction(ctx, s, func(tx *sql.Tx) (model.HourlyOffer, error) {
+		if err := catalogAdminActorTx(ctx, tx, actor); err != nil {
+			return model.HourlyOffer{}, err
+		}
 		var group string
 		if err := tx.QueryRowContext(ctx, `SELECT id FROM xnode_groups WHERE id=$1 FOR SHARE`, next.GroupID).Scan(&group); errors.Is(err, sql.ErrNoRows) {
 			return model.HourlyOffer{}, ErrNotFound

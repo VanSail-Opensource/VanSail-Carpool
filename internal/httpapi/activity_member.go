@@ -13,7 +13,7 @@ func (s *Server) activityOverview(w http.ResponseWriter, r *http.Request) {
 	if !s.requireOnboarded(w, r, user) {
 		return
 	}
-	config, err := s.activityConfig(r.Context())
+	config, err := s.deps.Settings.ActivityConfig(r.Context())
 	if err != nil {
 		s.communityFailure(w, r, err)
 		return
@@ -101,7 +101,7 @@ func (s *Server) activityCheckIn(w http.ResponseWriter, r *http.Request) {
 	if _, ok := s.requireIdempotencyKey(w, r); !ok {
 		return
 	}
-	config, err := s.activityConfig(r.Context())
+	config, err := s.deps.Settings.ActivityConfig(r.Context())
 	if err != nil {
 		s.communityFailure(w, r, err)
 		return

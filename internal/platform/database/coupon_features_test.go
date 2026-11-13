@@ -137,3 +137,27 @@ func TestCouponGrantDiscardPreservesHistory(t *testing.T) {
 		t.Fatalf("discard/history rows = (%d, %d), want (1, 1)", discards, redemptions)
 	}
 }
+
+func TestCouponUsageCountsZeroBalanceMultiplierRedemption(t *testing.T) {
+	t.Parallel()
+	ctx, store := context.Background(), newTestStore(t)
+	owner := createTestUser(t, store, 32_207)
+	now := time.Now().UTC()
+	limit := int64(1)
+	coupon, err := store.SaveCoupon(ctx, coupons.CouponInput{Code: "ZERO_MULTIPLY", Name: "Zero balance",
+		Kind: coupons.KindBalanceMultiply, ValueMinorOrBPS: 15_000, GlobalUseLimit: &limit, Active: true}, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := store.RedeemCoupon(ctx, owner.ID, coupon.Code, "zero-balance", now)
+	if err != nil || result.BalanceDeltaMinor != 0 {
+		t.Fatal(result, err)
+	}
+	definitions, err := store.ListCoupons(ctx, false)
+	if err != nil || len(definitions) != 1 || definitions[0].UsageCount != 1 {
+		t.Fatal("committed zero-credit redemption missing from administrator use count", definitions, err)
+	}
+	if _, err := store.RedeemCoupon(ctx, owner.ID, coupon.Code, "new-key", now); !errors.Is(err, ErrConflict) {
+		t.Fatal("displayed use count disagrees with limit admission", err)
+	}
+}

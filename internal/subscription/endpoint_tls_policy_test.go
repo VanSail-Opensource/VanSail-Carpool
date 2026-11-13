@@ -63,3 +63,47 @@ func TestEndpointLegacyInsecureDownloadTLSIsAlsoFixedOff(t *testing.T) {
 		}
 	}
 }
+
+func TestEndpointLegacyMapperCannotRestoreInsecureClientTLS(t *testing.T) {
+	for _, format := range []string{"xray", "sing-box", "clash", "stash"} {
+		t.Run(format, func(t *testing.T) {
+			p := endpointReviewProxy()
+			p.EndpointTuning = &EndpointOptions{}
+			mapper, path := "xrayJson", "streamSettings.tlsSettings.allowInsecure"
+			if format == "sing-box" {
+				mapper, path = "singbox", "tls.insecure"
+				p.Stream["network"] = "ws"
+				p.Stream["wsSettings"] = map[string]any{"path": "/current"}
+			} else if yamlFormat(format) {
+				mapper, path = "mihomo", "skip-cert-verify"
+				if format == "stash" {
+					mapper = "stash"
+				}
+				object(p.Stream, "xhttpSettings")["extra"] = map[string]any{"downloadSettings": map[string]any{"address": "down.example", "network": "xhttp", "security": "tls"}}
+			}
+			operations := []any{map[string]any{"op": "set", "to": path, "value": true}}
+			if yamlFormat(format) {
+				operations = append(operations, map[string]any{"op": "set", "to": "xhttp-opts.download-settings.skip-cert-verify", "value": true})
+			}
+			p.MapperHost = map[string]any{"clientOverrides": map[string]any{"mapper": map[string]any{mapper: operations}}}
+			before, err := json.Marshal(p.MapperHost)
+			if err != nil {
+				t.Fatal(err)
+			}
+			out, err := p.endpointDocument(format)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if value, _ := tuningPathValue(out, path); value != false {
+				t.Fatal("mapper bypassed fixed-off certificate policy", out)
+			}
+			if yamlFormat(format) && object(object(out, "xhttp-opts"), "download-settings")["skip-cert-verify"] != false {
+				t.Fatal("download mapper bypassed fixed-off certificate policy", out)
+			}
+			after, err := json.Marshal(p.MapperHost)
+			if err != nil || string(before) != string(after) {
+				t.Fatal("client policy rewrote saved mapper", err)
+			}
+		})
+	}
+}

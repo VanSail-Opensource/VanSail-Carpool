@@ -27,3 +27,20 @@ route and bootstrap code remain composition surfaces.
 Traffic reset is absent from reward selectors and current write contracts. Old
 prize definitions cannot serialize as new awards. Historical result projections
 retain their discriminator separately from the supported reward-write type.
+
+`AdminActivitySettings.vue` propagates its typed boolean save result to the aggregate Settings action. `drawDraft.ts` parses configured prize ticks from decimal strings before converting to the numeric API representation, rejecting malformed precision and unsafe integer conversion. Server prize limits remain authoritative. `drawDraft.test.ts` covers fractional-cent/exponent input, exact signed ticks and unsafe renewal serialization.
+
+Workspace reads and mutations share a request generation, preventing a delayed
+cached inventory from replacing a saved game/draw. Confirmed server responses
+update the local row before refresh; refresh errors identify read failure rather
+than asking the operator to replay a completed write. Editor fields, dismissal
+and repeat submissions lock during pending work; disposal retires completions.
+`useActivityWorkspace.test.ts` covers these boundaries. `AdminDrawForecast.test.ts`
+covers selected-draw isolation and explicit read retry. Hosted browser scenarios
+exercise the real controls, retained errors and recovery on mobile and desktop.
+
+Successful removals update local configuration before a refresh: games and
+instant draws leave the list; raffles retain a cancelled, disabled projection.
+A successful publication acknowledgement advances only a still-draft row to
+publishing and never downgrades a newer state. Read failure does not expose a
+repeat publication or cancellation action; Refresh reconciles retained facts.

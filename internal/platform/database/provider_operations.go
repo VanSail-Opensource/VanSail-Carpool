@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -42,68 +41,40 @@ func createProviderOperationStateTx(ctx context.Context, tx *sql.Tx, input provi
 	if err != nil {
 		return providerops.Operation{}, false, err
 	}
-	existing, loadErr := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+
-		` WHERE actor_user_id=$1 AND kind=$2 AND idempotency_key=$3`, input.ActorUserID, input.Kind, input.IdempotencyKey))
-	if loadErr == nil {
-		if existing.RequestFingerprint != input.RequestFingerprint {
-			return providerops.Operation{}, false, ErrConflict
-		}
-		if err := insertOperationReplayTx(ctx, tx, existing.Receipt.ID, input, now); err != nil {
-			return providerops.Operation{}, false, err
-		}
-		return existing, true, nil
+	if existing, replayed, err := replayProviderOperationTx(ctx, tx, input, now); err != nil || replayed {
+		return existing, replayed, err
 	}
-	if !errors.Is(loadErr, ErrNotFound) {
-		return providerops.Operation{}, false, loadErr
+	if err := providerOperationAdminActorTx(ctx, tx, input); err != nil {
+		return providerops.Operation{}, false, err
 	}
 	if err := lockProviderOperationAccountsTx(ctx, tx, input.ActorUserID, input.OwnerUserID); err != nil {
 		return providerops.Operation{}, false, err
 	}
-	operationID, err := ids.New()
+	return insertProviderOperationTx(ctx, tx, input, now, completed)
+}
+
+// Recover the immutable command before admission checks against mutable live
+// state. Items may be absent when the original target set is no longer current.
+func replayProviderOperationTx(ctx context.Context, tx *sql.Tx, input providerops.CreateInput, now time.Time) (providerops.Operation, bool, error) {
+	input, err := providerops.NormalizeCreate(input)
 	if err != nil {
 		return providerops.Operation{}, false, err
 	}
-	status := "queued"
-	var finished any
-	if completed {
-		status, finished = "succeeded", stamp(now)
+	existing, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+
+		` WHERE actor_user_id=$1 AND kind=$2 AND idempotency_key=$3`, input.ActorUserID, input.Kind, input.IdempotencyKey))
+	if errors.Is(err, ErrNotFound) {
+		return providerops.Operation{}, false, nil
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO provider_operations(id,actor_user_id,owner_user_id,kind,idempotency_key,
-		request_fingerprint,status,created_at,updated_at,completed_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, operationID,
-		input.ActorUserID, nullIfEmpty(input.OwnerUserID), input.Kind, input.IdempotencyKey,
-		input.RequestFingerprint, status, stamp(now), stamp(now), finished)
-	if err != nil {
-		if isUniqueViolation(err) {
-			return providerops.Operation{}, false, ErrConflict
-		}
-		return providerops.Operation{}, false, fmt.Errorf("insert provider operation: %w", err)
-	}
-	for _, item := range input.Items {
-		_, err := tx.ExecContext(ctx, `INSERT INTO provider_operation_items(operation_id,item_key,target_type,target_id,
-			status,created_at,updated_at,completed_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`, operationID, item.Key, item.TargetType,
-			item.TargetID, status, stamp(now), stamp(now), finished)
-		if err != nil {
-			return providerops.Operation{}, false, fmt.Errorf("insert provider operation item: %w", err)
-		}
-	}
-	if !completed {
-		job := map[string]string{"operationId": operationID}
-		if input.SealedTarget != "" {
-			job["sealedTarget"] = input.SealedTarget
-		}
-		payload, err := json.Marshal(job)
-		if err != nil {
-			return providerops.Operation{}, false, fmt.Errorf("encode provider operation job: %w", err)
-		}
-		if err := insertOutboxTx(ctx, tx, "provider_operation", string(payload), now, now); err != nil {
-			return providerops.Operation{}, false, err
-		}
-	}
-	operation, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=$1`, operationID))
 	if err != nil {
 		return providerops.Operation{}, false, err
 	}
-	return operation, false, nil
+	if existing.RequestFingerprint != input.RequestFingerprint {
+		return providerops.Operation{}, false, ErrConflict
+	}
+	if err := insertOperationReplayTx(ctx, tx, existing.Receipt.ID, input, now); err != nil {
+		return providerops.Operation{}, false, err
+	}
+	return existing, true, nil
 }
 
 // CreateOrReplayProviderOperation is an explicit alias for command services.

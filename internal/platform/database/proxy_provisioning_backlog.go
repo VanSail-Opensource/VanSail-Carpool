@@ -14,10 +14,10 @@ func (s *Store) retryAttempt_EnqueueUnlinkedPaidUsers(ctx context.Context, now t
 		return fmt.Errorf("begin unlinked purchase scan: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
-	rows, err := tx.QueryContext(ctx, `SELECT users.id FROM users WHERE users.onboarding_state='complete'
+	rows, err := tx.QueryContext(ctx, `SELECT users.id FROM users WHERE users.onboarding_state='complete' AND users.account_status='active'
 		AND users.proxy_user_id IS NULL
 		AND EXISTS(SELECT 1 FROM purchases WHERE purchases.user_id=users.id
-			AND purchases.status IN ('active','activating','queued') AND purchases.valid_until>$1)`, stamp(now))
+			AND purchases.status IN ('active','activating','queued') AND `+purchaseTimestampOrderSQL("purchases.valid_until")+`>$1)`, purchaseTimestampOrder(now))
 	if err != nil {
 		return fmt.Errorf("scan unlinked paid users: %w", err)
 	}

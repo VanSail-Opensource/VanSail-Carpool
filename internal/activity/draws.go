@@ -12,8 +12,6 @@ type PrizeInput struct {
 	Name           string `json:"name"`
 	ProbabilityBPS int    `json:"probabilityBps,omitempty"`
 	Stock          int64  `json:"stock,omitempty"`
-	Weight         int64  `json:"-"` // retained for historical test fixtures
-	StockRemaining *int64 `json:"-"` // retained for historical test fixtures
 	Reward         Reward `json:"reward"`
 }
 type Prize struct {
@@ -115,6 +113,9 @@ func (input LuckyDrawInput) MaximumPrizeDeduction() int64 {
 	var maximum int64
 	for _, prize := range input.Prizes {
 		if prize.Reward.Kind == RewardTXBDelta && prize.Reward.Range != nil && prize.Reward.Range.Min < 0 {
+			if prize.Reward.Range.Min == math.MinInt64 {
+				return math.MaxInt64
+			}
 			if -prize.Reward.Range.Min > maximum {
 				maximum = -prize.Reward.Range.Min
 			}

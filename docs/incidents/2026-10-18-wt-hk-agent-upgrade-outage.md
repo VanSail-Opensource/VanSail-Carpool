@@ -1,5 +1,10 @@
 # WT-HK Agent Upgrade Outage — 2026-10-18
 
+Historical incident record for 2026-10-18. Commands, temporary mitigations and
+proposed code below describe the affected versions and host at that time. They
+are not a current fleet runbook or authorization to restart a node; use the
+current signed-agent release and recovery procedures for a new incident.
+
 ## Executive summary
 
 WT-HK (`75f85947-99fd-435b-8307-95c6b7c9fdab`) stopped serving after a

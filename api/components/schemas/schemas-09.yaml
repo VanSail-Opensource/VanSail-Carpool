@@ -131,7 +131,8 @@ AdminUserSummary:
       properties:
         status:
           type: string
-          enum: [synchronized, not_provisioned]
+          enum: [synchronized, pending, failed, not_provisioned]
+          description: Historical application of the current native credentials, independent of current node liveness. Credentials awaiting their first authenticated deployment proof are pending; retained recovery errors are failed.
 
 AdminUserPage:
   type: object

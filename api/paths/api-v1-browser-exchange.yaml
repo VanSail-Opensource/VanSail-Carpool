@@ -5,7 +5,7 @@
     ],
     "operationId": "exchangeBrowserAccess",
     "security": [],
-    "description": "Same-origin POST atomically consumes a five-minute handoff and sets independent 30-day browser cookies.",
+    "description": "Same-origin POST atomically consumes a five-minute handoff and sets independent 30-day browser cookies. Invalid, expired or consumed links return 401 BROWSER_LINK_INVALID. Temporary storage failures return 503 BROWSER_SESSION_UNAVAILABLE without consuming the link, allowing an explicit retry before expiry.",
     "requestBody": {
       "required": true,
       "content": {
@@ -38,6 +38,9 @@
       },
       "429": {
         "$ref": "../openapi.yaml#/components/responses/TooManyRequests"
+      },
+      "503": {
+        "$ref": "../openapi.yaml#/components/responses/ServiceUnavailable"
       }
     }
   }

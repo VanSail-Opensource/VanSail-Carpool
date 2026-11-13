@@ -1,5 +1,11 @@
 # Constructed browser fixtures
 
+`PMRecoveryAudit.vue` uses `pm-admin-audit.html?recovery&lost&pending` to mount the
+actual administrator profile loader and PM command owner around an ambiguous
+accepted moderation. `__pmAudit` records stable keys and exact mutations; toggle
+`recover`, `failure`, and `pending` to exercise retry, quiet-read failure and
+terminal polling. All commands and reads remain constructed in the fixture.
+
 `route-recovery-audit.html` mounts the actual browser recovery controller and
 startup failure view around a synthetic lazy user route. Open the profile control
 for client navigation, add `direct` for an initial destination failure, `permanent`
@@ -139,12 +145,10 @@ statistics section via `NodeStatisticsAudit.vue`; combine `unknown-metrics`,
 `stale-metrics`, `offline`, `slow`, `empty`, and `zero-metrics` for count states.
 
 PAYG `deferred` exposes an Explore entry action; `window.paygAuditCalls` and
-resource timings show that PAYG/Combo imports and reads start on selection.
-The Combo flow includes three distinct Core options for selection and
-shared-indicator audits.
-Combine with `slow=1800`, `empty`, `combo-empty`, `error` or `combo-error` for
-loading/recovery states. An isolated browser context can go offline after PAYG
-loads to exercise the Combo chunk recovery, then return online and Reload.
+resource timings show when the PAYG import and reads start. Combine with
+`slow=1800`, `empty` or `error` for loading/recovery states. Use
+`hourly-audit.html?catalog` for constructed Charge by hour controls and receipts;
+fixed-term checkout is retired.
 
 Routing/DIY `recovered`, `recovered=review`, `recovered=failed` and `poll-error`
 exercise receipt resumption on entry, terminal states and status retry.
@@ -155,6 +159,9 @@ combine with `diy`, `populated`, `split`, `long-names` and `zh` for phone layout
 `intro`, `legacy`, `slow`, `empty`, `error`, `save-error`, `nickname` and `zh`
 exercise username-free onboarding and recovery. `window.__onboardingAudit` records
 only constructed transitions; no production authentication or messages run.
+`advance-error` refuses the first intro transition, then permits explicit retry.
+`defer-advance` holds the transition for owner-clearing checks; the trace exposes
+release and owner controls plus a mutable agreement revision and locale switch.
 
 X-Node `controls` mounts Nuxt UI switches, checkboxes, text inputs and a portalled
 form under the shared admin sizing classes. Inspect both themes and widths;
@@ -174,14 +181,16 @@ excluded from production builds.
 mount the real browser entrance, Mini App link panel, and browser exchange view.
 `link`, `exchange`, `slow`, `empty`, `error`, `expired`, `invalid`, and `zh`
 exercise link-only administrator access without production requests.
+`exchange&unavailable` returns one retryable 503 before successful exchange.
 `window.__browserAuthAudit` records mock issuance, exchange, and clipboard actions.
 
-
-`PMAdminAudit.vue`, `pm-admin-audit.ts` and `pm-admin-audit.html` mount real
-administration rows and dialogs with isolated reference-only operations.
-`empty`, `error`, `slow`, `reviewempty`, `reviewerror`, `reviewslow`, `pending`,
-`moderationerror`, `pollerror` and `reduced` exercise browser states without
-sending Telegram messages. `__pmAudit` and `__pmConversations` expose results.
+`PMAdminAudit.vue`, `pm-admin-audit.ts` and `pm-admin-audit.html` mount the real
+user-profile conversation panel and its reference-only delivery dialogs. Use
+`user=ada|mira|review` to select a constructed conversation. `empty`, `error`,
+`slow`, `reviewempty`, `reviewerror`, `reviewslow`, `pending`, `moderationerror`,
+`pollerror`, `reduced` and `zh` exercise states without sending messages. The
+fixture injects a browser-owned operation reader; it never substitutes the
+Mini App receipt client. `__pmAudit` and `__pmConversations` expose results.
 
 `CaptchaAudit.vue`, `captcha-audit.ts` and `captcha-audit.html` mount the actual
 entry gate with Cloudflare's public always-pass test site key and a mocked signed
@@ -203,6 +212,13 @@ different popularity shares for Add squads geometry, sorting and checkout audits
 control and dialog are absent while server-quoted refunds remain available.
 `CommunityAudit.vue`, `community-audit.ts` and `community-audit.html` exercise the
 full-width community layout with `locked`, `joined`, `slow` and `error` states.
+`defer-membership` and `defer-invite` hold owner-bound replies; volatile
+`window.__communityAudit` controls clear the owner and release the reply, and
+record attempted external opens without navigating to Telegram.
+`access` mounts `CommunityAccessAudit.vue` and the real member shell. Combine with
+`defer-access` to hold combo/balance replies independently for each owner; the
+fixture records reads and exposes only synthetic owner/release controls. Hosted
+checks verify that prior-member access cannot return after replacement or logout.
 
 - `LuckyAudit.vue` mounts the member Activity page in Nuxt UI without authentication.
 - `lucky-audit.ts` supplies a local Activity overview and controllable draw response through `window.__audit`.
@@ -210,7 +226,8 @@ full-width community layout with `locked`, `joined`, `slow` and `error` states.
 - `interaction-feedback.ts` installs the real delegated click listener against a constructed Telegram SDK, records haptic/closing/swipe calls and disposes the listener on page exit. It stays inactive for browser administration. The lucky fixture exposes `__audit.feedback`; add `bet`, `loss` or `zh` for the actual bet flow and bilingual controls. `slow`, `empty` and `error` cover initial states; set `__audit.loadFailure=false` before retrying a read failure. `__audit.failNext` injects a result failure. One bet tap records `impact:rigid`, then one `notification:success|warning`; it must not record another result-time impact.
 - `LuckyAdminAudit.vue`, `lucky-admin-audit.ts`, and `lucky-admin-audit.html` mount the browser admin activity panel with a constructed game, instant draw, raffle, catalog, and forecast data. Query parameters `slow`, `empty`, `error`, `zh` and `dark` exercise loading, failure, localization and appearance. Game/draw removal is mocked; `delete-error` preserves the target on failure, and setting `window.__audit.recover=true` permits retry. `window.__audit.deletes` records attempts without contacting a backend. The retained-game dialog uses the real shared confirmation component.
 
-These files are for local visual audits. The production Vite build starts from the root `index.html` and does not include this page.
+These files are for local visual audits. The production Vite build starts from
+the root `index.html`, `admin.html` and `subscription.html` and excludes fixtures.
 
 - `activity-boost-audit.ts` mounts the real activity page with controllable constructed boost, loading, error, reward and check-in states for Chrome DevTools MCP validation. Exposes `window.__boostAudit` and a locale switch for manual inspection.
 - `activity-boost-audit.html` opens that fixture directly, including the zero-boost
@@ -245,16 +262,13 @@ existing empty/slow/error/multiple-origin/large modes cover the new sections too
 
 - `ip-lookup-progress-audit.ts` supplies progressive, interrupted and 300-node/1,500-edge/1,000-path browser fixtures. The live fixture counts simulated upstream runs and implements a 60-second reuse window with forced refresh.
 
-
 `ip-lookup-rating-audit.ts` constructs all six report tiers (`rating=perfect|excellent|good|average|poor|incomplete`). `many-transfers` and `long-labels` exercise pagination and graph clipping. These are constructed browser evidence, not upstream collection or billing proof.
 
-- `XNodeAudit.vue`, `xnode-audit.ts` and `xnode-audit.html` provide constructed X-Node workspace and migration browser states. Query flags cover empty, slow, error, source preview, unsupported methods, pending receipts, recovery and Chinese localization. They never connect to production agents.
+- `XNodeAudit.vue`, `xnode-audit.ts` and `xnode-audit.html` provide constructed X-Node workspace browser states. Query flags cover empty, slow, error, native configuration previews, pending receipts, recovery and Chinese localization. They never connect to production agents.
   `legacy-source-rule` supplies an old enabled inventory-match rule to verify
   that the global firewall editor still exposes only supported detection rules.
   `not-ready` and `stale-metrics` exercise connected-but-unavailable node badges;
   the default ready fixture deliberately represents an older activity capability set.
-  `final` selects all-native checkpoints; `final-error` rejects completion to
-  exercise export review and retry without changing provider ownership.
 
 - `public-subscription-audit.ts` and `public-subscription-audit.html` supply populated, loading, empty, partial and invalid/revoked-link browser cases. Metadata requests record credential omission; copy and QR remain local.
 
@@ -262,14 +276,11 @@ existing empty/slow/error/multiple-origin/large modes cover the new sections too
 
 - `DetectorRetirementAudit.vue`, `detector-retirement-audit.ts`, and `detector-retirement-audit.html` exercise the retained browser navigation and affiliate profile at desktop/mobile sizes. Query flags `empty`, `slow`, `error`, `member`, and `zh` cover empty/loading/retry/localized states without detector resources.
 
-X-Node audit flags `source&shared` and `shared-error` exercise the localized shared SS-2022 preview warning and a refused handover that retains source ownership.
-
 - `RetiredControlsAudit.vue` exercises real catalog-node, statistics, administrator account-action and squad-editor components through the legacy mode of `detector-retirement-audit.ts`, including constructed loading, empty and error states.
 
-`MemberNodesAudit.vue` exercises member metrics, formats and revision-aware routing in native mode of the retirement fixture.
+`MemberNodesAudit.vue` exercises member metrics, formats and revision-aware routing in native mode of the retirement fixture. Its routing mock implements current endpoint/template choices, previews and durable save receipts; the retired raw member outbounds/template methods are removed. The hosted member recovery suite verifies the exact versioned save payload and operation key.
 
 The X-Node fixture also supplies named service users, access edits, isolated routing and subscription rotation. Flags `services-empty`, `service-error` and `service-save-error` exercise its browser states without contacting agents.
-
 
 `RoutingAudit.vue`, `routing-audit.ts` and `routing-audit.html` mount actual member
 routing and browser preset forms with isolated mock APIs. Flags `admin`, `zh`,
@@ -277,13 +288,15 @@ routing and browser preset forms with isolated mock APIs. Flags `admin`, `zh`,
 `preview-error`, `stale-preview`, `poll-error` and `disabled` cover UI states.
 `window.__routingAudit` records writes, previews and member operation polling.
 `load-timeout`, `preview-timeout` and `save-timeout` retain the real API deadline
-wrapper for that call; Chrome may construct a stalled fetch to inspect timeout
-errors and retained drafts without a backend. Initial-load timeout retries use
-the normal fixture data.
+wrapper for that call. A local fetch interceptor stalls those routing requests
+until their cancellation signal fires, so even the save case cannot reach a
+configured backend. This exercises timeout errors and retained drafts without
+requiring manual network interception. Initial-load timeout retries use the
+normal fixture data.
 
-`stablecoin-audit.ts` and `stablecoin-audit.html` mount actual token settings, review dismissal and selected-payment credit dialogs with constructed data. Flags `credit`, `zh`, `dark`, `slow`, `empty`, `error`, `save-error` and `action-error` cover both outcomes, failed loads/saves and retry. `window.__stablecoinAudit` records requests; it never contacts a chain.
+`stablecoin-audit.ts` and `stablecoin-audit.html` mount actual token settings, transfer review and payment instructions with constructed data. `stored` supplies an endpoint for the mocked server probe; `check-error` returns its constructed failure. `purged-review&action-error` retains a failed dismissal until `window.__stablecoinAudit.recover=true`, then retry removes the constructed transfer. The trace records checks, dismissals, settings and copies. The hosted browser suite checks these actions under its network-denial guard; no chain or backend request is made.
 
-`NativeAdminAudit.vue`, `native-admin-audit.ts` and `native-admin-audit.html` mount actual profile metrics/scans/TXB controls, machine tables/charts and browser statistics with constructed signed-request data. Flags `view=machine`, `view=statistics`, `empty`, `slow`, `error`, `save-error`, `dark` and `zh` exercise states; `window.__nativeAdminTarget` steers profile races and `window.__nativeAdminAudit` records scoped calls.
+`NativeAdminAudit.vue`, `native-admin-audit.ts` and `native-admin-audit.html` mount actual profile metrics/TXB controls, machine tables/charts and browser statistics with constructed signed-request data. Flags `view=machine`, `view=statistics`, `empty`, `slow`, `error`, `save-error`, `dark` and `zh` exercise states; `window.__nativeAdminTarget` steers profile races and `window.__nativeAdminAudit` records scoped calls.
 
 The X-Node fixture includes administrator CIDR grants; `grant-error`, `firewall-empty`, `slow` and `zh` exercise retained drafts, empty/loading states and Chinese labels.
 
@@ -297,8 +310,6 @@ offline, degraded, stale, and limited-report badges with constructed node data.
 
 Public subscription `diagnostics` shows compatible formats alongside explicit
 endpoint omissions and a failed Stash template; it uses synthetic credentials.
-
-Native admin `view=scan` isolates connection scanning; `scan-failed` projects a durable safe error code, while `error` rejects the request and `empty` returns a successful empty scan.
 
 The X-Node `commands` view isolates native utilities. `command-outcome=UNDELIVERED`, `REJECTED`, `FAILED` or `OUTCOME_UNKNOWN` projects each durable outcome; `slow` shows submission and polling.
 
@@ -321,7 +332,6 @@ X-Node `large-metrics` supplies a large CPU tree to inspect lazy mounting.
 errors/retry, empty data, exact large counters and late responses. Log updates
 are synthetic and traced as logs:<node ID>; close/pause must stop polling.
 `delete-error` retains endpoint rows and reports a localized action failure.
-Native admin `view=connections` displays only nodes with observed active user IPs.
 
 Routing flags `speedtest-start-error`, `speedtest-poll-error` and
 `speedtest-uncertain` exercise same-key lost replies, status-only retry, progressive
@@ -347,12 +357,12 @@ explicit forced reload payloads.
 Settings entrance is opened. This checks the actual DIY route at mobile/desktop
 widths without production traffic; returning restores the settings receipt loader.
 
-`payg-audit.html`, `payg-audit.ts` and `PAYGAudit.vue` mount the actual PAYG/Combo catalog and administrator squad editor with synthetic signed-transport-compatible data. Query flags select loading, empty, failure, locale, appearance and admin states; no real member data or upstream calls are used.
-`validity-audit.html` mounts the real member dashboard summary and admin entitlement tables with constructed raw lifecycle states. `boundary` expires an active term after 15 seconds; `inventory`, `zh`, `light` and `error` cover filters, themes and offline loading. `payg-audit.html?cards` mounts shared combo cards; PAYG fixtures include all profile types, missing profiles and long carriers, with an internal node-name sentinel that must never appear.
+`payg-audit.html`, `payg-audit.ts` and `PAYGAudit.vue` mount the actual Explore entrance and administrator squad editor with synthetic signed-transport-compatible data. Query flags select loading, empty, failure, locale, appearance and admin states; no real member data or upstream calls are used.
+`validity-audit.html` mounts the real member dashboard summary and admin entitlement tables with constructed raw lifecycle states. `boundary` expires an active term after 15 seconds; `inventory`, `zh`, `light` and `error` cover filters, themes and offline loading. `payg-audit.html?cards` mounts shared squad cards; PAYG fixtures include all profile types, missing profiles and long carriers, with an internal node-name sentinel that must never appear.
 
-PAYG fixtures record `paygAuditHaptics` through the real delegated feedback. Catalog data is populated by default; `combo-empty`, `combo-error` and `slow` exercise the introduction and content gate without upstream traffic. Settings fixtures expose PAYG rows with `payg-empty` and `save-error` scenarios.
+PAYG fixtures record `paygAuditHaptics` through the real delegated feedback. `slow`, `empty` and `error` exercise the member traffic view without upstream traffic. Settings fixtures expose PAYG rows with `payg-empty` and `save-error` scenarios.
 
-`pricing-audit.html`, `pricing-audit.ts` and `PricingAudit.vue` mount real pricing policy, workspace and read-only member notice components with constructed data. Query flags select `view=policy|overview|product|user|operations|exports|member`, `empty`, `error`, `slow`, `save-error` and `zh`. No production credentials, member records or external services are used.
+`pricing-audit.html`, `pricing-audit.ts` and `PricingAudit.vue` mount browser pricing policy, workspace, catalog, predictions and chart components with constructed data. Query flags select `view=policy|predictions|charts|catalog|overview|product|user|operations|exports` (default: policy), `empty`, `error`, `slow`, `save-error` and `zh`. The retired checkout fixture is removed. No production credentials, member records or external services are used.
 
 `PricingAudit.vue`, `pricing-audit.ts` and `pricing-audit.html` mount pricing components with deterministic API fixtures. `pricing-data.ts` supplies administrator-scoped user forecasts and paginated prices, including evaluated-but-unvalidated coverage. `ChartsAudit.vue` exercises line, interval, stacked and donut composition in both appearance modes. These fixtures support Chrome DevTools inspection and never write to production.
 
@@ -405,3 +415,111 @@ The editor has no cadence selector; `window.__xnodeAudit.writes` records success
 `service-error`, `service-save-error`, `slow`, and `zh` for the existing states.
 Add `service-reactive` to exercise reactive API results and confirm editor copies
 work without cloning a Vue proxy or mutating the loaded term.
+
+Public subscription `malformed` returns a constructed invalid metadata shape;
+the actual transport must show read recovery without exposing a usable link or
+crashing the page. Ready fixtures include current first-deployment fields.
+
+`RecoveryAudit.vue`, `recovery-audit.ts` and `recovery-audit.html` mount the actual
+App session watcher, currency control and payment sheet with constructed requests.
+`currency-slow` holds preference reads for explicit release, `currency-error`
+refuses saves until recovery, and `empty` removes payment methods. Cancellation
+receipts default to failed; `cancel-succeeded` returns success while the fetched
+order deliberately stays pending. `window.__recoveryAudit` exposes only synthetic
+read/write counts, deferred releases, owner replacement and payment completion.
+The hosted `browser-recovery-audit.mjs` checks desktop/mobile state, recovery,
+logout isolation, and the existing browser-auth fixture, retaining screenshots
+and console/network diagnostics. No production payment or authentication occurs.
+It verifies actual currency-menu bounds after errors and closes the explained
+empty-payment state. `browser-member-recovery.mjs` adds onboarding and community
+lifecycle checks to the same browser run.
+
+`OperationResolutionAudit.vue`, `operation-resolution-audit.ts` and
+`operation-resolution-audit.html` mount the actual receipt repair dialog with
+constructed retained operations. `blocked` selects a payment workflow that
+requires domain reconciliation; `error` refuses the first repair until the
+fixture's `__operationResolutionAudit.fail` is cleared. The fixture records
+explicit outcome/reason selections without contacting any server.
+`browser-auth-audit.html?recovery&session-unavailable` returns a temporary session
+read failure and records reads separately from Telegram exchanges, so hosted
+checks can verify safe retries.
+
+`PurchaseRecoveryAudit.vue`, `purchase-recovery-audit.ts` and
+`purchase-recovery-audit.html` mount the actual queued purchase summary and
+confirmation dialog. `error` rejects cancellation until the synthetic fail flag
+is cleared; `defer` holds the reply while the queued purchase is replaced. Hosted
+checks verify target changes retire consent, old replies do not report success
+for a replacement purchase, and errors remain visible inside the open dialog.
+No wallet or provider mutation occurs.
+
+`recovery-audit.html?captcha` mounts the actual App first-entry gate with a local
+constructed provider and deferred verification. The hosted owner-replacement
+check retires the old widget and verifies that its late session reply and expiry
+callback cannot alter the new account. No external verification request occurs.
+
+`purchase-recovery-audit.html?renewal` uses `renewalPricingFixture.ts` to supply
+server-shaped gross/discount/net amounts and retained contract/quote evidence.
+Add `expires`, `deferred-health`, `defer-pricing` or `pricing-error` to verify
+timed expiry, paused settlement copy, reopened-dialog response isolation and
+explicit read recovery. The fixture records writes; these price-preview checks
+must not toggle renewal or create any debit.
+
+Lucky activity `bet&progress` shows a completed group-reward threshold and a
+mutable constructed game. Refresh returns a fresh snapshot, so disabling that
+game exercises the actual eligibility transition. `__audit.bets` and `betKeys`
+record attempted mock bets, allowing hosted error/retry checks to verify intent
+identity without any wallet mutation.
+
+`payment-return-audit.html?crypto&pending`, `?crypto&failed`, `?crypto&refunded`
+and `?crypto&paid` provide constructed receipt states without conflating order
+value or expected crypto amounts with confirmed balance credit.
+
+Hourly recovery uses `hourly-audit.html` with policy/offer/enrollment replacement
+and retained-credit/zero-allowance states. `allowance-zero-unused` has no funded
+credit; `credit-exhausted` consumes both reported budgets.
+
+`ip-recovery-audit.html` mounts the actual BGP graph with missing endpoint metadata,
+route-page contraction and selection removal. `live` mounts live details with a
+retained paid snapshot, account replacement, logout and a delayed obsolete read.
+The fixture uses documentation addresses and constructed owners only.
+
+Browser auth `link&defer-link` holds administrator entrance creation across owner
+replacement/logout; `link&link-refresh-error` rejects expiry refresh until explicit
+recovery. Settings `__controlsAudit` exposes constructed owner replacement and
+tag-save recovery, with exact activation target and tag-write counts. These
+component fixtures seed typed sessions without full-session preload requests.
+
+The existing `pricing-audit.html?view=charts&exact` fixture compares a raw decimal
+traffic total beyond the JavaScript safe-integer range with numeric live-metric
+samples. `invalid` adds malformed and missing buckets; browser checks verify
+unavailable readouts without inventing zero traffic or issuing API requests.
+
+`emby-connection-audit.html?cached-refresh` restores schema-compatible constructed
+payment, amount-limit and activity snapshots while holding their live reads.
+`__embyConnectionAudit.releaseReads(fail)` releases those original snapshots or
+errors after a mutation, and exact write/delete counters expose accidental
+replays. The existing Emby connection cases keep their original behavior.
+
+`BackupRecoveryAudit.vue`, `backup-recovery-audit.ts` and
+`backup-recovery-audit.html` mount the actual backup/job workspace with constructed
+records and deferred reads/actions. `slow`, `empty`, `error`, `defer` and `zh`
+select states. `__backupRecoveryAudit` records exact deletion/download attempts,
+releases pending actions, and retires the workspace without real archive access.
+
+Lucky administrator fixtures add `stale-load`, `defer-save`, `read-after-save-error`
+and `forecast-error`. `__audit.releaseReads()` and `releaseSave(fail)` control
+constructed completions; `gameWrites` and `drawWrites` record reviewed targets and
+payloads without any live reward or wallet mutation.
+
+`CouponRecoveryAudit.vue`, `coupon-recovery-audit.ts` and
+`coupon-recovery-audit.html` mount the actual coupon workspace with constructed
+definitions and deferred mutations. `slow`, `defer`, `refresh-error`,
+`options-error` and `zh` select states. `__couponRecoveryAudit` records exact
+changed-field payloads, releases failures/successes and retires the owner view.
+No grant, wallet or payment operation is issued.
+
+Database audit adds `defer-review`, `defer-apply` and `cached-metadata` states.
+`databaseAudit` records exact review/apply inputs, releases constructed outcomes
+and retires the workspace. Its row includes an exact numeric string beyond the
+JavaScript safe-integer range and a nullable BOOLEAN. The cached metadata mode
+releases an obsolete table list after a current review has begun.

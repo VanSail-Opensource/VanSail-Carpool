@@ -39,7 +39,7 @@ var (
 	ErrInvalid = errors.New("request signature is invalid")
 	// ErrReplay marks a nonce already accepted for the same session.
 	ErrReplay = errors.New("request signature nonce was replayed")
-	// ErrRateLimited marks a session that exhausted its bounded nonce window.
+	// ErrRateLimited marks exhaustion of a session or process nonce budget.
 	ErrRateLimited = errors.New("request signature rate limit exceeded")
 	// ErrBodyTooLarge marks a body beyond the signed-request limit.
 	ErrBodyTooLarge = errors.New("request body is too large")
@@ -108,9 +108,16 @@ func (verifier *Verifier) Verify(request *http.Request, sessionToken, clientKey 
 	if !hmac.Equal([]byte(signature), []byte(wantSignature)) {
 		return ErrInvalid
 	}
+	// Body reads may span the timestamp boundary. Recheck immediately before
+	// reserving the nonce so an already-expired reservation cannot be accepted
+	// repeatedly by delayed requests that started inside the original window.
+	now := verifier.now()
+	if !fresh(now.Unix(), signedAtUnix, int64(verifier.window/time.Second)) {
+		return ErrStale
+	}
 	sessionDigest := sha256.Sum256([]byte(sessionToken))
 	expiresAt := time.Unix(signedAtUnix, 0).Add(verifier.window)
-	if err := verifier.replays.add(string(sessionDigest[:]), nonce, verifier.now(), expiresAt); err != nil {
+	if err := verifier.replays.add(string(sessionDigest[:]), nonce, now, expiresAt); err != nil {
 		return err
 	}
 	return nil

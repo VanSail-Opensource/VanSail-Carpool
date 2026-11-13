@@ -35,19 +35,9 @@ const props = withDefaults(defineProps<{
 const model = defineModel<string>({ required: true })
 const { t } = useI18n()
 const minor = computed(() => props.parseDisplayValue?.(model.value) ?? moneyFromTxbInput(model.value))
-const numericModel = computed<number | null>({
-  get: () => {
-    if (!model.value) return null
-    const value = Number(model.value)
-    return Number.isFinite(value) ? value : null
-  },
-  set: (value) => {
-    if (value === null || !Number.isFinite(value)) {
-      model.value = ''
-      return
-    }
-    model.value = props.integerOnly ? String(Math.trunc(value)) : value.toFixed(2)
-  },
+const numericModel = computed<number | null>(() => {
+  if (!model.value) return null
+  return inputToNumber(model.value) ?? null
 })
 const minimum = computed(() => inputToNumber(props.displayMinimum?.(props.minMinor) ?? props.displayValue?.(props.minMinor) ?? txbInputFromMinor(props.minMinor)))
 const maximum = computed(() => props.maxMinor === undefined ? undefined : inputToNumber(props.displayValue?.(props.maxMinor) ?? txbInputFromMinor(props.maxMinor)))
@@ -76,14 +66,17 @@ const error = computed(() => model.value && !valid.value ? message.value : undef
 defineExpose({ minor, valid })
 
 function inputToNumber(value: string): number | undefined {
-	if (!/^\d+(?:\.\d{1,2})?$/.test(value)) return undefined
-	const amount = Number(value)
+  const parsed = moneyFromTxbInput(value)
+  if (!parsed || BigInt(parsed) > BigInt(Number.MAX_SAFE_INTEGER)) return undefined
+  const amount = Number(value)
   return Number.isFinite(amount) ? amount : undefined
 }
 
 function updateSlider(value: number | number[]): void {
   const next = Array.isArray(value) ? value[0] : value
-  if (typeof next === 'number' && Number.isFinite(next)) numericModel.value = next
+  if (typeof next === 'number' && Number.isFinite(next)) {
+    model.value = props.integerOnly ? String(Math.trunc(next)) : next.toFixed(2)
+  }
 }
 </script>
 
@@ -98,20 +91,16 @@ function updateSlider(value: number | number[]): void {
   >
     <div class="amount-input amount-input--compact" :class="{ 'amount-input--slider': showSlider }">
       <UIcon name="i-ph-coins-fill" aria-hidden="true" />
-      <UInputNumber
+      <UInput
         :id="id"
-        v-model="numericModel"
+        v-model="model"
         class="amount-number"
-        :min="minimum"
-        :max="maximum"
-        :step="integerOnly ? 1 : 0.01"
-        :format-options="{ useGrouping: false, minimumFractionDigits: integerOnly ? 0 : 2, maximumFractionDigits: integerOnly ? 0 : 2 }"
-        increment
-        decrement
+        type="text"
+        :inputmode="integerOnly ? 'numeric' : 'decimal'"
+        autocomplete="off"
         :required="required"
         :disabled="disabled"
         :aria-invalid="model ? !valid : undefined"
-        fixed
       />
       <span>{{ props.suffix ?? t('common.currencyTxb') }}</span>
       <USlider

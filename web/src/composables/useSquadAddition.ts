@@ -1,6 +1,6 @@
 import { usePricingQuote } from './usePricingQuote'
 import { restoreRef } from '@/api/cache/restore'
-import { computed, readonly, shallowRef, watch } from 'vue'
+import { computed, onScopeDispose, readonly, shallowRef, watch } from 'vue'
 
 import { featuresApi, type CouponGrant } from '@/api/features'
 import { isCouponGrantAvailable } from '@/utils/coupons'
@@ -9,6 +9,7 @@ import type { Catalog, Purchase, SquadProduct } from '@/api/types'
 import { localizedError, t } from '@/i18n'
 import { createUuid } from '@/utils/browserCompatibility'
 import { notifyHaptic } from '@/utils/telegram'
+import { createLatestRequest } from '@/utils/latestRequest'
 
 interface SquadAdditionOptions {
   comboId?: () => string
@@ -26,7 +27,9 @@ export function useSquadAddition(options: SquadAdditionOptions) {
   const purchasing = shallowRef(false)
   const needsBalance = shallowRef(false)
   const error = shallowRef<string | null>(null)
-  let pendingAttempt: { fingerprint: string; key: string } | undefined
+  const pendingAttempts = new Map<string, string>()
+  const loads = createLatestRequest()
+  const mutations = createLatestRequest()
   const activeSquadSet = computed(() => new Set(options.activeSquadUuids()))
   const visibleSquads = computed(() => (catalog.value?.addons ?? []).filter((squad) =>
     squad.visible && squad.upstreamPresent && !activeSquadSet.value.has(squad.groupId),
@@ -52,6 +55,10 @@ export function useSquadAddition(options: SquadAdditionOptions) {
   })
 
   function reset(): void {
+    loads.invalidate()
+    mutations.invalidate()
+    loading.value = false
+    purchasing.value = false
     selectedCouponGrantId.value = null
     selectedSquadIds.value = []
     purchase.value = null
@@ -75,39 +82,50 @@ export function useSquadAddition(options: SquadAdditionOptions) {
   }
 
   async function load(): Promise<boolean> {
+    const ticket = loads.begin()
     loading.value = !restoreRef('/api/v1/catalog', catalog)
     error.value = null
     try {
       const [nextCatalog, wallet] = await Promise.all([api.getCatalog(), featuresApi.getCouponWallet().catch(() => null)])
+      if (!loads.isCurrent(ticket)) return false
       catalog.value = nextCatalog
       couponGrants.value = wallet?.items || []
       selectedSquadIds.value = selectedSquadIds.value.filter((id) => visibleSquads.value.some((squad) => squad.id === id))
       return true
     } catch (caught) {
+      if (!loads.isCurrent(ticket)) return false
       error.value = localizedError(caught, 'errors.catalogUnavailable')
       notifyHaptic('error')
       return false
     } finally {
-      loading.value = false
+      if (loads.isCurrent(ticket)) loading.value = false
     }
   }
 
   async function confirmPurchase(squadActivationCodes: Record<string, string>): Promise<boolean> {
     if (purchasing.value || !selectedSquadIds.value.length) return false
-    if (!quoteUsable.value && !pendingAttempt) { await refreshQuote(); return false }
+    const attemptFingerprint = fingerprint.value
+    if (!quoteUsable.value && !pendingAttempts.has(attemptFingerprint)) { await refreshQuote(); return false }
+    const ticket = mutations.begin()
+    const purchaseId = options.purchaseId()
     purchasing.value = true
     error.value = null
     needsBalance.value = false
     try {
-      const attemptFingerprint = JSON.stringify([options.purchaseId(), [...selectedSquadIds.value].sort(), selectedCouponGrantId.value, Object.entries(squadActivationCodes).sort(([a], [b]) => a.localeCompare(b))])
-      if (pendingAttempt?.fingerprint !== attemptFingerprint) pendingAttempt = { fingerprint: attemptFingerprint, key: createUuid() }
-      purchase.value = await api.addPurchaseAddons(options.purchaseId(), selectedSquadIds.value, pendingAttempt.key, squadActivationCodes, selectedCouponGrantId.value ?? undefined, quote.value?.quoteVersion)
-      pendingAttempt = undefined
+      const key = pendingAttempts.get(attemptFingerprint) ?? createUuid()
+      pendingAttempts.set(attemptFingerprint, key)
+      const result = await api.addPurchaseAddons(purchaseId, [...selectedSquadIds.value], key, squadActivationCodes, selectedCouponGrantId.value ?? undefined, quote.value?.quoteVersion)
+      if (!mutations.isCurrent(ticket) || fingerprint.value !== attemptFingerprint) return false
+      purchase.value = result
+      pendingAttempts.delete(attemptFingerprint)
       notifyHaptic('success')
       return true
     } catch (caught) {
+      if (!mutations.isCurrent(ticket) || fingerprint.value !== attemptFingerprint) return false
       if (caught instanceof ApiError && caught.code === 'PRICING_QUOTE_CHANGED') {
-        clearQuote(); await refreshQuote(); error.value = t('pricing.quoteChanged')
+        clearQuote(); await refreshQuote()
+        if (!mutations.isCurrent(ticket) || fingerprint.value !== attemptFingerprint) return false
+        error.value = t('pricing.quoteChanged')
       } else if (caught instanceof ApiError && caught.code === 'INSUFFICIENT_BALANCE') {
         needsBalance.value = true
         error.value = t('errors.purchaseBalance')
@@ -117,9 +135,11 @@ export function useSquadAddition(options: SquadAdditionOptions) {
       notifyHaptic('error')
       return false
     } finally {
-      purchasing.value = false
+      if (mutations.isCurrent(ticket)) purchasing.value = false
     }
   }
+
+  onScopeDispose(() => { loads.dispose(); mutations.dispose(); pendingAttempts.clear() })
 
   return {
     couponGrants: readonly(couponGrants), selectedCouponGrantId, eligibleCoupons,

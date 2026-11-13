@@ -21,6 +21,7 @@ export function useAdminUserHourly(userId: MaybeRefOrGetter<string>) {
   const keys = new Map<string, string>()
   let controller: AbortController | undefined
   let generation = 0
+  let identityVersion = 0
   let active = true
 
   async function load(quiet = false): Promise<void> {
@@ -45,7 +46,8 @@ export function useAdminUserHourly(userId: MaybeRefOrGetter<string>) {
     const version = view.value?.policy.version
     if (!active || busyEnrollment.value || !version) return false
     const target = toValue(userId)
-    const actionKey = `${target}:${squad.enrollmentId}`
+    const identity = identityVersion
+    const actionKey = JSON.stringify([target, squad.enrollmentId, version])
     busyEnrollment.value = squad.enrollmentId
     actionError.value = null
     conflict.value = false
@@ -54,21 +56,20 @@ export function useAdminUserHourly(userId: MaybeRefOrGetter<string>) {
     keys.set(actionKey, key)
     try {
       const receipt = await adminOperationsApi.disableAdminHourly(target, squad.enrollmentId, version, key)
-      if (!active || target !== toValue(userId)) return false
+      if (!active || identity !== identityVersion || target !== toValue(userId)) return false
       keys.delete(actionKey)
       queued.value = receipt
       await load(true)
       return true
     } catch (caught) {
-      if (!active) return false
-      if (caught instanceof ApiError) keys.delete(actionKey)
+      if (!active || identity !== identityVersion || target !== toValue(userId)) return false
       conflict.value = caught instanceof ApiError && caught.status === 409
       actionError.value = conflict.value
         ? t('hourly.conflict')
         : localizedError(caught, 'hourly.admin.user.actionFailed')
       return false
     } finally {
-      if (active) busyEnrollment.value = null
+      if (active && identity === identityVersion) busyEnrollment.value = null
     }
   }
 
@@ -79,12 +80,14 @@ export function useAdminUserHourly(userId: MaybeRefOrGetter<string>) {
   }
 
   watch(() => toValue(userId), () => {
+    identityVersion++
+    busyEnrollment.value = null
     view.value = null
     error.value = null
     clearActionError()
     void load()
   }, { immediate: true })
-  onScopeDispose(() => { active = false; generation++; controller?.abort(); view.value = null })
+  onScopeDispose(() => { active = false; generation++; identityVersion++; controller?.abort(); view.value = null; keys.clear() })
 
   return {
     view: readonly(view), squads, policyVersion, loading: readonly(loading), error: readonly(error),

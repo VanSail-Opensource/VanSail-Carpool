@@ -9,6 +9,7 @@ import { createUuid } from '@/utils/browserCompatibility'
 import { usePurchaseValidity } from '@/composables/usePurchaseValidity'
 
 interface PerformMessages {
+  intent?: unknown
   conflictKey?: string
   conflictCodeKeys?: Record<string, string>
 }
@@ -49,7 +50,10 @@ export function useAdminUserProfile(userId: MaybeRefOrGetter<string>) {
       const result = await adminOperationsApi.getUser(expectedId, controller.signal)
       if (active && ticket === generation && toValue(userId) === expectedId) detail.value = result
     } catch (caught) {
-      if (active && ticket === generation) { detail.value = null; loadError.value = localizedError(caught, 'adminUserProfile.loadFailed') }
+      if (active && ticket === generation) {
+        if (!quiet) detail.value = null
+        loadError.value = localizedError(caught, 'adminUserProfile.loadFailed')
+      }
     } finally {
       if (active && ticket === generation && toValue(userId) === expectedId) loading.value = false
     }
@@ -72,7 +76,7 @@ export function useAdminUserProfile(userId: MaybeRefOrGetter<string>) {
     if (busyAction.value || loading.value || !detail.value || loadError.value) return false
     const version = identityVersion
     const target = toValue(userId)
-    const actionKey = `${target}:${action}`
+    const actionKey = JSON.stringify([target, action, messages.intent ?? null])
     busyAction.value = action
     actionError.value = null
     conflict.value = false
@@ -86,7 +90,6 @@ export function useAdminUserProfile(userId: MaybeRefOrGetter<string>) {
       return true
     } catch (caught) {
       if (!active || version !== identityVersion) return false
-      if (caught instanceof ApiError) keys.delete(actionKey)
       conflict.value = caught instanceof ApiError && caught.status === 409
       const codeKey = caught instanceof ApiError ? messages.conflictCodeKeys?.[caught.code] : undefined
       actionError.value = codeKey
@@ -104,7 +107,7 @@ export function useAdminUserProfile(userId: MaybeRefOrGetter<string>) {
   }
 
   watch(() => toValue(userId), () => { identityVersion++; busyAction.value = null; actionError.value = null; void load() }, { immediate: true })
-  onScopeDispose(() => { active = false; generation++; identityVersion++; controller?.abort(); detail.value = null })
+  onScopeDispose(() => { active = false; generation++; identityVersion++; controller?.abort(); detail.value = null; keys.clear() })
 
   return {
     detail: currentDetail, options: shallowReadonly(options), loading: shallowReadonly(loading),

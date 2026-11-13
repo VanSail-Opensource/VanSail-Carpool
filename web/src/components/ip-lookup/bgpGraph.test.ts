@@ -10,6 +10,15 @@ function fixture(): IPLookupBGPTopology {
     paths: [], truncated: false, relationshipMeta: { status: 'success', source: 'caida', observedAt: '', errorCode: '' } }
 }
 describe('fixed compact BGP graph', () => {
+  it('keeps a partial topology renderable when an edge endpoint is absent', () => {
+    const topology = fixture()
+    topology.nodes = topology.nodes.filter(node => node.asn !== 20)
+    const layout = graphLayout(indexTopology(topology))
+    const present = new Set(layout.nodes.map(node => node.asn))
+    expect(layout.nodes.some(node => node.asn === 20)).toBe(false)
+    expect(layout.edges.length).toBeGreaterThan(0)
+    expect(layout.edges.every(edge => present.has(edge.from) && present.has(edge.to))).toBe(true)
+  })
   it('keeps intermediate transits and sorts each column by observations without inventing focus paths', () => {
     const topology = fixture()
     topology.projectionVersion = 2

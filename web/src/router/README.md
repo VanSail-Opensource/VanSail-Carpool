@@ -1,8 +1,8 @@
 # Router
 
-Catalog navigation renders immediately while a live dashboard refresh checks the
-member's renewal gate. Only the latest navigation may redirect; cached data never
-grants purchase permission, and catalog/quote/purchase endpoints enforce eligibility.
+The member guard resolves session, onboarding and administrator-access routing.
+Catalog and billing endpoints enforce purchase eligibility; route or cached state
+never grants purchase permission.
 
 - `index.ts` declares routes and installs the session guard.
 - `history.ts` selects WebView-safe in-memory history or browser history.
@@ -31,8 +31,8 @@ failure never changes or reloads the Telegram launch URL.
 
 `/balance` remains a compatibility redirect to `/home?topUp=1`; Home owns the real funding sheet.
 
-`/statistics` is a protected member route reached from Around TX and uses the
-shared shell back behavior instead of changing the Telegram launch URL.
+Statistics belongs to the separate browser-administrator `/admin/statistics`
+route. The member router does not expose a statistics view.
 
 `/community` is a protected thin member route reached from Around TX. It keeps
 group and channel joining outside onboarding and uses the shared shell back behavior.

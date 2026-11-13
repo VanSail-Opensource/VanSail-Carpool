@@ -7,24 +7,29 @@ func (s *SettingsService) paymentProfileReadiness(ctx context.Context, provider 
 		return nil, false
 	}
 	profiles, err := s.PaymentProfiles(ctx)
-	if err != nil || len(profiles) == 0 {
-		return nil, false
+	if err != nil {
+		// Profile storage owns migrated accounts. An unavailable read cannot
+		// make the provider look disabled through legacy setting defaults.
+		return []string{"unavailable:payment_profile." + provider}, true
 	}
+	found, missingProfile, missingMerchant := false, false, false
 	for _, profile := range profiles {
 		if profile.Provider != provider {
 			continue
 		}
+		found = true
 		if !profile.Enabled {
-			return nil, true
+			continue
 		}
-		issues := make([]string, 0, 2)
-		if !profile.Configured || len(profile.EnabledChannels) == 0 {
-			issues = append(issues, "missing:payment_profile."+provider)
-		}
-		if provider == "ezpay" && profile.MerchantID == "" {
-			issues = append(issues, "missing:payment_profile."+provider+".merchant_id")
-		}
-		return issues, true
+		missingProfile = missingProfile || !profile.Configured || len(profile.EnabledChannels) == 0
+		missingMerchant = missingMerchant || provider == "ezpay" && profile.MerchantID == ""
 	}
-	return nil, false
+	var issues []string
+	if missingProfile {
+		issues = append(issues, "missing:payment_profile."+provider)
+	}
+	if missingMerchant {
+		issues = append(issues, "missing:payment_profile."+provider+".merchant_id")
+	}
+	return issues, found
 }

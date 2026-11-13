@@ -66,8 +66,8 @@ func (s *scanner) checkAptos(ctx context.Context) error {
 
 func (s *scanner) scanAptos(ctx context.Context, cursor Cursor, addresses []string) (Batch, error) {
 	var cur aptosCursor
-	if cursor.Value != "" && json.Unmarshal([]byte(cursor.Value), &cur) != nil {
-		return Batch{}, ErrProof
+	if err := decodeCursor(cursor.Value, &cur); err != nil {
+		return Batch{}, err
 	}
 	if cur.Version == "" {
 		var status struct {
@@ -81,7 +81,11 @@ func (s *scanner) scanAptos(ctx context.Context, cursor Cursor, addresses []stri
 		if len(status.Processors) != 1 {
 			return Batch{}, ErrProof
 		}
-		cur.Version = string(status.Processors[0].Version)
+		version := string(status.Processors[0].Version)
+		if _, err := strconv.ParseUint(version, 10, 63); err != nil {
+			return Batch{}, ErrProof
+		}
+		cur.Version = version
 		cur.Index = 2147483647
 		return Batch{Cursor: Cursor{Value: cursorJSON(cur)}, CaughtUp: true}, nil
 	}
@@ -91,6 +95,9 @@ func (s *scanner) scanAptos(ctx context.Context, cursor Cursor, addresses []stri
 	}
 	if err := s.client.graphql(ctx, `query Transfers($where:fungible_asset_activities_bool_exp!){fungible_asset_activities(where:$where,order_by:[{transaction_version:asc},{event_index:asc}],limit:100){transaction_version event_index owner_address asset_type storage_id amount is_transaction_success type}}`, map[string]any{"where": where}, &page); err != nil {
 		return Batch{}, err
+	}
+	if page.Items == nil {
+		return Batch{}, ErrRPC
 	}
 	batch := Batch{Transfers: []Transfer{}, CaughtUp: len(page.Items) < 100}
 	// Activities are ordered by version/index. Retain only the current version's

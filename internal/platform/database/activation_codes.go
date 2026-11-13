@@ -71,8 +71,12 @@ func activationRecordTx(ctx context.Context, tx *sql.Tx, uuid string) (string, b
 	if err != nil {
 		return "", false, err
 	}
-	if required != 1 || !hash.Valid || hash.String == "" {
+	if required != 1 {
 		return "", false, nil
+	}
+	if !hash.Valid || hash.String == "" {
+		// A damaged retained credential cannot silently disable its gate.
+		return "", false, ErrConflict
 	}
 	return hash.String, true, nil
 }

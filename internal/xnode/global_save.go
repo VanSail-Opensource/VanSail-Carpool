@@ -3,83 +3,61 @@ package xnode
 import (
 	"context"
 	"encoding/json"
-	"io"
-	"maps"
-	"net/http"
 	"time"
-
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
 )
 
-func (s *Service) SaveGlobal(ctx context.Context, actor string, next GlobalConfig) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.saveGlobalLocked(ctx, actor, next)
+type globalWriteFence struct {
+	version int64
+	until   time.Time
 }
 
-func (s *Service) saveGlobalLocked(ctx context.Context, actor string, next GlobalConfig) error {
-	next.Telemetry.IncludeActiveIPs = true
+// Remote validation uses a private candidate. Only the short publication phase
+// holds the writer lock, and PostgreSQL fences every durable compile input.
+func (s *Service) SaveGlobal(ctx context.Context, actor string, next GlobalConfig) error {
+	s.mu.Lock()
 	previous, err := s.Global(ctx)
+	var fence globalWriteFence
+	if err == nil {
+		fence, err = s.captureGlobalWrite(ctx)
+	}
+	s.mu.Unlock()
 	if err != nil {
 		return err
 	}
-	if next.AutomaticWhitelist == nil {
-		next.AutomaticWhitelist = previous.AutomaticWhitelist
-	}
-	for name, provider := range next.Providers {
-		old := previous.Providers[name]
-		if old.Type == provider.Type {
-			merged := maps.Clone(old.Credentials)
-			if merged == nil {
-				merged = map[string]string{}
-			}
-			for key, value := range provider.Credentials {
-				if value != "" {
-					merged[key] = value
-				}
-			}
-			provider.Credentials = merged
-		}
-		next.Providers[name] = provider
-	}
-	if err = ValidateGlobal(next); err != nil {
+	next, err = prepareGlobalChange(previous, next)
+	if err != nil {
 		return err
 	}
-	if globalPoliciesKey(previous) != globalPoliciesKey(next) {
-		if err = s.validateGlobalPolicies(ctx, next); err != nil {
-			return err
-		}
+	if err = s.validateGlobalChange(ctx, previous, next); err != nil {
+		return err
 	}
-	runtimeChanged := globalRuntimeKey(previous) != globalRuntimeKey(next)
-	if runtimeChanged {
-		if err = s.validateAffected(ctx, nil, nil, &next); err != nil {
-			return err
-		}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.commitGlobalLocked(ctx, actor, previous, next, fence)
+}
+
+func (s *Service) captureGlobalWrite(ctx context.Context) (globalWriteFence, error) {
+	if repo, ok := s.repo.(compileVersionRepository); ok {
+		version, until, err := repo.XNodeCompileVersion(ctx, s.now().UTC())
+		return globalWriteFence{version: version, until: until}, err
 	}
-	for _, asset := range []struct {
-		target, previous, hash, previousHash string
-		geoIP                                bool
-	}{
-		{next.GeoIPURL, previous.GeoIPURL, next.GeoIPHash, previous.GeoIPHash, true},
-		{next.GeoSiteURL, previous.GeoSiteURL, next.GeoSiteHash, previous.GeoSiteHash, false},
-	} {
-		target := asset.target
-		if target == asset.previous && asset.hash == asset.previousHash {
-			continue
-		}
-		if target == "" || asset.geoIP && !requiresAssetLinkProbe(target, next) {
-			continue
-		}
-		// Enabled GeoIP countries were just fetched, hashed, and parsed in
-		// validateGlobalPolicies. Repeating a separate Range probe here both
-		// wastes a request and can reject hosts that serve full downloads but
-		// do not support byte ranges.
-		if asset.geoIP && next.SourceGeoIP.Enabled {
-			continue
-		}
-		if err = s.validateAssetLink(ctx, target); err != nil {
-			return err
-		}
+	return globalWriteFence{}, nil
+}
+
+func (s *Service) commitGlobalLocked(ctx context.Context, actor string, previous, next GlobalConfig, fence globalWriteFence) error {
+	current, err := s.Global(ctx)
+	if err != nil {
+		return err
+	}
+	if globalDocumentKey(current) != globalDocumentKey(previous) || (!fence.until.IsZero() && !s.now().Before(fence.until)) {
+		return ErrConflict
+	}
+	latest, err := s.captureGlobalWrite(ctx)
+	if err != nil {
+		return err
+	}
+	if latest.version != fence.version {
+		return ErrConflict
 	}
 	raw, err := json.Marshal(next)
 	if err != nil {
@@ -89,7 +67,7 @@ func (s *Service) saveGlobalLocked(ctx context.Context, actor string, next Globa
 	if err != nil {
 		return err
 	}
-	if err = s.settings.PutXNodeGlobal(ctx, actor, string(raw)); err != nil {
+	if err = s.settings.PutXNodeGlobalAtVersion(ctx, actor, string(raw), fence.version, fence.until); err != nil {
 		return err
 	}
 	s.globalSettings.publish(committed)
@@ -103,35 +81,8 @@ func (s *Service) saveGlobalLocked(ctx context.Context, actor string, next Globa
 			repo.ResetFirewallDetection()
 		}
 	}
-	if runtimeChanged {
+	if globalRuntimeKey(previous) != globalRuntimeKey(next) {
 		s.localCompileRevision.Add(1)
 	}
 	return nil
-}
-
-func requiresAssetLinkProbe(target string, config GlobalConfig) bool {
-	return target != "" && !(config.SourceGeoIP.Enabled && target == config.GeoIPURL)
-}
-
-func (s *Service) validateAssetLink(ctx context.Context, target string) error {
-	return upstreamqueue.Execute(ctx, s.validationQueue, func(ctx context.Context) error {
-		request, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
-		if err != nil {
-			return ErrInvalid
-		}
-		request.Header.Set("Range", "bytes=0-4095")
-		response, err := publicAssetClient(15 * time.Second).Do(request)
-		if err != nil {
-			return assetRequestFailure("asset link", err)
-		}
-		defer response.Body.Close()
-		if response.StatusCode != http.StatusOK && response.StatusCode != http.StatusPartialContent {
-			return assetResponseFailure("asset link", response.StatusCode)
-		}
-		data, err := io.ReadAll(io.LimitReader(response.Body, 4096))
-		if err != nil || len(data) == 0 {
-			return ErrUnavailable
-		}
-		return nil
-	})
 }

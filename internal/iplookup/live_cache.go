@@ -112,7 +112,7 @@ func (s *LiveService) runLiveFlight(ctx context.Context, key, ip string, c Confi
 		delete(s.flights, key)
 	}
 	if err == nil {
-		f.events = append(f.events, liveComplete(ip, data))
+		f.events = append(f.events, liveComplete(result, data))
 	} else {
 		f.events = append(f.events, LiveEvent{Type: "error", IP: ip, ErrorCode: "IP_DETAILS_UNAVAILABLE"})
 	}

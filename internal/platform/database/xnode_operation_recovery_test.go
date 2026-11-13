@@ -10,7 +10,7 @@ import (
 func TestNodeOperationReplayFencesTheInterruptedAttempt(t *testing.T) {
 	store := newTestStore(t)
 	ctx := context.Background()
-	actor := createTestUser(t, store, 80491)
+	actor := createTestAdmin(t, store, 80491)
 	at := time.Now().UTC()
 	op, _, err := store.CreateProviderOperation(ctx, providerops.CreateInput{ActorUserID: actor.ID, Kind: "xnode_command", IdempotencyKey: "handover", RequestFingerprint: "handover-request-v1", SealedTarget: "encrypted", Items: []providerops.ItemInput{{Key: "node", TargetType: "xnode", TargetID: "node"}}}, at)
 	if err != nil {

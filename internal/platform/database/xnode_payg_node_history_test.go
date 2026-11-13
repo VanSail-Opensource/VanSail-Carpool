@@ -113,3 +113,22 @@ func TestPAYGNodeHistoryRetainsHistoricalNodesAndPrunesOnlyExpiredSummaries(t *t
 		t.Fatal("history read exceeded its explicit bound", len(rows), truncated, err)
 	}
 }
+
+func TestPAYGNodeHistoryDoesNotWidenFractionalQueryBounds(t *testing.T) {
+	s, owner, _, _ := paygBillingFixture(t)
+	ctx, minute := context.Background(), time.Now().UTC().Truncate(time.Minute)
+	if _, err := s.db.ExecContext(ctx, `INSERT INTO xnode_payg_node_minutes(user_id,node_id,minute,upload_bytes)
+ VALUES($1,'node',$2,17)`, owner.UserID, minute); err != nil {
+		t.Fatal(err)
+	}
+	for _, at := range []time.Time{minute.Add(-time.Nanosecond), minute.Add(time.Nanosecond)} {
+		rows, _, err := s.XNodePAYGNodeHistory(ctx, owner.UserID, at, at)
+		if err != nil || len(rows) != 0 {
+			t.Fatal("parameter rounding widened capture window", at, rows, err)
+		}
+	}
+	rows, _, err := s.XNodePAYGNodeHistory(ctx, owner.UserID, minute, minute)
+	if err != nil || len(rows) != 1 || rows[0].UploadBytes != "17" {
+		t.Fatal("exact capture boundary was excluded", rows, err)
+	}
+}

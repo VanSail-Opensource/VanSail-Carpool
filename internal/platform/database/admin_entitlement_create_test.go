@@ -18,7 +18,7 @@ func manualGrantFixture(t *testing.T) (*Store, model.User, model.User, model.Com
 	ctx := context.Background()
 	store := newTestStore(t)
 	now := time.Date(2026, 9, 1, 8, 0, 0, 0, time.UTC)
-	actor := createTestUser(t, store, 42_001)
+	actor := createTestAdmin(t, store, 42_001)
 	user := createTestUser(t, store, 42_002)
 	if err := store.SaveXNodeGroup(ctx, xnode.Group{ID: manualGrantSquad, Name: "manual-grant", Enabled: true}); err != nil {
 		t.Fatal(err)

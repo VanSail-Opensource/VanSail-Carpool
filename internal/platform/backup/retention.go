@@ -124,3 +124,20 @@ func (s *Service) restoreExpiredBackup(path, staged string, exists bool, cause e
 func isPublishedBackup(name string) bool {
 	return strings.HasPrefix(name, "tx-carpool-") && strings.HasSuffix(name, ".dump")
 }
+
+// Deletion stages retain the published prefix (without a leading dot). Accept
+// the older hidden spelling too, and check recovery protection on the original
+// archive path rather than on its temporary deletion name.
+func deletionSourceName(name string) string {
+	name = strings.TrimPrefix(name, ".")
+	if !strings.HasPrefix(name, "tx-carpool-") {
+		return ""
+	}
+	for _, extension := range []string{".dump", ".db"} {
+		prefix, id, found := strings.Cut(name, extension+".deleting-")
+		if found && id != "" {
+			return prefix + extension
+		}
+	}
+	return ""
+}

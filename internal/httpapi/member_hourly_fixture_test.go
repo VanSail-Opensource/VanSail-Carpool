@@ -25,6 +25,7 @@ type memberHourlyFixture struct {
 	server *Server
 	router http.Handler
 	user   model.User
+	admin  model.User
 	token  string
 	policy model.HourlyPolicySnapshot
 }
@@ -33,10 +34,14 @@ func newMemberHourlyFixture(t *testing.T) memberHourlyFixture {
 	t.Helper()
 	s, handler, user := testBrowserHTTP(t)
 	ctx := context.Background()
-	if _, err := s.deps.Store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='complete' WHERE id=$1`, user.ID); err != nil {
+	if _, err := s.deps.Store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='complete',role='user' WHERE id=$1`, user.ID); err != nil {
 		t.Fatal(err)
 	}
-	user.OnboardingState = "complete"
+	user.OnboardingState, user.Role = "complete", "user"
+	actor, _, err := s.deps.Store.UpsertTelegramUser(ctx, model.TelegramProfile{ID: 9_897_000_002, FirstName: "Hourly administrator"}, true)
+	if err != nil {
+		t.Fatal(err)
+	}
 	vault, err := secret.NewVault([]byte("0123456789abcdef0123456789abcdef"))
 	if err != nil {
 		t.Fatal(err)
@@ -44,25 +49,21 @@ func newMemberHourlyFixture(t *testing.T) memberHourlyFixture {
 	s.deps.Settings = admin.NewSettingsService(s.deps.Store, vault)
 	policy := model.DefaultHourlyPolicy()
 	policy.SalesEnabled, policy.DailyAllowanceBytes, policy.ReducedRateBytesPerSecond, policy.ExtraGBPriceTXBMinor = true, 9007199254740993, 1024, 25
-	snapshot, err := s.deps.Settings.SaveHourlyPolicy(ctx, user.ID, "", policy)
+	snapshot, err := s.deps.Settings.SaveHourlyPolicy(ctx, actor.ID, "", policy)
 	if err != nil {
 		t.Fatal(err)
 	}
 	s.deps.Hourly = hourlybilling.New(s.deps.Store, s.deps.Settings, nil, vault)
-	s.deps.Accounts = accounts.NewService(s.deps.Store, nil, nil, nil, nil, nil, []int64{user.TelegramID}, time.Hour)
+	s.deps.Accounts = accounts.NewService(s.deps.Store, nil, nil, nil, nil, nil, []int64{actor.TelegramID}, time.Hour)
 	if err := s.deps.Store.SaveXNodeGroup(ctx, xnode.Group{ID: "member-hourly", Name: "Hourly hidden legacy", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.deps.Store.SaveHourlyOffer(ctx, user.ID, model.HourlyOffer{GroupID: "member-hourly", Enabled: true, HourlyPriceTXBMinor: 100}, 0); err != nil {
+	if _, err := s.deps.Store.SaveHourlyOffer(ctx, actor.ID, model.HourlyOffer{GroupID: "member-hourly", Enabled: true, HourlyPriceTXBMinor: 100}, 0); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.deps.Store.AdjustBalance(ctx, user.ID, 9007199254740993, "hourly-http-seed", "fixture", time.Now()); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.deps.Store.DB().ExecContext(ctx, `UPDATE users SET role='user' WHERE id=$1`, user.ID); err != nil {
-		t.Fatal(err)
-	}
-	user.Role = "user"
 	token, err := ids.Token(32)
 	if err != nil {
 		t.Fatal(err)
@@ -76,7 +77,7 @@ func newMemberHourlyFixture(t *testing.T) memberHourlyFixture {
 		r.Use(s.requireSignedRequest, s.requireSession)
 		s.mountMemberOperations(r)
 	})
-	return memberHourlyFixture{s, router, user, token, snapshot}
+	return memberHourlyFixture{server: s, router: router, user: user, admin: actor, token: token, policy: snapshot}
 }
 
 func (f memberHourlyFixture) request(t *testing.T, method, path, body, key string, authenticated bool) *httptest.ResponseRecorder {

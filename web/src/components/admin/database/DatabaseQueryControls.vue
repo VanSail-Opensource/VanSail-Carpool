@@ -152,8 +152,6 @@ function applyMobileFilters(): void {
 :global(.database-filter-drawer__body) { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-block: 1rem; }
 :global(.database-filter-drawer__footer) { flex: 0 0 auto; padding-top: 0.75rem; border-top: 1px solid var(--line); }
 
-@media (max-width: 899px) {
-}
 
 @media (min-width: 900px) {
   .database-query__mobile-filter { display: none; }

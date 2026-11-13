@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onScopeDispose, reactive, shallowRef, watch } from 'vue'
+import { computed, onScopeDispose, reactive, shallowRef, toRaw, watch } from 'vue'
 import { xnodeApi, type XNodeConfiguration, type XNodeSnippet } from '@/api/xnode'
 import { useI18n } from '@/i18n'
+import { cloneForEditing } from '@/utils/browserCompatibility'
 import XNodeJsonEditor from '@/components/common/JsonDocumentField.vue'
 import { shadowsocksConfiguration } from './configurationPresets'
 
@@ -17,19 +18,24 @@ const draft = reactive({ id: '', name: '', revision: 0, kind: 'outbound' as 'out
 const document = shallowRef<unknown>({})
 const validationError = shallowRef<string | null>(null)
 const validationNonce = shallowRef(0)
+const submitting = shallowRef(false)
+const blocked = computed(() => props.busy || submitting.value || removingId.value !== null)
+let active = true
 let validationGeneration = 0
-onScopeDispose(() => { validationGeneration++ })
+onScopeDispose(() => { active = false; validationGeneration++ })
 const snippetOptions = computed(() => props.snippets.map(item => ({ label: item.name, value: item.id })))
 const kinds = computed(() => ['outbound', 'routing'].map(value => ({ value, label: t(`xnode.snippetKinds.${value}`) })))
-function addShadowsocks() { editConfiguration(); document.value = shadowsocksConfiguration() }
+function addShadowsocks() { if (blocked.value) return; editConfiguration(); document.value = shadowsocksConfiguration() }
 function editConfiguration(item?: XNodeConfiguration): void {
+  if (!active || blocked.value) return
   mode.value = 'configuration'; Object.assign(draft, { id: item?.id ?? '', name: item?.name ?? '', revision: item?.revision ?? 0, snippetIds: [...(item?.snippetIds ?? [])] })
-  document.value = item?.document ?? { inbounds: [], outbounds: [{ tag: 'direct', protocol: 'freedom' }, { UserOutbound: {} }], routing: { rules: [{ UserRouting: {} }] } }
+  document.value = cloneForEditing(toRaw(item?.document ?? { inbounds: [], outbounds: [{ tag: 'direct', protocol: 'freedom' }, { UserOutbound: {} }], routing: { rules: [{ UserRouting: {} }] } }))
   editing.value = true; valid.value = true
 }
 function editSnippet(item?: XNodeSnippet): void {
+  if (!active || blocked.value) return
   mode.value = 'snippet'; Object.assign(draft, { id: item?.id ?? '', name: item?.name ?? '', revision: item?.revision ?? 0, kind: item?.kind ?? 'outbound' })
-  document.value = item?.document ?? []; editing.value = true; valid.value = true
+  document.value = cloneForEditing(toRaw(item?.document ?? [])); editing.value = true; valid.value = true
 }
 watch([document, () => draft.snippetIds.slice(), editing, mode, valid, validationNonce], (_value, _old, cleanup) => {
   const generation = ++validationGeneration
@@ -44,30 +50,37 @@ watch([document, () => draft.snippetIds.slice(), editing, mode, valid, validatio
   cleanup(() => { globalThis.clearTimeout(timer); validationGeneration++ })
 })
 async function save(): Promise<void> {
-  if (!valid.value || !draft.name || mode.value === 'configuration' && validation.value?.valid !== true) return
+  if (!active || blocked.value || !valid.value || !draft.name || mode.value === 'configuration' && validation.value?.valid !== true) return
+  const value = cloneForEditing(toRaw(document.value))
+  const common = { id: draft.id, name: draft.name, revision: draft.revision }
+  const configuration = { ...common, snippetIds: [...draft.snippetIds], document: value as Record<string, unknown> }
+  const snippet = { ...common, kind: draft.kind, document: value as Record<string, unknown>[] }
   const result = mode.value === 'configuration'
-    ? () => xnodeApi.saveConfiguration({ id: draft.id, name: draft.name, revision: draft.revision, snippetIds: draft.snippetIds, document: document.value as Record<string, unknown> })
-    : () => xnodeApi.saveSnippet({ id: draft.id, name: draft.name, revision: draft.revision, kind: draft.kind, document: document.value as Record<string, unknown>[] })
-  if (await props.perform(result)) editing.value = false
+    ? () => xnodeApi.saveConfiguration(configuration)
+    : () => xnodeApi.saveSnippet(snippet)
+  submitting.value = true
+  try { if (await props.perform(result) && active) editing.value = false }
+  finally { if (active) submitting.value = false }
 }
 async function removeConfiguration(item: XNodeConfiguration): Promise<void> {
-  if (props.busy || removingId.value) return
-  removingId.value = item.id
-  try { await props.perform(() => xnodeApi.deleteConfiguration(item.id)) }
-  finally { removingId.value = null }
+  if (!active || blocked.value) return
+  const id = item.id
+  removingId.value = id
+  try { await props.perform(() => xnodeApi.deleteConfiguration(id)) }
+  finally { if (active) removingId.value = null }
 }
 </script>
 
 <template>
   <div class="grid gap-5">
-    <div class="flex flex-wrap justify-end gap-2"><UButton variant="outline" color="neutral" :label="t('nodeAdmin.ss2022')" @click="addShadowsocks" /><UButton icon="i-ph-plus-bold" :label="t('xnode.addConfiguration')" @click="editConfiguration()" /><UButton color="neutral" variant="outline" icon="i-ph-code-bold" :label="t('xnode.addSnippet')" @click="editSnippet()" /></div>
+    <div class="flex flex-wrap justify-end gap-2"><UButton variant="outline" color="neutral" :disabled="blocked" :label="t('nodeAdmin.ss2022')" @click="addShadowsocks" /><UButton icon="i-ph-plus-bold" :disabled="blocked" :label="t('xnode.addConfiguration')" @click="editConfiguration()" /><UButton color="neutral" variant="outline" icon="i-ph-code-bold" :disabled="blocked" :label="t('xnode.addSnippet')" @click="editSnippet()" /></div>
     <p v-if="!configurations.length" class="text-muted">{{ t('xnode.noConfigurations') }}</p>
-    <div v-for="item in configurations" :key="item.id" class="configuration-row"><strong>{{ item.name }}</strong><span class="text-muted text-xs">{{ t('xnode.revision', { revision: item.revision }) }}</span><div class="flex gap-1"><UButton variant="ghost" color="neutral" icon="i-ph-pencil-simple-bold" :disabled="busy || !!removingId" :aria-label="t('common.edit')" @click="editConfiguration(item)" /><UButton variant="ghost" color="error" icon="i-ph-trash-bold" :loading="removingId === item.id" :disabled="busy || !!removingId" :aria-label="t('xnode.deleteConfiguration', { name: item.name })" @click="removeConfiguration(item)" /></div></div>
+    <div v-for="item in configurations" :key="item.id" class="configuration-row"><strong>{{ item.name }}</strong><span class="text-muted text-xs">{{ t('xnode.revision', { revision: item.revision }) }}</span><div class="flex gap-1"><UButton variant="ghost" color="neutral" icon="i-ph-pencil-simple-bold" :disabled="blocked" :aria-label="t('common.edit')" @click="editConfiguration(item)" /><UButton variant="ghost" color="error" icon="i-ph-trash-bold" :loading="removingId === item.id" :disabled="blocked" :aria-label="t('xnode.deleteConfiguration', { name: item.name })" @click="removeConfiguration(item)" /></div></div>
     <h3>{{ t('xnode.snippets') }}</h3>
     <p v-if="!snippets.length" class="text-muted">{{ t('xnode.noSnippets') }}</p>
-    <div v-for="item in snippets" :key="item.id" class="configuration-row"><strong>{{ item.name }}</strong><span class="text-muted text-xs">{{ t(`xnode.snippetKinds.${item.kind}`) }}</span><UButton variant="ghost" color="neutral" icon="i-ph-pencil-simple-bold" :aria-label="t('common.edit')" @click="editSnippet(item)" /></div>
-    <UModal v-model:open="editing" :title="t(mode === 'configuration' ? 'xnode.configuration' : 'xnode.snippet')" :ui="{ content: 'max-w-5xl' }">
-      <template #body><form class="grid gap-4" @submit.prevent="save"><UAlert v-if="saveError" color="warning" :title="saveError" /><UFormField :label="t('common.name')"><UInput v-model="draft.name" required class="w-full" /></UFormField><UFormField v-if="mode === 'snippet'" :label="t('xnode.snippetKind')"><USelect v-model="draft.kind" :items="kinds" class="w-full" /></UFormField><UFormField v-else :label="t('xnode.sharedSnippets')"><USelectMenu v-model="draft.snippetIds" value-key="value" multiple :items="snippetOptions" class="w-full" /></UFormField><XNodeJsonEditor v-model="document" :label="t('xnode.document')" :rows="20" @valid="valid = $event" /><p v-if="mode === 'configuration'" class="text-xs text-muted">{{ t('xnode.userMarkersHint') }}</p><UProgress v-if="validating" /><div v-if="validationError" class="grid gap-2"><p>{{ validationError }}</p><UButton variant="ghost" :label="t('common.tryAgain')" @click="validationNonce++" /></div><pre v-if="validation?.detail" class="text-xs whitespace-pre-wrap break-words">{{ validation.detail }}</pre><UAlert v-if="validation" :color="validation.valid ? 'success' : 'warning'" variant="soft" :title="t(validation.valid ? validation.needsAgentValidation ? 'xnode.nodeValidationRequired' : 'xnode.configurationValid' : 'xnode.configurationInvalid')" /><div class="flex justify-end"><UButton type="submit" :loading="busy" :disabled="!valid || validating || mode === 'configuration' && validation?.valid !== true" :label="t('common.save')" /></div></form></template>
+    <div v-for="item in snippets" :key="item.id" class="configuration-row"><strong>{{ item.name }}</strong><span class="text-muted text-xs">{{ t(`xnode.snippetKinds.${item.kind}`) }}</span><UButton variant="ghost" color="neutral" icon="i-ph-pencil-simple-bold" :disabled="blocked" :aria-label="t('common.edit')" @click="editSnippet(item)" /></div>
+    <UModal :open="editing" :dismissible="!blocked" :close="!blocked" @update:open="!blocked && (editing = $event)" :title="t(mode === 'configuration' ? 'xnode.configuration' : 'xnode.snippet')" :ui="{ content: 'max-w-5xl' }">
+      <template #body><form class="grid gap-4" @submit.prevent="save"><UAlert v-if="saveError" color="warning" :title="saveError" /><UFormField :label="t('common.name')"><UInput v-model="draft.name" :disabled="blocked" required class="w-full" /></UFormField><UFormField v-if="mode === 'snippet'" :label="t('xnode.snippetKind')"><USelect v-model="draft.kind" :disabled="blocked" :items="kinds" class="w-full" /></UFormField><UFormField v-else :label="t('xnode.sharedSnippets')"><USelectMenu v-model="draft.snippetIds" :disabled="blocked" value-key="value" multiple :items="snippetOptions" class="w-full" /></UFormField><XNodeJsonEditor v-model="document" :disabled="blocked" :label="t('xnode.document')" :rows="20" @valid="valid = $event" /><p v-if="mode === 'configuration'" class="text-xs text-muted">{{ t('xnode.userMarkersHint') }}</p><UProgress v-if="validating" /><div v-if="validationError" class="grid gap-2"><p>{{ validationError }}</p><UButton variant="ghost" :label="t('common.tryAgain')" :disabled="blocked" @click="!blocked && validationNonce++" /></div><pre v-if="validation?.detail" class="text-xs whitespace-pre-wrap break-words">{{ validation.detail }}</pre><UAlert v-if="validation" :color="validation.valid ? 'success' : 'warning'" variant="soft" :title="t(validation.valid ? validation.needsAgentValidation ? 'xnode.nodeValidationRequired' : 'xnode.configurationValid' : 'xnode.configurationInvalid')" /><div class="flex justify-end"><UButton type="submit" :loading="blocked" :disabled="blocked || !valid || validating || mode === 'configuration' && validation?.valid !== true" :label="t('common.save')" /></div></form></template>
     </UModal>
   </div>
 </template>

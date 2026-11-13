@@ -36,3 +36,16 @@ func TestLimitPreservesBoldAndMentionBoundaries(t *testing.T) {
 		t.Fatalf("mention message was truncated inside a link: %q", mention)
 	}
 }
+
+func TestLimitDoesNotCloseWhitespaceOnlyBoldIntoEmptyMarkup(t *testing.T) {
+	t.Parallel()
+	for _, whitespace := range []string{" ", "\t", "\n", "\u3000"} {
+		t.Run(whitespace, func(t *testing.T) {
+			input := "You reached *" + strings.Repeat(whitespace, MessageLimit) + "member*"
+			got := Limit(input)
+			if got != "You reached"+ellipsis || strings.Contains(got, "**") || utf8.RuneCountInString(got) > MessageLimit {
+				t.Fatalf("truncation created an empty bold entity: %q", got)
+			}
+		})
+	}
+}

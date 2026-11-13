@@ -1,4 +1,4 @@
-import { computed, shallowRef, watch } from 'vue'
+import { computed, onScopeDispose, shallowRef, watch } from 'vue'
 import { hourlyApi, type HourlySquad } from '@/api/hourly'
 import type { OperationReceipt } from '@/api/types'
 import { ApiError } from '@/api/http'
@@ -18,24 +18,27 @@ export function useHourly() {
   const submitting = shallowRef(false)
   const actionError = shallowRef<string | null>(null)
   const keys = new Map<string, string>()
+  let active = true
   const busy = computed(() => submitting.value || operation.polling.value)
   watch(operation.terminal, terminal => { if (terminal) void data.refresh() })
 
   async function run(identity: string, action: (key: string) => Promise<OperationReceipt>): Promise<boolean> {
-    if (busy.value) return false
+    if (!active || busy.value) return false
     submitting.value = true
     actionError.value = null
     const key = keys.get(identity) ?? createUuid()
     keys.set(identity, key)
     try {
-      operation.track(await action(key))
+      const receipt = await action(key)
+      if (!active) return false
+      operation.track(receipt)
       keys.delete(identity)
       await data.refresh()
-      return true
+      return active
     } catch (caught) {
-      actionError.value = hourlyError(caught)
+      if (active) actionError.value = hourlyError(caught)
       return false
-    } finally { submitting.value = false }
+    } finally { if (active) submitting.value = false }
   }
   function activate(squad: HourlySquad, code?: string): Promise<boolean> {
     const version = data.value.value?.policy.version ?? ''
@@ -50,15 +53,17 @@ export function useHourly() {
   }
   async function extra(enabled: boolean): Promise<boolean> {
     const snapshot = data.value.value?.policy
-    if (!snapshot || busy.value) return false
+    if (!active || !snapshot || busy.value) return false
     submitting.value = true
     actionError.value = null
     try {
       await hourlyApi.extra(enabled, snapshot.version, snapshot.policy.extraGBPriceTXBMinor)
+      if (!active) return false
       await data.refresh()
-      return true
-    } catch (caught) { actionError.value = hourlyError(caught); return false }
-    finally { submitting.value = false }
+      return active
+    } catch (caught) { if (active) actionError.value = hourlyError(caught); return false }
+    finally { if (active) submitting.value = false }
   }
+  onScopeDispose(() => { active = false; keys.clear() })
   return { ...data, operation, busy, submitting, actionError, activate, disable, extra }
 }

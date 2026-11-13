@@ -71,6 +71,9 @@ func (s *UserWorkflows) validateComboAndSquads(ctx context.Context, comboID stri
 	if len(squads) == 0 {
 		return nil
 	}
+	if s.importer == nil {
+		return errors.New("squad validation is unavailable")
+	}
 	live, err := s.importer.ListInternalSquads(ctx)
 	if err != nil {
 		return err

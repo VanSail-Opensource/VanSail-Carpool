@@ -60,7 +60,7 @@ func (s *Server) createCommunityInvite(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, accounts.ErrActiveComboRequired):
-			s.writeError(w, r, http.StatusConflict, "ACTIVE_COMBO_REQUIRED", "An active combo IS NOT DISTINCT FROM required to join this community.")
+			s.writeError(w, r, http.StatusConflict, "ACTIVE_COMBO_REQUIRED", "An active combo is required to join this community.")
 		case errors.Is(err, accounts.ErrCommunityAlreadyJoined):
 			s.writeError(w, r, http.StatusConflict, "COMMUNITY_ALREADY_JOINED", "You have already joined this community.")
 		default:

@@ -14,6 +14,7 @@ func TestAgreementPublicationPreservesAcceptedMembers(t *testing.T) {
 	ctx, store := context.Background(), newTestStore(t)
 	existing := createTestUser(t, store, 31931)
 	newcomer := createTestUser(t, store, 31932)
+	actor := createTestAdmin(t, store, 31933)
 	bundle, err := store.OnboardingBundle(ctx, onboarding.KindAgreements)
 	if err != nil {
 		t.Fatal(err)
@@ -41,11 +42,11 @@ func TestAgreementPublicationPreservesAcceptedMembers(t *testing.T) {
 		}
 		bundle.Draft[locale] = encoded
 	}
-	bundle, err = store.SaveOnboardingDraft(ctx, bundle.Kind, bundle.Draft, bundle.DraftRevision, existing.ID, time.Now())
+	bundle, err = store.SaveOnboardingDraft(ctx, bundle.Kind, bundle.Draft, bundle.DraftRevision, actor.ID, time.Now())
 	if err != nil {
 		t.Fatal(err)
 	}
-	published, err := store.PublishOnboarding(ctx, bundle.Kind, bundle.DraftRevision, existing.ID, time.Now())
+	published, err := store.PublishOnboarding(ctx, bundle.Kind, bundle.DraftRevision, actor.ID, time.Now())
 	if err != nil || published.PublishedRevision != oldRevision+1 {
 		t.Fatal(published, err)
 	}

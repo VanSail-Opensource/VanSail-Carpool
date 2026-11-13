@@ -1,12 +1,14 @@
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { FeaturePaymentMethod } from '@/api/features'
+import { featuresApi } from '@/api/features'
 import { setLocale } from '@/i18n'
 
 import BalancePaymentConfiguration from './BalancePaymentConfiguration.vue'
 import BalancePaymentSheet from './BalancePaymentSheet.vue'
+import PaymentChannelStep from './PaymentChannelStep.vue'
 
 const methods: FeaturePaymentMethod[] = [
   { id: 'ezpay:profile-one:alipay', provider: 'ezpay', profileId: 'profile-one', providerName: 'Renminbi payment', rail: 'alipay', name: 'Alipay', currency: 'CNY', cryptoCurrency: '', network: '', networkName: '', available: true, note: '', mode: 'order' },
@@ -17,6 +19,7 @@ const methods: FeaturePaymentMethod[] = [
 
 describe('BalancePaymentConfiguration', () => {
   afterEach(() => {
+    vi.restoreAllMocks()
     setLocale('en')
     document.body.innerHTML = ''
   })
@@ -99,6 +102,74 @@ describe('BalancePaymentConfiguration', () => {
     expect(wrapper.get('[data-test="payment-submit"]').text()).toContain('Reissue payment')
     expect(wrapper.text()).toContain('BEPUSDT rejected the order')
     expect(wrapper.find('[data-test="choose-channel"]').exists()).toBe(false)
+  })
+
+  it('keeps the reviewed amount and channel locked while its create is pending', async () => {
+    const wrapper = mount(PaymentChannelStep, {
+      props: { amount: '20.00', amountMinor: '2000', channels: [
+        { value: 'ezpay:alipay', label: 'Alipay', description: '', disabled: false },
+        { value: 'ezpay:wxpay', label: 'WeChat', description: '', disabled: false },
+      ], selectedMethodId: 'ezpay:alipay', stage: 'creating', error: null, amountValid: true,
+      canCreate: false, canReissue: false, minimumMinor: '100', maximumMinor: '10000000000' },
+    })
+    expect(wrapper.get('input').attributes('disabled')).toBeDefined()
+    expect(wrapper.findAll('button.provider-option').every(button => button.attributes('disabled') !== undefined)).toBe(true)
+    wrapper.getComponent({ name: 'TxbAmountField' }).vm.$emit('update:modelValue', '30.00')
+    await nextTick()
+    expect(wrapper.emitted('update:amount')).toBeUndefined()
+    wrapper.unmount()
+  })
+
+  it('reuses coupon redemption keys after an ambiguous response only for the same normalized code', async () => {
+    const redeem = vi.spyOn(featuresApi, 'redeemCoupon').mockRejectedValue(new Error('lost response'))
+    const wrapper = mount(BalancePaymentConfiguration, {
+      props: { amount: '20.00', methods, selectedMethodId: 'coupon', stage: 'configure', error: null, amountValid: true, canCreate: false, canReissue: false },
+      global: { stubs: {
+        PaymentProviderStep: true,
+        UAlert: true,
+      } },
+    })
+    const submit = async (code: string) => {
+      await wrapper.get('input').setValue(code)
+      await wrapper.get('button').trigger('click')
+      await flushPromises()
+    }
+    await submit(' summer ')
+    await submit('SUMMER')
+    await submit('WINTER')
+    await submit('summer')
+    expect(redeem.mock.calls[0][0]).toBe('SUMMER')
+    expect(redeem.mock.calls[1][1]).toBe(redeem.mock.calls[0][1])
+    expect(redeem.mock.calls[2][1]).not.toBe(redeem.mock.calls[0][1])
+    expect(redeem.mock.calls[3][1]).toBe(redeem.mock.calls[0][1])
+    wrapper.unmount()
+  })
+
+  it('locks a coupon attempt and discards its success after the configuration is retired', async () => {
+    let finish!: () => void
+    const redeem = vi.spyOn(featuresApi, 'redeemCoupon').mockReturnValue(new Promise(resolve => {
+      finish = () => resolve({
+        id: 'redemption', idempotencyKey: 'key', replayed: false, createdAt: '2026-11-13T00:00:00Z',
+        balanceDeltaMinor: '100', balanceAfterMinor: '100', grant: null,
+        coupon: { id: 'coupon', code: 'FUND', name: 'Funding', kind: 'balance_add', discountMode: 'fixed', valueMinorOrBps: '100',
+          percentCapMinor: null, eligibleComboIds: [], eligibleSquadIds: [], expiresAt: null, globalUseLimit: null,
+          perUserUseLimit: 1, active: true, usageCount: 1, createdAt: '2026-11-13T00:00:00Z', updatedAt: '2026-11-13T00:00:00Z' },
+      })
+    }))
+    const wrapper = mount(BalancePaymentConfiguration, {
+      props: { amount: '20.00', methods, selectedMethodId: 'coupon', stage: 'configure', error: null, amountValid: true, canCreate: false, canReissue: false },
+      global: { stubs: { PaymentProviderStep: true, UAlert: true } },
+    })
+    await wrapper.get('input').setValue('fund')
+    await wrapper.get('button').trigger('click')
+    expect(wrapper.get('input').attributes('disabled')).toBeDefined()
+    wrapper.getComponent({ name: 'PaymentProviderStep' }).vm.$emit('choose', 'ezpay:profile-one')
+    expect(wrapper.emitted('chooseMethod')).toBeUndefined()
+    wrapper.unmount()
+    finish()
+    await flushPromises()
+    expect(redeem).toHaveBeenCalledOnce()
+    expect(wrapper.emitted('couponRedeemed')).toBeUndefined()
   })
 })
 

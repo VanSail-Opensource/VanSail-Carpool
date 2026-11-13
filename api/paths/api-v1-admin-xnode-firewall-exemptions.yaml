@@ -76,7 +76,31 @@
                 "maxLength": 128,
                 "description": "Required for hours=0: exact current ban generation. Zero releases the ban without creating an exemption. Positive hours retain existing behavior."
               }
-            }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "hours": {
+                      "const": 0
+                    }
+                  },
+                  "required": [
+                    "hours"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "generation"
+                  ],
+                  "properties": {
+                    "generation": {
+                      "minLength": 1
+                    }
+                  }
+                }
+              }
+            ]
           }
         }
       }

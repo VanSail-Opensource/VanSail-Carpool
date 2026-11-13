@@ -1,6 +1,7 @@
 package app
 
 import (
+	"math"
 	"testing"
 	"time"
 
@@ -22,6 +23,8 @@ func TestNormalizeStarTransactionDirections(t *testing.T) {
 		{name: "incoming payment", input: telegram.StarTransaction{ID: "charge-1", Amount: 25, Source: partner}, wantOK: true},
 		{name: "outgoing refund", input: telegram.StarTransaction{ID: "charge-1", Amount: -25, Receiver: partner}, wantOK: true, wantRefund: true},
 		{name: "fractional transaction", input: telegram.StarTransaction{ID: "charge-1", Amount: 25, NanostarAmount: 1, Source: partner}},
+		{name: "unrepresentable absolute amount", input: telegram.StarTransaction{ID: "charge-1", Amount: math.MinInt64, Receiver: partner}},
+		{name: "ambiguous direction", input: telegram.StarTransaction{ID: "charge-1", Amount: 25, Source: partner, Receiver: partner}},
 		{name: "unrelated partner", input: telegram.StarTransaction{ID: "charge-1", Amount: 25, Source: &telegram.TransactionPartnerUser{Type: "fragment"}}},
 	}
 	for _, test := range tests {

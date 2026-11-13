@@ -12,6 +12,14 @@ offers `X-XNode-Hourly: v1` with a fresh 32-character lowercase hexadecimal
 partial or conflicting echoes grant no hourly authority. Disconnect or disabling
 the capability clears authority synchronously; reconnection uses a fresh session.
 
+`--version` also reports compiled hourly format support for signed upgrade and
+rollback checks. This static declaration does not assert operational readiness.
+Replacement binaries must retain this capability while any authorized, accepted
+or staged hourly user or issued credit sequence remains on disk. Credit evidence
+is inspected without recovering or modifying it; corruption blocks replacement.
+The empty journal created before the first hourly issuance does not prevent
+rollback of an initial upgrade.
+
 An hourly native user supplies `hourly.owner.{id,generation}`,
 `hourly.enrollment_id`, `accounting_period` and paid `valid_until`. Owner,
 enrollment, native principal and period form one immutable live-flow binding.

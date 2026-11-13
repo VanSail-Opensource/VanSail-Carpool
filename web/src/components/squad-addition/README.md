@@ -7,3 +7,10 @@ The regression in `SquadAdditionDialog.test.ts` protects the initial-open path.
 Owns the two-step active-ride add-on dialog. `SquadAdditionDialog.vue` orchestrates selection, activation codes, checkout, and in-place confirmation; `SquadAdditionCheckout.vue` renders the price review and completion state. `SquadAdditionDialog.test.ts` protects the one-based flow to zero-based progress mapping. The module reuses the catalog squad picker, whose selectable squad cards use the configured display currency directly, and `useSquadAddition` for API state. The checkout review retains its dual-currency presentation.
 
 The visual stepper keeps its zero-based component model; a localized screen-reader status announces the one-based stage and label. Lost purchase replies retain selection and retry the same request key through useSquadAddition.
+
+Dialog reset and disposal cancel activation prompts and pending step transitions. A late accepted add-on does not populate a reopened dialog; retrying its original selection retains the request identity.
+
+Checkout cannot return to selection while activation prompts or the submitted
+purchase are pending. The disabled Back control and parent transition guard keep
+the reviewed selection stable until the response; the dialog regression covers
+this boundary and the transition becoming available again after completion.

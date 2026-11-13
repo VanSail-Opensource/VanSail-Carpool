@@ -41,6 +41,7 @@ const { membership, loading, refreshing, joining, error, load, join } = useCommu
               class="community-page__refresh"
               :loading="refreshing"
               :label="$t('common.refresh')"
+              :aria-label="$t('common.refresh')"
               data-haptic="refresh"
               @click="load()"
             />

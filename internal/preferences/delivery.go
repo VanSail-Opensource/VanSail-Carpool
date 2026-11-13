@@ -11,7 +11,7 @@ func (p Preferences) Allows(kind string) (bool, error) {
 	case outbox.UserEventExpiration, outbox.UserEventExpiryReminder, outbox.UserEventQueuedActivation,
 		outbox.UserEventPurchaseActivation, outbox.UserEventAutoRenewal, outbox.UserEventPurchaseQueued,
 		outbox.UserEventRenewalScheduled, outbox.UserEventAddonActivated, outbox.UserEventQueuedCancellation,
-		outbox.UserEventAutoRenewalFailed:
+		outbox.UserEventAutoRenewalFailed, outbox.UserEventHourlyFundingWarning, outbox.UserEventHourlyFundingSuspended:
 		return p.Notifications.Combos, nil
 	case outbox.UserEventTrafficThreshold, outbox.UserEventAutomaticReset,
 		outbox.UserEventAutomaticResetFailed, outbox.UserEventManualResetCompleted, outbox.UserEventManualResetRefunded:

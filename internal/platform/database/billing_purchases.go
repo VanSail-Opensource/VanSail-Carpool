@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
-	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
@@ -40,6 +40,7 @@ func (s *Store) ListPurchases(ctx context.Context, userID string) ([]model.Purch
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+	sort.Slice(purchases, func(i, j int) bool { return moreRecentPurchase(purchases[i], purchases[j]) })
 	for index := range purchases {
 		purchases[index].SquadUUIDs, err = s.purchaseSquads(ctx, purchases[index].ID)
 		if err != nil {
@@ -77,46 +78,6 @@ func (s *Store) ListAllPurchases(ctx context.Context, limit int) ([]model.Purcha
 		}
 	}
 	return purchases, nil
-}
-
-// CancelPurchase credits its snapshotted price and schedules entitlement replacement when needed.
-func (s *Store) retryAttempt_CancelPurchase(ctx context.Context, purchaseID, reason string, now time.Time) (model.Purchase, error) {
-
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return model.Purchase{}, err
-	}
-	defer func() { _ = tx.Rollback() }()
-	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=$1`, purchaseID))
-	if err != nil {
-		return model.Purchase{}, err
-	}
-	if purchase.Status == "cancelled" {
-		return purchase, nil
-	}
-	if purchase.Status == "expired" || purchase.Status == "failed" {
-		return model.Purchase{}, ErrConflict
-	}
-	previousStatus := purchase.Status
-	if _, err := tx.ExecContext(ctx, `UPDATE purchases SET status='cancelled',updated_at=$1 WHERE id=$2`, stamp(now), purchase.ID); err != nil {
-		return model.Purchase{}, err
-	}
-	balance, err := adjustBalanceTx(ctx, tx, purchase.UserID, purchase.PriceTXBMinor, now)
-	if err != nil {
-		return model.Purchase{}, fmt.Errorf("refund cancelled purchase: %w", err)
-	}
-	if _, err := insertLedgerTx(ctx, tx, purchase.UserID, purchase.PriceTXBMinor, balance, "admin_entitlement_cancellation", purchase.ID, reason, now); err != nil {
-		return model.Purchase{}, err
-	}
-	if previousStatus != "queued" {
-		if err := insertOutboxTx(ctx, tx, "xnode_sync_user", `{"userId":"`+purchase.UserID+`"}`, now, now); err != nil {
-			return model.Purchase{}, err
-		}
-	}
-	if err := tx.Commit(); err != nil {
-		return model.Purchase{}, err
-	}
-	return s.PurchaseByID(ctx, purchase.ID)
 }
 
 const purchaseSelect = `SELECT purchases.id,purchases.user_id,purchases.combo_id,combos.name,purchases.charged_txb_minor,purchases.valid_from,purchases.valid_until,

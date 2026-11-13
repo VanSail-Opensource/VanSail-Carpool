@@ -9,7 +9,7 @@ const emit = defineEmits<{ confirm: []; refresh: [] }>()
 </script>
 
 <template>
-  <UModal v-model:open="open" :title="t('adminUserProfile.unblockIP')" :dismissible="!busy">
+  <UModal v-model:open="open" :title="t('adminUserProfile.unblockIP')" :dismissible="!busy" :close="!busy">
     <template #body>
       <div v-if="block" class="grid gap-3">
         <code class="break-all">{{ block.ip }}</code>

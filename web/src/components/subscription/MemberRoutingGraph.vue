@@ -18,7 +18,7 @@ const markerId = useId()
 const layout = computed(() => {
   const tree = routingTree(props.nodes, props.paths, props.choices, props.endpoints, props.templates, t('managedRouting.you'), props.trace)
   const distance = new Map(tree.nodes.map(node => [node.asn, node.layer]))
-  const placed = placeNodes(tree.nodes, tree.edges, distance, new Map())
+  const placed = placeNodes(tree.nodes, distance, new Map())
   if (narrow.value) {
     const columns = new Map<number, typeof placed.nodes>()
     for (const node of placed.nodes) { const column = columns.get(node.layer) ?? []; column.push(node); columns.set(node.layer, column) }

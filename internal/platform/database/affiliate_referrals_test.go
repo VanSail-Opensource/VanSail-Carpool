@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"errors"
+	"math"
 	"testing"
 	"time"
 
@@ -68,5 +69,9 @@ func TestAffiliateReferralsUseTelegramFullName(t *testing.T) {
 	}
 	if len(page.Items) != 1 || page.Items[0].FirstName != "Ada" || page.Items[0].LastName != "Lovelace" {
 		t.Fatalf("referral page = %#v", page)
+	}
+	page, err = store.AffiliateReferrals(ctx, inviter.ID, math.MaxInt)
+	if err != nil || len(page.Items) != 0 || page.Total != 1 || page.Page != math.MaxInt {
+		t.Fatalf("out-of-range page overflowed its SQL offset: %+v, %v", page, err)
 	}
 }

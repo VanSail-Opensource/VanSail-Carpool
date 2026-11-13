@@ -16,7 +16,7 @@ func TestPollConnectionScanRejectsAnotherProfileTarget(t *testing.T) {
 	repository := &targetScopedScanRepository{scan: providerops.ConnectionScan{ID: "scan", UserID: "target", Status: providerops.StatusProcessing, ExpiresAt: now.Add(time.Minute)}}
 	service := NewService(repository, nil, nil)
 	service.now = func() time.Time { return now }
-	if _, err := service.PollAdmin(context.Background(), "other", "scan"); !errors.Is(err, ErrScanNotFound) {
+	if _, err := service.PollAdmin(context.Background(), scanTestAdministrator(), "other", "scan"); !errors.Is(err, ErrScanNotFound) {
 		t.Fatalf("Poll(other profile) = %v, want ErrScanNotFound", err)
 	}
 	if repository.lastOwnerID != "other" {
@@ -35,7 +35,7 @@ func (*targetScopedScanRepository) CreateConnectionScan(context.Context, provide
 func (r *targetScopedScanRepository) ConnectionScanForUser(_ context.Context, scanID, userID string) (providerops.ConnectionScan, error) {
 	r.lastOwnerID = userID
 	if scanID != r.scan.ID || userID != r.scan.UserID {
-		return providerops.ConnectionScan{}, errors.New("not found")
+		return providerops.ConnectionScan{}, ErrScanNotFound
 	}
 	return r.scan, nil
 }
@@ -45,6 +45,13 @@ func (*targetScopedScanRepository) ConnectionScanByID(context.Context, string) (
 func (*targetScopedScanRepository) UpdateConnectionScan(context.Context, string, providerops.ConnectionScanUpdate, time.Time) (providerops.ConnectionScan, error) {
 	return providerops.ConnectionScan{}, errors.New("unexpected")
 }
-func (*targetScopedScanRepository) UserByID(context.Context, string) (model.User, error) {
+func (*targetScopedScanRepository) UserByID(_ context.Context, id string) (model.User, error) {
+	if id == scanTestAdministrator().ID {
+		return scanTestAdministrator(), nil
+	}
 	return model.User{}, errors.New("unexpected")
+}
+
+func (*targetScopedScanRepository) StartConnectionScan(context.Context, string, time.Time) (providerops.ConnectionScan, error) {
+	return providerops.ConnectionScan{}, errors.New("unexpected")
 }

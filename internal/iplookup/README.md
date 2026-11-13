@@ -10,8 +10,31 @@ New reputation providers extend the registry and queued adapter contract. Networ
 
 Feature implementation and contracts: `address.go`, `background.go`, `background_run.go`, `cache_key.go`, `config.go`, `enrichment.go`, `geo.go`, `progress.go`, `provider_geo.go`, `provider_http.go`, `provider_insights.go`, `provider_parse.go`, `provider_scamalytics.go`, `provider_sources.go`, `rating.go`, `refusals.go`, `registry.go`, `report_codec.go`, `report_types.go`, `retry_policy.go`, `rpki_lookup.go`, `rpki_repair.go`, `rpki_types.go`, `service.go`, `shodan_verdict.go`, `types.go`, `verdict.go`, `warnings.go`, `worker.go`, `worker_config.go`, `worker_live.go`, `worker_lock.go`, `worker_provider_context.go`, `worker_retry.go`, `worker_rpki.go`.
 
-Hosted regression coverage: `compact_report_test.go`, `config_order_test.go`, `geo_test.go`, `live_cache_test.go`, `live_graph_projection_test.go`, `live_http_test.go`, `live_integration_test.go`, `live_metadata_test.go`, `live_relationship_bulk_test.go`, `live_retry_test.go`, `live_shared_test.go`, `live_shodan_test.go`, `live_snapshot_test.go`, `live_test.go`, `live_tier1_test.go`, `live_transit_context_test.go`, `provider_http_test.go`, `provider_provenance_test.go`, `provider_test.go`, `rating_test.go`, `retry_policy_test.go`, `rpki_lookup_test.go`, `shodan_verdict_test.go`, `worker_config_test.go`, `worker_live_test.go`, `worker_retry_test.go`, `worker_rpki_test.go`, `worker_test.go`, `worker_warnings_test.go`.
+Hosted regression coverage: `compact_report_test.go`, `config_order_test.go`, `geo_test.go`, `live_asn_test.go`, `live_cache_test.go`, `live_events_test.go`, `live_graph_projection_test.go`, `live_http_test.go`, `live_integration_test.go`, `live_metadata_test.go`, `live_relationship_bulk_test.go`, `live_retry_test.go`, `live_shared_test.go`, `live_shodan_test.go`, `live_snapshot_test.go`, `live_test.go`, `live_tier1_test.go`, `live_traffic_test.go`, `live_transit_context_test.go`, `provider_http_test.go`, `provider_provenance_test.go`, `provider_test.go`, `rating_test.go`, `retry_policy_test.go`, `rpki_lookup_test.go`, `shodan_verdict_test.go`, `worker_config_test.go`, `worker_live_test.go`, `worker_retry_test.go`, `worker_rpki_test.go`, `worker_test.go`, `worker_warnings_test.go`.
 
 Network context and streaming: `live_asn.go`, `live_asn_prefetch.go`, `live_bgp.go`, `live_cache.go`, `live_classification.go`, `live_compact.go`, `live_contacts.go`, `live_events.go`, `live_graph_projection.go`, `live_ip.go`, `live_names.go`, `live_pipeline.go`, `live_relationship_bulk.go`, `live_relationships.go`, `live_requests.go`, `live_retry.go`, `live_service.go`, `live_shodan.go`, `live_snapshot.go`, `live_tasks.go`, `live_tier1.go`, `live_traffic.go`, `live_transfer.go`, `live_transit_context.go`, `live_transport.go`, `live_types.go`, `live_websites.go`.
 
 `retired_features_test.go` covers old settings/report projection, interrupted enrichment compatibility and progress that waits for network enrichment.
+
+`run_lease.go` carries a fresh execution fence through background, provider and detached live contexts. Running-report persistence requires that owner and an unexpired database lease; heartbeat cancellation alone cannot authorize stale progress or settlement. `background_lease_test.go` verifies distinct owners across executions and fence propagation through reads, provider work, progress and completion.
+
+Frozen report and live-snapshot repairs carry a transient `RepairRevision`
+derived from the exact stored document. Each database write compares that
+revision and immutable IP identity, returning the next revision without changing
+cache ordering. Reputation progress advances its token after every committed
+stage; losing repairs stop without overwriting newer sections or scheduling
+another chain. The token is excluded from public and stored JSON.
+`repair_test_helpers_test.go` supplies detached, revision-checking fixtures;
+`repair_revision_test.go` covers competing commits and token privacy, while
+`worker_retry_test.go` and `live_retry_test.go` retain policy/section recovery cases.
+
+Malformed traffic observations retain unavailable or partial coverage so snapshot
+repair remains eligible; null prefix responses remain unknown instead of zero.
+Both fresh and cached completion events preserve section error, partial and
+unconfigured task states while reporting the completed work count.
+
+`live_projection_recovery_test.go` covers malformed retained route summaries:
+invalid hop vectors are omitted from public traversal, valid evidence remains,
+and the partial snapshot stays eligible for a topology repair. Legacy compaction
+retains stored links without the unreachable original-path branch; request
+coalescing no longer maintains an unused aggregate failure flag.

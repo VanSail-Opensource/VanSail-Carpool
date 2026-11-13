@@ -15,13 +15,27 @@ import (
 
 // SaveSquadProduct upserts only non-default local merchandising. Restoring all
 // defaults removes the row so unedited upstream squads consume no local space.
-func (s *Store) SaveSquadProduct(ctx context.Context, input SquadProductInput) (model.SquadProduct, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_SaveSquadProduct(ctx context.Context, input SquadProductInput) (model.SquadProduct, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return model.SquadProduct{}, err
+	}
+	defer tx.Rollback()
+	product, err := saveSquadProductTx(ctx, tx, input, time.Now().UTC())
+	if err != nil {
+		return model.SquadProduct{}, err
+	}
+	if err = tx.Commit(); err != nil {
+		return model.SquadProduct{}, err
+	}
+	return product, nil
+}
+
+func saveSquadProductTx(ctx context.Context, tx *sql.Tx, input SquadProductInput, now time.Time) (model.SquadProduct, error) {
 	uuid := strings.TrimSpace(input.GroupID)
 	if input.PAYGState == "" {
 		input.PAYGState = "normal"
-		if existing, err := s.SquadProductByGroupID(ctx, uuid); err == nil {
+		if existing, err := scanSquad(tx.QueryRowContext(ctx, squadSelect+` WHERE group_id=$1`, uuid)); err == nil {
 			input.PAYGState = existing.PAYGState
 		} else if !errors.Is(err, ErrNotFound) {
 			return model.SquadProduct{}, err
@@ -51,9 +65,8 @@ func (s *Store) SaveSquadProduct(ctx context.Context, input SquadProductInput) (
 		}
 		featuresJSON = string(encoded)
 	}
-	now := time.Now().UTC()
-	if input.BillingMode == "combo" && input.PAYGPriceTXBMinor == 0 && strings.TrimSpace(input.Description) == "" && input.PriceTXBMinor == 0 && !input.Visible && input.StockLimit == nil && input.Profile == nil && len(input.Features) == 0 && !input.ActivationRequired && strings.TrimSpace(input.ActivationCode) == "" {
-		result, err := s.db.ExecContext(ctx, `DELETE FROM squad_product_overrides WHERE group_id=$1 AND ($2=1 OR features_json IS NULL OR features_json='[]')`, uuid, boolInt(input.Features != nil))
+	if input.BillingMode == "combo" && input.PAYGState == "normal" && input.PAYGPriceTXBMinor == 0 && strings.TrimSpace(input.Description) == "" && input.PriceTXBMinor == 0 && !input.Visible && input.StockLimit == nil && input.Profile == nil && len(input.Features) == 0 && !input.ActivationRequired && strings.TrimSpace(input.ActivationCode) == "" {
+		result, err := tx.ExecContext(ctx, `DELETE FROM squad_product_overrides WHERE group_id=$1 AND ($2=1 OR features_json IS NULL OR features_json='[]')`, uuid, boolInt(input.Features != nil))
 		if err != nil {
 			return model.SquadProduct{}, fmt.Errorf("remove default squad override: %w", err)
 		}
@@ -64,7 +77,7 @@ func (s *Store) SaveSquadProduct(ctx context.Context, input SquadProductInput) (
 		if deleted != 0 {
 			return virtualSquad(input, now), nil
 		}
-		if _, err = s.SquadProductByGroupID(ctx, uuid); errors.Is(err, ErrNotFound) {
+		if _, err = scanSquad(tx.QueryRowContext(ctx, squadSelect+` WHERE group_id=$1`, uuid)); errors.Is(err, ErrNotFound) {
 			return virtualSquad(input, now), nil
 		} else if err != nil {
 			return model.SquadProduct{}, err
@@ -82,17 +95,17 @@ func (s *Store) SaveSquadProduct(ctx context.Context, input SquadProductInput) (
 		}
 		profileJSON = string(encoded)
 	}
-	hash, err := activationHash(ctx, s.db, uuid, input.ActivationRequired, input.ActivationCode)
+	hash, err := activationHashTx(ctx, tx, uuid, input.ActivationRequired, input.ActivationCode)
 	if err != nil {
 		return model.SquadProduct{}, err
 	}
-	_, err = s.db.ExecContext(ctx, `INSERT INTO squad_product_overrides(group_id,description,profile_json,price_txb_minor,visible,stock_limit,activation_required,activation_code_hash,created_at,updated_at,billing_mode,payg_price_minor,payg_state,features_json)
+	_, err = tx.ExecContext(ctx, `INSERT INTO squad_product_overrides(group_id,description,profile_json,price_txb_minor,visible,stock_limit,activation_required,activation_code_hash,created_at,updated_at,billing_mode,payg_price_minor,payg_state,features_json)
 		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) ON CONFLICT(group_id) DO UPDATE SET description=excluded.description,profile_json=excluded.profile_json,price_txb_minor=excluded.price_txb_minor,visible=excluded.visible,stock_limit=excluded.stock_limit,activation_required=excluded.activation_required,activation_code_hash=excluded.activation_code_hash,updated_at=excluded.updated_at,billing_mode=excluded.billing_mode,payg_price_minor=excluded.payg_price_minor,payg_state=excluded.payg_state,features_json=COALESCE(excluded.features_json,squad_product_overrides.features_json)`,
 		uuid, strings.TrimSpace(input.Description), profileJSON, input.PriceTXBMinor, boolInt(input.Visible), input.StockLimit, boolInt(input.ActivationRequired), hash, stamp(now), stamp(now), input.BillingMode, input.PAYGPriceTXBMinor, input.PAYGState, featuresJSON)
 	if err != nil {
 		return model.SquadProduct{}, fmt.Errorf("save squad override: %w", err)
 	}
-	product, err := s.SquadProductByGroupID(ctx, uuid)
+	product, err := scanSquad(tx.QueryRowContext(ctx, squadSelect+` WHERE group_id=$1`, uuid))
 	if err != nil {
 		return model.SquadProduct{}, err
 	}
@@ -131,14 +144,6 @@ func (s *Store) ImportSquad(ctx context.Context, proxySquadUUID, name string) (m
 	return product, nil
 }
 
-// MarkAllSquadsMissing is retained for compatibility and intentionally does
-// nothing because presence is now read directly from Proxy.
-func (s *Store) MarkAllSquadsMissing(context.Context) error { return nil }
-
-// RefreshImportedSquads is retained for compatibility and intentionally does
-// not store upstream-owned identities.
-func (s *Store) RefreshImportedSquads(context.Context, []ImportedSquad) error { return nil }
-
 // ListSquadProductOverrides loads merchandising without derived stock counts.
 // Compilation, inventory and exports must use this bounded-cost read.
 func (s *Store) ListSquadProductOverrides(ctx context.Context, visibleOnly bool) ([]model.SquadProduct, error) {
@@ -163,7 +168,7 @@ func (s *Store) ListSquadProductOverrides(ctx context.Context, visibleOnly bool)
 	return products, rows.Err()
 }
 
-func activationHash(ctx context.Context, db *sql.DB, uuid string, required bool, code string) (any, error) {
+func activationHashTx(ctx context.Context, tx *sql.Tx, uuid string, required bool, code string) (any, error) {
 	if !required {
 		return nil, nil
 	}
@@ -176,7 +181,7 @@ func activationHash(ctx context.Context, db *sql.DB, uuid string, required bool,
 		return string(hash), nil
 	}
 	var existing sql.NullString
-	if err := db.QueryRowContext(ctx, `SELECT activation_code_hash FROM squad_product_overrides WHERE group_id=$1`, uuid).Scan(&existing); err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err := tx.QueryRowContext(ctx, `SELECT activation_code_hash FROM squad_product_overrides WHERE group_id=$1`, uuid).Scan(&existing); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("load squad activation code: %w", err)
 	}
 	if !existing.Valid || existing.String == "" {

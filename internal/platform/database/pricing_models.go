@@ -61,8 +61,11 @@ func (s *Store) TrainPricingResponse(ctx context.Context, kind, product string, 
 	if err != nil {
 		return pricing.ResponseModel{}, id, err
 	}
+	// The wire budget can trim the oldest observations before fitting. Support
+	// must describe that exact retained sample set, not discarded price ranges.
+	samples = samples[max(0, len(samples)-m.Samples):]
 	couponSamples := 0
-	for _, sample := range samples[max(0, len(samples)-m.Samples):] {
+	for _, sample := range samples {
 		if sample.CouponPresent > 0 && sample.CouponDiscount > 0 {
 			couponSamples++
 		}
@@ -82,6 +85,24 @@ func (s *Store) TrainPricingResponse(ctx context.Context, kind, product string, 
 	if err != nil {
 		return m, id, err
 	}
-	_, err = s.db.ExecContext(ctx, `INSERT INTO pricing_model_versions(id,kind,created_at,calibration_status,parameters_json,feature_definition_json,watermark,diagnostics_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(id) DO NOTHING`, id, "response:"+kind+":"+product, pricingStamp(now), status, string(raw), `{"features":["intercept","logPrice/reference","activity","renewals","couponPresent","couponDiscount"],"fit":"regularized logistic","validation":"chronological holdout; minimum 200 samples; price variation; Brier improvement; bias below 0.1; nonpositive price slope"}`, pricingStamp(now), string(diagnostics))
-	return m, id, err
+	result, err := s.db.ExecContext(ctx, `INSERT INTO pricing_model_versions(id,kind,created_at,calibration_status,parameters_json,feature_definition_json,watermark,diagnostics_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(id) DO NOTHING`, id, "response:"+kind+":"+product, pricingStamp(now), status, string(raw), `{"features":["intercept","logPrice/reference","activity","renewals","couponPresent","couponDiscount"],"fit":"regularized logistic","validation":"chronological holdout; minimum 200 samples; price variation; Brier improvement; bias below 0.1; nonpositive price slope"}`, pricingStamp(now), string(diagnostics))
+	if err != nil {
+		return pricing.ResponseModel{}, id, err
+	}
+	inserted, err := result.RowsAffected()
+	if err != nil {
+		return pricing.ResponseModel{}, id, err
+	}
+	if inserted == 0 {
+		// Concurrent fits share an immutable model ID. Use the committed winner's
+		// exact parameters so a decision never labels a losing local fit as it.
+		if err := s.db.QueryRowContext(ctx, `SELECT parameters_json FROM pricing_model_versions WHERE id=$1`, id).Scan(&existing); err != nil {
+			return pricing.ResponseModel{}, id, err
+		}
+		m = pricing.ResponseModel{}
+		if err := json.Unmarshal([]byte(existing), &m); err != nil {
+			return pricing.ResponseModel{}, id, err
+		}
+	}
+	return m, id, nil
 }

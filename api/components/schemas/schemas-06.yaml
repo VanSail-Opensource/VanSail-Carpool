@@ -17,7 +17,7 @@ GroupMessageRewardStatus:
     rewardMinor:
       description: Effective boosted reward before settlement; the immutable ledger amount after settlement.
       type: string
-      pattern: '^\\d+$'
+      pattern: '^\d+$'
     rewarded:
       type: boolean
     rewardedAt:

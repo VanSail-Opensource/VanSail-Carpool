@@ -3,12 +3,13 @@ package database
 
 import (
 	context "context"
+	model "github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	time "time"
 )
 
-func (s *Store) ExchangeBrowserAccessLink(ctx context.Context, linkHash, sessionHash []byte, now, expires time.Time) (string, string, error) {
+func (s *Store) ExchangeBrowserAccessLink(ctx context.Context, linkHash, sessionHash []byte, now, expires time.Time, authorize func(model.User, string) bool) (model.User, string, error) {
 	for retryIndex := 0; ; retryIndex++ {
-		r0, r1, r2 := s.retryAttempt_ExchangeBrowserAccessLink(ctx, linkHash, sessionHash, now, expires)
+		r0, r1, r2 := s.retryAttempt_ExchangeBrowserAccessLink(ctx, linkHash, sessionHash, now, expires, authorize)
 		if !s.retryTransaction(ctx, r2, retryIndex) {
 			return r0, r1, r2
 		}

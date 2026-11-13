@@ -57,18 +57,9 @@ func (s *SettingsService) PaymentProfile(ctx context.Context, provider, rail str
 	if rail != "" && !containsPaymentChannel(record.EnabledChannels, rail) {
 		return model.PaymentProfileRuntime{}, database.ErrNotFound
 	}
-	plaintext, decryptErr := s.vault.Decrypt("payment-profile:"+record.ID, record.CredentialCiphertext)
+	plaintext, decryptErr := s.paymentProfileCredential(ctx, record)
 	if decryptErr != nil {
-		legacyKey := "billing." + provider + "."
-		if provider == "ezpay" {
-			legacyKey += "key"
-		} else {
-			legacyKey += "api_token"
-		}
-		plaintext, decryptErr = s.Plaintext(ctx, legacyKey)
-		if decryptErr != nil {
-			return model.PaymentProfileRuntime{}, decryptErr
-		}
+		return model.PaymentProfileRuntime{}, decryptErr
 	}
 	return model.PaymentProfileRuntime{PaymentProfile: record.PaymentProfile, CredentialPlaintext: plaintext}, nil
 }
@@ -101,22 +92,16 @@ func (s *SettingsService) PaymentProfileByID(ctx context.Context, id, rail strin
 	if err != nil {
 		return model.PaymentProfileRuntime{}, err
 	}
+	if record.ID != id {
+		return model.PaymentProfileRuntime{}, database.ErrNotFound
+	}
 	s.applyDiscoveredChannels(&record.PaymentProfile)
 	if rail != "" && !containsPaymentChannel(record.EnabledChannels, rail) {
 		return model.PaymentProfileRuntime{}, database.ErrNotFound
 	}
-	plaintext, decryptErr := s.vault.Decrypt("payment-profile:"+record.ID, record.CredentialCiphertext)
+	plaintext, decryptErr := s.paymentProfileCredential(ctx, record)
 	if decryptErr != nil {
-		legacyKey := "billing." + record.Provider + "."
-		if record.Provider == "ezpay" {
-			legacyKey += "key"
-		} else {
-			legacyKey += "api_token"
-		}
-		plaintext, decryptErr = s.Plaintext(ctx, legacyKey)
-		if decryptErr != nil {
-			return model.PaymentProfileRuntime{}, decryptErr
-		}
+		return model.PaymentProfileRuntime{}, decryptErr
 	}
 	return model.PaymentProfileRuntime{PaymentProfile: record.PaymentProfile, CredentialPlaintext: plaintext}, nil
 }
@@ -175,8 +160,10 @@ func (s *SettingsService) SavePaymentProfile(ctx context.Context, actorID string
 		if err != nil {
 			return model.PaymentProfile{}, err
 		}
+	} else if err := s.validateRetainedPaymentCredential(ctx, id, input); err != nil {
+		return model.PaymentProfile{}, err
 	}
-	return s.profiles.SavePaymentProfile(ctx, database.PaymentProfileInput{ID: id, Provider: input.Provider, ProviderName: providerName,
+	return s.profiles.SavePaymentProfile(ctx, database.PaymentProfileInput{ID: id, ActorID: actorID, Provider: input.Provider, ProviderName: providerName,
 		EnabledChannels: channels, Endpoint: strings.TrimSpace(input.Endpoint), MerchantID: strings.TrimSpace(input.MerchantID),
 		CredentialCiphertext: ciphertext, Acknowledgement: strings.TrimSpace(input.Acknowledgement), Enabled: input.Enabled})
 }

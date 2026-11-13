@@ -2,10 +2,8 @@ package database
 
 import (
 	"context"
-	"database/sql"
-	"encoding/json"
-	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
@@ -18,19 +16,30 @@ type AdminOperationResolutionInput struct {
 	Resolution, Reason                                           string
 }
 
-// ResolveAdminOperation records a human decision without another provider attempt.
+// ErrOperationReconciliationRequired denies receipt repair without matching
+// retained domain evidence. It never authorizes a provider or financial override.
+var ErrOperationReconciliationRequired = fmt.Errorf("%w: operation still requires domain reconciliation", ErrConflict)
+
+// ResolveAdminOperation repairs a supported parent receipt from terminal item
+// evidence, without changing provider state, items, holds or notification gates.
 func (s *Store) retryAttempt_ResolveAdminOperation(ctx context.Context, input AdminOperationResolutionInput,
 	now time.Time) (model.OperationReceipt, error) {
-
+	if strings.TrimSpace(input.OperationID) == "" || strings.TrimSpace(input.IdempotencyKey) == "" || len(input.IdempotencyKey) > 128 ||
+		len(input.RequestFingerprint) < 16 || len(input.RequestFingerprint) > 128 || len(strings.TrimSpace(input.Reason)) < 3 || len(input.Reason) > 500 {
+		return model.OperationReceipt{}, ErrConflict
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
+	if err = catalogAdminActorTx(ctx, tx, input.ActorUserID); err != nil {
+		return model.OperationReceipt{}, err
+	}
 	if receipt, replayed, replayErr := resolvedOperationReplay(ctx, tx, input); replayErr != nil || replayed {
 		return commitResolvedReplay(tx, receipt, replayErr)
 	}
-	operation, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=$1`, input.OperationID))
+	operation, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=$1 FOR UPDATE`, input.OperationID))
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
@@ -38,7 +47,10 @@ func (s *Store) retryAttempt_ResolveAdminOperation(ctx context.Context, input Ad
 	if (before != "pending_review" && before != "partial") || before == input.Resolution {
 		return model.OperationReceipt{}, ErrConflict
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE provider_operations SET status=$1,updated_at=$2,completed_at=$3
+	if err = adminResolutionEvidenceTx(ctx, tx, operation.Receipt.Kind, input.OperationID, input.Resolution); err != nil {
+		return model.OperationReceipt{}, err
+	}
+	result, err := tx.ExecContext(ctx, `UPDATE provider_operations SET status=$1,updated_at=$2,completed_at=$3,error_code=CASE WHEN $1='succeeded' THEN '' ELSE error_code END
 		WHERE id=$4 AND status=$5`, input.Resolution, stamp(now), stamp(now), input.OperationID, before)
 	if err != nil {
 		return model.OperationReceipt{}, err
@@ -49,73 +61,22 @@ func (s *Store) retryAttempt_ResolveAdminOperation(ctx context.Context, input Ad
 		}
 		return model.OperationReceipt{}, ErrConflict
 	}
-	if err := insertResolutionReplay(ctx, tx, input, now); err != nil {
-		return model.OperationReceipt{}, err
-	}
-	if err := insertResolutionAudit(ctx, tx, input, before, now); err != nil {
-		return model.OperationReceipt{}, err
-	}
 	updated, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=$1`, input.OperationID))
 	if err != nil {
+		return model.OperationReceipt{}, err
+	}
+	replayID, err := ids.New()
+	if err != nil {
+		return model.OperationReceipt{}, err
+	}
+	if err := insertResolutionReplay(ctx, tx, replayID, input, now); err != nil {
+		return model.OperationReceipt{}, err
+	}
+	if err := insertResolutionAudit(ctx, tx, replayID, input, before, updated.Receipt, now); err != nil {
 		return model.OperationReceipt{}, err
 	}
 	if err := tx.Commit(); err != nil {
 		return model.OperationReceipt{}, err
 	}
 	return updated.Receipt, nil
-}
-
-func resolvedOperationReplay(ctx context.Context, tx *sql.Tx, input AdminOperationResolutionInput) (model.OperationReceipt, bool, error) {
-	var fingerprint string
-	err := tx.QueryRowContext(ctx, `SELECT request_fingerprint FROM provider_operation_replays
-		WHERE operation_id=$1 AND actor_user_id=$2 AND idempotency_key=$3 LIMIT 1`, input.OperationID,
-		input.ActorUserID, input.IdempotencyKey).Scan(&fingerprint)
-	if errors.Is(err, sql.ErrNoRows) {
-		return model.OperationReceipt{}, false, nil
-	}
-	if err != nil {
-		return model.OperationReceipt{}, false, err
-	}
-	if fingerprint != input.RequestFingerprint {
-		return model.OperationReceipt{}, false, ErrConflict
-	}
-	operation, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=$1`, input.OperationID))
-	return operation.Receipt, err == nil, err
-}
-
-func commitResolvedReplay(tx *sql.Tx, receipt model.OperationReceipt, err error) (model.OperationReceipt, error) {
-	if err != nil {
-		return model.OperationReceipt{}, err
-	}
-	if err := tx.Commit(); err != nil {
-		return model.OperationReceipt{}, err
-	}
-	return receipt, nil
-}
-
-func insertResolutionReplay(ctx context.Context, tx *sql.Tx, input AdminOperationResolutionInput, now time.Time) error {
-	id, err := ids.New()
-	if err != nil {
-		return err
-	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO provider_operation_replays(id,operation_id,actor_user_id,
-		idempotency_key,request_fingerprint,created_at) VALUES($1,$2,$3,$4,$5,$6)`, id, input.OperationID,
-		input.ActorUserID, input.IdempotencyKey, input.RequestFingerprint, stamp(now))
-	return err
-}
-
-func insertResolutionAudit(ctx context.Context, tx *sql.Tx, input AdminOperationResolutionInput, before string, now time.Time) error {
-	id, err := ids.New()
-	if err != nil {
-		return err
-	}
-	detail, err := json.Marshal(map[string]string{"reason": input.Reason, "before": before, "after": input.Resolution})
-	if err != nil {
-		return err
-	}
-	if err := insertAuditTx(ctx, tx, id, &input.ActorUserID, "provider_operation.resolve",
-		"provider_operation", input.OperationID, string(detail), now); err != nil {
-		return fmt.Errorf("audit operation resolution: %w", err)
-	}
-	return nil
 }

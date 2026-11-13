@@ -13,21 +13,36 @@ import (
 
 func topicMissing(err error) bool {
 	var api *telegram.APIError
-	if !errors.As(err, &api) || api.ErrorCode != 400 {
+	if !errors.As(err, &api) || api == nil || api.ErrorCode != 400 || !definiteRejection(err) {
 		return false
 	}
-	description := strings.ToLower(api.Description)
-	return strings.Contains(description, "message thread not found") || strings.Contains(description, "topic not found") || strings.Contains(description, "topic deleted")
+	switch strings.ToLower(strings.TrimSpace(api.Description)) {
+	case "bad request: message thread not found", "bad request: topic not found", "bad request: topic deleted":
+		return true
+	default:
+		return false
+	}
 }
 
 func profileMissing(err error) bool {
 	var api *telegram.APIError
-	return errors.As(err, &api) && api.ErrorCode == 400 && strings.Contains(strings.ToLower(api.Description), "message to edit not found")
+	return errors.As(err, &api) && api != nil && api.ErrorCode == 400 && definiteRejection(err) &&
+		strings.ToLower(strings.TrimSpace(api.Description)) == "bad request: message to edit not found"
 }
 
 func definiteRejection(err error) bool {
 	var api *telegram.APIError
-	return errors.As(err, &api) && (api.ErrorCode == 400 || api.ErrorCode == 401 || api.ErrorCode == 403 || api.ErrorCode == 429)
+	if !errors.As(err, &api) || api == nil || api.HTTPStatus != api.ErrorCode {
+		return false
+	}
+	switch api.ErrorCode {
+	case 400, 401, 403:
+		return api.RetryAfter == 0
+	case 429:
+		return api.RetryAfter >= 0
+	default:
+		return false
+	}
 }
 
 func (w *Worker) callResult(ctx context.Context, run execution, item providerops.Item, err error, started, appendOnly bool, reference, uncertainCode string) (phaseResult, error) {
@@ -51,7 +66,7 @@ func (w *Worker) callResult(ctx context.Context, run execution, item providerops
 		}
 	}
 	var api *telegram.APIError
-	rateLimited := errors.As(err, &api) && api.ErrorCode == 429
+	rateLimited := errors.As(err, &api) && api != nil && api.ErrorCode == 429 && definiteRejection(err)
 	if (!started || rateLimited || !appendOnly && !definiteRejection(err)) && run.job.Attempts < 10 {
 		persist, cancel := completionContext(ctx)
 		defer cancel()

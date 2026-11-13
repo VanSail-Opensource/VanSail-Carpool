@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { DatabaseMutationReview, DatabaseRow, DatabaseTable } from '@/api/features'
 import DatabaseRecordEditor from './DatabaseRecordEditor.vue'
+import DatabaseRecordFields from './DatabaseRecordFields.vue'
 
 const table: DatabaseTable = {
   name: 'users',
@@ -117,5 +118,39 @@ describe('DatabaseRecordEditor', () => {
     await wrapper.setProps({ review: deleteReview })
     expect(wrapper.find('.database-delete-summary').exists()).toBe(false)
     expect(wrapper.find('.database-review').exists()).toBe(true)
+  })
+
+  it('locks fields, repeated submission and dismissal while a review is pending', async () => {
+    const wrapper = mountEditor()
+    await wrapper.get('[data-test="reason"]').trigger('click')
+    await wrapper.setProps({ busy: true })
+    expect(wrapper.get('fieldset').attributes('disabled')).toBeDefined()
+    await wrapper.find('form').trigger('submit')
+    wrapper.findComponent(DrawerStub).vm.$emit('update:open', false)
+    expect(wrapper.emitted('review')).toBeUndefined()
+    expect(wrapper.emitted('cancel')).toBeUndefined()
+    wrapper.unmount()
+  })
+
+  it('serializes a nullable boolean cleared from NULL as false', async () => {
+    const wrapper = mountEditor()
+    await wrapper.setProps({ table: { ...table, columns: [{ name: 'enabled', declaredType: 'BOOLEAN', nullable: true, primaryKeyPosition: 0, editable: true, hasDefault: true, sensitive: false }] } })
+    wrapper.findComponent(DatabaseRecordFields).vm.$emit('update:null', 'enabled', false)
+    await wrapper.get('[data-test="reason"]').trigger('click')
+    await wrapper.find('form').trigger('submit')
+    expect(wrapper.emitted('review')?.[0]?.[0]).toMatchObject({ values: { enabled: false } })
+    wrapper.unmount()
+  })
+
+  it('requires new typed consent when a replacement review arrives', async () => {
+    const wrapper = mountEditor()
+    await wrapper.get('[data-test="reason"]').trigger('click')
+    await wrapper.setProps({ review })
+    await wrapper.get('[data-test="confirmation"]').trigger('click')
+    expect(wrapper.get('[data-action="submit"]').attributes('data-disabled')).toBeUndefined()
+    await wrapper.setProps({ review: { ...review, reviewHash: 'replacement', after: { id: 'user-1', role: 'member' } } })
+    expect(wrapper.get('[data-action="submit"]').attributes('data-disabled')).toBe('true')
+    expect(wrapper.get('[data-test="confirmation"]').attributes('data-value')).toBe('')
+    wrapper.unmount()
   })
 })

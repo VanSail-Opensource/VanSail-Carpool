@@ -1,7 +1,7 @@
 {
   "adminCatalog": {
     "title": "目录",
-    "copy": "管理实时套餐条款和上游 X-Node 节点组的稀疏覆盖配置。",
+    "copy": "管理保留的固定期限套餐条款和上游 X-Node 节点组的稀疏覆盖配置。",
     "chooseRecord": "请选择一条目录记录。",
     "newCombo": "新建套餐",
     "comboSummary": "{traffic}，有效 {days} 天",
@@ -20,7 +20,7 @@
     "noSquads": "暂无上游节点组",
     "noSquadsHint": "从 X-Node 刷新后配置可选访问。",
     "hideTitle": "隐藏此套餐？",
-    "hideDescription": "此套餐将不再用于新结算。现有及历史购买保留实时引用，因此后续修改仍会影响它们。",
+    "hideDescription": "此套餐将不再可供管理员新发放权益。现有购买及其续费资格会保留。",
     "hideCombo": "隐藏套餐"
   },
   "adminCatalogEditor": {
@@ -44,8 +44,8 @@
     },
     "includedSquads": "包含的实时节点组",
     "noSquads": "分配前请先刷新 X-Node 节点组。",
-    "available": "向用户开放",
-    "liveTermsHint": "隐藏会阻止新结算；对此实时记录的修改会影响活跃、排队和历史购买。",
+    "available": "允许管理员新发放权益",
+    "liveTermsHint": "隐藏会阻止管理员新发放权益。现有购买保留实时套餐引用，仍可续费。",
     "save": "保存套餐",
     "invalidFields": "请检查名称、价格、流量、配额和有效期后再保存。"
   }

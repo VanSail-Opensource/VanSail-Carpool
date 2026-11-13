@@ -7,8 +7,9 @@ import (
 	"sync"
 )
 
-// Only SaveGlobal writes this document after startup migrations. The published
-// snapshot is private, and every reader receives independent mutable fields.
+// The runtime ownership guard admits one application and one native service.
+// Only SaveGlobal and its lease adapter write this document after startup.
+// The published snapshot is private; readers receive independent mutable fields.
 type globalSettingsCache struct {
 	mu    sync.Mutex
 	value *GlobalConfig

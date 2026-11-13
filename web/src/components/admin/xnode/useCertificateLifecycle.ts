@@ -21,6 +21,7 @@ export function useCertificateLifecycle(options: CertificateLifecycleOptions) {
   const recoveryError = shallowRef<string | null>(null)
   const lastAction = shallowRef<CertificateAction | null>(null)
   let generation = 0, controller: AbortController | undefined
+  let permanentlyRetired = false
   function clearAttempt(expectedScope = scope()): void { saveCertificateAttempt(expectedScope, null); if (scope() === expectedScope) attempt.value = null }
   const command = useDurableCommand({ errorKey: 'certificates.actionFailed', loadReceipt: adminOperationsApi.getOperation, onTerminal: receipt => {
     if (['succeeded', 'failed', 'cancelled'].includes(receipt.status)) clearAttempt()
@@ -76,7 +77,14 @@ export function useCertificateLifecycle(options: CertificateLifecycleOptions) {
     await recover()
     if (!retired.value && command.receipt.value) await command.refresh()
   }
-  function retire(): void { retired.value = true; generation++; controller?.abort(); command.reset(); attempt.value = null }
+  function suspend(): void { retired.value = true; generation++; controller?.abort(); command.reset(); attempt.value = null }
+  function retire(): void { permanentlyRetired = true; suspend() }
+  function restore(): void {
+    if (permanentlyRetired || !retired.value) return
+    retired.value = false; recovered.value = false; recoveryError.value = null
+    attempt.value = loadCertificateAttempt(scope())
+    void recover()
+  }
   watch([options.nodeId, options.profileId], () => {
     generation++; controller?.abort(); command.reset(); recovered.value = false; recoveryError.value = null
     attempt.value = loadCertificateAttempt(scope()); lastAction.value = attempt.value?.action ?? null
@@ -84,7 +92,8 @@ export function useCertificateLifecycle(options: CertificateLifecycleOptions) {
     else recovered.value = true
   }, { immediate: true })
   window.addEventListener('txc:session-cleared', retire)
-  window.addEventListener('txc:browser-session-expired', retire)
-  onScopeDispose(() => { retire(); window.removeEventListener('txc:session-cleared', retire); window.removeEventListener('txc:browser-session-expired', retire) })
+  window.addEventListener('txc:browser-session-expired', suspend)
+  window.addEventListener('txc:browser-session-restored', restore)
+  onScopeDispose(() => { retire(); window.removeEventListener('txc:session-cleared', retire); window.removeEventListener('txc:browser-session-expired', suspend); window.removeEventListener('txc:browser-session-restored', restore) })
   return { receipt: command.receipt, checking: command.checking, busy: command.busy, error, recovering, blocksMutations, uncertain, canRetry, lastAction, run, refresh: reconcile }
 }

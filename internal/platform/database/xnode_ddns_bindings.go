@@ -43,8 +43,21 @@ func (s *Store) retryAttempt_SaveXNodeNodeDDNS(ctx context.Context, node xnode.N
 		return err
 	}
 	defer tx.Rollback()
-	if _, err = tx.ExecContext(ctx, saveXNodeNodeSQL, xnodeNodeArgs(node)...); err != nil {
+	if err = saveXNodeNodeDDNSTx(ctx, tx, node, bindings); err != nil {
 		return err
+	}
+	return tx.Commit()
+}
+
+func saveXNodeNodeDDNSTx(ctx context.Context, tx *sql.Tx, node xnode.Node, bindings map[string]xnode.DDNSHostBinding) error {
+	result, err := tx.ExecContext(ctx, saveXNodeNodeSQL, xnodeNodeArgs(node)...)
+	if err != nil {
+		return err
+	}
+	if affected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if affected != 1 {
+		return xnode.ErrConflict
 	}
 	if _, err = tx.ExecContext(ctx, `DELETE FROM xnode_ddns_jobs WHERE node_id=$1`, node.ID); err != nil {
 		return err
@@ -70,5 +83,5 @@ func (s *Store) retryAttempt_SaveXNodeNodeDDNS(ctx context.Context, node xnode.N
 			}
 		}
 	}
-	return tx.Commit()
+	return nil
 }

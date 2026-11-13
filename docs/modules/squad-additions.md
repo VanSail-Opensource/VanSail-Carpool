@@ -2,13 +2,18 @@
 
 ## Scope
 
-Members can add visible optional squads to their active VanSail Carpool purchase. The dashboard opens the mobile-safe two-step `UModal`: choose squads, then checkout and in-place confirmation. A queued successor disables the action because its term already owns the next renewal boundary.
+Members can add visible optional squads to their active VanSail Carpool purchase. The dashboard opens the mobile-safe two-step `UModal`: choose squads, then checkout and in-place confirmation. A separately queued successor keeps its existing paid selection; additions affect the current active term.
 
 ## Contract and pricing
 
 `POST /api/v1/purchases/{id}/addons/quote` returns the authoritative price. `POST /api/v1/purchases/{id}/addons` requires `Idempotency-Key` and applies the same server-side validation. Each squad is priced as `min(fullPrice, ceil(fullPrice * remainingTerm / originalComboValidity))`; administrator extensions therefore cannot exceed the full squad price.
 
-The request validates owner, active unexpired term, visible upstream-present squad, duplicate or already-held squad, activation code, current stock, and absence of a separate queued term. `stockHeldByCurrentUser` is derived only in the catalog response from the active entitlement, so a member holding a stock reservation can retain it for renewal or a normal queued purchase even after the capacity is reduced or new sales are closed. The server checks the held reservation inside the transaction; other members and newly selected squads still require spare capacity.
+The denominator uses the purchase's immutable `purchased_term_seconds` when
+recorded, so later catalog validity edits cannot reprice the already purchased
+duration. Historical purchases with no snapshot retain the existing catalog
+fallback; their missing original duration is never backfilled or guessed.
+
+The request validates owner, active unexpired term, visible upstream-present squad, duplicate or already-held squad, activation code, current stock, and compatible commerce controls. `stockHeldByCurrentUser` is derived only in the catalog response from the active entitlement, so a member holding a stock reservation can retain it for renewal or a normal queued purchase even after the capacity is reduced or new sales are closed. The server checks the held reservation inside the transaction; other members and newly selected squads still require spare capacity.
 
 ## Durability
 
@@ -23,7 +28,7 @@ The commit transaction debits TXB, inserts one immutable ledger entry and an ide
 
 ## Verification
 
-CI covers rounding and caps, extension behavior, replay/no-double-debit, outbox enqueue, rollover and automatic-renewal totals, queued-term blocking, picker filtering, and owner-held full-squad selection. Local tests are intentionally not part of this release procedure.
+CI covers rounding and caps, catalog validity changes, extension behavior, replay/no-double-debit, outbox enqueue, historical accounting and automatic-renewal totals, queued-successor isolation, picker filtering, and owner-held full-squad selection. Local tests are intentionally not part of this release procedure.
 
 ## Administrator overrides and paid facts
 

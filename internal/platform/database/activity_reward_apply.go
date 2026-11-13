@@ -35,16 +35,11 @@ func resolveDrawReward(spec activity.Reward, rng activity.RandomSource) (activit
 }
 
 func activeRewardPurchase(ctx context.Context, tx *sql.Tx, userID string, now time.Time) (string, int64, error) {
-	var id string
-	var traffic int64
-	err := tx.QueryRowContext(ctx, `SELECT purchases.id,COALESCE(purchases.entitlement_traffic_limit_bytes,combos.traffic_limit_bytes)
-  FROM purchases JOIN combos ON combos.id=purchases.combo_id WHERE purchases.user_id=$1
-  AND purchases.status IN ('active','activating') AND purchases.valid_from<=$2 AND purchases.valid_until>$3
-  ORDER BY purchases.valid_from DESC LIMIT 1`, userID, stamp(now), stamp(now)).Scan(&id, &traffic)
-	if err == sql.ErrNoRows {
+	purchase, err := activePurchaseAt(ctx, tx, userID, now)
+	if err == ErrNotFound {
 		return "", 0, ErrConflict
 	}
-	return id, traffic, err
+	return purchase.ID, purchase.TrafficLimitBytes, err
 }
 
 func applyDrawRewardTx(ctx context.Context, tx *sql.Tx, userID, resultID, prizeName string, reward activity.Reward, balance int64, now time.Time) (int64, error) {
@@ -125,9 +120,6 @@ func applyDrawEntitlementTx(ctx context.Context, tx *sql.Tx, userID, resultID st
    entitlement_addon_squad_uuids='[]',reward_renewal_price_minor=$4,
    reward_traffic_renewal=1,reward_renewal_traffic_limit_bytes=$5,entitlement_reset_strategy=$6,updated_at=$7 WHERE id=$8`, reward.ComboID, reward.TrafficLimitBytes, string(squads),
 			reward.RenewalPriceMinor, reward.TrafficLimitBytes, combo.ResetStrategy, stamp(now), purchaseID)
-		if err == nil {
-			err = nil
-		}
 	case activity.RewardSquadAccess:
 		for _, squad := range reward.SquadUUIDs {
 			if squad == "" {

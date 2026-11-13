@@ -177,6 +177,9 @@ func quoteAccessibleNodes(catalog model.Catalog, comboID string, addonIDs []stri
 	}
 	sort.Slice(result, func(left, right int) bool {
 		if result[left].CountryCode == result[right].CountryCode {
+			if result[left].Name == result[right].Name {
+				return result[left].UUID < result[right].UUID
+			}
 			return result[left].Name < result[right].Name
 		}
 		return result[left].CountryCode < result[right].CountryCode

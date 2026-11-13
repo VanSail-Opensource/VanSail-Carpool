@@ -33,6 +33,7 @@
     "squad_product_overrides",
     "statistics_snapshots",
     "telegram_boost_receipts",
+    "telegram_star_reconciliation",
     "telegram_pm_updates",
     "usdt_quotes",
     "usdt_scan_cursors",
@@ -4082,6 +4083,12 @@
           "notNull": true,
           "default": null,
           "primaryKey": 0
+        },
+        {
+          "name": "claim_generation",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
         }
       ]
     },
@@ -4634,6 +4641,24 @@
           "type": "text",
           "notNull": true,
           "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "sealed",
+          "type": "boolean",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "stale",
+          "type": "boolean",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "dirty",
+          "type": "boolean",
+          "notNull": true,
           "primaryKey": 0
         }
       ]
@@ -5389,6 +5414,24 @@
           "type": "bigint",
           "notNull": true,
           "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "sealed",
+          "type": "boolean",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "stale",
+          "type": "boolean",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "dirty",
+          "type": "boolean",
+          "notNull": true,
           "primaryKey": 0
         }
       ]
@@ -7414,6 +7457,53 @@
         },
         {
           "name": "created_at",
+          "type": "text",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "telegram_star_reconciliation",
+      "columns": [
+        {
+          "name": "bot_id",
+          "type": "bigint",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "generation",
+          "type": "bigint",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "next_offset",
+          "type": "bigint",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "anchor",
+          "type": "text",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "available_at",
+          "type": "text",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
           "type": "text",
           "notNull": true,
           "default": null,
@@ -11051,6 +11141,12 @@
     "account_cleanup_evidence_guard",
     "xnode_multiplier_retired",
     "xnode_legacy_rate_retired",
-    "xnode_stream_rate_retired"
+    "xnode_stream_rate_retired",
+    "pricing_calibration_sealed_guard",
+    "pricing_validation_sealed_guard",
+    "pricing_offer_calibration_lock",
+    "pricing_quote_calibration_lock",
+    "pricing_offer_calibration_changed",
+    "pricing_quote_calibration_changed"
   ]
 }

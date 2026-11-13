@@ -43,23 +43,23 @@ func applyMeta(task *ProgressTask, meta LiveMeta) {
 }
 
 // applyASNList marks the asns task error only when every origin lost all of
-// its sources, and partial when any origin lost at least one source.
+// its sources, and partial when any source or traffic summary is degraded.
 func applyASNList(task *ProgressTask, asns []ASNDetails) {
 	var failed, degraded int
 	for _, asn := range asns {
-		if len(asn.Sources) == 0 {
-			continue
-		}
 		errored := 0
+		partial := false
 		for _, meta := range asn.Sources {
 			if meta.Status == "error" {
 				errored++
 			}
+			partial = partial || meta.Status == "partial"
 		}
+		partial = partial || liveMetaFailed(asn.Traffic.BotHuman.LiveMeta) || liveMetaFailed(asn.Traffic.Devices.LiveMeta) || liveMetaFailed(asn.Traffic.IPVersion.LiveMeta)
 		switch {
-		case errored == len(asn.Sources):
+		case len(asn.Sources) > 0 && errored == len(asn.Sources):
 			failed++
-		case errored > 0:
+		case errored > 0 || partial:
 			degraded++
 		}
 	}
