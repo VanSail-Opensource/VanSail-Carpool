@@ -3,8 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"fmt"
-	"math"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
@@ -17,19 +15,23 @@ func (s *Store) PricingSummary(ctx context.Context, now time.Time) (map[string]a
 }
 func (s *Store) pricingSummary(ctx context.Context, now time.Time) (map[string]any, error) {
 	from := now.AddDate(0, 0, -30)
-	var revenue, paid int64
+	var revenue, paid string
 	var costCount int
-	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(-SUM(delta_txb_minor),0) FROM ledger_entries WHERE created_at>=$1 AND created_at<$2 AND kind IN ('purchase_debit','purchase_addon_debit','automatic_renewal','payg_gb','purchase_cancellation','admin_entitlement_cancellation','admin_entitlement_refund','member_refund_credit')`, pricingStamp(from), pricingStamp(now)).Scan(&revenue); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(-SUM(delta_txb_minor),0)::text FROM ledger_entries WHERE created_at>=$1 AND created_at<$2 AND kind IN ('purchase_debit','purchase_addon_debit','automatic_renewal','payg_gb','purchase_cancellation','admin_entitlement_cancellation','admin_entitlement_refund','member_refund_credit')`, pricingStamp(from), pricingStamp(now)).Scan(&revenue); err != nil {
 		return nil, err
 	}
 	// Actual payments have a recording time, not a separate payment date. The
 	// metadata effective date describes the rate and may be much older.
-	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(actual_paid_minor),0),COUNT(actual_paid_minor) FROM pricing_cost_versions WHERE recorded_at>=$1 AND recorded_at<$2`, pricingStamp(from), pricingStamp(now)).Scan(&paid, &costCount); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(actual_paid_minor),0)::text,COUNT(actual_paid_minor) FROM pricing_cost_versions WHERE recorded_at>=$1 AND recorded_at<$2`, pricingStamp(from), pricingStamp(now)).Scan(&paid, &costCount); err != nil {
 		return nil, err
 	}
 	var cost, margin any
 	if costCount > 0 {
-		cost, margin = fmt.Sprint(paid), fmt.Sprint(revenue-paid)
+		value, err := pricingSummaryDifference(revenue, paid)
+		if err != nil {
+			return nil, err
+		}
+		cost, margin = paid, value
 	}
 	var forecast sql.NullFloat64
 	if err := s.db.QueryRowContext(ctx, `SELECT SUM(f.predicted_mean) FROM pricing_forecast_vintages f WHERE f.entity_type='product' AND f.metric='gross_revenue_minor' AND f.target_from=$1 AND f.model_version='empirical-receipts-v1' AND f.generated_at=(SELECT MAX(x.generated_at) FROM pricing_forecast_vintages x WHERE x.entity_type=f.entity_type AND x.entity_id=f.entity_id AND x.metric=f.metric AND x.target_from=f.target_from AND x.model_version=f.model_version)`, pricingStamp(now.UTC().Truncate(24*time.Hour).Add(24*time.Hour))).Scan(&forecast); err != nil {
@@ -41,9 +43,15 @@ func (s *Store) pricingSummary(ctx context.Context, now time.Time) (map[string]a
 	}
 	var forecastRevenue, forecastMargin any
 	if forecast.Valid {
-		forecastRevenue = fmt.Sprint(int64(math.Round(forecast.Float64)))
+		forecastRevenue, err = pricingSummaryEstimate(forecast.Float64)
+		if err != nil {
+			return nil, err
+		}
 		if costsComplete && knownNodes > 0 && knownNodes == totalNodes {
-			forecastMargin = fmt.Sprint(int64(math.Round(forecast.Float64 - dailyCost)))
+			forecastMargin, err = pricingSummaryEstimate(forecast.Float64 - dailyCost)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 	var dynamic, configured int
@@ -55,18 +63,18 @@ func (s *Store) pricingSummary(ctx context.Context, now time.Time) (map[string]a
 		return nil, err
 	}
 	var interventions int
-	var discount int64
+	var discount string
 	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM pricing_admin_overrides WHERE created_at>=$1`, pricingStamp(from)).Scan(&interventions); err != nil {
 		return nil, err
 	}
-	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(discount_minor),0) FROM pricing_discount_spend WHERE status='CONSUMED' AND created_at>=$1`, pricingStamp(from)).Scan(&discount); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(discount_minor),0)::text FROM pricing_discount_spend WHERE status='CONSUMED' AND created_at>=$1`, pricingStamp(from)).Scan(&discount); err != nil {
 		return nil, err
 	}
 	overhead, err := s.pricingUnallocatedOverhead(ctx, now)
 	if err != nil {
 		return nil, err
 	}
-	return map[string]any{"unallocatedDailyCostMinor": overhead, "from": from, "until": now, "netRevenueMinor": fmt.Sprint(revenue), "recordedCostMinor": cost, "recordedMarginMinor": margin, "providerPaymentRecords": costCount, "forecastRevenueMinor": forecastRevenue, "forecastMarginMinor": forecastMargin, "forecastCalibration": "UNVALIDATED", "costNodes": knownNodes, "totalNodes": totalNodes, "dynamicProducts": dynamic, "configuredProducts": configured, "pendingJobs": pending, "failedJobs": failed, "interventions30": interventions, "manualDiscountMinor30": fmt.Sprint(discount)}, nil
+	return map[string]any{"unallocatedDailyCostMinor": overhead, "from": from, "until": now, "netRevenueMinor": revenue, "recordedCostMinor": cost, "recordedMarginMinor": margin, "providerPaymentRecords": costCount, "forecastRevenueMinor": forecastRevenue, "forecastMarginMinor": forecastMargin, "forecastCalibration": "UNVALIDATED", "costNodes": knownNodes, "totalNodes": totalNodes, "dynamicProducts": dynamic, "configuredProducts": configured, "pendingJobs": pending, "failedJobs": failed, "interventions30": interventions, "manualDiscountMinor30": discount}, nil
 }
 
 // pricingNextDayCosts refuses to invent traffic costs when the node forecast is missing.

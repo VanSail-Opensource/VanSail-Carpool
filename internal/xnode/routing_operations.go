@@ -2,6 +2,7 @@ package xnode
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
@@ -112,11 +113,15 @@ func (s *Service) runRoutingOperation(ctx context.Context, operation providerops
 			return err
 		}
 		_, validationErr := s.routingInput(ctx, identity, doc.Choices)
-		// Only a graph that cannot be validated at all fails the generation. A
+		// Only a proven invalid graph fails the generation. A
 		// digest mismatch is ordinary dependency drift: the applied rules are
 		// re-derived from the current inventory, and reconciliation re-prepares the
 		// saved generation instead of disabling the member's routing.
 		if validationErr != nil {
+			// A failed dependency read does not prove that the admitted graph changed.
+			if !errors.Is(validationErr, ErrInvalid) {
+				return validationErr
+			}
 			if err = repo.AdvanceXNodeRouting(ctx, id, operation.Receipt.ID, phase, "disabled", s.now().UTC()); err != nil {
 				return err
 			}

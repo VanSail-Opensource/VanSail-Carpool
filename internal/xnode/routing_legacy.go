@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
@@ -37,6 +38,9 @@ func (s *Service) migrateLegacyRouting(ctx context.Context) error {
 			return err
 		}
 		choices, conversionErr := s.convertLegacyChoices(ctx, identity, byOwner[id])
+		if conversionErr != nil && !errors.Is(conversionErr, ErrInvalid) {
+			return conversionErr
+		}
 		seed, err := ids.Token(32)
 		if err != nil {
 			return err
@@ -51,6 +55,9 @@ func (s *Service) migrateLegacyRouting(ctx context.Context) error {
 		}
 		plan := RoutingPlan{ProxyUserID: id, Phase: "revoking", LegacyCipher: legacy}
 		input, validationErr := s.routingInput(ctx, identity, choices)
+		if validationErr != nil && !errors.Is(validationErr, ErrInvalid) {
+			return validationErr
+		}
 		if conversionErr != nil || validationErr != nil {
 			plan.Phase, plan.Reason = "disabled", "routing_legacy_incompatible"
 			doc.Choices = []RoutingChoice{}

@@ -13,7 +13,7 @@ func (s *OperationService) handlePreferences(ctx context.Context, operation prov
 		return err
 	}
 	operation, item, fresh, err := s.start(ctx, operation, "emby_user")
-	if err != nil {
+	if err != nil || providerops.Terminal(item.Status) {
 		return err
 	}
 	if !fresh {
@@ -57,7 +57,7 @@ func (s *OperationService) handlePassword(ctx context.Context, operation provide
 		return err
 	}
 	operation, item, fresh, err := s.start(ctx, operation, "emby_user")
-	if err != nil {
+	if err != nil || providerops.Terminal(item.Status) {
 		return err
 	}
 	if !fresh {

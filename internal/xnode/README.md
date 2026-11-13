@@ -1572,3 +1572,12 @@ immutable metered-probe attribution and cannot represent standalone access.
 cancellation and unavailable dependencies leave a speedtest pair unattempted.
 Only typed invalid, conflicting or missing access closes it as access-changed;
 no failed read is treated as evidence authorizing or consuming probe traffic.
+
+Routing migration and deployment preserve admitted generations on dependency read
+failures. Compilation propagates an incomplete read instead of publishing an
+empty managed graph. Reconciliation retains each failed validation in its result
+so the existing bounded retry backoff runs even without a new configuration
+revision. Proven invalid graphs retain the existing rejection behavior.
+`routing_read_failure_fixtures_test.go` supplies isolated settings/repository
+failures; `routing_read_failure_test.go` verifies migration/deployment outcomes,
+and `routing_validation_retry_test.go` checks compilation and recovery scheduling.

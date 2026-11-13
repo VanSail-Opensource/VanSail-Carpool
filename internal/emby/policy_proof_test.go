@@ -43,7 +43,7 @@ func (r *nullRestrictionRemote) UpdatePolicy(ctx context.Context, id string, pol
 func TestProvisionDoesNotActivateAnUnverifiedRestriction(t *testing.T) {
 	t.Parallel()
 	repository := &serviceRepository{record: ProvisioningRecord{
-		Account: Account{ID: "account", UserID: "user", BaseUsername: "ada", Status: StatusQueued},
+		Account:            Account{ID: "account", UserID: "user", BaseUsername: "ada", Status: StatusQueued},
 		PasswordCiphertext: "sealed", PasswordContext: "emby.provisioning.password:user",
 	}}
 	remote := &nullRestrictionRemote{serviceRemote: newServiceRemote()}

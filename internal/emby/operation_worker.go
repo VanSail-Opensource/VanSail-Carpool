@@ -10,6 +10,12 @@ import (
 
 // HandleProviderOperation applies one Emby command without blindly replaying an ambiguous write.
 func (s *OperationService) HandleProviderOperation(ctx context.Context, operation providerops.Operation, job model.OutboxJob) error {
+	if providerops.Terminal(providerops.Status(operation.Receipt.Status)) {
+		return nil
+	}
+	if completed, err := s.completeRetainedItem(ctx, operation); completed || err != nil {
+		return err
+	}
 	switch operation.Receipt.Kind {
 	case providerops.KindEmbySetup:
 		return s.handleSetup(ctx, operation, job)
@@ -26,7 +32,7 @@ func (s *OperationService) HandleProviderOperation(ctx context.Context, operatio
 
 func (s *OperationService) handleSetup(ctx context.Context, operation providerops.Operation, _ model.OutboxJob) error {
 	operation, item, _, err := s.start(ctx, operation, "emby_user")
-	if err != nil {
+	if err != nil || providerops.Terminal(item.Status) {
 		return err
 	}
 	account, err := s.core.repository.EmbyAccountForUser(ctx, operation.OwnerUserID)
@@ -38,7 +44,7 @@ func (s *OperationService) handleSetup(ctx context.Context, operation providerop
 
 func (s *OperationService) handleProvisionRetry(ctx context.Context, operation providerops.Operation) error {
 	operation, item, _, err := s.start(ctx, operation, "emby_account")
-	if err != nil {
+	if err != nil || providerops.Terminal(item.Status) {
 		return err
 	}
 	record, err := s.core.repository.EmbyProvisioningByID(ctx, item.TargetID)

@@ -25,3 +25,8 @@ Priced Emby setup, durable provisioning, policy hardening, preference updates, a
 `policy_proof_test.go` verifies that non-negotiable false restrictions require an
 explicit JSON boolean; null or missing proof cannot complete provisioning. The
 existing pending-review path retains ambiguous setup state for reconciliation.
+
+Terminal operation items are replayed into their parent receipt before secret
+decryption or live account/provider reads. Retry preserves the recorded status,
+reference, error code and result; a known successful password write cannot be
+reclassified as ambiguous after a parent-receipt storage failure.

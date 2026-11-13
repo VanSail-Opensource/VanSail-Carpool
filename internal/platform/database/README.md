@@ -2051,3 +2051,20 @@ balance credits and ledger/redemption evidence together.
 
 `coupon_redemption_scan.go` decodes retained redemption amounts, grant references
 and current definition metadata for transactional responses and exact replay.
+
+`emby_operation_replay_test.go` verifies exact terminal item-to-parent recovery
+after a receipt write fails, without decrypting retired payloads or repeating a
+successful password update.
+
+## Pricing summary amount range
+
+`pricing_summary_amounts.go` preserves exact signed decimal aggregates and margins
+beyond the range of one wallet row. Finite forecast and unallocated-cost estimates
+remain rounded decimal strings; nonfinite estimates return
+`ErrPricingSummaryNonFinite` without inventing an amount. Missing provider payments
+and missing traffic forecasts retain their existing unavailable representation.
+
+`pricing_summary_amounts_test.go` covers retained refund/payment sums and negative
+margins beyond signed 64-bit range, large finite revenue/cost projections, and
+nonfinite cost arithmetic using finite stored forecasts. Historical ledger,
+payment and forecast rows are not rewritten.
