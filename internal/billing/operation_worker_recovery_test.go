@@ -2,6 +2,7 @@ package billing
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 	"testing"
@@ -32,8 +33,13 @@ func TestPaymentTerminalItemRecoversExactProviderRejection(t *testing.T) {
 		t.Fatalf("expected interrupted receipt: %v", err)
 	}
 	item := paymentWorkerItem(t, store, queued)
-	if item.Status != providerops.StatusFailed || !strings.Contains(item.ResultJSON, "merchant account unavailable") {
-		t.Fatalf("provider rejection not retained in item: %+v", item)
+	var result map[string]string
+	if err := json.Unmarshal([]byte(item.ResultJSON), &result); err != nil {
+		t.Fatal(err)
+	}
+	if item.Status != providerops.StatusFailed || item.ErrorCode != "PAYMENT_CREATE_REJECTED" ||
+		len(result) != 1 || result["paymentOrderId"] != queued.PaymentOrderID || strings.Contains(item.ResultJSON, "merchant account unavailable") {
+		t.Fatalf("safe provider rejection not retained in item: %+v", item)
 	}
 	repository.receiptErr = nil
 	repository.orderReadErr = errors.New("retired target must not be reloaded")
@@ -41,6 +47,10 @@ func TestPaymentTerminalItemRecoversExactProviderRejection(t *testing.T) {
 		t.Fatal(err)
 	}
 	operation := paymentWorkerOperation(t, store, queued)
+	if operation.Receipt.Status != string(providerops.StatusFailed) || operation.Receipt.ErrorMessage == nil ||
+		*operation.Receipt.ErrorMessage != "Payment provider rejected this checkout request." {
+		t.Fatalf("replayed public rejection changed: %+v", operation.Receipt)
+	}
 	if operation.ResultJSON != item.ResultJSON || operation.ProviderReference != item.ProviderReference || operation.Receipt.ErrorCode == nil || *operation.Receipt.ErrorCode != item.ErrorCode || gateway.calls != 1 {
 		t.Fatalf("recorded outcome changed: operation=%+v item=%+v calls=%d", operation, item, gateway.calls)
 	}

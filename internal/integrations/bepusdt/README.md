@@ -23,3 +23,7 @@ signed bodies or callback capabilities. They are excluded from formatted errors,
 public operation receipts, and live diagnostic logs. Timeout and expiration
 values retain the upstream seconds contract; values exceeding the maximum
 representable Go duration fail validation before conversion.
+
+`wire_integer_test.go` verifies exact integer metadata, including values beyond
+float64 precision and the maximum supported expiry. Provider signature number
+formatting remains separate from integer field decoding.
