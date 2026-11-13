@@ -4,6 +4,7 @@ import { resolve } from 'node:path'
 import { chromium } from 'playwright'
 import { createServer } from 'vite'
 import { memberRecoveryScenarios } from './browser-member-recovery.mjs'
+import { operationRecoveryScenarios } from './browser-operation-recovery.mjs'
 
 // Hosted browser validation only; AGENTS.md prohibits running suites locally.
 const output = resolve(globalThis.process.env.BROWSER_AUDIT_OUTPUT ?? 'browser-audit-artifacts')
@@ -153,6 +154,7 @@ try {
       assert.equal(await page.evaluate(() => globalThis.__browserAuthAudit.exchanges), 2)
     })
     await memberRecoveryScenarios(scenario, size)
+    await operationRecoveryScenarios(scenario, size)
   }
   globalThis.console.log(JSON.stringify(results, null, 2))
   if (results.some(result => !result.passed)) globalThis.process.exitCode = 1

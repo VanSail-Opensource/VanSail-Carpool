@@ -19,9 +19,12 @@ func (s *Server) telegramSubscriptionReply(ctx context.Context, user model.User,
 	return botcommands.FormatSubscription(copy, dashboard, time.Now().UTC())
 }
 
-func (s *Server) telegramComboReply(ctx context.Context, user model.User, copy botcommands.Copy, formatMoney func(model.Money) model.Money) string {
+func (s *Server) telegramComboReply(ctx context.Context, user model.User, copy botcommands.Copy) string {
 	dashboard, err := s.deps.Catalog.Dashboard(ctx, user)
-	if err != nil || dashboard.ActivePurchase == nil {
+	if err != nil {
+		return ""
+	}
+	if dashboard.ActivePurchase == nil {
 		return botcommands.FormatNoSubscription(copy)
 	}
 	purchase := dashboard.ActivePurchase

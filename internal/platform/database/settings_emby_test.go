@@ -123,11 +123,15 @@ func TestEmbyConnectionRequiresAdminAndAtomicRedactedAudit(t *testing.T) {
 	if err := store.SaveEmbyConnection(ctx, initial.Version(), next, actor.ID); err != nil {
 		t.Fatal(err)
 	}
-	events, err := store.ListAuditEvents(ctx, 10)
-	if err != nil || len(events) != 1 || events[0].Action != "emby.connection.update" || events[0].ActorUserID == nil || *events[0].ActorUserID != actor.ID {
-		t.Fatalf("committed connection audit = %+v, %v", events, err)
+	var events int
+	var detail string
+	err = store.DB().QueryRowContext(ctx, `SELECT COUNT(*),COALESCE(MIN(detail),'') FROM audit_events
+		WHERE action='emby.connection.update' AND actor_user_id=$1 AND target_type='setting' AND target_id='emby.connection'`, actor.ID).
+		Scan(&events, &detail)
+	if err != nil || events != 1 {
+		t.Fatalf("committed connection audits = %d, %v", events, err)
 	}
-	if strings.Contains(events[0].Detail, next.BaseURL.Value) || strings.Contains(events[0].Detail, next.Token.Value) {
+	if strings.Contains(detail, next.BaseURL.Value) || strings.Contains(detail, next.Token.Value) {
 		t.Fatal("connection audit retained secret material")
 	}
 }

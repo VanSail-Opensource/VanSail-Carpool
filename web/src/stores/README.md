@@ -10,7 +10,8 @@ clearing or failing authentication cancels preload and discards cached responses
   Concurrent route guards await the same bootstrap; forced refreshes, explicit
   session updates and clearing invalidate older replies and their error paths.
 - `sessionConcurrency.test.ts` covers awaited shared reads and stale response
-  isolation across refresh, completion and clear boundaries.
+  isolation across refresh, completion and clear boundaries. A temporary session
+  read failure remains retryable without starting another Telegram exchange.
 - `sessionRecovery.test.ts` covers verified cleanup error classification,
   unauthenticated state, and removal of that classification on a later retry.
 

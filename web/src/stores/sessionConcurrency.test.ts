@@ -1,6 +1,7 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from '@/api/client'
+import { ApiError } from '@/api/http'
 import type { Session } from '@/api/types'
 import { setCacheSession } from '@/api/cache/session'
 import { setExperience } from '@/utils/experience'
@@ -26,6 +27,21 @@ beforeEach(() => { setExperience('miniapp'); setActivePinia(createPinia()); setC
 afterEach(() => { vi.restoreAllMocks(); setCacheSession(null) })
 
 describe('session bootstrap identity boundaries', () => {
+  it('retries temporary session storage failures without starting Telegram authentication', async () => {
+    const getMe = vi.spyOn(api, 'getMe').mockRejectedValueOnce(new ApiError(503, { code: 'SESSION_UNAVAILABLE', message: 'Unavailable' })).mockResolvedValueOnce(member)
+    const auth = vi.spyOn(api, 'authTelegram')
+    const store = useSessionStore()
+    await store.bootstrap()
+    expect(store.status).toBe('error')
+    expect(store.errorCode).toBe('SESSION_UNAVAILABLE')
+    expect(auth).not.toHaveBeenCalled()
+    await store.bootstrap(true)
+    expect(getMe).toHaveBeenCalledTimes(2)
+    expect(store.user?.id).toBe(member.user.id)
+    expect(store.status).toBe('ready')
+    expect(auth).not.toHaveBeenCalled()
+  })
+
   it('makes every concurrent caller wait for the shared bootstrap', async () => {
     const response = deferred<Session>()
     const getMe = vi.spyOn(api, 'getMe').mockReturnValue(response.promise)

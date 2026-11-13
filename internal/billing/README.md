@@ -50,6 +50,9 @@ Payment-method discovery, exact decimal arithmetic, checkout creation, provider 
 - `queued_test_helpers_test.go` exercises the production worker against durable
   PostgreSQL state with injected provider/storage failures.
 - `events_test.go` covers event validation, authorization, settlement, and BEPUSDT compatibility.
+- `events_recovery_test.go` preserves temporary owner lookup failures as retryable
+  storage errors and accepts the same authoritative paid/refunded event after
+  recovery. Only a confirmed missing or mismatched owner is a payment conflict.
 - `service_test_helpers_test.go` contains shared billing repository, settings, and gateway doubles.
 - `methods_test.go` covers documented method identifiers and rail ordering.
 - `decimal_test.go` covers decimal parsing, equivalence, and rounding.

@@ -94,7 +94,7 @@ func TestAuthenticationFailures(t *testing.T) {
 	if _, err := service.UserBySession(context.Background(), ""); !errors.Is(err, ErrInvalidAuthentication) {
 		t.Fatalf("empty UserBySession() error = %v", err)
 	}
-	if _, err := service.UserBySession(context.Background(), "token"); !errors.Is(err, ErrInvalidAuthentication) {
+	if _, err := service.UserBySession(context.Background(), "token"); !errors.Is(err, testError) || errors.Is(err, ErrInvalidAuthentication) {
 		t.Fatalf("failed UserBySession() error = %v", err)
 	}
 }

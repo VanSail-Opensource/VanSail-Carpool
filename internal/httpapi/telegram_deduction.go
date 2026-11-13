@@ -46,12 +46,3 @@ func (s *Server) processTelegramDeduction(ctx context.Context, message *telegram
 	}
 	s.sendTelegramReply(ctx, message, botcommands.FormatDeductSucceeded(copy, s.telegramDisplayFormatter(ctx, target)(model.TXBMoney(amount))))
 }
-
-func telegramDeductCommand(text string) (string, bool) {
-	command, ok := botcommands.Parse(text)
-	if !ok || command.Name != botcommands.Deduct || len(command.Args) != 1 {
-		return "", false
-	}
-	amount, err := billing.ParseTXBMajor(command.Args[0])
-	return command.Args[0], err == nil && amount > 0
-}

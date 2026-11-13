@@ -116,6 +116,7 @@ BulkExtensionCreateRequest:
     reason: { type: string, minLength: 3, maxLength: 500 }
 
 OperationResolutionRequest:
+  description: Requested parent-receipt status must match retained completed item outcomes for a supported administrative workflow; this is not a domain or financial override.
   type: object
   additionalProperties: false
   required: [resolution, reason]

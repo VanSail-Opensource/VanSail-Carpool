@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"strings"
@@ -91,7 +92,13 @@ func (s *Service) ValidateEvent(ctx context.Context, event ProviderEvent) (model
 	}
 	if event.TelegramID != nil {
 		user, err := s.repository.UserByID(ctx, order.UserID)
-		if err != nil || user.TelegramID != *event.TelegramID {
+		if errors.Is(err, database.ErrNotFound) {
+			return model.PaymentOrder{}, database.ErrConflict
+		}
+		if err != nil {
+			return model.PaymentOrder{}, fmt.Errorf("validate provider event owner: %w", err)
+		}
+		if user.TelegramID != *event.TelegramID {
 			return model.PaymentOrder{}, database.ErrConflict
 		}
 	}

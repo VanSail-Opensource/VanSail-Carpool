@@ -97,12 +97,12 @@ func TestHTTPAndTelegramCheckInRefuseButOrdinaryMessagesStaySilent(t *testing.T)
 		t.Fatalf("HTTP refusal: %d %s", response.Code, response.Body.String())
 	}
 	message := &telegram.Message{MessageID: 1, Chat: telegram.Chat{ID: -100123456, Type: "supergroup"}, From: &telegram.User{ID: 42}, Text: "/signin"}
-	server.processTelegramGroupMessage(ctx, message)
+	server.processTelegramGroupMessageUpdate(ctx, 0, message)
 	if len(capture.replies) != 1 || !strings.Contains(capture.replies[0], "not boosted the group yet") {
 		t.Fatalf("command replies: %v", capture.replies)
 	}
 	message.MessageID, message.Text = 2, "An ordinary group message"
-	server.processTelegramGroupMessage(ctx, message)
+	server.processTelegramGroupMessageUpdate(ctx, 0, message)
 	if len(capture.replies) != 1 {
 		t.Fatalf("ordinary message produced refusal: %v", capture.replies)
 	}
@@ -115,7 +115,7 @@ func TestHTTPAndTelegramCheckInRefuseButOrdinaryMessagesStaySilent(t *testing.T)
 		t.Fatalf("unboosted progress: %+v, %v", status, err)
 	}
 	message.MessageID, message.Chat.ID, message.SenderBoostCount = 3, -100999999, 3
-	server.processTelegramGroupMessage(ctx, message)
+	server.processTelegramGroupMessageUpdate(ctx, 0, message)
 	var otherGroupEvents int
 	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM activity_group_message_events WHERE chat_id=-100999999`).Scan(&otherGroupEvents); err != nil || otherGroupEvents != 0 {
 		t.Fatalf("other group events: %d %v", otherGroupEvents, err)

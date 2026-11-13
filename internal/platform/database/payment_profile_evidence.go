@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -58,12 +57,7 @@ func paymentProfileActorTx(ctx context.Context, tx *sql.Tx, actorID string) erro
 	if actorID == "" {
 		return nil // Bootstrap and automatic readiness changes use a system actor.
 	}
-	var role string
-	err := tx.QueryRowContext(ctx, `SELECT role FROM users WHERE id=$1 FOR SHARE`, actorID).Scan(&role)
-	if errors.Is(err, sql.ErrNoRows) || err == nil && role != "admin" {
-		return ErrConflict
-	}
-	return err
+	return catalogAdminActorTx(ctx, tx, actorID)
 }
 
 func paymentProfileAuditTx(ctx context.Context, tx *sql.Tx, actorID, action, profileID string, now time.Time) error {

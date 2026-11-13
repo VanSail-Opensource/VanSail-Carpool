@@ -19,7 +19,7 @@ func (s *Store) pricingSummary(ctx context.Context, now time.Time) (map[string]a
 	from := now.AddDate(0, 0, -30)
 	var revenue, paid int64
 	var costCount int
-	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(-SUM(delta_txb_minor),0) FROM ledger_entries WHERE created_at>=$1 AND created_at<$2 AND kind IN ('purchase_debit','purchase_addon_debit','automatic_renewal','payg_gb','purchase_cancellation','admin_entitlement_cancellation')`, pricingStamp(from), pricingStamp(now)).Scan(&revenue); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(-SUM(delta_txb_minor),0) FROM ledger_entries WHERE created_at>=$1 AND created_at<$2 AND kind IN ('purchase_debit','purchase_addon_debit','automatic_renewal','payg_gb','purchase_cancellation','admin_entitlement_cancellation','admin_entitlement_refund','member_refund_credit')`, pricingStamp(from), pricingStamp(now)).Scan(&revenue); err != nil {
 		return nil, err
 	}
 	// Actual payments have a recording time, not a separate payment date. The

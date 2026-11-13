@@ -25,6 +25,10 @@ Trusted Telegram authentication and resumable account onboarding live here. Netw
   applicable PAYG provisioning through the existing durable outbox. A combo is
   required only for combo access, never for a member's subscription link.
 - `service_test.go` covers authentication and session behavior.
+- `session_recovery_test.go` distinguishes absent/expired credentials from storage
+  and context failures. Only confirmed missing sessions are authentication errors;
+  transient lookups retain their cause so the HTTP boundary can return a retryable
+  response and preserve the member's existing cookie.
 - `auth_limiter_test.go` covers per-identity isolation and token refill behavior.
 - `membership_test.go` covers community membership facts, one-space invite eligibility, and approval-time entitlement rechecks.
 - `onboarding_test.go` covers provider-free agreement completion without a username.

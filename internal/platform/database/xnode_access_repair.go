@@ -21,7 +21,7 @@ func (s *Store) retryAttempt_EnqueueXNodeAccessRepairs(ctx context.Context, now 
  LEFT JOIN purchases p ON p.id=(SELECT current.id FROM purchases current WHERE current.user_id=u.id AND current.status IN ('active','activating') AND vansail_timestamp(current.valid_from)<=vansail_timestamp($1) AND vansail_timestamp(current.valid_until)>vansail_timestamp($2) ORDER BY current.valid_from DESC LIMIT 1)
  LEFT JOIN xnode_identities i ON i.user_id=u.id
  LEFT JOIN xnode_periods a ON a.id=i.current_period_id
- WHERE u.onboarding_state='complete' AND (i.proxy_user_id IS NULL OR
+ WHERE u.account_status='active' AND u.onboarding_state='complete' AND (i.proxy_user_id IS NULL OR
  i.credentials_cipher='' OR i.subscription_cipher='' OR COALESCE(LENGTH(i.subscription_hash),0)<>32 OR
  (p.id IS NOT NULL AND (a.id IS NULL OR a.purchase_id<>p.id OR a.status<>'open')
  AND i.access_disabled=0

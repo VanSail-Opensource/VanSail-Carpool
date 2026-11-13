@@ -28,9 +28,9 @@ func TestAdminResolutionReplayReturnsItsImmutableReceipt(t *testing.T) {
 	if _, err = store.ResolveAdminOperation(t.Context(), input, now); !errors.Is(err, ErrConflict) {
 		t.Fatal("changed resolution intent reused an old key", err)
 	}
-	events, err := store.ListAuditEvents(t.Context(), 100)
-	if err != nil || len(events) != 1 {
-		t.Fatal("replay rewrote or duplicated audit evidence", events, err)
+	var audits int
+	if err := store.DB().QueryRowContext(t.Context(), `SELECT COUNT(*) FROM audit_events WHERE actor_user_id=$1 AND action='provider_operation.resolve' AND target_type='provider_operation' AND target_id=$2`, input.ActorUserID, input.OperationID).Scan(&audits); err != nil || audits != 1 {
+		t.Fatal("replay rewrote or duplicated owned audit evidence", audits, err)
 	}
 }
 

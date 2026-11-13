@@ -9,10 +9,11 @@ import (
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 )
 
-// ErrInvalidAuthentication denotes untrusted or expired Telegram launch data.
+// ErrInvalidAuthentication denotes invalid launch data or a missing/expired session.
 var ErrInvalidAuthentication = errors.New("invalid Telegram authentication")
 
 // ErrAuthenticationRateLimited bounds verified Telegram identity exchanges.
@@ -186,8 +187,11 @@ func (s *Service) UserBySession(ctx context.Context, token string) (model.User, 
 	}
 	hash := sha256.Sum256([]byte(token))
 	user, err := s.repository.UserBySession(ctx, hash[:], s.now().UTC())
+	if errors.Is(err, database.ErrNotFound) {
+		return model.User{}, ErrInvalidAuthentication
+	}
 	if err != nil {
-		return model.User{}, fmt.Errorf("%w: %v", ErrInvalidAuthentication, err)
+		return model.User{}, fmt.Errorf("lookup Mini App session: %w", err)
 	}
 	return user, nil
 }

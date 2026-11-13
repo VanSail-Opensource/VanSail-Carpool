@@ -18,13 +18,16 @@ func (s *Store) retryAttempt_ObservePricingWorker(ctx context.Context, now time.
 	}
 	defer tx.Rollback()
 	var previous string
-	if err = tx.QueryRowContext(ctx, `SELECT observed_at FROM pricing_worker_watermark WHERE singleton=1`).Scan(&previous); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT observed_at FROM pricing_worker_watermark WHERE singleton=1 FOR UPDATE`).Scan(&previous); err != nil {
 		return err
 	}
 	if previous != "" {
 		before, e := parseStamp(previous)
 		if e != nil {
 			return e
+		}
+		if !now.After(before) {
+			return nil // A delayed process must not move monitoring evidence back.
 		}
 		if now.Sub(before) > 45*time.Second {
 			id, e := ids.New()

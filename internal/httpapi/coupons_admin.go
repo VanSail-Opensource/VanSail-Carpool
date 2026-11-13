@@ -47,12 +47,12 @@ func (s *Server) adminUpdateCoupon(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) adminDeactivateCoupon(w http.ResponseWriter, r *http.Request) {
 	active := false
-	input, err := s.couponInput(r.Context(), chiURLParam(r, "id"), couponRequest{Active: &active})
+	input, expectedUpdatedAt, err := s.couponInput(r.Context(), chiURLParam(r, "id"), couponRequest{Active: &active})
 	if err != nil {
 		s.communityFailure(w, r, err)
 		return
 	}
-	if _, err := s.deps.Coupons.Save(r.Context(), input); err != nil {
+	if _, err := s.deps.Coupons.SaveAdmin(r.Context(), currentUser(r).ID, input, expectedUpdatedAt); err != nil {
 		s.communityFailure(w, r, err)
 		return
 	}
@@ -65,12 +65,12 @@ func (s *Server) adminSaveCoupon(w http.ResponseWriter, r *http.Request, id stri
 		s.writeError(w, r, http.StatusBadRequest, "INVALID_COUPON", "Coupon fields are invalid.")
 		return
 	}
-	input, err := s.couponInput(r.Context(), id, request)
+	input, expectedUpdatedAt, err := s.couponInput(r.Context(), id, request)
 	if err != nil {
 		s.communityFailure(w, r, err)
 		return
 	}
-	item, err := s.deps.Coupons.Save(r.Context(), input)
+	item, err := s.deps.Coupons.SaveAdmin(r.Context(), currentUser(r).ID, input, expectedUpdatedAt)
 	if err != nil {
 		s.communityFailure(w, r, err)
 		return
@@ -82,23 +82,25 @@ func (s *Server) adminSaveCoupon(w http.ResponseWriter, r *http.Request, id stri
 	writeJSON(w, status, mapCoupon(item))
 }
 
-func (s *Server) couponInput(ctx context.Context, id string, request couponRequest) (coupons.CouponInput, error) {
+func (s *Server) couponInput(ctx context.Context, id string, request couponRequest) (coupons.CouponInput, time.Time, error) {
 	var input coupons.CouponInput
+	var expectedUpdatedAt time.Time
 	if id != "" {
 		items, err := s.deps.Coupons.List(ctx, false)
 		if err != nil {
-			return coupons.CouponInput{}, err
+			return coupons.CouponInput{}, time.Time{}, err
 		}
 		found := false
 		for _, item := range items {
 			if item.ID == id {
 				input = item.CouponInput
+				expectedUpdatedAt = item.UpdatedAt
 				found = true
 				break
 			}
 		}
 		if !found {
-			return coupons.CouponInput{}, database.ErrNotFound
+			return coupons.CouponInput{}, time.Time{}, database.ErrNotFound
 		}
 	}
 	input.ID = id
@@ -117,7 +119,7 @@ func (s *Server) couponInput(ctx context.Context, id string, request couponReque
 	if request.ValueMinorOrBPS != nil {
 		value, err := parseMinorString(*request.ValueMinorOrBPS, true)
 		if err != nil {
-			return coupons.CouponInput{}, coupons.ErrInvalidInput
+			return coupons.CouponInput{}, time.Time{}, coupons.ErrInvalidInput
 		}
 		input.ValueMinorOrBPS = value
 	}
@@ -126,7 +128,7 @@ func (s *Server) couponInput(ctx context.Context, id string, request couponReque
 		if request.PercentCapMinor.Value != nil {
 			value, err := parseMinorString(*request.PercentCapMinor.Value, true)
 			if err != nil {
-				return coupons.CouponInput{}, coupons.ErrInvalidInput
+				return coupons.CouponInput{}, time.Time{}, coupons.ErrInvalidInput
 			}
 			input.PercentCapMinor = &value
 		}
@@ -149,5 +151,5 @@ func (s *Server) couponInput(ctx context.Context, id string, request couponReque
 	if request.Active != nil {
 		input.Active = *request.Active
 	}
-	return input, nil
+	return input, expectedUpdatedAt, nil
 }

@@ -16,10 +16,14 @@ setExperience(params.has('link') || params.has('recovery') ? 'miniapp' : 'browse
 if (params.has('link') || params.has('recovery')) await import('@/styles/main.css')
 else initializeBrowserTheme()
 setLocale(params.has('zh') ? 'zh-CN' : 'en')
-const state = { configReads: 0, links: 0, exchanges: 0, copied: '', usedTokens: [] as string[] }
+const state = { configReads: 0, sessionReads: 0, links: 0, exchanges: 0, copied: '', usedTokens: [] as string[] }
 if (params.has('recovery')) {
   window.Telegram = { WebApp: { initData: 'synthetic-verified-sign-in', platform: 'web' } } as typeof window.Telegram
-  api.getMe = async () => { throw new ApiError(401, { code: 'UNAUTHENTICATED', message: '' }) }
+  api.getMe = async () => {
+    state.sessionReads++
+    if (params.has('session-unavailable')) throw new ApiError(503, { code: 'SESSION_UNAVAILABLE', message: '' })
+    throw new ApiError(401, { code: 'UNAUTHENTICATED', message: '' })
+  }
   api.authTelegram = async () => {
     state.exchanges++
     if (params.has('recoveryslow')) await new Promise(resolve => setTimeout(resolve, Math.min(5000, Math.max(0, Number(params.get('recoveryslow')) || 1500))))

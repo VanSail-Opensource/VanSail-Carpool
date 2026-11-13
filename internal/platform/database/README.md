@@ -263,6 +263,9 @@ The regression fixture checks hosted PostgreSQL atomic rollback,
 credential retention and owner retention. No discovery observations are stored
 in these binding tables. `xnode_ddns_bindings_test.go` exercises these constraints
 through the shared PostgreSQL store factory.
+The node upsert must affect one row before replacing bindings;
+`xnode_ddns_removal_test.go` preserves existing bindings when removal or retirement
+wins a race with an older node settings save.
 
 `catalog_topology_epoch_test.go` verifies native metadata changes advance the
 shared revision while equal values and live agent bookkeeping do not. It runs
@@ -379,6 +382,9 @@ financial and accounting records remain unchanged at startup. No source database
 import, identity relinking, private file backup or database swap runs at boot.
 `xnode_access_repair.go` coalesces bounded paid provisioning recovery into the
 existing outbox without resetting exhausted or settled purchase periods.
+Only active accounts enter its bounded candidate scan; a bot block alone does not
+revoke paid benefits. `xnode_access_repair_eligibility_test.go` covers unavailable
+subjects with retained complete onboarding, active blocked members and restoration.
 
 Native traffic aggregation streams indexed node/day groups with checked integer
 sums. Backup-gated native retention prunes only expired access and superseded
@@ -868,6 +874,9 @@ idempotency and subscription-only writes during pending routing deployment.
 only after durable cursor/ban writes; `xnode_firewall_detection_test.go` covers
 cross-node totals, replay, exclusion, rollback and expiry. `xnode_firewall_policy.go`
 migrates encrypted node rules to one encrypted global policy.
+`xnode_firewall_events.go` discards staged counts at the start of every SQL retry.
+`xnode_firewall_retry_test.go` injects a serialization failure after staging to
+verify that retries neither multiply subthreshold counts nor lose a threshold ban.
 `xnode_firewall_protected.go` releases existing managed-node false positives.
 `xnode_diy_reconcile.go` batches free reference cleanup through the existing outbox
 and uses revision fences; it never debits a wallet or allowance.
@@ -942,6 +951,19 @@ transitions, ignores events at or before a newer retained transition, and closes
 legacy duplicate open incidents on recovery. Deleted-node telemetry is a no-op.
 `pricing_incidents_test.go` covers independent recorder locking, one alert per
 transition, duplicate cleanup, exact ordering, and removed nodes.
+
+`pricing_models.go` returns the committed immutable model after a concurrent
+publication wins the same model ID. `pricing_model_race_test.go` blocks the losing
+insert and verifies that its returned parameters match the stored winner and replay.
+
+`pricing_summary.go` subtracts every purchase refund/cancellation ledger lane from
+net revenue. `pricing_summary_refunds_test.go` runs those real refund flows,
+including a partial administrator refund, while gross product receipts remain
+the original before-refund amount.
+
+`pricing_worker_state.go` locks and advances its monitoring watermark monotonically.
+`pricing_worker_state_test.go` rejects a delayed observation as a source of false
+continuity gaps while preserving the original recorded outage interval.
 
 Renewal contracts, numerical snapshots, coupon economics and settlement: `pricing_renewal_budget.go`, `pricing_renewal_candidates.go`, `pricing_cost_evidence.go`, `pricing_renewal_reads.go`, `pricing_renewal_schedule.go`, `pricing_renewal_settlement.go`, `pricing_renewal_snapshot.go`.
 
@@ -1031,8 +1053,10 @@ Provider requests remain outside every transaction.
 - `connection_scans_retry_generated.go` wraps the transactional methods in `connection_scans.go`.
 - `coupon_grant_listing_retry_generated.go` wraps the transactional methods in `coupon_grant_listing.go`.
 - `coupon_purchase_retry_generated.go` wraps the transactional methods in `coupon_purchase.go`.
+- `coupons_admin_retry_generated.go` wraps the transactional methods in `coupons_admin.go`.
 - `coupons_part2_retry_generated.go` wraps the transactional methods in `coupons_part2.go`.
 - `coupons_part3_retry_generated.go` wraps the transactional methods in `coupons_part3.go`.
+- `coupons_retry_generated.go` wraps the transactional methods in `coupons.go`.
 - `destructive_retry_generated.go` wraps the transactional methods in `destructive.go`.
 - `emby_operations_retry_generated.go` wraps the transactional methods in `emby_operations.go`.
 - `emby_provisioning_part2_retry_generated.go` wraps the transactional methods in `emby_provisioning_part2.go`.
@@ -1760,3 +1784,7 @@ saved and re-enabled profiles from stale discovery;
 `retention_purchase_replay_test.go` preserves charged receipts and replay after
 compaction; `session_timestamp_test.go` checks exact authentication, renewal and
 handoff expiry without recording activity for expired credentials.
+
+Administrator coupon definitions: `coupons_admin.go` rechecks the active, unblocked administrator and the existing `updated_at` revision under a row lock before saving. `coupon_writes.go` shares canonical writes with the raw fixture entry point, advances revisions despite repeated/backward clock ticks, and returns the exact pre-commit snapshot. Definition and redacted policy audit commit together. `coupons_admin_test.go` covers audit rollback, actor eligibility and private reward isolation; `coupons_admin_revision_test.go` covers stale/concurrent edits, deactivation retention and unchanged settled redemptions. No historical financial evidence is rewritten.
+
+Payment profile actor eligibility: `payment_profile_actor_test.go` verifies that saved-profile edits and deletion recheck active/unblocked administrator state inside the mutation transaction. Empty actors remain restricted to existing bootstrap/readiness system entry points; rejected human actors produce no changes or actor audit.

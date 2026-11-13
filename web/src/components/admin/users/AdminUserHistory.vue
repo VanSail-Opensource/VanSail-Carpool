@@ -4,6 +4,7 @@ import type { AdminUserDetail, OperationReceipt } from '@/api/adminOperations'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import { useI18n } from '@/i18n'
 import { formatDateTime, formatMoney } from '@/utils/format'
+import { canRepairOperation } from './operationResolution'
 type Payment = AdminUserDetail['payments'][number]
 defineProps<{ detail: AdminUserDetail; busy: boolean }>()
 const emit = defineEmits<{ resolve: [operation: OperationReceipt]; refundPayment: [payment: Payment]; creditPayment: [payment: Payment] }>()
@@ -49,7 +50,7 @@ function operationTone(status: OperationReceipt['status']): 'neutral' | 'success
       <template #identity-cell="{ row }"><div class="admin-cell"><strong>{{ row.original.kind }}</strong><code>{{ row.original.id }}</code></div></template>
       <template #date-cell="{ row }">{{ formatDateTime(row.original.updatedAt) }}</template>
       <template #status-cell="{ row }"><StatusBadge :tone="operationTone(row.original.status)" :label="t(`adminUserProfile.operationStatus.${row.original.status}`)" /></template>
-      <template #actions-cell="{ row }"><UButton v-if="['pending_review', 'partial'].includes(row.original.status)" color="warning" variant="ghost" icon="i-ph-gavel" :label="t('adminUserProfile.resolve')" :disabled="busy" @click="emit('resolve', row.original)" /></template>
+      <template #actions-cell="{ row }"><UButton v-if="canRepairOperation(row.original)" color="warning" variant="ghost" icon="i-ph-gavel" :label="t('adminUserProfile.resolve')" :disabled="busy" @click="emit('resolve', row.original)" /><span v-else-if="['pending_review', 'partial'].includes(row.original.status)">{{ t('adminUserProfile.reconciliationRequired') }}</span></template>
       <template #empty>{{ t('adminUserProfile.noOpenOperations') }}</template>
     </UTable>
     <UTable v-else class="admin-table" :data="detail.embyAccounts" :columns="columns.slice(0, 4).filter(column => column.id !== 'amount')">

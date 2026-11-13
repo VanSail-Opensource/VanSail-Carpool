@@ -100,13 +100,12 @@ func TestAdminCatalogRequiresCurrentActorAndRecordsCommittedChange(t *testing.T)
 	if err != nil || product.Name != "Live name" || !product.Visible {
 		t.Fatal("committed squad snapshot missing", product, err)
 	}
-	events, err := store.ListAuditEvents(ctx, 100)
-	if err != nil || len(events) != 3 {
-		t.Fatal("catalog changes did not each have one audit", events, err)
-	}
-	for _, event := range events {
-		if event.ActorUserID == nil || *event.ActorUserID != actor.ID || event.TargetID == "" {
-			t.Fatal("catalog audit lost actor or target", event)
+	for _, expected := range []struct{ action, targetType, targetID string }{
+		{"combo.save", "combo", combo.ID}, {"combo.hide", "combo", combo.ID}, {"squad_product.save", "squad_product", product.ID},
+	} {
+		var count int
+		if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_events WHERE actor_user_id=$1 AND action=$2 AND target_type=$3 AND target_id=$4`, actor.ID, expected.action, expected.targetType, expected.targetID).Scan(&count); err != nil || count != 1 {
+			t.Fatal("catalog change did not have one exact actor/target audit", expected, count, err)
 		}
 	}
 }

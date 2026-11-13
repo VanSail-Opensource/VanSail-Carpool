@@ -99,6 +99,8 @@ func (s *Server) telegramWebhook(w http.ResponseWriter, r *http.Request) {
 		if err := s.deps.Store.ResolvePaymentRefundOperation(r.Context(), payment.InvoicePayload,
 			payment.TelegramPaymentChargeID, time.Now().UTC()); err != nil {
 			s.deps.Logger.Error("resolve Stars refund operation", "request_id", middlewareRequestID(r), "error", err)
+			s.writeError(w, r, http.StatusServiceUnavailable, "REFUND_RECONCILIATION_PENDING", "The refund is recorded, but its operation receipt could not be reconciled. Please retry.")
+			return
 		}
 	}
 	pmHandled, pmErr := s.processTelegramPM(r.Context(), update)

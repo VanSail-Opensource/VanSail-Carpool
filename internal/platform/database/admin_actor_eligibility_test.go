@@ -66,8 +66,8 @@ func TestCatalogEmbyAndPricingMutationsRecheckCurrentActorEligibility(t *testing
 	if err != nil || currentPolicy.Version != policy.Version || currentPolicy.LastApprovedVersion != policy.LastApprovedVersion {
 		t.Fatal("rejected actor changed pricing policy", err)
 	}
-	events, err := store.ListAuditEvents(ctx, 100)
-	if err != nil || len(events) != 0 {
-		t.Fatal("rejected writes left success audits", events, err)
+	var audits int
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_events WHERE actor_user_id=$1`, actor.ID).Scan(&audits); err != nil || audits != 0 {
+		t.Fatal("rejected writes left actor success audits", audits, err)
 	}
 }

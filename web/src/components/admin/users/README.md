@@ -6,7 +6,7 @@
 - `AdminEntitlementEditor.vue` validates the advanced optimistic-lock overwrite form.
 - `AdminEntitlementRefundDialog.vue` requires an exact positive TXB-minor refund amount bounded by the original net debit.
 - `AdminManualEntitlementDialog.vue` creates a zero-charge, audited fixed-term grant with explicit combo, term, bytes, cadence, optional squads and reason; 409 overlaps keep the draft visible with localized conflict copy.
-- `AdminOperationResolutionDialog.vue` records an audited resolution without retrying an ambiguous provider mutation.
+- `AdminOperationResolutionDialog.vue` requests audited parent-receipt repair from retained completed item evidence. It requires an explicit outcome and never defaults to success. `operationResolution.ts` limits the entrance to entitlement edits, credited-refund synchronization, combo replacement, bulk extension and historical outage synchronization; the server validates actual evidence. Unsupported domain workflows show reconciliation guidance. `operationResolution.test.ts` checks both permitted kinds and denied payment/member/native/Emby/restriction kinds.
 - `AdminUserEntitlements.vue` presents the fixed-term plan workspace: a primary manual-grant action plus labelled per-row edit-terms and refund actions, readable status/validity/price facts, and Motion transitions that honor reduced motion.
 - `AdminUserHourly.vue` presents the administrator hourly projection (policy, wallet, daily usage, enrollments) with a confirmed disable action.
 - `useAdminUserHourly.ts` owns the hourly projection load with abort/generation guards, the quoted policy version and idempotent disable queuing.

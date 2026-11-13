@@ -159,7 +159,10 @@ async function resolveOperation(payload: { resolution: OperationResolution; reas
   const operation = resolving.value
   if (!operation) return
   const ok = await profile.perform(`resolve:${operation.id}`, (key) =>
-    adminOperationsApi.resolveOperation(operation.id, payload.resolution, payload.reason, key), { intent: payload })
+    adminOperationsApi.resolveOperation(operation.id, payload.resolution, payload.reason, key), {
+      intent: payload,
+      conflictCodeKeys: { OPERATION_RECONCILIATION_REQUIRED: 'adminUserProfile.reconciliationRequired' },
+    })
   if (ok) resolving.value = null
 }
 

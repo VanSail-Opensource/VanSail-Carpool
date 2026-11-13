@@ -45,6 +45,12 @@ onboarding, signed requests and the existing idempotent operation protections.
 - `browser_auth_recovery_test.go` verifies that transient exchange failures return
   a retryable response without cookies, preserve the handoff for retry, and still
   enforce single use after successful authentication.
+- `session_recovery_test.go` verifies that Mini App session lookup outages return
+  retryable availability errors, preserve the bearer, and distinguish actual
+  expiration before any protected handler can run.
+- `telegram_refund_recovery_test.go` injects a Stars refund receipt write failure
+  after the wallet reversal and verifies that webhook redelivery repairs the
+  operation and item without repeating the financial change.
 - `browser_auth_scope_test.go` covers Mini App rejection from browser admin
   routes, signed-request replay, expired-cookie clearing, role revocation,
   removed login routes, and existing streamed-backup origin/device safeguards.
@@ -87,11 +93,10 @@ onboarding, signed requests and the existing idempotent operation protections.
   `dashboard_response_test.go` covers the populated and empty JSON contracts.
 - `purchases.go` serves the authenticated queued-purchase cancellation and TXB refund endpoint.
 - `member_purchase_operations.go` serves first-term refund quotes, idempotent mutations, and owner-scoped receipts. Member manual resets are not exposed; only previously paid queued reset obligations remain supported.
-- `member_connections.go` preserves scan and drop-route compatibility while the signed-handle command now queues a three-day block followed by disconnect.
-- `member_ip_blocks.go` lists owner-only active blocks, queues owner unblocks, and maps ownership mismatches to not found.
+- `member_connections.go` maps retained connection-service errors; current owner connection observations and grants are served by `member_connection_observations.go`.
 - `member_routes.go` mounts the member connection, refund, and operation resources.
 - `dashboard_usage.go` validates the authenticated member's UTC traffic range and serves the bounded per-node usage projection.
-- `statistics.go` serves the cached aggregate snapshot, on-demand shared
+- `statistics.go` serves cached aggregate snapshots and current native node statistics with retryable availability errors.
 - `billing_orders.go` creates, polls, and cancels member payment orders.
 - `automatic_renewal.go` serves the owner-only automatic-renewal status and toggle resource and logs unexpected provider failures with request, user, and purchase correlation; manual renewal routes are not public.
 - `onboarding.go` serves and administers localized onboarding content.
@@ -110,7 +115,7 @@ onboarding, signed requests and the existing idempotent operation protections.
 - `activity_draw_admin.go` saves validated instant and raffle configurations, publishes drafts, checks live catalog prize references through queued integrations, and exposes current-cost forecasts.
 - `activity_types_test.go` checks member-safe prize previews and draw receipt identity mapping.
 - `coupons_member.go` serves wallet, soft-discard, and redemption behavior plus coupon response mapping.
-- `coupons_admin.go` serves coupon creation, updates, deactivation, and partial-input merging.
+- `coupons_admin.go` serves coupon creation, updates and deactivation through the atomic administrator writer. Partial edits retain the exact revision read before merging; stale writes conflict without reactivating a concurrently disabled coupon or losing its audit.
 
 ## Administrator features
 
@@ -131,7 +136,7 @@ onboarding, signed requests and the existing idempotent operation protections.
 - `admin_user_connections.go` scopes durable connection scans and transient IP projections to the selected profile.
 - `admin_bulk_extensions.go` normalizes minute durations or deprecated day inputs for inclusive-OR previews and idempotent bulk-extension jobs.
 - `admin_bulk_extensions_test.go` covers minute input, legacy-day normalization, and ambiguous duration rejection.
-- `admin_operation_resolution.go` records idempotent audited resolutions for pending-review and partial operations without provider retry.
+- `admin_operation_resolution.go` requests evidence-consistent parent receipt repair; unsupported workflows and unfinished item evidence return `OPERATION_RECONCILIATION_REQUIRED` without a provider or financial override.
 - `admin_payments.go` lists administrator payment and refund projections, applies refunds, and grants terminal-payment courtesy credits.
 - `admin_operations.go` manages backups, durable jobs, and audit-event listings.
 - `admin_errors.go` maps administrator domain and upstream failures to transport errors.
@@ -163,11 +168,10 @@ onboarding, signed requests and the existing idempotent operation protections.
 - `community_test.go` covers nullable inputs, decimal parsing, reward mapping, and required idempotency.
 - `community_membership_test.go` covers stable onboarding, membership-check, active-combo, already-joined, and invite-provider transport errors.
 - `admin_catalog_test.go` covers strict decoding of typed squad profile writes.
-- `operations_commands_test.go` covers Telegram deduction command parsing.
 - `telegram_pm_commands_test.go` covers topic-owner targeting and refusal to infer refunds without a positive traffic quote.
 - `payment_callbacks_test.go` verifies that navigation returns accept only the documented payment providers.
 - `admin_user_detail_test.go` covers owner-ID restoration in nested aggregate records.
-- `member_ip_blocks_test.go` covers member isolation, administrator actor attribution, and open-operation conflicts.
+- `member_ip_blocks_test.go` verifies administrator actor attribution for retained IP-block removals.
 - `telegram_membership_test.go` covers joins, rejoins, promotions, departures,
   bots, missing configuration, and unrelated chats through a pure transition predicate.
 
@@ -236,7 +240,7 @@ headers. It excludes probe identities and does not create or rotate credentials.
 
 - `xnode_named_services.go`: Admin-only service identity CRUD, subscription rotation and native routing endpoints.
 
-`xnode_firewall.go` exposes authenticated browser-admin evidence reads and onboarded member quote/purchase endpoints. All delivery uses the existing durable outbox; the HTTP request commits a grant and never waits on a node.
+`xnode_firewall.go` exposes administrator-only ban and detection-evidence searches. Paid member firewall purchases are retired; current owner connection grants use their separate lease endpoint.
 
 
 `xnode_routing_plans.go` exposes owner-scoped typed plans/previews and browser admin
@@ -248,9 +252,9 @@ administrator customization remains separate.
 
 `usdt_review.go` owns payment-scoped native-token evidence listing, audited settlement and permanent review dismissal over existing browser-signed administrative routes.
 
-`admin_user_metrics.go` serves browser-scoped native per-profile metrics. The existing `xnode.Node` decoder requires explicit non-null multipliers from 0 through 1000, with at most six fractional digits. Statistics reads moved into the existing administrator router.
+`admin_user_metrics.go` serves browser-scoped native per-profile metrics. Node multipliers are retired and normalized to one; obsolete request fields cannot alter current billing. Statistics reads use the existing administrator router.
 
-`xnode_node_write_test.go` guards omitted/null multiplier rejection, numeric bounds and lexical fractional precision.
+`xnode_node_write_test.go` verifies that obsolete multiplier values are ignored and normalized for compatibility.
 
 `xnode_subscription_selection.go` previews the draft template policy using the same bounded Go matcher as bearer requests. Both public subscription paths negotiate explicit format, admin regex, built-in detection, then Base64; a regex overrides HTML negotiation. Generated output and synthetic previews remain no-store.
 

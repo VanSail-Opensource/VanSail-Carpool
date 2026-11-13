@@ -125,9 +125,12 @@ func TestCouponUpdateDistinguishesOmittedFieldsFromNull(t *testing.T) {
 	if err := json.Unmarshal([]byte(`{"name":"Preserved"}`), &omitted); err != nil {
 		t.Fatalf("decode omitted request: %v", err)
 	}
-	preserved, err := server.couponInput(ctx, created.ID, omitted)
+	preserved, preservedRevision, err := server.couponInput(ctx, created.ID, omitted)
 	if err != nil {
 		t.Fatalf("couponInput(omitted): %v", err)
+	}
+	if !preservedRevision.Equal(created.UpdatedAt) {
+		t.Fatal("partial update lost the definition revision it merged")
 	}
 	if preserved.PercentCapMinor == nil || preserved.ExpiresAt == nil || preserved.GlobalUseLimit == nil || preserved.PerUserUseLimit == nil {
 		t.Fatalf("omitted nullable fields were cleared: %+v", preserved)
@@ -137,9 +140,12 @@ func TestCouponUpdateDistinguishesOmittedFieldsFromNull(t *testing.T) {
 	if err := json.Unmarshal([]byte(`{"percentCapMinor":null,"expiresAt":null,"globalUseLimit":null,"perUserUseLimit":null}`), &cleared); err != nil {
 		t.Fatalf("decode null request: %v", err)
 	}
-	input, err := server.couponInput(ctx, created.ID, cleared)
+	input, clearedRevision, err := server.couponInput(ctx, created.ID, cleared)
 	if err != nil {
 		t.Fatalf("couponInput(null): %v", err)
+	}
+	if !clearedRevision.Equal(created.UpdatedAt) {
+		t.Fatal("explicit-null update lost the definition revision it merged")
 	}
 	if input.PercentCapMinor != nil || input.ExpiresAt != nil || input.GlobalUseLimit != nil || input.PerUserUseLimit != nil {
 		t.Fatalf("explicit null did not clear nullable fields: %+v", input)

@@ -427,3 +427,13 @@ and console/network diagnostics. No production payment or authentication occurs.
 It verifies actual currency-menu bounds after errors and closes the explained
 empty-payment state. `browser-member-recovery.mjs` adds onboarding and community
 lifecycle checks to the same browser run.
+
+`OperationResolutionAudit.vue`, `operation-resolution-audit.ts` and
+`operation-resolution-audit.html` mount the actual receipt repair dialog with
+constructed retained operations. `blocked` selects a payment workflow that
+requires domain reconciliation; `error` refuses the first repair until the
+fixture's `__operationResolutionAudit.fail` is cleared. The fixture records
+explicit outcome/reason selections without contacting any server.
+`browser-auth-audit.html?recovery&session-unavailable` returns a temporary session
+read failure and records reads separately from Telegram exchanges, so hosted
+checks can verify safe retries.

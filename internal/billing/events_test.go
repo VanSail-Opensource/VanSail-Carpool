@@ -15,6 +15,7 @@ func TestServiceValidateEvent(t *testing.T) {
 	tradeID := "trade-1"
 	baseOrder := model.PaymentOrder{ID: "order-1", UserID: "user-1", Provider: "ezpay", ProviderRail: "alipay", PayableAmount: "1.00", PayableCurrency: "CNY", ProviderTradeID: &tradeID}
 	telegramID := int64(42)
+	userLookupFailure := errors.New("user lookup")
 	tests := []struct {
 		name      string
 		mutate    func(*billingRepository, *ProviderEvent)
@@ -30,7 +31,11 @@ func TestServiceValidateEvent(t *testing.T) {
 		{name: "telegram mismatch", mutate: func(_ *billingRepository, event *ProviderEvent) { wrong := int64(99); event.TelegramID = &wrong }, wantError: database.ErrConflict},
 		{name: "user lookup error", mutate: func(repository *billingRepository, event *ProviderEvent) {
 			event.TelegramID = &telegramID
-			repository.userErr = errors.New("user lookup")
+			repository.userErr = userLookupFailure
+		}, wantError: userLookupFailure},
+		{name: "missing event owner", mutate: func(repository *billingRepository, event *ProviderEvent) {
+			event.TelegramID = &telegramID
+			repository.userErr = database.ErrNotFound
 		}, wantError: database.ErrConflict},
 	}
 

@@ -63,14 +63,7 @@ func (s *Store) PricingPolicy(ctx context.Context, kind, id string) (pricing.Pol
 }
 
 func pricingAdminTx(ctx context.Context, tx *sql.Tx, actor string) error {
-	var role string
-	if err := tx.QueryRowContext(ctx, `SELECT role FROM users WHERE id=$1`, actor).Scan(&role); err != nil {
-		return err
-	}
-	if role != "admin" {
-		return ErrConflict
-	}
-	return nil
+	return catalogAdminActorTx(ctx, tx, actor)
 }
 
 func pricingAuditTx(ctx context.Context, tx *sql.Tx, actor, action, target, reason string, value any, now time.Time) error {
