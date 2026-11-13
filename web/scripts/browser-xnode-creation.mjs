@@ -1,5 +1,15 @@
 import assert from 'node:assert/strict'
 
+async function visibleFeedback(page, dialog, feedback, save) {
+  await feedback.waitFor()
+  const [modal, error, action] = await Promise.all([dialog.boundingBox(), feedback.boundingBox(), save.boundingBox()])
+  assert.ok(modal && error && action)
+  for (const bounds of [error, action]) {
+    assert.ok(bounds.x >= modal.x && bounds.x + bounds.width <= modal.x + modal.width + 1, 'save feedback/action exceeds modal width')
+    assert.ok(bounds.y >= Math.max(0, modal.y) && bounds.y + bounds.height <= Math.min(page.viewportSize().height, modal.y + modal.height) + 1, 'save feedback/action is outside the visible modal viewport')
+  }
+}
+
 export async function xnodeCreationScenarios(scenario, size) {
   for (const mode of ['configuration', 'snippet']) {
     await scenario(size, `xnode-${mode}-creation-retry`, `xnode-audit.html?xnodeTab=configurations&creation-retry=${mode}`, async (page, capture) => {
@@ -11,16 +21,20 @@ export async function xnodeCreationScenarios(scenario, size) {
       await name.fill('Original creation')
       await save.click()
       await page.waitForFunction(() => globalThis.__catalogCreation.attempts.length === 1)
-      await dialog.getByRole('alert').filter({ hasText: 'Could not save' }).waitFor()
+      const feedback = dialog.getByRole('alert')
+      await feedback.filter({ hasText: 'Could not save these changes. Check the input and retry.' }).waitFor()
+      await visibleFeedback(page, dialog, feedback, save)
       await capture('uncertain-create-retained')
       await name.fill('Changed after uncertainty')
-      await save.click()
+      await name.press('Enter')
       await page.waitForFunction(() => globalThis.__catalogCreation.attempts.length === 2)
       await page.waitForFunction(() => !globalThis.document.querySelector('[role="dialog"] button[type="submit"]')?.disabled)
       const changed = await page.evaluate(() => globalThis.__catalogCreation.attempts)
       assert.equal(changed[1].id, changed[0].id)
       assert.equal(changed[1].revision, 0)
       assert.equal(await dialog.isVisible(), true)
+      await feedback.filter({ hasText: 'This resource is still in use or has changed. Refresh and try again.' }).waitFor()
+      await visibleFeedback(page, dialog, feedback, save)
       await capture('conflict-retains-changed-draft')
       await name.fill('Original creation')
       await save.click()

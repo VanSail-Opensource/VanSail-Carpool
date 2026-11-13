@@ -11,7 +11,7 @@
       "services": "Service users"
     },
     "loadFailed": "Could not load node data. Please retry.",
-    "saveFailed": "Could not save node settings. Check the input and retry.",
+    "saveFailed": "Could not save these changes. Check the input and retry.",
     "invalidJson": "Enter valid JSON.",
     "addNode": "Add node",
     "editNode": "Edit node",

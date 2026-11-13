@@ -114,7 +114,7 @@ async function enroll(node: XNode): Promise<void> {
         <template v-else>
           <form class="xnode-form" @submit.prevent="save">
             <fieldset class="xnode-form border-0 p-0 m-0 min-w-0" :disabled="blocked">
-              <UAlert v-if="saveError" color="warning" :title="saveError" />
+              <UAlert v-if="saveError" role="alert" color="warning" :title="saveError" />
               <div class="xnode-fields">
                 <UFormField :label="t('common.name')"><UInput v-model="draft.name" required class="w-full" /></UFormField>
                 <UFormField :label="t('xnode.configuration')"><USelect v-model="draft.configId" :items="configurations" class="w-full" /></UFormField>

@@ -59,10 +59,11 @@ certificate, endpoint, firewall, lease, metrics and command modules.
 ## Validation
 
 - Repository policy prohibits local automated suites. None were run.
-- Final `npm run generate:api`, `npm run lint` (zero warnings), and
+- Before the hosted feedback follow-up, `npm run generate:api`,
+  `npm run lint` (zero warnings), and
   `npm run build` (Vue typecheck followed by Vite production build) passed on
   the completed frontend/schema tree, including all creation-retry corrections.
-  The final Vite build took 8.50 seconds;
+  That local Vite build took 8.50 seconds;
   existing large chart/map/graph chunks still trigger its size warning.
   `git diff --check` passed. Earlier typecheck attempts were killed with exit
   137 during shared resource pressure; the final sequential gate completed
@@ -100,3 +101,23 @@ reported the revision conflict. Restoring the submitted name reconciled the exac
 saved resource, closed the dialog without a false error, and displayed exactly
 one new revision-1 configuration. The hosted browser gate additionally covers
 snippet recovery and both desktop/mobile screenshots.
+
+### Hosted evidence and mobile feedback follow-up
+
+PR CI run `43432409524` produced artifact `14041465871` with 160 browser
+scenarios: 150 passed and ten failed. All ten failures had empty console/network
+issue lists. The failed assertions assumed an implicit Nuxt alert role or used
+Playwright's control-disabled query on a fieldset. These checks now target
+explicit announcement roles and both fieldset/descendant disabled semantics.
+
+Inspected 390×844 screenshots confirmed wrapped node names, usable recovery
+actions, unavailable/stale status, scoped inventory failure and independent
+global settings. They also exposed a configuration-save error above the scrolled
+mobile viewport. Configuration/snippet Save and failure feedback now share the
+existing modal footer; hosted cases require both to stay visible after pointer
+and Enter submissions. The shared bilingual failure copy is resource-neutral.
+
+The local runtime became unavailable during this follow-up. The final footer,
+ARIA, browser assertion and copy changes are reconstructed from the exact remote
+reviewed commit and require hosted lint, typecheck, build and browser validation;
+earlier local passes do not claim verification of these additional edits.

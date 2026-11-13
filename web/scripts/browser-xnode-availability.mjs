@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 const metricWarning = 'Live status is unavailable. Configuration and recovery actions remain available; any previous observations are not current.'
 export async function xnodeAvailabilityScenarios(scenario, size) {
   await scenario(size, 'xnode-metrics-failure', 'xnode-audit.html?availability&unavailable=metrics&long-names', async (page, capture) => {
-    await page.getByRole('alert').filter({ hasText: metricWarning }).waitFor()
+    await page.getByRole('status').filter({ hasText: metricWarning }).waitFor()
     await page.locator('.xnode-row').first().waitFor()
     assert.equal(await page.getByText('Status unavailable', { exact: true }).count(), 2)
     assert.equal(await page.getByRole('button', { name: 'Add node', exact: true }).isEnabled(), true)
@@ -44,7 +44,7 @@ export async function xnodeAvailabilityScenarios(scenario, size) {
   })
   await scenario(size, 'xnode-stale-status', 'xnode-audit.html?availability&fail-after-first=metrics', async (page, capture) => {
     await page.getByText('Online', { exact: true }).waitFor()
-    await page.getByRole('alert').filter({ hasText: metricWarning }).waitFor()
+    await page.getByRole('status').filter({ hasText: metricWarning }).waitFor()
     assert.equal(await page.getByText('Not current', { exact: true }).count(), 2)
     assert.equal(await page.getByText('Online', { exact: true }).count(), 0)
     assert.equal(await page.getByRole('button', { name: 'Add node', exact: true }).isEnabled(), true)
@@ -66,8 +66,10 @@ export async function xnodeAvailabilityScenarios(scenario, size) {
     await dialog.getByLabel('Record name', { exact: true }).fill('node.example.com')
     const ttl = dialog.getByLabel('TTL (seconds)', { exact: true })
     await ttl.fill('2147483648')
-    await dialog.getByText('Enter a whole TTL from 0 to 2147483647 seconds. 0 uses the default.', { exact: true }).waitFor()
+    const ttlError = dialog.getByText('Enter a whole TTL from 0 to 2147483647 seconds. 0 uses the default.', { exact: true })
+    await ttlError.waitFor()
     assert.equal(await dialog.getByRole('button', { name: 'Save', exact: true }).isEnabled(), false)
+    await ttlError.scrollIntoViewIfNeeded()
     await capture('invalid-ttl-with-manual-zone')
     await ttl.fill('300')
     await dialog.getByRole('button', { name: 'Save', exact: true }).click()

@@ -9,7 +9,7 @@ import XNodeConfigurations from './XNodeConfigurations.vue'
 const api = vi.hoisted(() => ({ saveConfiguration: vi.fn(), configurations: vi.fn(), saveSnippet: vi.fn(), snippets: vi.fn(), validate: vi.fn() }))
 vi.mock('@/api/xnode', () => ({ xnodeApi: api }))
 vi.mock('@/i18n', () => ({ useI18n: () => ({ t: (key: string) => key }) }))
-const Modal = { props: { open: Boolean }, template: '<section v-if="open"><slot name="body" /></section>' }
+const Modal = { props: { open: Boolean }, template: '<section v-if="open"><slot name="body" /><slot name="footer" /></section>' }
 const Button = defineComponent({ props: { label: { type: String, default: '' }, disabled: Boolean, type: { type: String, default: 'button' } }, emits: ['click'], setup: (props, { emit }) => () => h('button', { type: props.type, disabled: props.disabled, onClick: () => emit('click') }, props.label) })
 const Input = defineComponent({ props: { modelValue: { type: String, default: '' }, disabled: Boolean }, emits: ['update:modelValue'], setup: (props, { emit }) => () => h('input', { value: props.modelValue, disabled: props.disabled, onInput: (event: Event) => emit('update:modelValue', (event.target as HTMLInputElement).value) }) })
 const Field = { template: '<div><slot /></div>' }
@@ -45,6 +45,7 @@ describe('native configuration and snippet creation identity', () => {
     }
     const submit = async () => { await wrapper.get('form').trigger('submit'); await flushPromises() }
     await add()
+    expect(wrapper.get('button[type="submit"]').attributes('form')).toBe(wrapper.get('form').attributes('id'))
     await wrapper.get('input').setValue('Original')
     await submit()
     expect(wrapper.find('form').exists()).toBe(true)

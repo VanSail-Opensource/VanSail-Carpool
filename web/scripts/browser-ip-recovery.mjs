@@ -4,7 +4,11 @@ export async function ipRecoveryScenarios(scenario, size) {
   await scenario(size, 'ip-admin-required-read', 'ip-lookup-audit.html?admin&admin-load-error', async (page, capture) => {
     await page.getByRole('button', { name: 'Try again', exact: true }).waitFor()
     assert.equal(await page.getByRole('button', { name: 'Save', exact: true }).isEnabled(), false)
-    assert.equal(await page.locator('.lookup-settings__fields').isDisabled(), true)
+    const fields = page.locator('.lookup-settings__fields')
+    assert.equal(await fields.evaluate(element => element.tagName === 'FIELDSET' && element.disabled), true)
+    const controls = fields.locator('input, button, select, textarea')
+    assert.ok(await controls.count() > 0)
+    for (const control of await controls.all()) assert.equal(await control.isDisabled(), true)
     assert.equal(await page.evaluate(() => globalThis.__ipAudit.counters().savedBody), null)
     await capture('unavailable-read-only')
     await page.evaluate(() => { globalThis.__ipAudit.admin.recovered = true })

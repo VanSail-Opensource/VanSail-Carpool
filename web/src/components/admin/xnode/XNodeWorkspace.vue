@@ -28,7 +28,7 @@ const tabs = computed(() => workspaceTabs.map(value => ({ value, disabled: works
     <header class="admin-section-header"><div><h2>{{ t('xnode.title') }}</h2><p class="text-muted">{{ t('xnode.description') }}</p></div><UButton v-if="workspace.canRefresh.value" variant="ghost" color="neutral" icon="i-ph-arrow-clockwise" :aria-label="t('common.refresh')" :disabled="workspace.busy.value" :loading="workspace.loading.value" @click="workspace.load" /></header>
     <div class="min-w-0 overflow-x-auto"><UTabs v-model="tab" :items="tabs" :content="false" variant="link" :ui="{ root: 'items-start', list: 'w-max min-w-full' }" /></div>
     <UAlert v-if="workspace.actionError.value" color="warning" :title="workspace.actionError.value" />
-    <UAlert v-if="workspaceNeedsMetrics(tab) && workspace.metricError.value" color="warning" :title="workspace.metricError.value" />
+    <UAlert v-if="workspaceNeedsMetrics(tab) && workspace.metricError.value" role="status" aria-live="polite" color="warning" :title="workspace.metricError.value" />
     <AdminSectionState :key="tab" :loading="workspace.loading.value" :error="workspace.error.value" @retry="workspace.load">
       <XNodeNodes @refresh="workspace.load" v-if="tab === 'nodes'" :nodes="workspace.nodes.value" :endpoints="workspace.endpoints.value" :configurations="workspace.configurations.value" :metrics="workspace.metrics.value" :busy="workspace.busy.value" :perform="workspace.perform" :save-error="workspace.actionError.value" />
       <XNodeServiceUsers v-else-if="tab === 'services'" :nodes="workspace.nodes.value" :groups="workspace.groups.value" />

@@ -29,6 +29,11 @@ cases exercise unavailable recovery reads, changed drafts and matching recovery.
 `catalogCreation.test.ts` checks exact-content, ordering, refusal and revision
 boundaries; `XNodeConfigurationsCreation.test.ts` verifies retained creation IDs
 and distinct subsequent editors through the real component.
+The configuration/snippet modal keeps Save and its failure alert in the existing
+footer while the editor body scrolls. Native form association preserves both
+pointer and Enter submission; hosted browser checks require feedback and Save
+to remain inside the visible modal viewport. Optional telemetry uses a polite
+status announcement, while failed modal saves use an explicit alert role.
 
 `XNodeAccessGroups.vue` retains access-group/resource ownership and composes
 `XNodeEndpointForm.vue` for endpoint drafts.
