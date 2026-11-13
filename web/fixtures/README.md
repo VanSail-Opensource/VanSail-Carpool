@@ -491,3 +491,9 @@ The existing `pricing-audit.html?view=charts&exact` fixture compares a raw decim
 traffic total beyond the JavaScript safe-integer range with numeric live-metric
 samples. `invalid` adds malformed and missing buckets; browser checks verify
 unavailable readouts without inventing zero traffic or issuing API requests.
+
+`emby-connection-audit.html?cached-refresh` restores schema-compatible constructed
+payment, amount-limit and activity snapshots while holding their live reads.
+`__embyConnectionAudit.releaseReads(fail)` releases those original snapshots or
+errors after a mutation, and exact write/delete counters expose accidental
+replays. The existing Emby connection cases keep their original behavior.

@@ -17,3 +17,13 @@ Network context and streaming: `live_asn.go`, `live_asn_prefetch.go`, `live_bgp.
 `retired_features_test.go` covers old settings/report projection, interrupted enrichment compatibility and progress that waits for network enrichment.
 
 `run_lease.go` carries a fresh execution fence through background, provider and detached live contexts. Running-report persistence requires that owner and an unexpired database lease; heartbeat cancellation alone cannot authorize stale progress or settlement. `background_lease_test.go` verifies distinct owners across executions and fence propagation through reads, provider work, progress and completion.
+
+Frozen report and live-snapshot repairs carry a transient `RepairRevision`
+derived from the exact stored document. Each database write compares that
+revision and immutable IP identity, returning the next revision without changing
+cache ordering. Reputation progress advances its token after every committed
+stage; losing repairs stop without overwriting newer sections or scheduling
+another chain. The token is excluded from public and stored JSON.
+`repair_test_helpers_test.go` supplies detached, revision-checking fixtures;
+`repair_revision_test.go` covers competing commits and token privacy, while
+`worker_retry_test.go` and `live_retry_test.go` retain policy/section recovery cases.

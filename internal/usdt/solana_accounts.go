@@ -62,7 +62,7 @@ func (s *scanner) solanaAccounts(ctx context.Context, owners []string) (map[stri
 		if err := s.client.rpc(ctx, "getTokenAccountsByOwner", []any{owner, map[string]string{"mint": s.client.spec.Token}, map[string]string{"encoding": "jsonParsed", "commitment": "finalized"}}, &reply); err != nil {
 			return nil, err
 		}
-		if len(reply.Value) > 128 {
+		if reply.Value == nil || len(reply.Value) > 128 {
 			return nil, ErrRPC
 		}
 		for _, item := range reply.Value {

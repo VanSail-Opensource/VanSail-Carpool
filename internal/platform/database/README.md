@@ -473,6 +473,14 @@ preloads use the same parsed ordering.
 `maintenance_lease_precision_test.go` verifies exact lease takeover, one owner
 for concurrent first claims, and refusal to replace malformed lease evidence.
 
+Frozen IP report repairs in `ip_lookup_repair_cas.go` lock the current partial
+row and compare a SHA256 revision of its exact stored JSON before publishing.
+The transient token never enters public or stored JSON. Original identity,
+policy/parser versions, live fetch time and completion ordering stay intact;
+successful report stages return the next revision for continued repair.
+`ip_lookup_report_repair_test.go` and `ip_lookup_live_repair_test.go` cover
+competing partial writers, stale work, revision advancement and identity changes.
+
 ## Production files
 
 - `billing_purchase_addon_fingerprint.go`, `billing_purchase_addon_quote.go`, and `billing_purchase_addons.go` validate, price, replay-protect, debit, record, and queue active-term squad additions in one transaction.
@@ -1101,6 +1109,7 @@ Provider requests remain outside every transaction.
 - `ip_lookup_live_cache_retry_generated.go` wraps the transactional methods in `ip_lookup_live_cache.go`.
 - `ip_lookup_live_stage_retry_generated.go` wraps the transactional methods in `ip_lookup_live_stage.go`.
 - `ip_lookup_queries_retry_generated.go` wraps the transactional methods in `ip_lookup_queries.go`.
+- `ip_lookup_repair_cas_retry_generated.go` wraps the transactional methods in `ip_lookup_repair_cas.go`.
 - `ip_lookup_settings_retry_generated.go` wraps the transactional methods in `ip_lookup_settings.go`.
 - `maintenance_runs_retry_generated.go` wraps the transactional methods in `maintenance_runs.go`.
 - `member_early_activation_retry_generated.go` wraps the transactional methods in `member_early_activation.go`.
@@ -1187,6 +1196,7 @@ Provider requests remain outside every transaction.
 - `xnode_firewall_policy_retry_generated.go` wraps the transactional methods in `xnode_firewall_policy.go`.
 - `xnode_firewall_tx_retry_generated.go` wraps the transactional methods in `xnode_firewall_tx.go`.
 - `xnode_first_sync_retry_generated.go` wraps the transactional methods in `xnode_first_sync.go`.
+- `xnode_global_settings_retry_generated.go` wraps the transactional methods in `xnode_global_settings.go`.
 - `xnode_group_delete_retry_generated.go` wraps the transactional methods in `xnode_group_delete.go`.
 - `xnode_groups_retry_generated.go` wraps the transactional methods in `xnode_groups.go`.
 - `xnode_identities_retry_generated.go` wraps the transactional methods in `xnode_identities.go`.

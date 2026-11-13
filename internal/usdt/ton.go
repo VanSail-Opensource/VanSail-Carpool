@@ -65,7 +65,7 @@ func (s *scanner) scanTON(ctx context.Context, cursor Cursor, owners []string) (
 	if err := s.client.get(ctx, "/jetton/transfers", q, &page); err != nil {
 		return Batch{}, err
 	}
-	if len(page.Items) > 100 {
+	if page.Items == nil || len(page.Items) > 100 {
 		return Batch{}, ErrRPC
 	}
 	batch := Batch{Transfers: []Transfer{}}

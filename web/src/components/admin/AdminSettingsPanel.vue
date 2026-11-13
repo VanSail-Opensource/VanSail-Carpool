@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { restoreRef } from '@/api/cache/restore'
-import { computed, onMounted, reactive, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, onMounted, onScopeDispose, reactive, shallowRef, useTemplateRef, watch } from 'vue'
 import type { AdminSetting } from '@/api/types'
 import type { ActivitySettings, ActivitySettingsWrite } from '@/api/features'
 import { featuresApi } from '@/api/features'
@@ -13,11 +13,14 @@ import SwitchField from '@/components/common/SwitchField.vue'
 import { useAdminSection } from '@/composables/useAdminSection'
 import { localizedError, useI18n } from '@/i18n'
 import { writeAdminSettings } from '@/utils/adminSettingWrites'
+import { createLatestRequest } from '@/utils/latestRequest'
 import AdminSectionState from './AdminSectionState.vue'
 const { items, loading, busy, error, load, perform } = useAdminSection<AdminSetting>('settings')
 const draft = reactive<Record<string, string>>({})
 const saved = reactive({ visible: false, failed: false })
 const activitySettings = shallowRef<ActivitySettings | null>(null)
+const activityLatest = createLatestRequest()
+let disposed = false
 const activityLoading = shallowRef(true)
 const activityBusy = shallowRef(false)
 const activityError = shallowRef<string | null>(null)
@@ -125,31 +128,38 @@ async function saveAll(): Promise<void> {
   }
 }
 async function loadActivitySettings(): Promise<void> {
+  if (disposed || activityBusy.value) return
+  const ticket = activityLatest.begin()
   activityLoading.value = !restoreRef('/api/v1/admin/activity-settings', activitySettings)
   activityError.value = null
   try {
-    activitySettings.value = await featuresApi.getAdminActivitySettings()
+    const next = await featuresApi.getAdminActivitySettings()
+    if (activityLatest.isCurrent(ticket)) activitySettings.value = next
   } catch (caught) {
-    activityError.value = localizedError(caught, 'errors.adminLoad')
+    if (activityLatest.isCurrent(ticket)) activityError.value = localizedError(caught, 'errors.adminLoad')
   } finally {
-    activityLoading.value = false
+    if (activityLatest.isCurrent(ticket)) activityLoading.value = false
   }
 }
 async function saveActivitySettings(value: ActivitySettingsWrite): Promise<boolean> {
-  if (activityBusy.value) return false
+  if (disposed || activityBusy.value || activityLoading.value || !activitySettings.value) return false
+  const ticket = activityLatest.begin()
   activityBusy.value = true
   activityError.value = null
   try {
-    activitySettings.value = await featuresApi.saveAdminActivitySettings(value)
+    const next = await featuresApi.saveAdminActivitySettings(value)
+    if (!activityLatest.isCurrent(ticket)) return false
+    activitySettings.value = next
     return true
   } catch (caught) {
-    activityError.value = localizedError(caught, 'errors.adminAction')
+    if (activityLatest.isCurrent(ticket)) activityError.value = localizedError(caught, 'errors.adminAction')
     return false
   } finally {
-    activityBusy.value = false
+    if (activityLatest.isCurrent(ticket)) activityBusy.value = false
   }
 }
 onMounted(() => void loadActivitySettings())
+onScopeDispose(() => { disposed = true; activityLatest.dispose() })
 </script>
 <template>
   <section class="admin-panel">

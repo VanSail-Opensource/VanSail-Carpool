@@ -8,7 +8,7 @@ import StatisticsTrafficChart from './StatisticsTrafficChart.vue'
 function remote(values: string[]): StatisticsSnapshot['remote'] {
   return { weeklyUserIncrease: 0, monthlyAverageUsagePercent: 0,
     trafficDates: ['2026-11-11', '2026-11-12', '2026-11-13'],
-    trafficSeries: [{ uuid: 'accounted', name: 'Accounted', dailyBytes: values }] }
+    trafficSeries: [{ uuid: 'accounted', countryCode: 'US', name: 'Accounted', dailyBytes: values }] }
 }
 const mountChart = (values: string[]) => mount(StatisticsTrafficChart, { props: { remote: remote(values) }, global: { stubs: { LineChart: true } } })
 

@@ -74,3 +74,8 @@ save failures. Only constructed accounts, links and preference writes are used.
 `browser-chart-recovery.mjs` checks exact decimal traffic readouts, unavailable
 buckets and safe numeric metric detail in desktop/mobile Chromium, including
 keyboard navigation. Its existing chart fixture issues no API requests.
+
+`browser-admin-settings-recovery.mjs` holds cached administrator settings reads
+through reviewed profile, amount-limit and reward saves, then resolves or rejects
+the obsolete reads. It also verifies deleted providers stay absent. All six
+mobile/desktop scenarios use constructed data in the existing Emby settings fixture.

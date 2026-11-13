@@ -121,7 +121,7 @@ func TestHourlyFundingWarningsAdvancePastAlreadyNotifiedPage(t *testing.T) {
 		if index > 0 {
 			input.GroupID = fmt.Sprintf("funding-warning-group-%03d", index)
 			input.ActivationKey = fmt.Sprintf("funding-warning-activation-%03d", index)
-			addHourlyBillingOffer(t, s, input.OwnerID, input.GroupID, 100)
+			addHourlyBillingOffer(t, s, hourlyBillingAdmin(t, s), input.GroupID, 100)
 		}
 		makeDueHourlyBillingFixture(t, s, input, policy, hourlyBillingNow(t, s).Add(-4*time.Hour))
 	}

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { restoreCached } from '@/api/cache/restore'
 import { mergeRefreshedDraft } from '@/api/cache/drafts'
-import { computed, onMounted, reactive, shallowRef } from 'vue'
+import { computed, onMounted, onScopeDispose, reactive, shallowRef } from 'vue'
 import { motion } from 'motion-v'
 
 import { adminBillingApi } from '@/api/adminBilling'
@@ -9,8 +9,11 @@ import InlineNotice from '@/components/common/InlineNotice.vue'
 import TxbAmountField from '@/components/common/TxbAmountField.vue'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { localizedError, useI18n } from '@/i18n'
+import { createLatestRequest } from '@/utils/latestRequest'
 import { formatDateTime, moneyFromTxbInput, txbInputFromMinor } from '@/utils/format'
 
+const latest = createLatestRequest()
+let disposed = false
 const maximumInt64Minor = '9223372036854775807'
 const draft = reactive({ minimum: '', maximum: '' })
 const loading = shallowRef(true)
@@ -34,6 +37,8 @@ const canSave = computed(() => {
 })
 
 async function load(): Promise<void> {
+  if (disposed || busy.value) return
+  const ticket = latest.begin()
   loading.value = !restoreCached<Awaited<ReturnType<typeof adminBillingApi.getAmountLimits>>>('/api/v1/admin/billing/amount-limits', response => {
     draft.minimum = txbInputFromMinor(response.minimum.minor)
     draft.maximum = txbInputFromMinor(response.maximum.minor)
@@ -44,42 +49,46 @@ async function load(): Promise<void> {
   const previous = { ...draft }
   try {
     const response = await adminBillingApi.getAmountLimits()
+    if (!latest.isCurrent(ticket)) return
     mergeRefreshedDraft(draft, {
       minimum: txbInputFromMinor(response.minimum.minor),
       maximum: txbInputFromMinor(response.maximum.minor),
     }, previous)
     updatedAt.value = response.updatedAt
   } catch (caught) {
-    error.value = localizedError(caught, 'errors.adminLoad')
+    if (latest.isCurrent(ticket)) error.value = localizedError(caught, 'errors.adminLoad')
   } finally {
-    loading.value = false
+    if (latest.isCurrent(ticket)) loading.value = false
   }
 }
 
 async function save(): Promise<boolean> {
-  if (busy.value || loading.value) return false
+  if (disposed || busy.value || loading.value) return false
   if (!canSave.value) { error.value = t('adminSettings.amountLimits.rangeInvalid'); return false }
+  const ticket = latest.begin()
   busy.value = true
   error.value = null
   saved.value = false
   try {
     const limits = await adminBillingApi.updateAmountLimits(minimumMinor.value, maximumMinor.value)
+    if (!latest.isCurrent(ticket)) return false
     draft.minimum = txbInputFromMinor(limits.minimum.minor)
     draft.maximum = txbInputFromMinor(limits.maximum.minor)
     updatedAt.value = limits.updatedAt
     saved.value = true
     return true
   } catch (caught) {
-    error.value = localizedError(caught, 'errors.adminAction')
+    if (latest.isCurrent(ticket)) error.value = localizedError(caught, 'errors.adminAction')
     return false
   } finally {
-    busy.value = false
+    if (latest.isCurrent(ticket)) busy.value = false
   }
 }
 
 defineExpose({ save, loading })
 
 onMounted(() => void load())
+onScopeDispose(() => { disposed = true; latest.dispose() })
 </script>
 
 <template>

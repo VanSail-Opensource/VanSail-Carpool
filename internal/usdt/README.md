@@ -154,3 +154,23 @@ cannot silently become an unwatched alias or duplicate another collector.
 The soak compares retained heap after two stopped-worker garbage collections, so JSON/HTTP `sync.Pool` victim buffers are released consistently before sampling. The 8 MiB retained-growth limit, 224 MiB peak RSS limit, goroutine bound and 256 MiB no-swap container remain unchanged. In Actions run 42465600146, a single-GC sample was 8,957,392 bytes while the final collected profile retained about 513 KiB and peak RSS stayed 72,990,720 bytes; allocation stacks were dominated by synthetic JSON RPC generation/decoding. This is a measurement correction, not a looser memory budget.
 
 `config_secrets.go` resolves masked URLs by canonical registry network and endpoint ID before reusing API keys. An inherited key requires exact unchanged RPC, WS and indexer destinations, including stored inactive destinations. Rejected merges leave drafts untouched, never persist and never wake collectors. `config_secrets_test.go` covers host/path/query retargets, WS/indexer changes, cross-network ID reuse, explicit fresh keys and readiness preservation. Existing configuration decoding and validation still precede all queued calls; no new queue or persistence is introduced.
+
+Scanner readiness and history advancement require complete response evidence.
+An absent Aptos processor version, missing Solana signature execution metadata,
+or absent TRON contract execution result preserves the cursor for retry.
+Required history/account collections distinguish an explicit empty array from
+missing or null data, so an incomplete successful HTTP envelope cannot skip
+deposits. `scanner_metadata_test.go` and `scanner_pages_test.go` cover these
+boundaries and retain valid zero-version baselines, empty pages and explicit
+failed-transaction handling. This follows the documented
+[Solana signature fields](https://solana.com/docs/rpc/http/getsignaturesforaddress)
+and [TRON solidified receipt semantics](https://developers.tron.network/reference/gettransactioninfobyid-1).
+
+`solana_signature.go` validates the documented null/string/tagged-object error
+forms before treating history as failed. Malformed booleans, numbers and empty
+variants cannot skip a payment. TRON contract result `SUCCESS=1` is distinct
+from the unexecuted `DEFAULT=0`; the top-level `SUCESS=0` may be omitted.
+The [protocol definitions](https://github.com/tronprotocol/protocol/blob/master/core/Tron.proto)
+and [execution result table](https://developers.tron.network/docs/errors) govern
+these checks, including retained explicit VM failures. The hosted scanner and
+TRON fixtures cover both omitted and explicit top-level success.

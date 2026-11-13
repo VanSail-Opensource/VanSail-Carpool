@@ -14,7 +14,7 @@ import (
 // liveRetryRepository repairs frozen snapshot rows and appends durable jobs.
 type liveRetryRepository interface {
 	IPLiveSnapshotByID(context.Context, string) (LiveDetails, string, error)
-	UpdateIPLiveSnapshot(context.Context, string, LiveDetails) error
+	UpdateIPLiveSnapshot(context.Context, string, LiveDetails) (string, error)
 	EnqueueOutbox(context.Context, string, string, time.Time) error
 }
 
@@ -104,7 +104,7 @@ func (s *LiveService) HandleLiveRetryOutbox(ctx context.Context, job model.Outbo
 	if err != nil {
 		return err
 	}
-	if err := repository.UpdateIPLiveSnapshot(ctx, payload.SnapshotID, repaired); err != nil {
+	if _, err := repository.UpdateIPLiveSnapshot(ctx, payload.SnapshotID, repaired); err != nil {
 		if errors.Is(err, ErrRepairConflict) {
 			return nil
 		}

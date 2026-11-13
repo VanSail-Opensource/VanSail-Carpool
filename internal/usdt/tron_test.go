@@ -48,6 +48,14 @@ func TestTronConfirmedHistoryUsesSolidReceiptEvents(t *testing.T) {
 	if err != nil || len(batch.Transfers) != 1 || batch.Transfers[0].Amount != "1.000000" || !batch.CaughtUp {
 		t.Fatalf("batch=%+v %v", batch, err)
 	}
+	for _, result := range []string{"", "SUCESS", "SUCCESS"} {
+		r.Result = result
+		transfers, err := decodeTronReceipt(spec, r, hash, []string{wallet})
+		if err != nil || len(transfers) != 1 || transfers[0].Amount != "1.000000" {
+			t.Fatal("explicit/default protobuf success lost payment", result, transfers, err)
+		}
+	}
+	r.Result = ""
 	r.Receipt.Result = "REVERT"
 	transfers, err := decodeTronReceipt(spec, r, hash, []string{wallet})
 	if err != nil || len(transfers) != 0 {

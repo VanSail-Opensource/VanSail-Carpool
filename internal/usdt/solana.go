@@ -112,6 +112,12 @@ func (s *scanner) scanSolana(ctx context.Context, cursor Cursor, owners []string
 	batch := Batch{Transfers: []Transfer{}}
 	reachedBaseline := false
 	for _, sig := range signatures {
+		// Missing metadata is unknown execution evidence, not a failed transfer
+		// or an old-history boundary that may safely advance the cursor.
+		failed, err := solanaExecutionFailed(sig.Err)
+		if sig.Signature == "" || sig.Slot == 0 || err != nil {
+			return Batch{}, ErrProof
+		}
 		if sig.Slot <= cur.Baseline && h.Last == "" {
 			reachedBaseline = true
 			break
@@ -119,7 +125,7 @@ func (s *scanner) scanSolana(ctx context.Context, cursor Cursor, owners []string
 		if sig.Confirmation != "finalized" {
 			return Batch{}, ErrProof
 		}
-		if string(sig.Err) != "null" {
+		if failed {
 			continue
 		}
 		var tx solTransaction
