@@ -12,8 +12,6 @@ import (
 
 // CreateBrowserAccessLink stores a short-lived, hashed browser handoff reference.
 func (s *Store) CreateBrowserAccessLink(ctx context.Context, hash []byte, userID, returnTo string, expires time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
 	_, err := s.db.ExecContext(ctx, `INSERT INTO browser_access_links(token_hash,user_id,return_to,expires_at) VALUES($1,$2,$3,$4)`, hash, userID, returnTo, stamp(expires))
 	return err
 }

@@ -86,7 +86,7 @@ func TestManagedRoutingSupportsProductionContextsWithoutWeakeningCycles(t *testi
 			if _, err = f.service.SaveConfiguration(ctx, profile); err != nil {
 				t.Fatal(err)
 			}
-			peer, err := f.service.SaveNode(ctx, xnode.Node{Name: "Production-style peer", Enabled: true, Multiplier: 1, ConfigID: profile.ID}, xnode.NodeSettings{})
+			peer, err := f.service.SaveNode(ctx, xnode.Node{Name: "Production-style peer", Enabled: true, ConfigID: profile.ID}, xnode.NodeSettings{})
 			if err != nil {
 				t.Fatal(err)
 			}

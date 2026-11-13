@@ -52,13 +52,13 @@ func (s *Service) Global(ctx context.Context) (GlobalConfig, error) {
 func (s *Service) Nodes(ctx context.Context) ([]Node, error) {
 	nodes, err := s.repo.XNodeNodes(ctx)
 	for i := range nodes {
-		nodes[i].Multiplier, nodes[i].MultiplierFP = 1, MultiplierScale
+		nodes[i].MultiplierFP = MultiplierScale
 	}
 	return nodes, err
 }
 func (s *Service) Node(ctx context.Context, id string) (Node, NodeSettings, error) {
 	node, err := s.repo.XNodeNode(ctx, id)
-	node.Multiplier, node.MultiplierFP = 1, MultiplierScale
+	node.MultiplierFP = MultiplierScale
 	if err != nil {
 		return node, NodeSettings{}, err
 	}
@@ -73,7 +73,6 @@ func (s *Service) Node(ctx context.Context, id string) (Node, NodeSettings, erro
 }
 
 func normalizeNodeSettings(settings *NodeSettings) {
-	normalizeNodeDNS(settings)
 	if settings.DDNS == nil {
 		settings.DDNS = []wire.DDNSJob{}
 	}

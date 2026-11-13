@@ -2,7 +2,6 @@ package xnode
 
 import (
 	"context"
-	"encoding/json"
 )
 
 // DDNSHostBinding stores panel-owned references separately from agent discovery.
@@ -11,28 +10,6 @@ type DDNSHostBinding struct {
 	IPv4HostIDs  []string `json:"ipv4HostIds,omitempty"`
 	IPv6HostIDs  []string `json:"ipv6HostIds,omitempty"`
 	ConfiguredBy string   `json:"-"`
-}
-
-// UnmarshalJSON accepts the former single-host fields during rolling upgrades.
-func (b *DDNSHostBinding) UnmarshalJSON(data []byte) error {
-	var input struct {
-		IPv4HostIDs []string `json:"ipv4HostIds"`
-		IPv6HostIDs []string `json:"ipv6HostIds"`
-		IPv4HostID  string   `json:"ipv4HostId"`
-		IPv6HostID  string   `json:"ipv6HostId"`
-	}
-	if err := json.Unmarshal(data, &input); err != nil {
-		return err
-	}
-	b.IPv4HostIDs = append([]string(nil), input.IPv4HostIDs...)
-	b.IPv6HostIDs = append([]string(nil), input.IPv6HostIDs...)
-	if len(b.IPv4HostIDs) == 0 && input.IPv4HostID != "" {
-		b.IPv4HostIDs = []string{input.IPv4HostID}
-	}
-	if len(b.IPv6HostIDs) == 0 && input.IPv6HostID != "" {
-		b.IPv6HostIDs = []string{input.IPv6HostID}
-	}
-	return nil
 }
 
 type ddnsBindingReader interface {

@@ -70,8 +70,6 @@ func saveLiveStageTx(ctx context.Context, tx *sql.Tx, id string, stage iplookup.
 
 // MarkIPLookupLiveAttempt commits before the first actual queued external request.
 func (s *Store) MarkIPLookupLiveAttempt(ctx context.Context, id string) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
 	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_reports SET live_state_json=jsonb_set((live_state_json)::jsonb,'{attempted}',('true')::jsonb,true)::text WHERE id=$1 AND status='processing' AND (CASE ((live_state_json)::jsonb #> '{status}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (live_state_json)::jsonb #>> '{status}' END)='processing'
 		AND ((COALESCE(lease_owner,'')='' AND $2='') OR (lease_owner=$2 AND `+purchaseTimestampOrderSQL("lease_expires_at")+`>`+databaseClockTimestampOrderSQL+`))`, id, iplookup.RunLeaseOwner(ctx))
 	if err != nil {

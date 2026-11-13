@@ -21,7 +21,7 @@ func TestDecodeNodeSettingsIgnoresRetiredStoredFields(t *testing.T) {
 	if err != nil {
 		t.Fatalf("decodeNodeSettings(retired fields) = %v", err)
 	}
-	if !settings.LegacyDNSLoopback || settings.DNS.Mode != "xray" || !settings.Firewall.Enabled ||
+	if len(settings.dnsFallbackServers) != 1 || settings.dnsFallbackServers[0] != "127.0.0.1" || !settings.Firewall.Enabled ||
 		settings.Certificates["primary"].Provider != "acme" {
 		t.Fatalf("known settings were lost: %+v", settings)
 	}

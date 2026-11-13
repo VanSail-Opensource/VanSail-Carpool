@@ -25,6 +25,7 @@ const firewall = computed({ get: () => model.value.firewall ?? { enabled: false,
 <template>
   <div class="xnode-operational">
     <div v-if="discovery.error.value" role="alert"><p>{{ discovery.error.value }}</p><UButton type="button" :label="t('common.tryAgain')" variant="link" @click="discovery.load" /></div>
+    <UAlert v-if="!ddnsValid" color="warning" variant="soft" :title="t('nodeForms.ddnsInvalid')" />
     <details><summary>{{ t('xnode.ddns') }}</summary><XNodeDDNSSettings v-model="model" :hosts="hosts" :providers="discovery.providers.value" :providers-loading="discovery.loading.value" @valid="ddnsValid = $event" /></details>
     <details><summary>{{ t('xnode.certificates') }}</summary><XNodeCertificateSettings v-model="model" :inbounds="inbounds" :providers="discovery.providers.value" :providers-loading="discovery.loading.value || !!discovery.error.value" :node-id="nodeId" :revision="revision" :metric="metric" :saved="certificatesSaved" :saved-profile-ids="savedCertificateIds" @valid="certificatesValid = $event" /></details>
     <details><summary>{{ t('xnode.dns') }}</summary><XNodeDNSSettings v-model="dns" /></details>

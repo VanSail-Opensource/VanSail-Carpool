@@ -45,7 +45,6 @@
 
   .admin-list-row--user,
   .admin-list-row--payment,
-  .admin-list-row--entitlement,
   .admin-list-row--refund {
     grid-template-columns: auto minmax(0, 1fr);
     align-items: start;
@@ -55,19 +54,15 @@
 
   .admin-list-row--user > strong,
   .admin-list-row--payment > strong,
-  .admin-list-row--entitlement > strong,
   .admin-list-row--refund > strong,
   .admin-list-row--user > .status-badge,
   .admin-list-row--payment > .status-badge,
-  .admin-list-row--entitlement > .status-badge,
   .admin-list-row--refund > .status-badge,
   .admin-list-row--user > .row-actions,
   .admin-list-row--payment > .row-actions,
-  .admin-list-row--entitlement > .row-actions,
   .admin-list-row--refund > .row-actions,
   .admin-list-row--user > .button,
   .admin-list-row--payment > .button,
-  .admin-list-row--entitlement > .button,
   .admin-list-row--refund > .button {
     grid-column: 2;
     min-width: 0;
@@ -75,7 +70,6 @@
 
   .admin-list-row--user > strong,
   .admin-list-row--payment > strong,
-  .admin-list-row--entitlement > strong,
   .admin-list-row--refund > strong {
     margin-top: 0.1rem;
     font-variant-numeric: tabular-nums;
@@ -84,14 +78,12 @@
 
   .admin-list-row--user > .status-badge,
   .admin-list-row--payment > .status-badge,
-  .admin-list-row--entitlement > .status-badge,
   .admin-list-row--refund > .status-badge {
     justify-self: start;
   }
 
   .admin-list-row--user > .button,
   .admin-list-row--payment > .button,
-  .admin-list-row--entitlement > .button,
   .admin-list-row--refund > .button {
     width: 100%;
   }

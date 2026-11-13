@@ -23,10 +23,11 @@ raffle, IP lookup and Telegram deduction categories, along with retained retired
 financial evidence. The contract regression rejects unknown ledger categories
 without discarding known historical transactions.
 
-Retired node traffic multiplier response properties remain constant 1. The
-generated shapes and `responses.test.ts` reject obsolete nonconstant values in
-current node/catalog responses. Their separate write contract accepts arbitrary
-ignored legacy input, while the node editor omits that property entirely.
+Native node responses omit the retired traffic multiplier. The node write schema
+accepts only editable identity, name, enablement, country/provider and configuration
+fields. Retired multiplier and server-managed revisions, timestamps and agent
+bindings are rejected; frontend editors no longer echo them. Historical catalog
+and statistics accounting metadata remains a separate contract.
 
 - `activity.ts` defines instant and raffle administration, quantized reward ranges, settled outcomes, and forecast responses.
 - `commerce.ts` defines Emby and payment responses, including discovered crypto currency/network metadata and pending crypto orders.

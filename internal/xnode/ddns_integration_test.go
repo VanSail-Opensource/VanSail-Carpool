@@ -41,7 +41,7 @@ func TestDDNSAcknowledgmentStagesBypassBeforeFreeRoutingRedistribution(t *testin
 	if err != nil {
 		t.Fatal(err)
 	}
-	offline, err := f.service.SaveNode(ctx, xnode.Node{Name: "Offline", Enabled: true, Multiplier: 1, ConfigID: f.node.ConfigID}, xnode.NodeSettings{})
+	offline, err := f.service.SaveNode(ctx, xnode.Node{Name: "Offline", Enabled: true, ConfigID: f.node.ConfigID}, xnode.NodeSettings{})
 	if err != nil {
 		t.Fatal(err)
 	}

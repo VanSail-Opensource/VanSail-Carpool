@@ -60,7 +60,6 @@
 
   .admin-list-row--user,
   .admin-list-row--payment,
-  .admin-list-row--entitlement,
   .admin-list-row--refund {
     grid-template-columns: auto minmax(240px, 1fr) auto auto auto;
   }

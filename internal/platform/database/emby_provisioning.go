@@ -58,8 +58,6 @@ func (s *Store) retryAttempt_RetryEmbyProvisioning(ctx context.Context, accountI
 // BeginEmbyProvisioning leases the account state to a kind-specific outbox handler.
 
 func (s *Store) BeginEmbyProvisioning(ctx context.Context, accountID string, now time.Time) (domain.ProvisioningRecord, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
 	if _, err := s.db.ExecContext(ctx, `UPDATE emby_accounts SET status='provisioning',updated_at=$1 WHERE id=$2 AND status='queued'`, stamp(now), accountID); err != nil {
 		return domain.ProvisioningRecord{}, fmt.Errorf("begin Emby provisioning: %w", err)
 	}

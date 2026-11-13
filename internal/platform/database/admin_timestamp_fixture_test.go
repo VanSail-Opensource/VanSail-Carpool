@@ -15,7 +15,9 @@ type adminTimestampFixture struct {
 func newAdminTimestampFixture(t *testing.T) adminTimestampFixture {
 	t.Helper()
 	store := newTestStore(t)
-	base := time.Date(2026, 11, 13, 12, 0, 0, 0, time.UTC)
+	// Fresh migrations record real-time audit events. Place this fixture after
+	// those completed writes while retaining exact whole-second boundaries.
+	base := time.Now().UTC().Truncate(time.Second).Add(time.Second)
 	times := []time.Time{base.Add(time.Second), base.Add(time.Nanosecond), base, base.Add(500 * time.Millisecond), base.Add(500 * time.Millisecond), base.Add(-time.Nanosecond)}
 	var users, ids []string
 	for index := range times {

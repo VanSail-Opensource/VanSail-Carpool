@@ -8,7 +8,7 @@ import XNodeAccessGroups from './XNodeAccessGroups.vue'
 const api = vi.hoisted(() => ({ saveConfiguration: vi.fn(), saveSnippet: vi.fn(), saveGroup: vi.fn(), validate: vi.fn() }))
 vi.mock('@/api/xnode', () => ({ xnodeApi: api }))
 vi.mock('@/i18n', async (importOriginal) => ({ ...await importOriginal<typeof import('@/i18n')>(), useI18n: () => ({ t: (key: string) => key }) }))
-const Modal = { name: 'ModalStub', props: { open: Boolean, close: Boolean, dismissible: Boolean }, emits: ['update:open'], template: '<section v-if="open"><slot name="body" /></section>' }
+const Modal = { name: 'ModalStub', props: { open: Boolean, close: Boolean, dismissible: Boolean }, emits: ['update:open'], template: '<section v-if="open"><slot name="body" /><slot name="footer" /></section>' }
 const Button = { name: 'ButtonStub', props: { label: String, icon: String, disabled: Boolean, loading: Boolean, type: String }, emits: ['click'], template: '<div @click="!disabled && $emit(\'click\')">{{ label }}</div>' }
 const Input = { name: 'InputStub', props: { modelValue: String, disabled: Boolean }, emits: ['update:modelValue'], template: '<div />' }
 const Field = { template: '<div><slot /></div>' }
@@ -31,6 +31,7 @@ describe('native editor submit snapshots', () => {
     await wrapper.get('form').trigger('submit')
     expect(wrapper.findComponent(Modal).props('dismissible')).toBe(false)
     expect(wrapper.findComponent(Input).props('disabled')).toBe(true)
+    expect(wrapper.findAllComponents(Button).find(item => item.props('type') === 'submit')!.props('disabled')).toBe(true)
     wrapper.findComponent(Modal).vm.$emit('update:open', false)
     wrapper.findComponent(Input).vm.$emit('update:modelValue', 'Late change')
     wrapper.findComponent(Json).vm.$emit('update:modelValue', [{ tag: 'late-change' }])

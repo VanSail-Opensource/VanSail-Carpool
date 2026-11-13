@@ -20,6 +20,7 @@ export function useAdminIPLookup() {
   const settings = reactive<IPLookupAdminSettings>(emptySettings())
   const combos = shallowRef<Combo[]>([])
   const loading = shallowRef(true)
+  const loaded = shallowRef(false)
   const busy = shallowRef(false)
   const errorCode = shallowRef('')
   const saved = shallowRef(false)
@@ -31,8 +32,8 @@ export function useAdminIPLookup() {
     if (disposed || busy.value) return
     const current = ++version
     const owner = session.user?.id
-    loading.value = true
-    saved.value = false
+    loading.value = true; loaded.value = false
+    saved.value = false; errorCode.value = ''
     try {
       const [value, catalog] = await Promise.all([ipLookupApi.settings(), api.getAdminResource<{ items: Combo[] }>('combos')])
       if (disposed || current !== version || owner !== session.user?.id) return
@@ -40,13 +41,14 @@ export function useAdminIPLookup() {
       normalizeRetry(settings)
       settings.credentials = Object.fromEntries([...value.providers.map(provider => provider.id), 'cloudflare_radar'].map(id => [id, { value: '', clear: false }]))
       combos.value = catalog.items
+      loaded.value = true
       errorCode.value = ''
     } catch (error) { if (!disposed && current === version && owner === session.user?.id) setError(error) }
     finally { if (!disposed && current === version && owner === session.user?.id) loading.value = false }
   }
 
   async function save(): Promise<void> {
-    if (disposed || busy.value || loading.value) return
+    if (disposed || busy.value || loading.value || !loaded.value) return
     busy.value = true
     saved.value = false
     errorCode.value = ''
@@ -67,11 +69,12 @@ export function useAdminIPLookup() {
   function clear(): void {
     Object.assign(settings, emptySettings())
     combos.value = []
+    loaded.value = false
     saved.value = false
     busy.value = false
     errorCode.value = ''
   }
   watch(() => session.user?.id, () => { clear(); void load() }, { immediate: true })
   onScopeDispose(() => { disposed = true; version++; clear() })
-  return { settings, combos, loading, busy, errorCode, saved, save, load }
+  return { settings, combos, loading, loaded, busy, errorCode, saved, save, load }
 }

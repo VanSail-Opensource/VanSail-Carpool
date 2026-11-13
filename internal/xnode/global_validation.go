@@ -12,7 +12,6 @@ import (
 
 func prepareGlobalChange(previous, next GlobalConfig) (GlobalConfig, error) {
 	next = cloneGlobal(next)
-	next.Telemetry.IncludeActiveIPs = true
 	if next.AutomaticWhitelist == nil {
 		next.AutomaticWhitelist = previous.AutomaticWhitelist
 	}

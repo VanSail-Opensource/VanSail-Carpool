@@ -11,11 +11,16 @@ func (m *Master) rotateEnrollment(ctx context.Context, id string, hash []byte) e
 }
 
 func (m *Master) rotateEnrollmentAs(ctx context.Context, id string, hash []byte, actor string) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	release, err := m.lockEnrollment(ctx, id)
+	if err != nil {
+		return err
+	}
+	defer release()
 	if err := m.service.persistEnrollment(ctx, actor, id, hash); err != nil {
 		return err
 	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.disconnectPeerLocked(id)
 	return nil
 }
@@ -43,11 +48,17 @@ func (m *Master) deleteNode(ctx context.Context, id string) error {
 }
 
 func (m *Master) deleteNodeAs(ctx context.Context, id, actor string) error {
-	// Share registration's lock so a handshake cannot join between the drain
+	// Share registration's node lock so a handshake cannot join between the drain
 	// check and the durable deletion. A later handshake rechecks its token.
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if m.peers[id] != nil {
+	release, err := m.lockEnrollment(ctx, id)
+	if err != nil {
+		return err
+	}
+	defer release()
+	m.mu.RLock()
+	connected := m.peers[id] != nil
+	m.mu.RUnlock()
+	if connected {
 		return fmt.Errorf("%w: enrolled node must be drained before deletion", ErrConflict)
 	}
 	return m.service.persistNodeDeletion(ctx, actor, id)

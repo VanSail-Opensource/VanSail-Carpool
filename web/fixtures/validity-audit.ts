@@ -6,7 +6,6 @@ import type { AdminEntitlement } from '@/api/types'
 import { setExperience } from '@/utils/experience'
 import { initializeBrowserTheme, setBrowserTheme } from '@/browser/theme'
 import { setLocale, t } from '@/i18n'
-import { effectivePurchaseStatus } from '@/utils/purchaseValidity'
 import ValidityAudit from './ValidityAudit.vue'
 import '@/styles/main.css'
 import '@/browser/styles.css'
@@ -109,13 +108,11 @@ window.fetch = async (input, init) => {
   }
   if (path.endsWith('/automatic-renewal')) return json({ enabled: false, eligible: false, ineligibleReason: 'unavailable' })
   if (path.endsWith('/refund/eligibility')) return json({ eligible: false })
-  const filter = url.searchParams.get('status')
   let value: unknown = { items: [] }
   if (path.endsWith('/dashboard')) value = { activePurchase: items[0], queuedPurchase: null, balance: money('2500'), user: { id: '99101', role: 'member' }, statistics: null, subscriptionUrl: null, statisticsStale: false, statisticsWarning: '', autoRenewalFailure: null, fetchedAt: iso(0) }
   else if (path.endsWith('/catalog')) value = { combos: [], addons: [], nodes: [] }
-  else if (path.endsWith('/admin/entitlements')) value = { items: filter ? items.filter(item => effectivePurchaseStatus(item, Date.now()) === filter) : items, page: { nextCursor: null } }
   return json(value)
 }
-const app = createApp(ValidityAudit, { items, inventory: params.has('inventory'), profile: params.has('profile') })
+const app = createApp(ValidityAudit, { items, profile: params.has('profile') })
 app.config.globalProperties.$t = t
 app.use(createPinia()).use(createRouter({ history: createMemoryHistory(), routes: [{ path: '/:pathMatch(.*)*', component: ValidityAudit }] })).use(ui).mount('#app')

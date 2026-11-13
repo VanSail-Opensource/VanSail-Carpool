@@ -130,23 +130,6 @@
     "none": "暂无审计事件",
     "noneHint": "已接受或已发放的固定期限套餐会显示在这里。"
   },
-  "adminEntitlements": {
-    "title": "权益",
-    "copy": "查看当前与历史访问权限及其所属账户。",
-    "filter": "筛选权益",
-    "all": "全部状态",
-    "activating": "激活中",
-    "expired": "已过期",
-    "cancelled": "已取消",
-    "failed": "失败",
-    "loadMore": "加载更多权益",
-    "summary": "用户 {user} / {from} 至 {to}",
-    "none": "当前视图暂无权益",
-    "noneHint": "已接受或已发放的固定期限套餐会显示在这里。",
-    "cancelTitle": "取消此权益？",
-    "cancelDescription": "已收取的 TXB 金额会退回，活跃访问将通过同步任务撤销。",
-    "cancelEntitlement": "取消权益"
-  },
   "adminSection": {
     "loadingContent": "正在加载内容。",
     "unavailable": "此分区暂时不可用。",

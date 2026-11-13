@@ -4,7 +4,7 @@ import { xnodeApi } from '@/api/xnode'
 import { localizedError, useI18n } from '@/i18n'
 import { createLatestRequest } from '@/utils/latestRequest'
 
-const props = defineProps<{ provider: string }>()
+const props = defineProps<{ provider: string; validationError?: string }>()
 const model = defineModel<string>({ required: true })
 const { t } = useI18n()
 const zones = shallowRef<{ id: string; name: string }[]>([])
@@ -33,8 +33,9 @@ onScopeDispose(() => { controller?.abort(); latest.dispose() })
 </script>
 
 <template>
-  <UFormField :label="t('xnode.zone')" :description="t('nodeForms.zoneNameHint')">
-    <USelectMenu v-model="model" :items="items" value-key="value" :loading="loading" :disabled="!provider" :search-input="{ placeholder: t('nodeForms.discoverySearch') }" class="w-full" :ui="{ value: 'whitespace-normal break-all', itemLabel: 'whitespace-normal break-all' }">
+  <UFormField :label="t('xnode.zone')" :description="t('nodeForms.zoneNameHint')" :error="validationError">
+    <UInput v-if="!loading && (!supported || !!error || !zones.length)" v-model="model" :disabled="!provider" class="w-full" />
+    <USelectMenu v-else v-model="model" :items="items" value-key="value" :loading="loading" :disabled="!provider" :search-input="{ placeholder: t('nodeForms.discoverySearch') }" class="w-full" :ui="{ value: 'whitespace-normal break-all', itemLabel: 'whitespace-normal break-all' }">
       <template #empty>{{ t(loading ? 'common.loading' : 'nodeForms.zonesEmpty') }}</template>
     </USelectMenu>
     <p v-if="error" class="text-sm text-error" role="alert">{{ error }}</p>

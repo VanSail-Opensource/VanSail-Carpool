@@ -18,30 +18,3 @@ get:
     '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
     '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
     '404': { $ref: '../openapi.yaml#/components/responses/NotFound' }
-put:
-  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
-  tags: [Admin, Database Administration]
-  operationId: updateAdminDatabaseRowCompatibility
-  summary: Apply a previously reviewed update through the compatibility route
-  description: One-step writes are refused. The review hash and typed confirmation must match a live review.
-  parameters:
-    - $ref: '../openapi.yaml#/components/parameters/DatabaseTableName'
-  requestBody:
-    required: true
-    content:
-      application/json:
-        schema:
-          $ref: '../openapi.yaml#/components/schemas/DatabaseCompatibilityUpdate'
-  responses:
-    '200':
-      description: Updated typed row.
-      content:
-        application/json:
-          schema:
-            $ref: '../openapi.yaml#/components/schemas/DatabaseRow'
-    '400': { $ref: '../openapi.yaml#/components/responses/BadRequest' }
-    '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
-    '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
-    '404': { $ref: '../openapi.yaml#/components/responses/NotFound' }
-    '409': { $ref: '../openapi.yaml#/components/responses/Conflict' }
-    '422': { $ref: '../openapi.yaml#/components/responses/Unprocessable' }

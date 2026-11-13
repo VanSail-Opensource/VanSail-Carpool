@@ -7,17 +7,15 @@ import { formatDate, formatBytes } from '@/utils/format'
 import MetricLineChart from '@/components/common/MetricLineChart.vue'
 import XNodeMetricSection from './XNodeMetricSection.vue'
 import { metricLabel } from './metricRows'
+import { nodeStatus } from './nodeStatus'
 const props = defineProps<{ node: XNodeMetrics['nodes'][number]; name: string; cpu: MetricSample[]; memory: MetricSample[] }>()
 const emit = defineEmits<{ logs: [] }>()
 const { t } = useI18n()
 const expanded = shallowRef(false)
 const status = computed(() => {
-  const node = props.node
-  if (node.stale) return { label: 'xnode.stale', color: 'neutral' as const }
-  if (!node.connected || !node.ready) return { label: 'xnode.offline', color: 'error' as const }
-  if (!node.synchronized) return { label: 'xnode.degraded', color: 'warning' as const }
-  if (!node.telemetryAvailable) return { label: 'xnode.metricsUnavailable', color: 'neutral' as const }
-  return { label: 'xnode.online', color: 'success' as const }
+  const state = nodeStatus(props.node)
+  return state.label === 'xnode.online' && !props.node.telemetryAvailable
+    ? { label: 'xnode.metricsUnavailable', color: 'neutral' as const } : state
 })
 const fields = computed(() => expanded.value ? Object.entries(props.node.machine ?? {}) : [])
 const rate = (value?: number) => t('statistics.perSecond', { value: formatBytes(value ?? 0) })

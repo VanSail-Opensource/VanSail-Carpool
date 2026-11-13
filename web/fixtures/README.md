@@ -50,11 +50,9 @@ All preview/save operations are constructed; no credentials or external requests
 are generated. Client diagnostics demonstrate the GUI; hosted renderer regressions
 establish adapter behavior against pinned upstream documentation.
 
-The X-Node audit's `legacy-multiplier` parameter injects an obsolete 1.25 value
-directly into its constructed node data. The list and editor must display no
-multiplier control or badge, and `window.__xnodeAudit.writes` must omit that field
-after saving. Normal fixtures use the compatibility value 1. Existing loading,
-read/save failure, empty, Chinese and light/dark flags apply to the same flow.
+The X-Node fixture uses the current multiplier-free node contract. Existing
+loading, read/save failure, empty, Chinese and light/dark flags apply to that
+flow; submitted node bodies contain only editable fields.
 
 `certificateFixture.ts` augments the X-Node audit with `certificates` for desired
 profiles, a failed attempt and a still-serving certificate. Add `certificate-dns`,
@@ -85,9 +83,9 @@ TCP/UDP/SSH intervals, range-to-one and range-to-range forwarding. Combine with
 `slow`, `node-load-error`, `node-save-error`, `empty`, and `zh` for state/localization
 audits; `window.__xnodeAudit.writes` records saves without contacting a backend.
 
-Add `legacy-dns` to inspect the DNS redirect-only form with a retained legacy
-resolver document. Toggling redirect retains its mode/upstream evidence for the
-server migration; the fixture's recorded writes expose the original values.
+The DNS editor fixture now exposes only the current redirect policy. Retired
+resolver-mode, upstream-list and public migration-state fixtures are removed;
+persisted historical migration is exercised by backend coverage.
 
 `UsageBreakdownAudit.vue`, `usage-breakdown-audit.ts`, `usage-breakdown-data.ts`
 and `usage-breakdown-audit.html` mount the real member panel and Unovis chart.
@@ -358,7 +356,7 @@ Settings entrance is opened. This checks the actual DIY route at mobile/desktop
 widths without production traffic; returning restores the settings receipt loader.
 
 `payg-audit.html`, `payg-audit.ts` and `PAYGAudit.vue` mount the actual Explore entrance and administrator squad editor with synthetic signed-transport-compatible data. Query flags select loading, empty, failure, locale, appearance and admin states; no real member data or upstream calls are used.
-`validity-audit.html` mounts the real member dashboard summary and admin entitlement tables with constructed raw lifecycle states. `boundary` expires an active term after 15 seconds; `inventory`, `zh`, `light` and `error` cover filters, themes and offline loading. `payg-audit.html?cards` mounts shared squad cards; PAYG fixtures include all profile types, missing profiles and long carriers, with an internal node-name sentinel that must never appear.
+`validity-audit.html` mounts the real member dashboard summary and admin entitlement tables with constructed raw lifecycle states. `boundary` expires an active term after 15 seconds; `profile`, `zh`, `light` and `error` cover the current profile, themes and offline loading. The retired standalone entitlement inventory is no longer mounted. `payg-audit.html?cards` mounts shared squad cards; PAYG fixtures include all profile types, missing profiles and long carriers, with an internal node-name sentinel that must never appear.
 
 PAYG fixtures record `paygAuditHaptics` through the real delegated feedback. `slow`, `empty` and `error` exercise the member traffic view without upstream traffic. Settings fixtures expose PAYG rows with `payg-empty` and `save-error` scenarios.
 
@@ -523,3 +521,33 @@ Database audit adds `defer-review`, `defer-apply` and `cached-metadata` states.
 and retires the workspace. Its row includes an exact numeric string beyond the
 JavaScript safe-integer range and a nullable BOOLEAN. The cached metadata mode
 releases an obsolete table list after a current review has begun.
+
+### X-Node availability and pressure audit
+
+`workspaceAvailabilityFixture.ts` extends the real X-Node workspace when
+`availability` is present. `unavailable=metrics` proves optional live-status
+failure does not block node configuration; `unavailable=groups&xnodeTab=groups`
+exercises independent navigation after required-inventory failure.
+`fail-after-first=metrics` preserves a clearly stale last observation.
+`long-names`, `missing-metrics` and `empty&slow-read=nodes&delay=1600` cover
+mobile wrapping, unknown status, loading and empty content. The chosen tab
+survives reload through `xnodeTab`; `window.__xnodeAvailability.calls` records
+exact dependency reads and its `recovered` flag releases constructed failures.
+`ddns&zones-empty` exposes direct zone entry and visible TTL/source validation.
+`browser-xnode-availability.mjs` adds hosted-only desktop/mobile scenarios to the
+existing recovery audit. These fixtures contain no real credentials or agents.
+
+The IP lookup admin fixture supports `admin&admin-load-error`: required settings
+fail until `window.__ipAudit.admin.recovered = true`; `settingsReads` records
+retry admission. The hosted browser audit verifies disabled defaults and a
+successful save only after recovery. Hourly admin fixtures retain their `slow`
+and `error` states for inspecting read/write exclusion.
+
+`catalogCreationFixture.ts` adds `creation-retry=configuration` or
+`creation-retry=snippet` with `xnodeTab=configurations`. Its first creation commits
+before returning a lost response, then the first recovery read fails. Renaming
+the retained draft keeps the same ID and produces a conflict; restoring the
+original definition reconciles the saved resource without advancing revision 0.
+`window.__catalogCreation` exposes constructed attempts/records for inspection.
+`browser-xnode-creation.mjs` exercises both flows at desktop/mobile sizes and
+checks that opening a subsequent creation editor produces a different ID.

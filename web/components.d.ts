@@ -35,7 +35,6 @@ declare module 'vue' {
     AdminEmbyConnection: typeof import('./src/components/admin/AdminEmbyConnection.vue')['default']
     AdminEntitlementEditor: typeof import('./src/components/admin/users/AdminEntitlementEditor.vue')['default']
     AdminEntitlementRefundDialog: typeof import('./src/components/admin/users/AdminEntitlementRefundDialog.vue')['default']
-    AdminEntitlementsPanel: typeof import('./src/components/admin/AdminEntitlementsPanel.vue')['default']
     AdminIPLookupPage: typeof import('./src/components/admin/ip-lookup/AdminIPLookupPage.vue')['default']
     AdminIPUnblockDialog: typeof import('./src/components/admin/users/AdminIPUnblockDialog.vue')['default']
     AdminLuckyDrawEditor: typeof import('./src/components/admin/activity/AdminLuckyDrawEditor.vue')['default']

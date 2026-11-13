@@ -31,8 +31,6 @@ func (s *Store) IPLookupRun(ctx context.Context, operationID string) (iplookup.R
 
 // SaveIPLookupProgress persists each attempt marker and completed normalized stage.
 func (s *Store) SaveIPLookupProgress(ctx context.Context, report iplookup.Report) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
 	raw, err := iplookup.EncodeReport(report)
 	if err != nil {
 		return err

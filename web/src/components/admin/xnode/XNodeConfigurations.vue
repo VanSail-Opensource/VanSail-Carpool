@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { computed, onScopeDispose, reactive, shallowRef, toRaw, watch } from 'vue'
+import { computed, onScopeDispose, reactive, shallowRef, toRaw, useId, watch } from 'vue'
 import { xnodeApi, type XNodeConfiguration, type XNodeSnippet } from '@/api/xnode'
 import { useI18n } from '@/i18n'
-import { cloneForEditing } from '@/utils/browserCompatibility'
+import { cloneForEditing, createUuid } from '@/utils/browserCompatibility'
 import XNodeJsonEditor from '@/components/common/JsonDocumentField.vue'
 import { shadowsocksConfiguration } from './configurationPresets'
+import { saveConfigurationWithRecovery, saveSnippetWithRecovery } from './catalogCreation'
 
 const props = defineProps<{ configurations: XNodeConfiguration[]; snippets: XNodeSnippet[]; busy: boolean; saveError?: string | null; perform: (action: () => Promise<unknown>) => Promise<boolean> }>()
 const { t } = useI18n()
+const formId = useId()
 const mode = shallowRef<'configuration' | 'snippet'>('configuration')
 const editing = shallowRef(false)
 const removingId = shallowRef<string | null>(null)
@@ -21,19 +23,23 @@ const validationNonce = shallowRef(0)
 const submitting = shallowRef(false)
 const blocked = computed(() => props.busy || submitting.value || removingId.value !== null)
 let active = true
+let creationId = ''
+const recovery = new globalThis.AbortController()
 let validationGeneration = 0
-onScopeDispose(() => { active = false; validationGeneration++ })
+onScopeDispose(() => { active = false; validationGeneration++; recovery.abort() })
 const snippetOptions = computed(() => props.snippets.map(item => ({ label: item.name, value: item.id })))
 const kinds = computed(() => ['outbound', 'routing'].map(value => ({ value, label: t(`xnode.snippetKinds.${value}`) })))
 function addShadowsocks() { if (blocked.value) return; editConfiguration(); document.value = shadowsocksConfiguration() }
 function editConfiguration(item?: XNodeConfiguration): void {
   if (!active || blocked.value) return
+  creationId = ''
   mode.value = 'configuration'; Object.assign(draft, { id: item?.id ?? '', name: item?.name ?? '', revision: item?.revision ?? 0, snippetIds: [...(item?.snippetIds ?? [])] })
   document.value = cloneForEditing(toRaw(item?.document ?? { inbounds: [], outbounds: [{ tag: 'direct', protocol: 'freedom' }, { UserOutbound: {} }], routing: { rules: [{ UserRouting: {} }] } }))
   editing.value = true; valid.value = true
 }
 function editSnippet(item?: XNodeSnippet): void {
   if (!active || blocked.value) return
+  creationId = ''
   mode.value = 'snippet'; Object.assign(draft, { id: item?.id ?? '', name: item?.name ?? '', revision: item?.revision ?? 0, kind: item?.kind ?? 'outbound' })
   document.value = cloneForEditing(toRaw(item?.document ?? [])); editing.value = true; valid.value = true
 }
@@ -55,9 +61,13 @@ async function save(): Promise<void> {
   const common = { id: draft.id, name: draft.name, revision: draft.revision }
   const configuration = { ...common, snippetIds: [...draft.snippetIds], document: value as Record<string, unknown> }
   const snippet = { ...common, kind: draft.kind, document: value as Record<string, unknown>[] }
-  const result = mode.value === 'configuration'
-    ? () => xnodeApi.saveConfiguration(configuration)
-    : () => xnodeApi.saveSnippet(snippet)
+  const selectedMode = mode.value
+  const result = () => {
+    const id = common.id || (creationId ||= createUuid())
+    return selectedMode === 'configuration'
+      ? saveConfigurationWithRecovery({ ...configuration, id }, recovery.signal)
+      : saveSnippetWithRecovery({ ...snippet, id }, recovery.signal)
+  }
   submitting.value = true
   try { if (await props.perform(result) && active) editing.value = false }
   finally { if (active) submitting.value = false }
@@ -80,7 +90,25 @@ async function removeConfiguration(item: XNodeConfiguration): Promise<void> {
     <p v-if="!snippets.length" class="text-muted">{{ t('xnode.noSnippets') }}</p>
     <div v-for="item in snippets" :key="item.id" class="configuration-row"><strong>{{ item.name }}</strong><span class="text-muted text-xs">{{ t(`xnode.snippetKinds.${item.kind}`) }}</span><UButton variant="ghost" color="neutral" icon="i-ph-pencil-simple-bold" :disabled="blocked" :aria-label="t('common.edit')" @click="editSnippet(item)" /></div>
     <UModal :open="editing" :dismissible="!blocked" :close="!blocked" @update:open="!blocked && (editing = $event)" :title="t(mode === 'configuration' ? 'xnode.configuration' : 'xnode.snippet')" :ui="{ content: 'max-w-5xl' }">
-      <template #body><form class="grid gap-4" @submit.prevent="save"><UAlert v-if="saveError" color="warning" :title="saveError" /><UFormField :label="t('common.name')"><UInput v-model="draft.name" :disabled="blocked" required class="w-full" /></UFormField><UFormField v-if="mode === 'snippet'" :label="t('xnode.snippetKind')"><USelect v-model="draft.kind" :disabled="blocked" :items="kinds" class="w-full" /></UFormField><UFormField v-else :label="t('xnode.sharedSnippets')"><USelectMenu v-model="draft.snippetIds" :disabled="blocked" value-key="value" multiple :items="snippetOptions" class="w-full" /></UFormField><XNodeJsonEditor v-model="document" :disabled="blocked" :label="t('xnode.document')" :rows="20" @valid="valid = $event" /><p v-if="mode === 'configuration'" class="text-xs text-muted">{{ t('xnode.userMarkersHint') }}</p><UProgress v-if="validating" /><div v-if="validationError" class="grid gap-2"><p>{{ validationError }}</p><UButton variant="ghost" :label="t('common.tryAgain')" :disabled="blocked" @click="!blocked && validationNonce++" /></div><pre v-if="validation?.detail" class="text-xs whitespace-pre-wrap break-words">{{ validation.detail }}</pre><UAlert v-if="validation" :color="validation.valid ? 'success' : 'warning'" variant="soft" :title="t(validation.valid ? validation.needsAgentValidation ? 'xnode.nodeValidationRequired' : 'xnode.configurationValid' : 'xnode.configurationInvalid')" /><div class="flex justify-end"><UButton type="submit" :loading="blocked" :disabled="blocked || !valid || validating || mode === 'configuration' && validation?.valid !== true" :label="t('common.save')" /></div></form></template>
+      <template #body>
+        <form :id="formId" class="grid gap-4" @submit.prevent="save">
+          <UFormField :label="t('common.name')"><UInput v-model="draft.name" :disabled="blocked" required class="w-full" /></UFormField>
+          <UFormField v-if="mode === 'snippet'" :label="t('xnode.snippetKind')"><USelect v-model="draft.kind" :disabled="blocked" :items="kinds" class="w-full" /></UFormField>
+          <UFormField v-else :label="t('xnode.sharedSnippets')"><USelectMenu v-model="draft.snippetIds" :disabled="blocked" value-key="value" multiple :items="snippetOptions" class="w-full" /></UFormField>
+          <XNodeJsonEditor v-model="document" :disabled="blocked" :label="t('xnode.document')" :rows="20" @valid="valid = $event" />
+          <p v-if="mode === 'configuration'" class="text-xs text-muted">{{ t('xnode.userMarkersHint') }}</p>
+          <UProgress v-if="validating" />
+          <div v-if="validationError" class="grid gap-2"><p>{{ validationError }}</p><UButton variant="ghost" :label="t('common.tryAgain')" :disabled="blocked" @click="!blocked && validationNonce++" /></div>
+          <pre v-if="validation?.detail" class="text-xs whitespace-pre-wrap break-words">{{ validation.detail }}</pre>
+          <UAlert v-if="validation" :color="validation.valid ? 'success' : 'warning'" variant="soft" :title="t(validation.valid ? validation.needsAgentValidation ? 'xnode.nodeValidationRequired' : 'xnode.configurationValid' : 'xnode.configurationInvalid')" />
+        </form>
+      </template>
+      <template #footer>
+        <div class="grid w-full gap-3">
+          <UAlert v-if="saveError" role="alert" color="warning" :title="saveError" />
+          <div class="flex justify-end"><UButton type="submit" :form="formId" :loading="blocked" :disabled="blocked || !valid || validating || mode === 'configuration' && validation?.valid !== true" :label="t('common.save')" /></div>
+        </div>
+      </template>
     </UModal>
   </div>
 </template>

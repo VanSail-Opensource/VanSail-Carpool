@@ -20,6 +20,8 @@ import { firewallRangesFixture } from './firewallRangesFixture'
 import { certificateFixture } from './certificateFixture'
 import { endpointOptionsFixture } from './endpointOptionsFixture'
 import { configurationDeletionFixture } from './configurationDeletionFixture'
+import { workspaceAvailabilityFixture } from './workspaceAvailabilityFixture'
+import { catalogCreationFixture } from './catalogCreationFixture'
 import '@/browser/styles.css'
 
 const params = new URLSearchParams(location.search)
@@ -30,8 +32,8 @@ const trace = { calls: [] as string[], copies: [] as string[], writes: [] as unk
 globalThis.addEventListener('catalog-quota-save', event => trace.writes.push((event as CustomEvent).detail))
 const stamp = '2026-10-15T00:00:00Z'
 const nodes: XNode[] = params.has('empty') ? [] : [
-  { removingAt: params.has('removing') ? new Date().toISOString() : undefined, id: '11111111-1111-4111-8111-111111111111', name: 'Amsterdam', countryCode: 'NL', providerName: 'Fixture', multiplier: params.has('legacy-multiplier') ? (1.25 as 1) : 1, enabled: true, configId: 'shared', agentId: 'fixture-agent-one', desiredRevision: 3, acceptedRevision: 3, appliedRevision: 3 },
-  { id: '22222222-2222-4222-8222-222222222222', name: 'Singapore', countryCode: 'SG', providerName: 'Fixture', multiplier: 1, enabled: true, configId: 'shared', desiredRevision: 0, acceptedRevision: 0, appliedRevision: 0 },
+  { removingAt: params.has('removing') ? new Date().toISOString() : undefined, id: '11111111-1111-4111-8111-111111111111', name: 'Amsterdam', countryCode: 'NL', providerName: 'Fixture', enabled: true, configId: 'shared', agentId: 'fixture-agent-one', desiredRevision: 3, acceptedRevision: 3, appliedRevision: 3 },
+  { id: '22222222-2222-4222-8222-222222222222', name: 'Singapore', countryCode: 'SG', providerName: 'Fixture', enabled: true, configId: 'shared', desiredRevision: 0, acceptedRevision: 0, appliedRevision: 0 },
 ]
 pricingAnalysisApi.data = async (_dataset, query, signal) => {
   trace.calls.push('node-cost:' + String(query?.node))
@@ -43,7 +45,7 @@ pricingAnalysisApi.data = async (_dataset, query, signal) => {
 }
 pricingAnalysisApi.cost = async body => { if (params.has('cost-save-error')) throw new ApiError(503, { code: 'PRICING_UNAVAILABLE', message: '' }); trace.writes.push({ pricingCost: structuredClone(body) }) }
 const configurations: XNodeConfiguration[] = params.has('empty') ? [] : [{ id: 'shared', name: 'Shared configuration', revision: 1, snippetIds: [], document: { inbounds: [{ tag: 'paid', port: 443, protocol: 'vless', settings: { decryption: 'none' } }], outbounds: [{ tag: 'direct', protocol: 'freedom' }, { UserOutbound: {} }], routing: { rules: [{ UserRouting: {} }] } } }]
-let global: XNodeGlobal = { geodataIntervalHours: params.has('legacy-schedule') ? undefined : 24, geodataCron: params.has('legacy-schedule') ? '0 * * * *' : '', sourceGeoIp: { enabled: false, selectors: ['geoip:cn'] }, blockedDomains: [], connectionLimit: 0, blockedPorts: '', torrent: { enabled: false }, telemetry: { sample_seconds: 1, report_seconds: 5, include_active_ips: false }, updates: { enabled: false }, providers: {} }
+let global: XNodeGlobal = { geodataIntervalHours: params.has('legacy-schedule') ? undefined : 24, geodataCron: params.has('legacy-schedule') ? '0 * * * *' : '', sourceGeoIp: { enabled: false, selectors: ['geoip:cn'] }, blockedDomains: [], connectionLimit: 0, blockedPorts: '', torrent: { enabled: false }, telemetry: { sample_seconds: 1, report_seconds: 5 }, updates: { enabled: false }, providers: {} }
 let latest: OperationReceipt | null = null
 const pause = async () => { if (params.has('slow')) await new Promise(resolve => setTimeout(resolve, Number(params.get('slow')) || 2000)) }
 async function check(name: string): Promise<void> {
@@ -65,13 +67,16 @@ xnodeApi.node = async id => {
   await check('node:' + id)
   if (params.has('node-load-error') && !nodeLoadFailed) { nodeLoadFailed = true; throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }) }
   if (params.has('stale-node')) await new Promise(resolve => setTimeout(resolve, id === nodes[0]?.id ? 1500 : 30))
-  return { node: nodes.find(node => node.id === id)!, settings: { ddns: [], certificates: params.has('no-certificates') ? {} : { primary: { provider: '', config: params.has('node-file') ? { cert_mode: 'file', cert_file: '/etc/x-node/tls/cert.pem', key_file: '/etc/x-node/tls/key.pem' } : { domain: 'proxy.example', cert_mode: 'http', auto_tls: true } } }, inboundCertificates: {}, dns: { mode: params.has('legacy-dns') ? 'smartdns' : 'xray', redirect: false, upstreams: [id === nodes[0]?.id ? '1.1.1.1' : '8.8.8.8'] }, firewall: params.has('firewall-ranges') ? firewallRangesFixture() : { enabled: false, protect: false, tcp_ports: [443], ssh_ports: [22], allow_prefixes: [], udp_ports: [] } } }
+  return { node: nodes.find(node => node.id === id)!, settings: { ddns: [], certificates: params.has('no-certificates') ? {} : { primary: { provider: '', config: params.has('node-file') ? { cert_mode: 'file', cert_file: '/etc/x-node/tls/cert.pem', key_file: '/etc/x-node/tls/key.pem' } : { domain: 'proxy.example', cert_mode: 'http', auto_tls: true } } }, inboundCertificates: {}, dns: { redirect: false }, firewall: params.has('firewall-ranges') ? firewallRangesFixture() : { enabled: false, protect: false, tcp_ports: [443], ssh_ports: [22], allow_prefixes: [], udp_ports: [] } } }
 }
 xnodeApi.saveNode = async (node, settings) => {
   await check('save-node')
   if (params.has('node-save-error')) throw new ApiError(422, { code: 'XNODE_INPUT_INVALID', message: '' })
   trace.writes.push(JSON.parse(JSON.stringify({ node, settings })))
-  return { ...nodes[0]!, ...node, id: node.id || 'fixture-created-node' }
+  const index = nodes.findIndex(value => value.id === node.id)
+  const saved: XNode = { ...nodes[index], id: node.id || 'fixture-created-node', name: node.name ?? '', enabled: node.enabled ?? true, configId: node.configId ?? '', countryCode: node.countryCode, providerName: node.providerName }
+  if (index < 0) nodes.push(saved); else nodes[index] = saved
+  return structuredClone(saved)
 }
 xnodeApi.configurations = async () => ({ items: structuredClone(configurations) })
 xnodeApi.snippets = async () => ({ items: [] })
@@ -161,7 +166,7 @@ if (params.has('ddns') || params.has('builtin-ddns')) {
   const originalNode = xnodeApi.node
   xnodeApi.node = async (id, signal) => {
     const value = await originalNode(id, signal)
-    value.settings.ddns = [{ id: 'primary', provider: 'cloudflare', zone: 'saved.example', name: 'node', ttl_seconds: 300 }]
+    value.settings.ddns = [{ id: 'primary', provider: 'cloudflare', zone: 'saved.example', name: 'node.saved.example', ipv4: 'auto', interface: 'eth0', ttl_seconds: 300 }]
     if (params.has('builtin-ddns')) {
       value.settings.ddns = [{ id: 'primary', provider: 'builtin:panel', zone: '', name: '', ipv4: params.has('ipv6-only') ? '' : 'auto', ipv6: params.has('ipv4-only') ? '' : 'auto', interface: 'eth0', interval_seconds: 300 }]
       value.settings.ddnsBindings = { primary: { ipv4HostIds: params.has('ipv6-only') ? [] : [id], ipv6HostIds: params.has('ipv4-only') ? [] : [id === nodes[0]?.id ? '33333333-3333-4333-8333-333333333333' : '44444444-4444-4444-8444-444444444444'] } }
@@ -213,7 +218,11 @@ firewallApi.bans = async (query = '', cursor = '') => {
 certificateFixture(params, trace, nodes)
 endpointOptionsFixture(params, trace, nodes, configurations)
 configurationDeletionFixture(params, trace, nodes, configurations)
+workspaceAvailabilityFixture(params, nodes)
+catalogCreationFixture(params, trace, configurations)
 const app = createApp(XNodeAudit)
 app.config.globalProperties.$t = t
 app.provide(operationReceiptLoaderKey, adminOperationsApi.getOperation)
-app.use(createPinia()).use(createRouter({ history: createWebHistory(), routes: [{ path: '/:pathMatch(.*)*', component: XNodeAudit }] })).use(ui).mount('#app')
+const router = createRouter({ history: createWebHistory(), routes: [{ path: '/:pathMatch(.*)*', component: XNodeAudit }] })
+app.use(createPinia()).use(router).use(ui)
+void router.isReady().then(() => app.mount('#app'))

@@ -41,41 +41,8 @@ func (s *Store) ListPurchases(ctx context.Context, userID string) ([]model.Purch
 		return nil, err
 	}
 	sort.Slice(purchases, func(i, j int) bool { return moreRecentPurchase(purchases[i], purchases[j]) })
-	for index := range purchases {
-		purchases[index].SquadUUIDs, err = s.purchaseSquads(ctx, purchases[index].ID)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return purchases, nil
-}
-
-// ListAllPurchases returns recent entitlement records for the administrative view.
-func (s *Store) ListAllPurchases(ctx context.Context, limit int) ([]model.Purchase, error) {
-	if limit <= 0 || limit > 500 {
-		limit = 100
-	}
-	rows, err := s.db.QueryContext(ctx, purchaseSelect+` ORDER BY purchases.created_at DESC LIMIT $1`, limit)
-	if err != nil {
+	if err := hydratePurchaseSquads(ctx, s.db, purchases); err != nil {
 		return nil, err
-	}
-	defer func() { _ = rows.Close() }()
-	purchases := make([]model.Purchase, 0)
-	for rows.Next() {
-		purchase, err := scanPurchase(rows)
-		if err != nil {
-			return nil, err
-		}
-		purchases = append(purchases, purchase)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	for index := range purchases {
-		purchases[index].SquadUUIDs, err = s.purchaseSquads(ctx, purchases[index].ID)
-		if err != nil {
-			return nil, err
-		}
 	}
 	return purchases, nil
 }

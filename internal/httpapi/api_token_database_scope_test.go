@@ -21,7 +21,6 @@ func TestAPITokenDatabaseAndBackupsRequireBothDomains(t *testing.T) {
 		r.Post("/api/v1/admin/database/tables/{table}/query", accepted)
 		r.Post("/api/v1/admin/database/mutations/review", accepted)
 		r.Post("/api/v1/admin/database/mutations", accepted)
-		r.Put("/api/v1/admin/database/tables/{table}/rows", accepted)
 		r.Get("/api/v1/admin/backups/{id}/download", accepted)
 	})
 	for _, test := range []struct {
@@ -48,7 +47,6 @@ func TestAPITokenDatabaseAndBackupsRequireBothDomains(t *testing.T) {
 			{"POST", "/api/v1/admin/database/tables/xnode_nodes/query", test.read},
 			{"POST", "/api/v1/admin/database/mutations/review", test.write},
 			{"POST", "/api/v1/admin/database/mutations", test.write},
-			{"PUT", "/api/v1/admin/database/tables/xnode_nodes/rows", test.write},
 			{"GET", "/api/v1/admin/backups/backup/download", test.read},
 		} {
 			request := httptest.NewRequest(entry.method, entry.path, nil)

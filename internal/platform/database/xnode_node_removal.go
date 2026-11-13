@@ -72,8 +72,6 @@ func lockRemoval(ctx context.Context, tx *sql.Tx, id string, version int64, fini
 }
 
 func (s *Store) PrepareXNodeRemoval(ctx context.Context, id string, version int64, plans ...xnode.RoutingPlan) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -89,8 +87,6 @@ func (s *Store) PrepareXNodeRemoval(ctx context.Context, id string, version int6
 }
 
 func (s *Store) FinishXNodeRemoval(ctx context.Context, id string, version int64, actor, operation string) (bool, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return false, err

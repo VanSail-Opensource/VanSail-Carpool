@@ -6,7 +6,7 @@ import { useI18n } from '@/i18n'
 
 const model = defineModel<NonNullable<XNodeSettings['dns']>>({ required: true })
 const { t } = useI18n()
-const redirect = computed({ get: () => !!model.value.redirect, set: value => { model.value = { ...model.value, redirect: value } } })
+const redirect = computed({ get: () => !!model.value.redirect, set: value => { model.value = { redirect: value } } })
 </script>
 
 <template>

@@ -6,9 +6,10 @@ import { useI18n } from '@/i18n'
 import { moneyFromTxbInput, txbInputFromMinor } from '@/utils/format'
 import { bytesFromSizeInput, bytesPerSecondFromInput, rateInputFromBytesPerSecond, sizeInputFromBytes } from '@/utils/transferUnits'
 
-const props = defineProps<{ snapshot: HourlyPolicySnapshot; busy: boolean }>()
+const props = defineProps<{ snapshot: HourlyPolicySnapshot; busy: boolean; disabled?: boolean }>()
 const emit = defineEmits<{ save: [policy: HourlyPolicy] }>()
 const { t } = useI18n()
+const blocked = computed(() => props.busy || props.disabled)
 const state = reactive({ salesEnabled: false, dailyAllowanceBytes: '', reducedRateBytesPerSecond: '', extraPrice: '', activationHours: '', cooldownSeconds: '' })
 watch(() => props.snapshot, value => Object.assign(state, {
   salesEnabled: value.policy.salesEnabled,
@@ -35,6 +36,7 @@ const schema = computed(() => {
   }).refine(value => !value.salesEnabled || (bytesPerSecondFromInput(value.reducedRateBytesPerSecond) !== '' && BigInt(bytesPerSecondFromInput(value.reducedRateBytesPerSecond)) > 0n), { message: t('hourly.admin.positiveRate'), path: ['reducedRateBytesPerSecond'] })
 })
 function save(): void {
+  if (blocked.value) return
   emit('save', {
     salesEnabled: state.salesEnabled, dailyAllowanceBytes: bytesFromSizeInput(state.dailyAllowanceBytes),
     reducedRateBytesPerSecond: bytesPerSecondFromInput(state.reducedRateBytesPerSecond),
@@ -46,13 +48,13 @@ function save(): void {
 
 <template>
   <UForm :schema="schema" :state="state" class="hourly-policy-form" @submit="save">
-    <div class="hourly-policy-form__wide"><USwitch v-model="state.salesEnabled" :disabled="busy" :label="t('hourly.admin.salesEnabled')" :description="t('hourly.admin.salesHint')" /></div>
-    <UFormField name="dailyAllowanceBytes" :label="t('hourly.admin.allowance')" :description="t('hourly.admin.allowanceHint')" required><UInput v-model="state.dailyAllowanceBytes" autocomplete="off" spellcheck="false" :disabled="busy" class="w-full" /></UFormField>
-    <UFormField name="reducedRateBytesPerSecond" :label="t('hourly.admin.rate')" :description="t('hourly.admin.rateHint')" required><UInput v-model="state.reducedRateBytesPerSecond" autocomplete="off" spellcheck="false" :disabled="busy" class="w-full" /></UFormField>
-    <UFormField name="extraPrice" :label="t('hourly.admin.extraPrice')" :description="t('hourly.admin.extraHint')" required><UInput v-model="state.extraPrice" inputmode="decimal" :disabled="busy" class="w-full" /></UFormField>
-    <UFormField name="activationHours" :label="t('hourly.admin.activationHours')" :description="t('hourly.admin.activationHint')" required><UInput v-model="state.activationHours" inputmode="numeric" :disabled="busy" class="w-full" /></UFormField>
-    <UFormField name="cooldownSeconds" :label="t('hourly.admin.cooldown')" :description="t('hourly.admin.cooldownHint')" required><UInput v-model="state.cooldownSeconds" inputmode="numeric" :disabled="busy" class="w-full" /></UFormField>
-    <div class="hourly-policy-form__wide"><UButton type="submit" :loading="busy" :disabled="busy" :label="t('hourly.admin.savePolicy')" /></div>
+    <div class="hourly-policy-form__wide"><USwitch v-model="state.salesEnabled" :disabled="blocked" :label="t('hourly.admin.salesEnabled')" :description="t('hourly.admin.salesHint')" /></div>
+    <UFormField name="dailyAllowanceBytes" :label="t('hourly.admin.allowance')" :description="t('hourly.admin.allowanceHint')" required><UInput v-model="state.dailyAllowanceBytes" autocomplete="off" spellcheck="false" :disabled="blocked" class="w-full" /></UFormField>
+    <UFormField name="reducedRateBytesPerSecond" :label="t('hourly.admin.rate')" :description="t('hourly.admin.rateHint')" required><UInput v-model="state.reducedRateBytesPerSecond" autocomplete="off" spellcheck="false" :disabled="blocked" class="w-full" /></UFormField>
+    <UFormField name="extraPrice" :label="t('hourly.admin.extraPrice')" :description="t('hourly.admin.extraHint')" required><UInput v-model="state.extraPrice" inputmode="decimal" :disabled="blocked" class="w-full" /></UFormField>
+    <UFormField name="activationHours" :label="t('hourly.admin.activationHours')" :description="t('hourly.admin.activationHint')" required><UInput v-model="state.activationHours" inputmode="numeric" :disabled="blocked" class="w-full" /></UFormField>
+    <UFormField name="cooldownSeconds" :label="t('hourly.admin.cooldown')" :description="t('hourly.admin.cooldownHint')" required><UInput v-model="state.cooldownSeconds" inputmode="numeric" :disabled="blocked" class="w-full" /></UFormField>
+    <div class="hourly-policy-form__wide"><UButton type="submit" :loading="busy" :disabled="blocked" :label="t('hourly.admin.savePolicy')" /></div>
   </UForm>
 </template>
 

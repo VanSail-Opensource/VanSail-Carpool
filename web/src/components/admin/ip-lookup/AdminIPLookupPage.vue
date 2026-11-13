@@ -13,9 +13,10 @@ import ProviderOrder from './ProviderOrder.vue'
 import RetrySettings from './RetrySettings.vue'
 import { useAdminIPLookup } from './useAdminIPLookup'
 
-const { settings, combos, loading, busy, errorCode, saved, save, load } = useAdminIPLookup()
+const { settings, combos, loading, loaded, busy, errorCode, saved, save, load } = useAdminIPLookup()
 async function saveSettings() { await save() }
 const { t } = useI18n()
+const blocked = computed(() => busy.value || loading.value || !loaded.value)
 const workspace = shallowRef('general')
 const tabs = computed(() => [{ value: 'general', label: t('adminWorkspace.configuration') }, { value: 'providers', label: t('ipLookup.providerHeading') }, { value: 'quotas', label: t('ipLookup.quotaHeading') }])
 const invalidConfig = computed(() => t('ipLookup.errors.IP_LOOKUP_INVALID_CONFIG'))
@@ -37,26 +38,26 @@ const schema = computed(() => z.object({
 
 <template>
   <section class="admin-panel admin-ip-lookup">
-    <div class="admin-panel__heading"><div><h2>{{ t('ipLookup.adminTitle') }}</h2><p>{{ t('ipLookup.adminSubtitle') }}</p></div><UButton type="submit" form="ip-lookup-settings" icon="i-ph-floppy-disk" :loading="busy" :disabled="busy || loading" :label="t('common.save')" /></div>
+    <div class="admin-panel__heading"><div><h2>{{ t('ipLookup.adminTitle') }}</h2><p>{{ t('ipLookup.adminSubtitle') }}</p></div><UButton type="submit" form="ip-lookup-settings" icon="i-ph-floppy-disk" :loading="busy" :disabled="blocked" :label="t('common.save')" /></div>
     <UTabs v-model="workspace" :items="tabs" :content="false" variant="link" class="admin-workspace-tabs" />
     <SkeletonBlock v-if="loading" height="14rem" />
     <template v-else>
       <InlineNotice v-if="errorCode" tone="warning">{{ ipLookupErrorText(errorCode) }}</InlineNotice>
       <InlineNotice v-if="saved" tone="success">{{ t('ipLookup.saved') }}</InlineNotice>
       <UForm id="ip-lookup-settings" :state="settings" :schema="schema" class="lookup-settings" @submit="saveSettings">
-        <fieldset class="lookup-settings__fields" :disabled="busy">
+        <fieldset class="lookup-settings__fields" :disabled="blocked">
           <div v-show="workspace === 'general'" class="lookup-general">
             <SwitchField id="ip-lookup-enabled" v-model="settings.enabled" :label="t('ipLookup.enable')" :help="t('ipLookup.enableHelp')" />
             <div class="lookup-fees"><TxbAmountField id="lookup-fee" v-model="settings.lookupFeeTxb" :label="t('ipLookup.lookupFee')" min-minor="0" /><TxbAmountField id="refresh-fee" v-model="settings.refreshFeeTxb" :label="t('ipLookup.refreshFee')" min-minor="0" /></div>
-            <div class="lookup-orders"><ProviderOrder v-model="checkOrder" :title="t('ipLookup.checkOrder')" :help="t('ipLookup.checkOrderHelp')" :disabled="busy" /><ProviderOrder v-model="settings.geolocationOrder" :title="t('ipLookup.geolocationOrder')" :help="t('ipLookup.geolocationOrderHelp')" :disabled="busy" /></div>
-            <UFormField name="refreshQuotaCost" :label="t('ipLookup.refreshQuotaCost')" :help="t('ipLookup.refreshQuotaHelp')"><UInputNumber v-model="settings.refreshQuotaCost" :min="0" :max="1000000" :step="1" :disabled="busy" /></UFormField>
-            <RetrySettings v-if="settings.retry" v-model="settings.retry" :disabled="busy" />
+            <div class="lookup-orders"><ProviderOrder v-model="checkOrder" :title="t('ipLookup.checkOrder')" :help="t('ipLookup.checkOrderHelp')" :disabled="blocked" /><ProviderOrder v-model="settings.geolocationOrder" :title="t('ipLookup.geolocationOrder')" :help="t('ipLookup.geolocationOrderHelp')" :disabled="blocked" /></div>
+            <UFormField name="refreshQuotaCost" :label="t('ipLookup.refreshQuotaCost')" :help="t('ipLookup.refreshQuotaHelp')"><UInputNumber v-model="settings.refreshQuotaCost" :min="0" :max="1000000" :step="1" :disabled="blocked" /></UFormField>
+            <RetrySettings v-if="settings.retry" v-model="settings.retry" :disabled="blocked" />
           </div>
           <ProviderSettings v-show="workspace === 'providers'" v-model="settings" />
           <ComboQuotas v-show="workspace === 'quotas'" v-model="settings.comboQuotas" :combos="combos" />
         </fieldset>
       </UForm>
-      <UButton v-if="errorCode && !settings.providers.length" color="neutral" variant="outline" :label="t('common.tryAgain')" @click="load" />
+      <UButton v-if="errorCode && !loaded" color="neutral" variant="outline" :label="t('common.tryAgain')" @click="load" />
     </template>
   </section>
 </template>

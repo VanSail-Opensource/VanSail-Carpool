@@ -14,7 +14,7 @@ func TestNodeWriteRejectsRetiredAndUnknownSettings(t *testing.T) {
 		name, settings string
 		valid          bool
 	}{
-		{"current", `{"dns":{"mode":"xray"},"firewall":{"enabled":true}}`, true},
+		{"current", `{"dns":{"redirect":true},"firewall":{"enabled":true}}`, true},
 		{"retired bandwidth", `{"bandwidth":{"normalMbps":100}}`, false},
 		{"null retired bandwidth", `{"bandwidth":null}`, false},
 		{"unknown setting", `{"future":true}`, false},

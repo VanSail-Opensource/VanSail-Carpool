@@ -1,5 +1,18 @@
 # X-Node control plane
 
+`master_enrollment_lock.go` serializes enrollment rotation, registration and
+deletion per node with cancellable, reference-counted gates. PostgreSQL waits
+never hold the fleet mutex used for live status and command delivery. Handshakes
+recheck authority before publication; shutdown still fences peer WaitGroup
+admission. `master_enrollment_isolation_test.go` covers an unrelated healthy node
+during a blocked rotation, stale-token rejection and cancelled-waiter cleanup.
+
+`master_report_lanes.go` gives command receipts a separate bounded consumer from
+state/firewall database acknowledgments. Only errors correlated to a pending
+command enter that lane; state rejection errors retain control-frame order.
+`master_results_isolation_test.go` verifies command progress during a blocked
+applied-state write and prevents an older ACK from erasing a later state error.
+
 Member subscription rotation resolves the authenticated owner's native identity
 and commits through `RotateXNodeMemberSubscription`, which locks the exact
 account generation and compares the original token and credential material.
@@ -23,7 +36,7 @@ covers credential generation and document validation.
 
 `endpoint_inbound.go` derives administrator endpoint protocol/transport/security from the node's resolved inbound, certificate bindings and the same saved snippet expansion used by compilation. It keeps source configuration reads unchanged. `endpoint_preview.go` returns applicable typed fields, sanitized field errors and independent client compatibility for incomplete drafts using fixed synthetic credentials. Preview performs only local reads and native client analysis; it never queues external work or persists a draft. Save reuses this validation against current desired state before encrypting `overrides.clientOptions`. `endpoint_validation.go` decodes that separate administrator type and validates the client document without server runtime side effects. `endpoint_options.go` merges nested inherited XHTTP headers, XMUX and download settings before applying typed overrides. `endpoint_preview_test.go` covers read-only preview, encrypted round trips and protocol changes between preview/save; `endpoint_options_test.go` protects nested inheritance. `endpoint_inventory_compatibility_test.go` checks that inherited mode changes preserve compatible peers across all six export formats; runtime projection failures are isolated to the affected endpoint while store/credential failures remain fatal. These regressions run in hosted CI.
 
-Node traffic multipliers are retired. `node_decode.go` ignores the deprecated input and serializes it as constant `1`; `SaveNode` sets the fixed-point default without an agent traffic flush. Catalog/statistics adapters retain compatibility properties at `1`. Host name `{price}` expands only the existing PAYG price, with no Combo multiplier label. Recorded weighted usage and financial evidence remain authoritative. The PostgreSQL cutover establishes acceptance-sequence boundaries before new ingestion; see the database module for deployment and preservation constraints. Hosted tests in `node_multiplier_retired_test.go` and `native_policy_test.go` cover obsolete inputs and offline node edits.
+Node traffic multipliers are retired. The node API no longer accepts or returns a `multiplier` property; its former permissive decoder has been removed. The HTTP write DTO admits only `id`, `name`, `countryCode`, `providerName`, `enabled` and `configId`; agent identity, revisions and timestamps remain server-owned response fields. `SaveNode` sets the fixed-point default without an agent traffic flush. Catalog/statistics adapters retain their separate properties at `1`. Host name `{price}` expands only the existing PAYG price, with no Combo multiplier label. Recorded weighted usage and financial evidence remain authoritative. The PostgreSQL cutover establishes acceptance-sequence boundaries before new ingestion; see the database module for deployment and preservation constraints. Hosted tests in `node_multiplier_retired_test.go`, `native_policy_test.go` and `httpapi/xnode_node_write_test.go` cover historical scale normalization, rejected obsolete/server-owned inputs and offline node edits.
 
 `certificate_commands.go` queues revision-fenced ACME lifecycle operations through
 the existing durable command executor and recovers the latest profile receipt.
@@ -49,14 +62,18 @@ replay keeps the original revision and command ID, while an uncertain operation
 cannot issue through a replacement agent. `certificate_delivery_test.go` covers
 this fence and encrypted private metadata without widening browser inputs.
 
-`node_dns.go` retires resolver selection at settings boundaries. Effective DNS
-always uses Xray. Its encrypted `legacyDnsLoopback` compatibility state preserves
-the old SmartDNS loopback fallback only for scoped interception; explicit native
-DNS servers take priority. `compiler.go` applies the fallback to a node-local
-compiled copy, never to the shared configuration. Older clients cannot erase
-the marker during unrelated saves. The deprecated upstream list remains unused.
-`node_dns_test.go` covers compatibility, malformed/native DNS preservation,
-non-mutating compilation and encrypted round trips in hosted CI.
+Public node DNS settings expose only `redirect`; resolver mode, upstream lists
+and `legacyDnsLoopback` are rejected. `node_settings_history.go` reads bounded
+encrypted historical documents and translates the former effective loopback
+behavior into a private explicit native default. The next ordinary save writes
+`nativeDnsFallbackServers` internally and removes the retired keys. That field
+is never a public input or response. `node_dns.go` preserves the default across
+unrelated saves and interception toggles. `compiler.go` applies it only to a
+node-local compiled copy when interception is enabled and native DNS has no
+servers; explicit native DNS always wins and shared configurations stay intact.
+`node_dns_test.go` covers native DNS preservation, source isolation and encrypted
+canonical round trips. `node_settings_history_test.go` and the HTTP settings
+boundary tests distinguish stored migration from strict current requests.
 
 Node firewall port ranges use the pinned public protocol's compact interval
 normalizer before encrypted node settings are saved. Legacy singleton ports
@@ -227,6 +244,14 @@ generation. Obsolete jobs/generations are acknowledged without mutation; durable
 cursor/operation commit precedes every successful acknowledgment. Delivery uses
 the existing control lane and single WebSocket writer, independently of traffic.
 
+`ddns_compile.go` isolates invalid historical DDNS jobs in the runtime projection
+while retaining encrypted source settings and strict new writes. It publishes
+bounded diagnostics only for accepted master compilation and preflights fresh
+manual commands. `ddns_compile_test.go` covers source preservation, diagnostic
+bounds, obsolete/manual compilation isolation and manual-command rejection.
+`ddns_compile_integration_test.go` verifies that an unusable stored job cannot
+block reconnect or authorization, while valid sibling jobs and source data remain.
+
 `ddns_operations.go` stages the existing protected firewall bank, atomically
 updates bound hosts and resumes automatic free routing in `ddns_routes.go`.
 Saved endpoint choices, credentials and accounting remain authoritative. Pending
@@ -259,8 +284,12 @@ assigned once across jobs and families; it creates no public DNS records. Extern
 providers may use optional single-host bindings. The authenticated configuring
 administrator supplies audit ownership. Generations are derived from
 discovery/provider configuration and binding references; neither host IDs nor
-audit ownership enter the agent configuration. Omitted bindings preserve older
-editor writes. Unsupported peers retain ordinary authorization updates and
+audit ownership enter the agent configuration. Omitted binding maps preserve
+existing references; an explicit empty map requests their removal, subject to
+the existing required-host validation for enabled built-in jobs. Public writes use only
+the plural host-ID arrays. The bounded stored-settings reader migrates former
+singleton keys only where the corresponding array was absent; explicit empty
+arrays never restore former hosts. Unsupported peers retain ordinary authorization updates and
 external DNS jobs while built-in jobs await negotiated support.
 `ddns_bindings_test.go` checks actor ownership, omission/rename compatibility,
 generation changes, separate references and legacy configuration projection.
@@ -667,7 +696,7 @@ Task 2 pins protocol/native validation at signed X-Node v2.0.5, source commit `5
 
 Master policy extensions: `native_policy_types.go` owns country, completion-schedule and per-user node-speed contracts. `geoip_asset.go` streams verified public GeoIP data through the existing validation queue and temporary files; `geoip_decode.go` decodes bounded country messages with the pinned Xray protobuf and compacts selected prefixes without expanding addresses. `policy_assets.go` caches parsed generations across global-save validation and compiler views, with completion deadlines and bounded retries, so one save does not download the same full asset repeatedly. `geoip_delivery.go` queues country preparation durably, streams 256-prefix chunks through the per-node command queue for `source_geoip_stream_v1`, then activates a generation reference; older agents keep inline data when it fits the frame limit. `routing_preflight.go` uses that same reference when validating member route changes. `geoip_delivery_test.go`, `geoip_decode_test.go` and `native_policy_test.go` cover chunk bounds, compatibility, asset precision and selector validation. `source_listeners.go` derives country source-filter listeners from the same document with Hysteria inbounds removed, so direct Hysteria clients rely on the node's probe protection instead of the country rule; `source_listeners_test.go` covers that exclusion and preserves unrelated native sections.
 
-`live_availability.go` excludes rolled-back, stale and non-sampled agents from live activity decisions. Service identities are excluded from global connection controls; open-handler limits and exact accounting remain agent-owned. `node_decode.go` ignores retired multiplier inputs and publishes the fixed multiplier of 1. Global/node/compiler changes negotiate typed native capabilities; byte counters remain decimal strings for browser transport.
+`live_availability.go` excludes rolled-back, stale and non-sampled agents from live activity decisions. Service identities are excluded from global connection controls; open-handler limits and exact accounting remain agent-owned. The strict node write DTO rejects retired multiplier inputs and the node response omits that property. Global/node/compiler changes negotiate typed native capabilities; byte counters remain decimal strings for browser transport.
 
 `client_document_validation.go` validates administrator client subscription documents independently of the agent IP-geodata prohibition. It removes only the client display label `remarks` from the analysis copy for both DIY exports and template previews; server configurations retain their strict root schema. Client-local assets remain in the actual output; analysis-only replacements perform no downloads. Shared geosite block selectors also defer file contents to agent preflight. `client_document_validation_test.go` covers the label-only relaxation, client-local asset preflight and strict server-root rejection.
 
@@ -702,7 +731,7 @@ covers authorized endpoint IDs, legacy order and listener-aware proofs.
 
 State requests coalesce into the existing reconciler. The socket reader never waits on native compilation or GeoIP refreshes, so queued utility results and traffic acknowledgments keep progressing during external asset work.
 
-`node_multiplier_retired_test.go` verifies that obsolete multiplier inputs cannot affect an offline node edit or its 1x billing default.
+`node_multiplier_retired_test.go` verifies that historical fixed-point values cannot affect an offline node edit or its 1x billing default; HTTP regressions reject the retired public multiplier input.
 
 
 ## Managed member routing
@@ -1145,10 +1174,14 @@ HTTP responses redact secrets. Failed reads are never cached.
 and caller mutation of secrets and policies. Adding a reference-valued global
 field also requires extending `cloneGlobal`.
 
-Active-IP sampling is mandatory. `DefaultGlobal`, `DecodeGlobal` and `SaveGlobal`
-normalize the retained legacy telemetry opt-out to enabled; older deployed agents
-therefore receive true without changing their saved sample/report intervals.
-`reporting_defaults_test.go` also protects this upgrade behavior.
+Active-IP sampling is mandatory. The inert `telemetry.include_active_ips` option
+is removed from the public request/response and native wire contracts. The
+bounded `DecodeGlobal` saved-settings reader removes the old boolean only after
+the settings facade decrypts the document. It preserves sample/report intervals,
+credentials and validation of all other fields; the next ordinary save removes
+the retired field without a separate database migration/write. Public writes
+still use strict typed decoding. `reporting_defaults_test.go` covers saved
+normalization, exact intervals and rejection of retired or unknown live fields.
 
 `master_activity.go` accepts only authenticated current-peer snapshots and
 independently negotiated observation history. Actual sample timestamps must be
@@ -1330,13 +1363,13 @@ Node removal runs node.remove as an existing durable operation, never a wire com
 
 `member_connections_eligibility_test.go` checks funding, onboarding, account eligibility, automation gates, duplicate expiry and unchanged balance.
 
-`service_enrollment.go` rotates enrollment through the master lock and rejects retired nodes.
+`service_enrollment.go` rotates enrollment through a node-specific admission lock and rejects retired nodes.
 
 Period settlement and routing deployment proof: `period_closure.go` fences and seals only recorded participants; purge and background settlement never hold the shared service mutation mutex over network waits. `routing_config_proof.go` and `routing_deployment_proof.go` validate the sent native rules, selected principals/listeners, transit generations and applied revisions. See [job and routing reliability](../../docs/job-routing-reliability.md) for constraints and incident evidence.
 
 `native_job_dispatch.go` dispatches queued native work, completes superseded disabled-node intents, and preserves offline/capability waits without exhausting delivery attempts. Access repair retains settled/ambiguous accounting for review instead of granting another allowance. `native_job_dispatch_test.go` covers the firewall delivery wait classification: undelivered/uncertain commands stay retryable, while rejected or agent-failed commands do not.
 
-Node-level bandwidth overrides are retired. Stored node settings are historical evidence: `node_settings.go` decodes them through a compatibility reader that ignores unknown or retired keys (including the former top-level `bandwidth` field) while rejecting malformed JSON, documents that are not a JSON object (`null`, arrays, scalars) and wrong-typed known fields. `Service.Node`, DNS preservation during saves and automatic firewall lease reads share that boundary. Reads never rewrite stored state, and subsequent saves re-encode only current typed settings, so retired keys are dropped. The public SaveNode request type and its validation remain strict, so writes cannot persist unsupported fields. Native per-user speed capabilities remain available for commerce policies. `node_settings_test.go` covers encrypted reads, rejected malformed/foreign-node state, save round trips and populated lease status; `node_settings_decode_test.go` covers tolerated retired keys and rejected non-object documents directly, and `node_dns_test.go` retains legacy resolver compatibility when old bandwidth data exists.
+Node-level bandwidth overrides are retired. Stored node settings are historical evidence: `node_settings.go` bounds documents to the native protocol frame limit and decodes historical unknown keys (including the former top-level `bandwidth` field) without accepting them as live inputs. Malformed JSON, non-object documents (`null`, arrays, scalars) and wrong-typed known fields are rejected. `Service.Node`, private DNS-default preservation and automatic firewall lease reads share that boundary. Reads never rewrite stored state; subsequent ordinary saves encode current settings and the private native default, dropping retired keys. Native per-user speed capabilities remain available for commerce policies. `node_settings_test.go` covers encrypted reads, rejected malformed/foreign-node state, save round trips and populated lease status; `node_settings_decode_test.go` covers retired stored keys and rejected non-object documents, while `node_dns_test.go` protects effective DNS through the stored migration.
 
 `node_removal_routes.go` prunes typed node choices, freezes member routing saves, retains every affected revocation participant and synchronizes applied credential revocation before final retirement. `node_removal_routes_test.go` covers saved/previous choices, unrelated plans, replay and concurrent removals. Empty plans stay disabled; surviving choices reconcile after removal.
 

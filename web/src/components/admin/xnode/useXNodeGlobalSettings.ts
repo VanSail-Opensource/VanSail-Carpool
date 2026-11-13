@@ -22,7 +22,7 @@ export function useXNodeGlobalSettings(part?: 'automaticWhitelist') {
     try {
       const value = await xnodeApi.global(controller.signal)
       if (!latest.isCurrent(ticket)) return
-      draft.value = { ...value, automaticWhitelist: value.automaticWhitelist ?? { enabled: true, durationHours: 24 }, telemetry: { ...value.telemetry, include_active_ips: true }, sourceGeoIp: value.sourceGeoIp ?? { enabled: false, selectors: ['geoip:cn'] }, blockedDomains: value.blockedDomains ?? [] }
+      draft.value = { ...value, automaticWhitelist: value.automaticWhitelist ?? { enabled: true, durationHours: 24 }, sourceGeoIp: value.sourceGeoIp ?? { enabled: false, selectors: ['geoip:cn'] }, blockedDomains: value.blockedDomains ?? [] }
       loaded.value = true
     } catch (caught) { if (latest.isCurrent(ticket)) error.value = localizedError(caught, 'xnode.loadFailed') }
     finally { if (latest.isCurrent(ticket)) loading.value = false }

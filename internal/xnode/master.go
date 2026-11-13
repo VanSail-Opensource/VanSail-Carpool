@@ -42,6 +42,8 @@ type Master struct {
 	ctx                    context.Context
 	cancel                 context.CancelFunc
 	mu                     sync.RWMutex
+	enrollmentMu           sync.Mutex
+	enrollmentLocks        map[string]*nodeEnrollmentLock
 	peers                  map[string]*agentPeer
 	live                   map[string]liveSnapshot
 	globalBlocks           map[int]bool

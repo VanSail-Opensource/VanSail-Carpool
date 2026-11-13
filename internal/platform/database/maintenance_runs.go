@@ -122,8 +122,6 @@ func (s *Store) CompleteMaintenanceRun(ctx context.Context, runID, backupRunID s
 	if runErr != nil {
 		status, errorCode = "failed", maintenanceErrorCode(runErr)
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
 	result, err := s.db.ExecContext(ctx, `UPDATE maintenance_runs SET status=$1,backup_run_id=$2,cleanup_counts_json=$3,
 		error_code=$4,lease_expires_at=$5,updated_at=$6,completed_at=$7 WHERE id=$8 AND status='running'`, status,
 		nullIfEmpty(backupRunID), string(payload), errorCode, stamp(now), stamp(now), stamp(now), runID)

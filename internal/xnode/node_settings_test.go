@@ -46,7 +46,7 @@ func TestEncryptedNodeSettingsDiscardRetiredBandwidthWithoutChangingDesiredState
 		t.Fatal(err)
 	}
 	want := NodeSettings{
-		DNS:                 wire.DNSPolicy{Mode: "xray", Redirect: true, Upstreams: []string{"127.0.0.1"}},
+		DNS:                 wire.DNSPolicy{Redirect: true},
 		DDNS:                []wire.DDNSJob{{ID: "wan", Provider: wire.BuiltinDDNSProvider, Interface: "eth0", IPv4: "auto"}},
 		DDNSBindings:        map[string]DDNSHostBinding{},
 		Certificates:        map[string]wire.Certificate{"local": {Config: wire.CertConfig{CertMode: "file", CertFile: "cert.pem", KeyFile: "key.pem"}}},

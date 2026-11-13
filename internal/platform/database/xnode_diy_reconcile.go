@@ -9,8 +9,8 @@ import (
 )
 
 func (s *Store) EnqueueDIYReconcile(ctx context.Context, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	s.diyCleanupMu.Lock()
+	defer s.diyCleanupMu.Unlock()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from '@/i18n'
 import AdminSectionState from '@/components/admin/AdminSectionState.vue'
 import XNodeGlobalSettings from './XNodeGlobalSettings.vue'
@@ -14,19 +14,22 @@ import XNodeMetrics from './XNodeMetrics.vue'
 import XNodeSubscriptionTemplates from './XNodeSubscriptionTemplates.vue'
 import XNodeRoutingTemplates from './XNodeRoutingTemplates.vue'
 import { useXNodeWorkspace } from './useXNodeWorkspace'
+import { workspaceTab, workspaceTabs, workspaceNeedsMetrics } from './workspaceTabs'
 
 const { t } = useI18n()
-const workspace = useXNodeWorkspace()
-const tab = shallowRef(useRoute().query.xnodeTab === 'global' ? 'global' : 'nodes')
-const tabs = computed(() => ['nodes', 'global', 'configurations', 'templates', 'routing', 'services', 'groups', 'firewall', 'leases', 'metrics'].map(value => ({ value, label: t(value === 'leases' ? 'automaticLeases.title' : value === 'routing' ? 'managedRouting.templatesTitle' : value === 'firewall' ? 'firewall.title' : value === 'templates' ? 'nodeTemplates.title' : `xnode.tabs.${value}`) })))
+const route = useRoute(), router = useRouter()
+const tab = computed({ get: () => workspaceTab(route.query.xnodeTab), set: (value: string | number) => { void router.replace({ query: { ...route.query, xnodeTab: workspaceTab(value) } }) } })
+const workspace = useXNodeWorkspace(() => tab.value)
+const tabs = computed(() => workspaceTabs.map(value => ({ value, disabled: workspace.busy.value, label: t(value === 'leases' ? 'automaticLeases.title' : value === 'routing' ? 'managedRouting.templatesTitle' : value === 'firewall' ? 'firewall.title' : value === 'templates' ? 'nodeTemplates.title' : `xnode.tabs.${value}`) })))
 </script>
 
 <template>
   <section class="xnode-workspace">
-    <header class="admin-section-header"><div><h2>{{ t('xnode.title') }}</h2><p class="text-muted">{{ t('xnode.description') }}</p></div><UButton variant="ghost" color="neutral" icon="i-ph-arrow-clockwise" :aria-label="t('common.refresh')" :loading="workspace.loading.value" @click="workspace.load" /></header>
+    <header class="admin-section-header"><div><h2>{{ t('xnode.title') }}</h2><p class="text-muted">{{ t('xnode.description') }}</p></div><UButton v-if="workspace.canRefresh.value" variant="ghost" color="neutral" icon="i-ph-arrow-clockwise" :aria-label="t('common.refresh')" :disabled="workspace.busy.value" :loading="workspace.loading.value" @click="workspace.load" /></header>
     <div class="min-w-0 overflow-x-auto"><UTabs v-model="tab" :items="tabs" :content="false" variant="link" :ui="{ root: 'items-start', list: 'w-max min-w-full' }" /></div>
     <UAlert v-if="workspace.actionError.value" color="warning" :title="workspace.actionError.value" />
-    <AdminSectionState :loading="workspace.loading.value" :error="workspace.error.value" @retry="workspace.load">
+    <UAlert v-if="workspaceNeedsMetrics(tab) && workspace.metricError.value" role="status" aria-live="polite" color="warning" :title="workspace.metricError.value" />
+    <AdminSectionState :key="tab" :loading="workspace.loading.value" :error="workspace.error.value" @retry="workspace.load">
       <XNodeNodes @refresh="workspace.load" v-if="tab === 'nodes'" :nodes="workspace.nodes.value" :endpoints="workspace.endpoints.value" :configurations="workspace.configurations.value" :metrics="workspace.metrics.value" :busy="workspace.busy.value" :perform="workspace.perform" :save-error="workspace.actionError.value" />
       <XNodeServiceUsers v-else-if="tab === 'services'" :nodes="workspace.nodes.value" :groups="workspace.groups.value" />
       <XNodeGlobalSettings v-else-if="tab === 'global'" />

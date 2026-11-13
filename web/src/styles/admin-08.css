@@ -84,8 +84,7 @@
     grid-template-columns: minmax(0, 1fr) max-content max-content auto;
   }
 
-  .admin-list-row--user,
-  .admin-list-row--entitlement {
+  .admin-list-row--user {
     grid-template-columns: auto minmax(0, 1fr) max-content max-content auto;
   }
 

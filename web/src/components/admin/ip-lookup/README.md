@@ -11,3 +11,9 @@ a snapshot of the reviewed settings, load/save admission is exclusive, and owner
 changes or workspace disposal clear credential drafts and retire pending replies.
 
 `useAdminIPLookup.test.ts` covers immutable save snapshots, read/write admission, owner changes and disposal of private provider drafts.
+
+Initial or refresh failure keeps the form read-only until settings and catalog
+load successfully. Empty defaults can never be submitted after a failed read;
+previously loaded values remain inspectable and the retry action remains
+available. Hosted unit and desktop/mobile browser regressions cover failure,
+recovery and the first authorized save.

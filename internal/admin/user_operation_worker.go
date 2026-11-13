@@ -15,7 +15,7 @@ import (
 type UserOperationRepository interface {
 	BeginProviderOperationAttempt(context.Context, string, time.Time) (providerops.Operation, error)
 	CompleteProviderOperation(context.Context, string, providerops.Completion, time.Time) (providerops.Operation, error)
-	ListProviderOperationItems(context.Context, string) ([]providerops.Item, error)
+	ProviderOperationItems(context.Context, string) ([]providerops.Item, error)
 	BeginProviderOperationItemAttempt(context.Context, string, string, time.Time) (providerops.Item, error)
 	CompleteProviderOperationItem(context.Context, string, string, providerops.Completion, time.Time) (providerops.Item, error)
 	UserByID(context.Context, string) (model.User, error)
@@ -56,7 +56,7 @@ func (w *UserOperationWorker) HandleProviderOperation(ctx context.Context, opera
 	if operation.Receipt.Status != string(providerops.StatusProcessing) {
 		return nil
 	}
-	items, err := w.repository.ListProviderOperationItems(ctx, operation.Receipt.ID)
+	items, err := w.repository.ProviderOperationItems(ctx, operation.Receipt.ID)
 	if err != nil {
 		return err
 	}

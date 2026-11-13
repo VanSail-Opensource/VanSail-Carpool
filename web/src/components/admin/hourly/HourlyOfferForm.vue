@@ -5,9 +5,10 @@ import type { HourlyOffer } from '@/api/hourly'
 import type { SquadProduct } from '@/api/types'
 import { useI18n } from '@/i18n'
 import { formatMoney, moneyFromTxbInput, txbInputFromMinor } from '@/utils/format'
-const props = defineProps<{ squad: SquadProduct; offer?: HourlyOffer; busy: boolean; activationHours: number }>()
+const props = defineProps<{ squad: SquadProduct; offer?: HourlyOffer; busy: boolean; disabled?: boolean; activationHours: number }>()
 const emit = defineEmits<{ save: [groupId: string, revision: string, enabled: boolean, minor: string, requiredHours: number] }>()
 const { t } = useI18n()
+const blocked = computed(() => props.busy || props.disabled)
 const maximumHours = 2_562_047
 const state = reactive({ enabled: false, price: '0.00', requiredHours: '1' })
 watch(() => [props.offer, props.activationHours] as const, ([offer, activationHours]) => Object.assign(state, {
@@ -33,16 +34,16 @@ const schema = computed(() => z.object({
     return minor !== '' && BigInt(minor) <= 9223372036854775807n / BigInt(priceBoundHours.value)
   }, t('hourly.admin.invalidPrice')),
 }).refine(value => !value.enabled || BigInt(moneyFromTxbInput(value.price) || '0') > 0n, { path: ['price'], message: t('hourly.admin.positivePrice') }))
-function save(): void { emit('save', props.squad.groupId, props.offer?.revision ?? '0', state.enabled, moneyFromTxbInput(state.price), Number(state.requiredHours)) }
+function save(): void { if (blocked.value) return; emit('save', props.squad.groupId, props.offer?.revision ?? '0', state.enabled, moneyFromTxbInput(state.price), Number(state.requiredHours)) }
 </script>
 
 <template>
   <UForm :schema="schema" :state="state" class="hourly-offer-form" @submit="save">
     <div class="hourly-offer-form__name"><strong>{{ squad.name }}</strong><small>{{ squad.groupId }}</small></div>
-    <USwitch v-model="state.enabled" :label="t('hourly.admin.offerEnabled')" :aria-label="t('hourly.admin.offerFor', { name: squad.name })" :disabled="busy" />
-    <UFormField name="price" :label="t('hourly.admin.hourlyPrice')" required><UInput v-model="state.price" inputmode="decimal" :disabled="busy" class="w-full" /></UFormField>
-    <UFormField name="requiredHours" :label="t('hourly.admin.requiredHours')" :hint="requiredBalance ? t('hourly.admin.requiredHoursHint', { hours: effectiveHours, amount: requiredBalance }) : undefined" required><UInput v-model.trim="state.requiredHours" inputmode="numeric" :disabled="busy" class="w-full" /></UFormField>
-    <UButton type="submit" color="neutral" variant="outline" :loading="busy" :disabled="busy" :label="t('common.save')" :aria-label="t('hourly.admin.saveOffer', { name: squad.name })" />
+    <USwitch v-model="state.enabled" :label="t('hourly.admin.offerEnabled')" :aria-label="t('hourly.admin.offerFor', { name: squad.name })" :disabled="blocked" />
+    <UFormField name="price" :label="t('hourly.admin.hourlyPrice')" required><UInput v-model="state.price" inputmode="decimal" :disabled="blocked" class="w-full" /></UFormField>
+    <UFormField name="requiredHours" :label="t('hourly.admin.requiredHours')" :hint="requiredBalance ? t('hourly.admin.requiredHoursHint', { hours: effectiveHours, amount: requiredBalance }) : undefined" required><UInput v-model.trim="state.requiredHours" inputmode="numeric" :disabled="blocked" class="w-full" /></UFormField>
+    <UButton type="submit" color="neutral" variant="outline" :loading="busy" :disabled="blocked" :label="t('common.save')" :aria-label="t('hourly.admin.saveOffer', { name: squad.name })" />
   </UForm>
 </template>
 

@@ -22,8 +22,6 @@ func (s *Store) LinkProvisionedProxyUser(ctx context.Context, userID, username, 
 	if userID == "" || username == "" || remoteID == "" {
 		return ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
 	result, err := s.db.ExecContext(ctx, `UPDATE users SET proxy_user_id=$1,recovery_reason='',updated_at=$2
 		WHERE id=$3 AND CAST(telegram_id AS TEXT)=$4 AND onboarding_state='complete' AND account_status='active' AND COALESCE(proxy_user_id,'')=$5
 		AND EXISTS(SELECT 1 FROM purchases WHERE user_id=$6 AND status IN ('active','activating','queued') AND `+purchaseTimestampOrderSQL("valid_until")+`>$7)`,

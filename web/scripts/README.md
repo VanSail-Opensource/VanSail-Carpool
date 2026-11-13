@@ -37,6 +37,17 @@ overflow, and writes per-state screenshots and `results.json` to
 `BROWSER_AUDIT_OUTPUT`. CI uploads these artifacts even after a failure. Run it
 only in hosted CI; the repository's local automated-suite restriction applies.
 
+`browser-xnode-availability.mjs` verifies optional telemetry failure, tab-scoped
+inventory loading, stale status, long node identities, loading/empty state and
+manual DDNS zone/TTL validation at desktop and mobile widths.
+`browser-xnode-creation.mjs` checks committed configuration/snippet creation with
+a lost response, failed recovery read, retained changed-draft conflict and exact
+saved-content recovery before creating a new resource with a distinct identity.
+The same cases verify pointer and Enter submission, explicit error announcements
+and visible footer feedback without programmatically scrolling to the error.
+IP read-failure coverage checks both the disabled fieldset property and effective
+disabled states of its descendant controls.
+
 `browser-member-recovery.mjs` adds desktop/mobile checks for intro retry,
 agreement revision consent, delayed owner changes, community loading/errors and
 retired invite links using the real onboarding and community components.

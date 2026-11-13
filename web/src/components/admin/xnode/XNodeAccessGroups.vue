@@ -2,7 +2,7 @@
 import { computed, onScopeDispose, reactive, shallowRef, toRaw } from 'vue'
 import { xnodeApi, type XNodeGroup, type XNodeEndpoint, type XNode, type XNodeConfiguration } from '@/api/xnode'
 import { useI18n } from '@/i18n'
-import { cloneForEditing } from '@/utils/browserCompatibility'
+import { cloneForEditing, createUuid } from '@/utils/browserCompatibility'
 import XNodeAccessBindings from './XNodeAccessBindings.vue'
 import XNodeEndpointForm from './XNodeEndpointForm.vue'
 
@@ -20,9 +20,11 @@ const nodes = computed(() => props.nodes.map(item => ({ label: item.name, value:
 const submitting = shallowRef(false)
 const blocked = computed(() => props.busy || submitting.value)
 let active = true
+let groupCreationId = ''
 onScopeDispose(() => { active = false })
 function editGroup(item?: XNodeGroup): void {
   if (!active || blocked.value) return
+  groupCreationId = ''
   Object.assign(group, { id: item?.id ?? '', name: item?.name ?? '', enabled: item?.enabled ?? true })
   bindings.value = cloneForEditing(toRaw(item?.bindings ?? []))
   bindingValid.value = true
@@ -43,7 +45,12 @@ async function performMutation(action: () => Promise<unknown>): Promise<boolean>
 async function saveGroup(): Promise<void> {
   if (!bindingValid.value || blocked.value) return
   const payload = { ...group, bindings: cloneForEditing(toRaw(bindings.value)) }
-  if (await performMutation(() => xnodeApi.saveGroup(payload)) && active) groupOpen.value = false
+  if (await performMutation(() => {
+    // Keep an uncertain create tied to this editor without marking it as an
+    // existing resource before the server has confirmed the save.
+    payload.id ||= groupCreationId ||= createUuid()
+    return xnodeApi.saveGroup(payload)
+  }) && active) groupOpen.value = false
 }
 async function deleteEndpoint(item: XNodeEndpoint): Promise<void> {
   const id = item.id

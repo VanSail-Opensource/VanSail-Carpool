@@ -54,7 +54,7 @@ func (s *Service) saveNode(ctx context.Context, node Node, settings NodeSettings
 			return node, err
 		}
 	}
-	node.Multiplier, node.MultiplierFP = 1, MultiplierScale
+	node.MultiplierFP = MultiplierScale
 	global, err := s.Global(ctx)
 	if err != nil {
 		return node, err
@@ -82,7 +82,7 @@ func (s *Service) saveNode(ctx context.Context, node Node, settings NodeSettings
 	}
 	stored := settings
 	stored.DDNSBindings = nil
-	node.SettingsCipher, err = s.seal("xnode.node."+node.ID, stored)
+	node.SettingsCipher, err = s.sealNodeSettings(node.ID, stored)
 	if err != nil {
 		return node, err
 	}

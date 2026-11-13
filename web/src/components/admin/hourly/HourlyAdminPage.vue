@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, shallowRef } from 'vue'
+import { onMounted, onScopeDispose, shallowRef } from 'vue'
 import { api } from '@/api/client'
 import { hourlyApi, type HourlyPolicy, type HourlyPolicySnapshot, type HourlyOffer } from '@/api/hourly'
 import type { SquadProduct } from '@/api/types'
@@ -19,37 +19,42 @@ const error = shallowRef<string | null>(null)
 const actionError = shallowRef<string | null>(null)
 const saved = shallowRef(false)
 let loadVersion = 0
+let active = true
 async function load(): Promise<void> {
+  if (!active || busy.value) return
   const version = ++loadVersion
-  loading.value = true; error.value = null
+  loading.value = true; error.value = null; saved.value = false
   try {
     const [nextPolicy, nextOffers, nextSquads] = await Promise.all([hourlyApi.policy(), hourlyApi.offers(), api.getAdminResource<{ items: SquadProduct[] }>('squad-products')])
-    if (version !== loadVersion) return
+    if (!active || version !== loadVersion) return
     policy.value = nextPolicy; offers.value = nextOffers
     // Hourly access is sold only for combo squads; pay-as-you-go (charge by
     // traffic) squads have their own per-GB offer and must not appear here.
     squads.value = nextSquads.items.filter(squad => squad.billingMode !== 'payg')
     actionError.value = null
-  } catch (caught) { if (version === loadVersion) error.value = localizedError(caught, 'hourly.loadFailed') }
-  finally { if (version === loadVersion) loading.value = false }
+  } catch (caught) { if (active && version === loadVersion) error.value = localizedError(caught, 'hourly.loadFailed') }
+  finally { if (active && version === loadVersion) loading.value = false }
 }
 async function perform(action: () => Promise<void>): Promise<void> {
-  if (busy.value) return
+  if (!active || busy.value || loading.value || error.value) return
+  loadVersion++
   busy.value = true; actionError.value = null; saved.value = false
-  try { await action(); saved.value = true }
-  catch (caught) { actionError.value = caught instanceof ApiError && caught.status === 409 ? t('hourly.conflict') : localizedError(caught, 'hourly.actionFailed') }
-  finally { busy.value = false }
+  try { await action(); if (active) saved.value = true }
+  catch (caught) { if (active) actionError.value = caught instanceof ApiError && caught.status === 409 ? t('hourly.conflict') : localizedError(caught, 'hourly.actionFailed') }
+  finally { if (active) busy.value = false }
 }
 function savePolicy(next: HourlyPolicy): Promise<void> {
-  return perform(async () => { policy.value = await hourlyApi.savePolicy(policy.value!.version, next) })
+  const version = policy.value?.version ?? ''
+  return perform(async () => { const saved = await hourlyApi.savePolicy(version, next); if (active) policy.value = saved })
 }
 function saveOffer(groupId: string, revision: string, enabled: boolean, minor: string, requiredHours: number): Promise<void> {
   return perform(async () => {
     const next = await hourlyApi.saveOffer(groupId, revision, enabled, minor, requiredHours)
-    offers.value = [...offers.value.filter(value => value.groupId !== groupId), next]
+    if (active) offers.value = [...offers.value.filter(value => value.groupId !== groupId), next]
   })
 }
 onMounted(() => void load())
+onScopeDispose(() => { active = false; loadVersion++; policy.value = null; offers.value = []; squads.value = [] })
 </script>
 
 <template>
@@ -60,11 +65,11 @@ onMounted(() => void load())
         <InlineNotice v-if="actionError" tone="warning">{{ actionError }}</InlineNotice>
         <InlineNotice v-else-if="saved" tone="success">{{ t('hourly.admin.saved') }}</InlineNotice>
         <h3>{{ t('hourly.admin.policy') }}</h3>
-        <HourlyPolicyForm :snapshot="policy" :busy="busy" @save="savePolicy" />
+        <HourlyPolicyForm :snapshot="policy" :busy="busy" :disabled="loading || !!error" @save="savePolicy" />
         <section class="hourly-admin__offers">
           <h3>{{ t('hourly.admin.offers') }}</h3><p>{{ t('hourly.admin.offersHint') }}</p>
           <p v-if="!squads.length">{{ t('hourly.admin.noSquads') }}</p>
-          <HourlyOfferForm v-for="squad in squads" :key="squad.groupId" :squad="squad" :offer="offers.find(value => value.groupId === squad.groupId)" :activation-hours="policy.policy.activationHours" :busy="busy" @save="saveOffer" />
+          <HourlyOfferForm v-for="squad in squads" :key="squad.groupId" :squad="squad" :offer="offers.find(value => value.groupId === squad.groupId)" :activation-hours="policy.policy.activationHours" :busy="busy" :disabled="loading || !!error" @save="saveOffer" />
         </section>
       </div>
     </AdminSectionState>

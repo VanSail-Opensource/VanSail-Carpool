@@ -22,9 +22,26 @@ func (s *Server) xnodeNode(w http.ResponseWriter, r *http.Request) {
 	privateSubscriptionHeaders(w)
 	writeJSON(w, http.StatusOK, map[string]any{"node": node, "settings": settings})
 }
+
+// nodeWrite contains only administrator-editable fields. Agent identity,
+// revisions and timestamps are server-owned observations, never write inputs.
+type nodeWrite struct {
+	ID           string `json:"id"`
+	Name         string `json:"name"`
+	CountryCode  string `json:"countryCode"`
+	ProviderName string `json:"providerName"`
+	Enabled      bool   `json:"enabled"`
+	ConfigID     string `json:"configId"`
+}
+
+func (input nodeWrite) node() xnode.Node {
+	return xnode.Node{ID: input.ID, Name: input.Name, CountryCode: input.CountryCode,
+		ProviderName: input.ProviderName, Enabled: input.Enabled, ConfigID: input.ConfigID}
+}
+
 func (s *Server) xnodeSaveNode(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Node     xnode.Node         `json:"node"`
+		Node     nodeWrite          `json:"node"`
 		Settings xnode.NodeSettings `json:"settings"`
 	}
 	if err := decodeJSON(w, r, &input); err != nil {
@@ -34,7 +51,7 @@ func (s *Server) xnodeSaveNode(w http.ResponseWriter, r *http.Request) {
 	if id := chiURLParam(r, "id"); id != "" {
 		input.Node.ID = id
 	}
-	node, err := s.deps.XNode.SaveNodeAs(r.Context(), input.Node, input.Settings, currentUser(r).ID)
+	node, err := s.deps.XNode.SaveNodeAs(r.Context(), input.Node.node(), input.Settings, currentUser(r).ID)
 	if err != nil {
 		s.xnodeError(w, r, err)
 		return

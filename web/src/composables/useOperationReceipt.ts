@@ -30,6 +30,7 @@ export function useOperationReceipt(intervalMilliseconds = 1500, loader?: Operat
 
   function schedule(expectedVersion: number): void {
     clearTimer()
+    if (document.hidden || !polling.value || expectedVersion !== version) return
     const delay = Math.min(intervalMilliseconds * (2 ** failures), 10_000)
     timer = window.setTimeout(() => void poll(expectedVersion), delay)
   }
@@ -37,6 +38,7 @@ export function useOperationReceipt(intervalMilliseconds = 1500, loader?: Operat
   async function poll(expectedVersion = version): Promise<void> {
     const operationId = receipt.value?.id
     if (!operationId || checking.value || expectedVersion !== version) return
+    clearTimer()
     checking.value = true
     try {
       const next = await loadReceipt(operationId)
@@ -78,7 +80,12 @@ export function useOperationReceipt(intervalMilliseconds = 1500, loader?: Operat
     failures = 0
   }
 
-  onScopeDispose(reset)
+  function visibility(): void {
+    if (document.hidden) clearTimer()
+    else if (polling.value && operationIsActive(receipt.value?.status)) void poll(version)
+  }
+  document.addEventListener('visibilitychange', visibility)
+  onScopeDispose(() => { reset(); document.removeEventListener('visibilitychange', visibility) })
 
   return {
     receipt: readonly(receipt),

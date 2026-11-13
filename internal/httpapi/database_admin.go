@@ -28,7 +28,6 @@ func (h *DatabaseAdministrationHTTP) Mount(router chi.Router) {
 	router.Get("/database/tables", h.tables)
 	router.Get("/database/tables/{table}/rows", h.rows)
 	router.Post("/database/tables/{table}/query", h.queryRows)
-	router.Put("/database/tables/{table}/rows", h.updateCompatibility)
 	router.Post("/database/mutations/review", h.review)
 	router.Post("/database/mutations", h.apply)
 	router.Get("/backups/{id}/download", h.download)
@@ -97,29 +96,6 @@ func (h *DatabaseAdministrationHTTP) apply(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	writeJSON(w, http.StatusOK, result)
-}
-
-// updateCompatibility preserves the initially published path but intentionally
-// refuses old one-step writes because ApplyMutation requires a live reviewHash.
-
-func (h *DatabaseAdministrationHTTP) updateCompatibility(w http.ResponseWriter, r *http.Request) {
-	var request databaseadmin.MutationRequest
-	if err := decodeJSON(w, r, &request); err != nil {
-		h.writeError(w, r, http.StatusBadRequest, "INVALID_DATABASE_MUTATION", "The reviewed database mutation is invalid.")
-		return
-	}
-	request.Action = "update"
-	request.Table = chi.URLParam(r, "table")
-	result, err := h.editor.ApplyMutation(r.Context(), currentUser(r).ID, request)
-	if err != nil {
-		h.failure(w, r, err)
-		return
-	}
-	if result.Row == nil {
-		h.writeError(w, r, http.StatusInternalServerError, "DATABASE_EDIT_FAILED", "The database record was not returned.")
-		return
-	}
-	writeJSON(w, http.StatusOK, result.Row)
 }
 
 func (h *DatabaseAdministrationHTTP) download(w http.ResponseWriter, r *http.Request) {

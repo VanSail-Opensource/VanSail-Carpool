@@ -2,6 +2,7 @@
 import { computed, onScopeDispose, reactive, shallowRef, watch } from 'vue'
 import { xnodeApi, type XNodeEndpoint, type XNodeEndpointField, type XNode, type XNodeConfiguration } from '@/api/xnode'
 import { useI18n } from '@/i18n'
+import { createUuid } from '@/utils/browserCompatibility'
 import { nodeInboundItems } from './nodeFormOptions'
 import { endpointDraft, endpointOptions, endpointOptionErrors, endpointPayload } from './endpointForm'
 import { useEndpointPreview } from './useEndpointPreview'
@@ -14,6 +15,7 @@ const { t } = useI18n()
 const submitting = shallowRef(false)
 const blocked = computed(() => props.busy || submitting.value)
 let active = true
+let creationId = ''
 onScopeDispose(() => { active = false })
 const draft = reactive(endpointDraft(props.item, props.nodes[0]?.id))
 const nodes = computed(() => props.nodes.map(item => ({ value: item.id, label: item.name })))
@@ -38,7 +40,12 @@ async function save() {
   const payload = endpointPayload(draft, fields.value)
   submitting.value = true
   try {
-    const saved = await props.perform(() => xnodeApi.saveEndpoint(payload))
+    const saved = await props.perform(() => {
+      // The keyed editor owns one creation identity across uncertain retries;
+      // preview and new/edit presentation continue to use the original draft.
+      payload.id ||= creationId ||= createUuid()
+      return xnodeApi.saveEndpoint(payload)
+    })
     if (!active) return
     if (saved) emit('saved')
     else await preview.load()

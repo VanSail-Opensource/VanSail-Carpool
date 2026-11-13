@@ -36,21 +36,15 @@ func TestNativeGlobalRetainsLegacyScheduleAndMasterGeoIP(t *testing.T) {
 	}
 }
 
-func TestRetiredNodeMultiplierCannotChangeWireOutput(t *testing.T) {
-	for _, document := range []string{`{}`, `{"multiplier":null}`, `{"multiplier":-1}`, `{"multiplier":0.0000001}`, `{"multiplier":"old"}`, `{"multiplier":{"legacy":true}}`} {
-		var node Node
-		if err := json.Unmarshal([]byte(document), &node); err != nil || node.Multiplier != 1 || node.MultiplierFP != MultiplierScale {
-			t.Fatalf("deprecated input affected accounting: %s %+v %v", document, node, err)
-		}
-	}
-	node := Node{Multiplier: 7.5, MultiplierFP: 7_500_000, Name: "historical"}
+func TestRetiredNodeMultiplierIsAbsentFromWireOutput(t *testing.T) {
+	node := Node{MultiplierFP: 7_500_000, Name: "historical"}
 	raw, err := json.Marshal(node)
 	var output map[string]any
-	if err != nil || json.Unmarshal(raw, &output) != nil || output["multiplier"] != float64(1) || node.MultiplierFP != 7_500_000 {
+	if err != nil || json.Unmarshal(raw, &output) != nil || node.MultiplierFP != 7_500_000 {
 		t.Fatal(string(raw), err, node)
 	}
-	if json.Unmarshal([]byte(`{"unknown":1}`), &node) == nil {
-		t.Fatal("unknown node field accepted")
+	if _, exists := output["multiplier"]; exists {
+		t.Fatal("retired API property survived", string(raw))
 	}
 }
 

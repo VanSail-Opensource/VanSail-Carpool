@@ -48,10 +48,10 @@ describe('rendering snapshot compatibility', () => {
     expect(isResponseCompatible('/api/v1/ledger', 'GET', { items: [{ ...entry, kind: 'not_a_ledger_kind' }] })).toBe(false)
   })
 
-  it('accepts only the retired constant multiplier in current node response contracts', () => {
-    const node = { id: 'node', name: 'Amsterdam', enabled: true, configId: 'config', multiplier: 1 }
+  it('accepts current node responses without retired multiplier metadata', () => {
+    const node = { id: 'node', name: 'Amsterdam', enabled: true, configId: 'config' }
     expect(isResponseCompatible('/api/v1/admin/xnode/nodes', 'GET', { items: [node] })).toBe(true)
-    for (const multiplier of [0, 1.5, null, '1']) expect(isResponseCompatible('/api/v1/admin/xnode/nodes', 'GET', { items: [{ ...node, multiplier }] })).toBe(false)
+    expect(isResponseCompatible('/api/v1/admin/xnode/nodes', 'GET', { items: [{ ...node, enabled: 'true' }] })).toBe(false)
     const catalog = { combos: [], addons: [], nodes: [{ uuid: 'node', name: 'Amsterdam', countryCode: 'NL', consumptionMultiplier: 1, providerName: null }] }
     expect(isResponseCompatible('/api/v1/catalog', 'GET', catalog)).toBe(true)
     expect(isResponseCompatible('/api/v1/catalog', 'GET', { ...catalog, nodes: [{ ...catalog.nodes[0], consumptionMultiplier: 2 }] })).toBe(false)

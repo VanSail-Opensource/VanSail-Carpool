@@ -16,6 +16,13 @@ native executor limits still bound actual execution. It is not a separate queue.
 
 `executor_test.go` checks independent completion and cancellation joins without relying on timing sleeps.
 
+Admission reserves a lane slot and joins the lifecycle before the database
+claim, then releases the lifecycle mutex while PostgreSQL responds. A slow
+ordinary claim cannot stall urgent/compute claims or shutdown cancellation.
+Shutdown also joins claims still waiting on the database; a late claimed job
+is completed for recovery without invoking its handler. These boundaries are
+covered by `claim_isolation_test.go`.
+
 `claim.go` requires durable generation-aware completion and renewal. PostgreSQL claims serialize only resource
 admission, lock candidates with SKIP LOCKED, then release locks before providers.
 

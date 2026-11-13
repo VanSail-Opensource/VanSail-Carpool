@@ -44,7 +44,7 @@ func scanXNodeNode(row rowScanner) (xnode.Node, error) {
 		}
 		node.RetiredAt = &at
 	}
-	node.Enabled, node.Multiplier, node.MultiplierFP = enabled == 1, 1, xnode.MultiplierScale
+	node.Enabled, node.MultiplierFP = enabled == 1, xnode.MultiplierScale
 	node.CreatedAt, err = time.Parse(time.RFC3339Nano, created)
 	if err != nil {
 		return node, err
@@ -77,8 +77,6 @@ func (s *Store) XNodeNodeByToken(ctx context.Context, hash []byte) (xnode.Node, 
 }
 
 func (s *Store) SaveXNodeNode(ctx context.Context, node xnode.Node) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
 	result, err := s.db.ExecContext(ctx, saveXNodeNodeSQL, xnodeNodeArgs(node)...)
 	if err != nil {
 		return err
@@ -131,8 +129,6 @@ func (s *Store) AdvanceXNodeRevision(ctx context.Context, id string, observed ui
 	if observed >= math.MaxInt64 {
 		return 0, xnode.ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
 	var revision uint64
 	err := s.db.QueryRowContext(ctx, `UPDATE xnode_nodes SET desired_revision=GREATEST(desired_revision,$1)+1 WHERE id=$2 AND desired_revision<$3 RETURNING desired_revision`, observed, id, int64(math.MaxInt64)).Scan(&revision)
 	return revision, err

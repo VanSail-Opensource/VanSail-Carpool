@@ -18,6 +18,10 @@ export function usePaymentTarget(options: PaymentTargetOptions) {
   const qrDataUrl = shallowRef<string | null>(null)
   let timer: ReturnType<typeof setTimeout> | undefined
   const latest = createLatestRequest()
+  let tracking = false
+  let trackingToken = 0
+  let failures = 0
+  let pollingToken: number | undefined
 
   function clearTimer(): void {
     if (timer !== undefined) clearTimeout(timer)
@@ -25,6 +29,7 @@ export function usePaymentTarget(options: PaymentTargetOptions) {
   }
 
   function stop(): void {
+    tracking = false
     latest.invalidate()
     clearTimer()
   }
@@ -39,6 +44,7 @@ export function usePaymentTarget(options: PaymentTargetOptions) {
 
   async function present(next: FeaturePaymentOrder): Promise<PaymentTargetResult> {
     const token = latest.begin()
+    tracking = false; failures = 0
     clearTimer()
     await remember(next, token)
     if (!latest.isCurrent(token)) return 'pending'
@@ -59,25 +65,34 @@ export function usePaymentTarget(options: PaymentTargetOptions) {
 
   function schedule(token: number): void {
     clearTimer()
-    timer = setTimeout(() => void poll(token), 2000)
+    tracking = true; trackingToken = token
+    if (!document.hidden) timer = setTimeout(() => void poll(token), Math.min(2000 * 2 ** failures, 30_000))
   }
 
   async function poll(token: number): Promise<void> {
-    if (!latest.isCurrent(token) || !order.value) return
+    if (!tracking || !latest.isCurrent(token) || !order.value || pollingToken === token) return
+    clearTimer()
+    pollingToken = token
     try {
       const refreshed = await api.getPaymentOrder(order.value.id)
       if (!latest.isCurrent(token)) return
+      failures = 0
       order.value = refreshed
       if (refreshed.status === 'paid') {
+        tracking = false
         options.onPaid()
         return
       }
       if (isTerminalPaymentStatus(refreshed.status)) {
+        tracking = false
         options.onTerminal(refreshed)
         return
       }
     } catch {
-      // A transient status failure must not discard a valid checkout.
+      // Retain the accepted checkout while reducing pressure during an outage.
+      if (latest.isCurrent(token)) failures = Math.min(failures + 1, 4)
+    } finally {
+      if (pollingToken === token) pollingToken = undefined
     }
     if (latest.isCurrent(token)) schedule(token)
   }
@@ -96,7 +111,14 @@ export function usePaymentTarget(options: PaymentTargetOptions) {
     notifyHaptic('success')
   }
 
+  function visibility(): void {
+    if (document.hidden) clearTimer()
+    else if (tracking) void poll(trackingToken)
+  }
+  document.addEventListener('visibilitychange', visibility)
   onScopeDispose(() => {
+    tracking = false
+    document.removeEventListener('visibilitychange', visibility)
     clearTimer()
     latest.dispose()
   })

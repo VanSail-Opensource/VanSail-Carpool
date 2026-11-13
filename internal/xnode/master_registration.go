@@ -2,18 +2,18 @@ package xnode
 
 import (
 	"context"
+	"encoding/json"
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
 
-// Enrollment rotation and peer replacement share the master lock. Persist stream
-// replacement in the same critical section so concurrent hellos cannot publish a
-// peer whose boot has already been durably closed by another authenticated peer.
+// Enrollment rotation and peer replacement share the node's admission lock.
+// Stream replacement precedes publication without holding the fleet-wide mutex.
 func (m *Master) registerPeer(ctx context.Context, node string, hash []byte, hello wire.AgentHello, peer *agentPeer) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if ctx.Err() != nil {
-		return ctx.Err()
+	release, err := m.lockEnrollment(ctx, node)
+	if err != nil {
+		return err
 	}
+	defer release()
 	current, err := m.service.repo.XNodeNodeByToken(ctx, hash)
 	if err != nil || current.ID != node {
 		return ErrUnavailable
@@ -30,12 +30,24 @@ func (m *Master) registerPeer(ctx context.Context, node string, hash []byte, hel
 			return err
 		}
 	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if ctx.Err() != nil || m.ctx != nil && m.ctx.Err() != nil {
+		return ErrUnavailable
+	}
 	if previous := m.peers[node]; previous != nil {
 		previous.cancel()
 		previous.socket.Close()
 	}
 	m.peers[node] = peer
-	m.live[node] = liveSnapshot{hello: hello, activityReports: peer.activityReports}
+	previous := m.live[node]
+	snapshot := liveSnapshot{hello: hello, activityReports: peer.activityReports, ddnsWarningAt: previous.ddnsWarningAt, ddnsWarning: previous.ddnsWarning}
+	// The current master-side utility diagnostic belongs to stored node settings,
+	// not the previous agent's authority or telemetry. Preserve only that entry.
+	if snapshot.ddnsWarning != nil {
+		snapshot.logs = []json.RawMessage{snapshot.ddnsWarning}
+	}
+	m.live[node] = snapshot
 	m.wg.Add(1)
 	return nil
 }

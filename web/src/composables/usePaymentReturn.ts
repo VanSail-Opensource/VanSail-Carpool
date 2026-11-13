@@ -24,10 +24,15 @@ export function usePaymentReturn(orderId: Ref<string>, options: PaymentReturnOpt
   const authenticationRequired = shallowRef(false)
   let pollTimer: ReturnType<typeof setTimeout> | undefined
   const latest = createLatestRequest()
+  let pollingActive = false
+  let pollingToken = 0
+  let checkingToken: number | undefined
+  let failures = 0
 
   const isConfirmed = computed(() => state.value === 'confirmed')
 
   function stopPolling(): void {
+    pollingActive = false
     latest.invalidate()
     clearPollTimer()
   }
@@ -39,10 +44,12 @@ export function usePaymentReturn(orderId: Ref<string>, options: PaymentReturnOpt
 
   function schedulePoll(token: number): void {
     clearPollTimer()
-    pollTimer = setTimeout(() => void refresh(token), 2000)
+    pollingActive = true; pollingToken = token
+    if (!document.hidden) pollTimer = setTimeout(() => void refresh(token), Math.min(2000 * 2 ** failures, 30_000))
   }
 
   function applyStatus(status: FeaturePaymentOrder['status'], token: number): void {
+    pollingActive = false
     if (status === 'paid') {
       state.value = 'confirmed'
     } else if (terminalStatuses.has(status)) {
@@ -55,13 +62,15 @@ export function usePaymentReturn(orderId: Ref<string>, options: PaymentReturnOpt
 
   async function refresh(expectedToken?: number): Promise<void> {
     const token = expectedToken ?? latest.begin()
+    if (checkingToken === token || !latest.isCurrent(token)) return
     clearPollTimer()
-    if (!latest.isCurrent(token)) return
+    pollingActive = false
     if (!orderId.value) {
       state.value = 'missing'
       return
     }
     state.value = order.value || returnDetails.value ? 'pending' : 'checking'
+    checkingToken = token
     try {
       if (options.browserStatus) {
         const provider = options.provider?.value
@@ -72,6 +81,7 @@ export function usePaymentReturn(orderId: Ref<string>, options: PaymentReturnOpt
         }
         const next = await api.getPaymentReturnStatus(provider, orderId.value, capability)
         if (!latest.isCurrent(token)) return
+        failures = 0
         authenticationRequired.value = false
         returnDetails.value = next
         orderStatus.value = next.status
@@ -80,6 +90,7 @@ export function usePaymentReturn(orderId: Ref<string>, options: PaymentReturnOpt
         returnDetails.value = null
         const next = await api.getPaymentOrder(orderId.value)
         if (!latest.isCurrent(token)) return
+        failures = 0
         authenticationRequired.value = false
         order.value = next
         orderStatus.value = next.status
@@ -96,11 +107,14 @@ export function usePaymentReturn(orderId: Ref<string>, options: PaymentReturnOpt
         return
       }
       if (order.value || returnDetails.value) {
+        failures = Math.min(failures + 1, 4)
         state.value = 'pending'
         schedulePoll(token)
       } else {
         state.value = 'unavailable'
       }
+    } finally {
+      if (checkingToken === token) checkingToken = undefined
     }
   }
 
@@ -109,9 +123,17 @@ export function usePaymentReturn(orderId: Ref<string>, options: PaymentReturnOpt
     returnDetails.value = null
     orderStatus.value = null
     authenticationRequired.value = false
+    failures = 0
     void refresh()
   }, { immediate: true })
+  function visibility(): void {
+    if (document.hidden) clearPollTimer()
+    else if (pollingActive) void refresh(pollingToken)
+  }
+  document.addEventListener('visibilitychange', visibility)
   onScopeDispose(() => {
+    pollingActive = false
+    document.removeEventListener('visibilitychange', visibility)
     clearPollTimer()
     latest.dispose()
   })

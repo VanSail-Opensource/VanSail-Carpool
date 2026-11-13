@@ -16,11 +16,12 @@ and per-client compatibility. Endpoint read metadata is never a writable native
 protocol selector. Encrypted `overrides.clientOptions` uses its generated
 administrator allowlist; member DIY types/permissions remain independent.
 
-Node traffic multipliers are retired. `XNodeNodeWrite` accepts an optional,
-unrestricted deprecated `multiplier` value solely for old-client compatibility;
-the backend ignores it, including null. Node, catalog and statistics responses
-retain deprecated traffic multiplier properties as constant 1. Member interfaces
-do not display them. Existing recorded usage and financial facts remain unchanged;
+Node traffic multipliers are retired. `XNodeNodeWrite` accepts exactly the six
+editable fields `id`, `name`, `enabled`, `countryCode`, `providerName` and `configId`.
+The node response no longer exposes `multiplier`; obsolete multiplier inputs and
+server-owned agent, revision, removal and timestamp fields are rejected on write.
+Catalog and statistics responses retain their separate historical accounting
+contracts. Existing recorded usage and financial facts remain unchanged;
 PAYG/hourly prices and reward multipliers have independent contracts.
 
 Certificate lifecycle reuses node commands with `name=certificates.run`,
@@ -31,10 +32,11 @@ administrator devices, including pending/uncertain outcomes. Optional
 `certificateProgress` in node metrics is advisory and memory-only. Certificate
 status/results expose public certificate facts, never keys/provider credentials.
 
-Node DNS resolver-mode and upstream fields are deprecated compatibility inputs.
-Effective DNS uses native Xray `dns.servers`. Encrypted per-node
-`legacyDnsLoopback` state retains the former loopback fallback without editing
-shared configurations or host resolver services.
+Node DNS writes expose only `redirect`; obsolete resolver `mode`, `upstreams`
+and public `legacyDnsLoopback` inputs are rejected. Effective DNS uses native
+Xray `dns.servers`. The backend privately migrates existing encrypted node
+settings so historical loopback fallback remains effective until explicit native
+resolver settings replace it; that migration state is never a writable API field.
 
 Node firewall settings retain legacy individual ports and add inclusive TCP,
 UDP and SSH ranges. Forwarding adds optional source/target end ports: a source
@@ -109,3 +111,8 @@ authentication. Capabilities expire 30 minutes after order creation; public
 navigation forwards but never issues them. Legacy links require ownership.
 
 Hourly commerce uses independent offers and enrollments; no legacy purchase is converted. Activation/disable return existing durable operation receipts, and whole-hour renewals preserve exact paid-through authorization. All large byte and monetary accounting integers remain decimal strings.
+
+Native telemetry accepts only sampling/report intervals. The inert
+`include_active_ips` field is rejected on new writes; active-IP reporting remains
+mandatory. Historical encrypted global settings are read through a private
+storage adapter and no longer expose that obsolete flag.

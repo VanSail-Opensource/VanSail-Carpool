@@ -53,7 +53,7 @@ func TestManagedRoutingNeverEnablesPeersBeforeEveryNodeApplies(t *testing.T) {
 	if _, err = f.service.SaveConfiguration(ctx, profile); err != nil {
 		t.Fatal(err)
 	}
-	other, err := f.service.SaveNode(ctx, xnode.Node{Name: "Peer", Enabled: true, Multiplier: 1, ConfigID: f.node.ConfigID}, xnode.NodeSettings{})
+	other, err := f.service.SaveNode(ctx, xnode.Node{Name: "Peer", Enabled: true, ConfigID: f.node.ConfigID}, xnode.NodeSettings{})
 	if err != nil {
 		t.Fatal(err)
 	}
