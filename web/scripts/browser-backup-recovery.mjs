@@ -5,7 +5,7 @@ export async function backupRecoveryScenarios(scenario, size) {
     await scenario(size, 'admin-' + kind + '-delete-recovery', 'backup-recovery-audit.html?defer&slow&refresh-error', async (page, capture) => {
       await capture('loading')
       if (kind === 'job') await page.getByRole('tab', { name: 'Synchronization jobs', exact: true }).click()
-      const trigger = page.getByRole('button', { name: kind === 'backup' ? 'Delete' : 'Delete constructed job', exact: true })
+      const trigger = page.getByRole('button', { name: kind === 'backup' ? 'Delete' : 'Delete constructed job', exact: true, includeHidden: true })
       await trigger.waitFor()
       await trigger.click()
       const dialog = page.getByRole('dialog')
@@ -13,6 +13,7 @@ export async function backupRecoveryScenarios(scenario, size) {
       await dialog.getByRole('button', { name: kind === 'backup' ? 'Delete backup' : 'Delete job', exact: true }).click()
       await page.waitForFunction(() => globalThis.__backupRecoveryAudit.pending === 1)
       assert.equal(await dialog.getByRole('button', { name: 'Cancel', exact: true }).isEnabled(), false)
+      // The modal hides background accessibility nodes; still require the actual trigger to be disabled.
       assert.equal(await trigger.isEnabled(), false)
       await page.keyboard.press('Escape')
       assert.equal(await dialog.isVisible(), true)

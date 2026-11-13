@@ -4,7 +4,7 @@ export async function adminActivityRecoveryScenarios(scenario, size) {
   await scenario(size, 'admin-game-save-recovery', 'lucky-admin-audit.html?defer-save&read-after-save-error&dark', async (page, capture) => {
     await page.getByRole('button', { name: 'Edit Retained coin', exact: true }).click()
     const dialog = page.getByRole('dialog')
-    const name = dialog.getByRole('textbox', { name: 'Name', exact: true })
+    const name = dialog.getByLabel('Name', { exact: true })
     await name.fill('Confirmed game')
     await dialog.getByRole('button', { name: 'Save game', exact: true }).click()
     await page.waitForFunction(() => globalThis.__audit.pendingSaves === 1)
@@ -36,7 +36,7 @@ export async function adminActivityRecoveryScenarios(scenario, size) {
     await page.getByRole('tab', { name: 'Lucky draws', exact: true }).click()
     await page.getByRole('button', { name: 'Edit Weekend rewards', exact: true }).click()
     const dialog = page.getByRole('dialog')
-    await dialog.getByRole('textbox', { name: 'Name', exact: true }).fill('Confirmed draw')
+    await dialog.getByLabel('Name', { exact: true }).fill('Confirmed draw')
     await dialog.getByRole('button', { name: 'Save draw', exact: true }).click()
     await page.waitForFunction(() => globalThis.__audit.drawWrites.length === 1)
     await page.waitForFunction(() => {
@@ -44,7 +44,7 @@ export async function adminActivityRecoveryScenarios(scenario, size) {
       return fieldset && !fieldset.disabled
     })
     await page.evaluate(() => globalThis.__audit.releaseReads())
-    assert.equal(await dialog.getByRole('textbox', { name: 'Name', exact: true }).inputValue(), 'Confirmed draw')
+    assert.equal(await dialog.getByLabel('Name', { exact: true }).inputValue(), 'Confirmed draw')
     await capture('confirmed')
     await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
     await dialog.waitFor({ state: 'hidden' })
