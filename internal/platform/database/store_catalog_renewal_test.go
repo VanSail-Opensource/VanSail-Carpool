@@ -90,10 +90,10 @@ func TestRenewalSelectionSurvivesBillingModeAndHourlyOfferEdits(t *testing.T) {
 	if err := store.SaveXNodeGroup(ctx, xnode.Group{ID: "retained-a", Name: "Retained A", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.SaveHourlyOffer(ctx, user.ID, model.HourlyOffer{GroupID: "retained-a", Enabled: true, HourlyPriceTXBMinor: 1}, 0); err != nil {
+	if _, err := store.SaveHourlyOffer(ctx, createTestAdmin(t, store, 9_897_000_001).ID, model.HourlyOffer{GroupID: "retained-a", Enabled: true, HourlyPriceTXBMinor: 1}, 0); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.SaveHourlyOffer(ctx, user.ID, model.HourlyOffer{GroupID: "retained-a", Enabled: false, HourlyPriceTXBMinor: 2}, 1); err != nil {
+	if _, err := store.SaveHourlyOffer(ctx, createTestAdmin(t, store, 9_897_000_001).ID, model.HourlyOffer{GroupID: "retained-a", Enabled: false, HourlyPriceTXBMinor: 2}, 1); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := store.SaveSquadProduct(ctx, SquadProductInput{GroupID: "retained-b", UpstreamPresent: true, BillingMode: "payg", PAYGPriceTXBMinor: 100}); err != nil {

@@ -13,6 +13,9 @@ func (s *Service) Compile(ctx context.Context, nodeID string) (wire.Config, erro
 }
 func (s *Service) compile(ctx context.Context, nodeID string, replacement *Configuration, shared *Snippet, fleet *GlobalConfig, member *Customization) (wire.Config, error) {
 	s = s.withCompileReads(nodeID)
+	if fleet != nil {
+		s.globalSettings.publish(*fleet)
+	}
 	node, settings, err := s.Node(ctx, nodeID)
 	if err != nil {
 		return wire.Config{}, err
@@ -62,9 +65,6 @@ func (s *Service) compile(ctx context.Context, nodeID string, replacement *Confi
 	global, err := s.Global(ctx)
 	if err != nil {
 		return wire.Config{}, err
-	}
-	if fleet != nil {
-		global = *fleet
 	}
 	settings.Firewall = global.FirewallDetection.Apply(settings.Firewall)
 	ports, hashes, err := GlobalWire(global, native)

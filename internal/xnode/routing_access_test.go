@@ -37,7 +37,9 @@ func (s *prunedRoutingSettings) Optional(context.Context, string) (string, error
 	s.reads++
 	return "", ErrUnavailable
 }
-func (*prunedRoutingSettings) PutXNodeGlobal(context.Context, string, string) error { return nil }
+func (*prunedRoutingSettings) PutXNodeGlobalAtVersion(context.Context, string, string, int64, time.Time) error {
+	return nil
+}
 
 func TestRoutingReconciliationRetainsCommittedFullAccessPrune(t *testing.T) {
 	vault, err := secret.NewVault(make([]byte, 32))

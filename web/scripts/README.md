@@ -70,3 +70,7 @@ Desktop/mobile checks retain screenshots and never contact IP data providers.
 `browser-settings-recovery.mjs` verifies owner-bound administrator links, expired
 link creation failures, queued activation reconsent and retained tag drafts after
 save failures. Only constructed accounts, links and preference writes are used.
+
+`browser-chart-recovery.mjs` checks exact decimal traffic readouts, unavailable
+buckets and safe numeric metric detail in desktop/mobile Chromium, including
+keyboard navigation. Its existing chart fixture issues no API requests.

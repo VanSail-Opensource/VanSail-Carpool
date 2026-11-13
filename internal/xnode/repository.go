@@ -71,5 +71,5 @@ type Repository interface {
 
 type Settings interface {
 	Optional(context.Context, string) (string, error)
-	PutXNodeGlobal(context.Context, string, string) error
+	PutXNodeGlobalAtVersion(context.Context, string, string, int64, time.Time) error
 }

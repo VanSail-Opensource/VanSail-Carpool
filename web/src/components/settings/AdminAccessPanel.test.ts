@@ -13,11 +13,12 @@ const account = reactive<{ user: { id: string } | null; isAdmin: boolean }>({ us
 vi.mock('@/stores/session', () => ({ useSessionStore: () => account }))
 import AdminAccessPanel from './AdminAccessPanel.vue'
 
-const stubs = {
-  UAlert: { props: ['title'], template: '<p role="alert">{{ title }}</p>' },
-  UInput: { props: ['modelValue'], render(this: { modelValue: string }) { return h('input', { value: this.modelValue }) } },
-  UButton: { props: ['label', 'disabled'], render(this: { label: string; disabled: boolean }) { return h('button', { disabled: this.disabled }, this.label) } },
+const base = {
+  Alert: { props: ['title'], template: '<p role="alert">{{ title }}</p>' },
+  Input: { props: ['modelValue'], render(this: { modelValue: string }) { return h('input', { value: this.modelValue }) } },
+  Button: { props: ['label', 'disabled'], render(this: { label: string; disabled: boolean }) { return h('button', { disabled: this.disabled }, this.label) } },
 }
+const stubs = { ...base, ...Object.fromEntries(Object.entries(base).map(([name, value]) => ['U' + name, value])) }
 const link = (id: string): AdminAccessLink => ({ url: `https://panel.example/admin/access#token=${id}`, expiresAt: new Date(Date.now() + 60_000).toISOString() })
 const mountPanel = () => mount(AdminAccessPanel, { global: { stubs } })
 beforeEach(() => { vi.resetAllMocks(); account.user = { id: 'first' }; account.isAdmin = true; mocks.copyText.mockResolvedValue(true) })

@@ -153,14 +153,20 @@ func (r *compileReads) DesiredEntitlement(ctx context.Context, id string, now ti
 		return item, nil
 	}
 	if purchases, ok := r.purchases[id]; ok {
+		var selected *model.Purchase
 		for _, purchase := range purchases {
-			if (purchase.Status == "active" || purchase.Status == "activating") && !purchase.ValidFrom.After(now) && purchase.ValidUntil.After(now) {
-				r.desired[id] = &purchase
-				return &purchase, nil
+			if (purchase.Status != "active" && purchase.Status != "activating") || purchase.ValidFrom.After(now) || !purchase.ValidUntil.After(now) {
+				continue
+			}
+			if selected == nil || purchase.ValidFrom.After(selected.ValidFrom) ||
+				purchase.ValidFrom.Equal(selected.ValidFrom) && (purchase.CreatedAt.After(selected.CreatedAt) ||
+					purchase.CreatedAt.Equal(selected.CreatedAt) && purchase.ID > selected.ID) {
+				copy := purchase
+				selected = &copy
 			}
 		}
-		r.desired[id] = nil
-		return nil, nil
+		r.desired[id] = selected
+		return selected, nil
 	}
 	item, err := r.Repository.DesiredEntitlement(ctx, id, now)
 	if err == nil {

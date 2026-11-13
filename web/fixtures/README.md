@@ -486,3 +486,8 @@ replacement/logout; `link&link-refresh-error` rejects expiry refresh until expli
 recovery. Settings `__controlsAudit` exposes constructed owner replacement and
 tag-save recovery, with exact activation target and tag-write counts. These
 component fixtures seed typed sessions without full-session preload requests.
+
+The existing `pricing-audit.html?view=charts&exact` fixture compares a raw decimal
+traffic total beyond the JavaScript safe-integer range with numeric live-metric
+samples. `invalid` adds malformed and missing buckets; browser checks verify
+unavailable readouts without inventing zero traffic or issuing API requests.

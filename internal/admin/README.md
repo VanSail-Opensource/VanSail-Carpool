@@ -76,7 +76,9 @@ operations even when their reasons are identical.
 
 - `usdt_settings.go` ? Encrypted USDT configuration registration and validation.
 
-`xnode_settings.go` Registers encrypted fleet configuration with typed validation.
+`xnode_settings.go` registers encrypted fleet configuration with typed validation.
+Global writes require the versioned database adapter, retaining the validated
+compile epoch and entitlement deadline through the administrator audit commit.
 
 `user_provider_commands.go` validates manual temporary restrictions; `user_provider_worker.go` executes queued changes. `user_account_commands_test.go` covers coupon, refund and restriction command validation.
 

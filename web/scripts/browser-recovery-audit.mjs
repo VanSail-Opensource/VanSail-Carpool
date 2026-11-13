@@ -11,6 +11,7 @@ import { receiptRecoveryScenarios } from './browser-receipt-recovery.mjs'
 import { hourlyRecoveryScenarios } from './browser-hourly-recovery.mjs'
 import { ipRecoveryScenarios } from './browser-ip-recovery.mjs'
 import { settingsRecoveryScenarios } from './browser-settings-recovery.mjs'
+import { chartPrecisionScenarios } from './browser-chart-recovery.mjs'
 
 // Hosted browser validation only; AGENTS.md prohibits running suites locally.
 const output = resolve(globalThis.process.env.BROWSER_AUDIT_OUTPUT ?? 'browser-audit-artifacts')
@@ -167,6 +168,7 @@ try {
     await hourlyRecoveryScenarios(scenario, size)
     await ipRecoveryScenarios(scenario, size)
     await settingsRecoveryScenarios(scenario, size)
+    await chartPrecisionScenarios(scenario, size)
   }
   globalThis.console.log(JSON.stringify(results, null, 2))
   if (results.some(result => !result.passed)) globalThis.process.exitCode = 1

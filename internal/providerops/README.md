@@ -27,3 +27,8 @@ handles remain short-lived service data and are never stored in these records.
 `validation_test.go` verifies exact nested numeric result preservation and the
 single bounded JSON-object contract. Canonical durable results never round
 integer counters or decimal evidence through floating-point conversion.
+
+Command normalization owns a copy of the item slice before trimming or
+validating it. Concurrent retries and rejected commands leave the caller's
+input unchanged. `validation_ownership_test.go` verifies independent normalized
+results and unchanged input even when a later item is invalid or duplicated.

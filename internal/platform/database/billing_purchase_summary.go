@@ -16,7 +16,7 @@ func (s *Store) ActiveAndQueuedPurchases(ctx context.Context, userID string, now
 	var active, queued *model.Purchase
 	for index := range purchases {
 		purchase := purchases[index]
-		if (purchase.Status == "active" || purchase.Status == "activating") && !now.Before(purchase.ValidFrom) && now.Before(purchase.ValidUntil) && active == nil {
+		if (purchase.Status == "active" || purchase.Status == "activating") && !now.Before(purchase.ValidFrom) && now.Before(purchase.ValidUntil) && (active == nil || moreRecentPurchase(purchase, *active)) {
 			copy := purchase
 			active = &copy
 		}
@@ -26,4 +26,17 @@ func (s *Store) ActiveAndQueuedPurchases(ctx context.Context, userID string, now
 		}
 	}
 	return active, queued, nil
+}
+
+// Whole-second outer bounds retain indexed candidate filtering without deciding
+// eligibility lexically: RFC3339Nano omits zero fractions and trims trailing zeros.
+func purchaseWindowCandidateBounds(now time.Time) (lower, upper string) {
+	second := now.UTC().Truncate(time.Second)
+	return stamp(second.Add(-time.Second)), stamp(second.Add(time.Second))
+}
+
+func moreRecentPurchase(candidate, current model.Purchase) bool {
+	return candidate.ValidFrom.After(current.ValidFrom) ||
+		candidate.ValidFrom.Equal(current.ValidFrom) && (candidate.CreatedAt.After(current.CreatedAt) ||
+			candidate.CreatedAt.Equal(current.CreatedAt) && candidate.ID > current.ID)
 }

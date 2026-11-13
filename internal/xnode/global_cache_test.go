@@ -5,6 +5,7 @@ import (
 	"errors"
 	"sync"
 	"testing"
+	"time"
 
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
@@ -19,7 +20,7 @@ func (s *globalCacheSettings) Optional(context.Context, string) (string, error) 
 	s.reads++
 	return "", nil
 }
-func (s *globalCacheSettings) PutXNodeGlobal(context.Context, string, string) error {
+func (s *globalCacheSettings) PutXNodeGlobalAtVersion(context.Context, string, string, int64, time.Time) error {
 	if s.fail {
 		return errors.New("write failed")
 	}

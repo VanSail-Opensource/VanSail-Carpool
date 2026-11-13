@@ -464,6 +464,15 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `activity_draws_part2.go`, `activity_extensions_part2.go`, and `activity_part2.go` continue activity persistence.
 - `billing_payments_part2.go`, `coupons_part2.go`, and `coupons_part3.go` continue billing and coupon persistence.
 
+Purchase window projections use coarse UTC candidates followed by parsed exact
+start/expiry comparisons, including fractional seconds and nanoseconds.
+`purchase_window_precision_test.go` keeps community eligibility, preference
+writes, desired access and the home summary consistent, and checks chronological
+selection of overlapping retained purchases. Member history and native compile
+preloads use the same parsed ordering.
+`maintenance_lease_precision_test.go` verifies exact lease takeover, one owner
+for concurrent first claims, and refusal to replace malformed lease evidence.
+
 ## Production files
 
 - `billing_purchase_addon_fingerprint.go`, `billing_purchase_addon_quote.go`, and `billing_purchase_addons.go` validate, price, replay-protect, debit, record, and queue active-term squad additions in one transaction.
@@ -1513,6 +1522,12 @@ records, ciphertext versions and the wallet transaction's shared row fence;
 typed UTC timestamps and revision CAS without deriving or changing legacy prices.
 `hourly_settings_test.go` and `hourly_offers_test.go` cover competing writes,
 wallet/configuration locking, audit atomicity and group-removal behavior.
+Both write transactions lock the current active, unblocked administrator before
+changing policy or offers; a stale authenticated role cannot authorize a write.
+`hourly_admin_authority_test.go` covers demotion, account closure, blocked and
+missing actors, unchanged rejected state/audits, and exact committed responses.
+Shared billing and HTTP fixtures keep configuration administrators separate from
+ordinary paid members.
 Decryption remains outside Store; see `docs/hourly-administration.md`.
 
 Hourly native/history persistence:
@@ -1892,8 +1907,10 @@ binding. Group deletion attributes its existing audit to the actor.
 customization responses retain the validated preview fields supplied by the
 service, while persisted fields and revisions come from the transaction.
 No configuration document, credential, token, hash, or ciphertext enters these
-audit details. Existing global, automatic, routing, and subscription-template
-settings use the similarly fenced `PutAdminSetting` transaction.
+audit details. Routing and subscription-template settings use the similarly fenced
+`PutAdminSetting` transaction. Global and automatic-lease settings additionally
+retain compile epoch and entitlement-boundary checks through their dedicated
+`PutAdminXNodeGlobalAtVersion` transaction.
 
 - `xnode_admin_test_helpers_test.go` builds raw worker-compatible inventory and
   captures every touched relation, including trigger-maintained versions.
@@ -1949,3 +1966,24 @@ administrator hourly stops: all matching requests recover one original result,
 purchase/audit or receipt, and queued job. Insert conflicts consult exact
 committed evidence only after rollback, so a stale serializable snapshot cannot
 turn accepted intent into a false conflict; changed fingerprints still fail.
+
+### Validated fleet settings commit
+
+`xnode_global_settings.go` locks current administrator authority and the compile
+revision before writing encrypted fleet settings and the metadata-only audit.
+It checks the database clock after all potentially blocking writes, so a
+candidate whose entitlement boundary elapsed while waiting cannot commit.
+`xnode_global_settings_retry_generated.go` retries the complete rolled-back
+transaction only. `xnode_global_settings_test.go` covers stale administrators,
+compile epochs, audit rollback and recovery; `xnode_global_deadline_test.go`
+holds the audit write across the validation deadline and verifies full rollback.
+
+
+### Administrator coupon wallet admission
+
+`admin_coupon_grants.go` checks the current active, unblocked administrator and
+active beneficiary in the same transaction as each fresh grant or discard and
+its audit. Accepted exact commands replay before these mutable admission checks,
+preserving prior ownership and discard evidence.
+`admin_coupon_authority_test.go` covers demoted, purging and blocked actors,
+purging beneficiaries, accepted replay and unchanged retained wallet/history.

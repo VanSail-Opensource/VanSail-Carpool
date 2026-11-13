@@ -26,18 +26,15 @@ func (s *Store) retryAttempt_ClaimMaintenanceRun(ctx context.Context, localDate,
 		return "", false, fmt.Errorf("begin maintenance claim: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
-	var activeID string
-	err = tx.QueryRowContext(ctx, `SELECT id FROM maintenance_runs
-		WHERE status='running' AND lease_expires_at>$1
-		ORDER BY started_at DESC,id DESC LIMIT 1`, stamp(now)).Scan(&activeID)
-	if err == nil {
+	activeID, expired, err := maintenanceLeaseCandidatesTx(ctx, tx, now)
+	if err != nil {
+		return "", false, fmt.Errorf("inspect maintenance claim: %w", err)
+	}
+	if activeID != "" {
 		if commitErr := tx.Commit(); commitErr != nil {
 			return "", false, fmt.Errorf("commit held maintenance claim: %w", commitErr)
 		}
 		return activeID, false, nil
-	}
-	if !errors.Is(err, sql.ErrNoRows) {
-		return "", false, fmt.Errorf("inspect maintenance claim: %w", err)
 	}
 	if !force {
 		var completedID string
@@ -54,10 +51,12 @@ func (s *Store) retryAttempt_ClaimMaintenanceRun(ctx context.Context, localDate,
 			return "", false, fmt.Errorf("inspect completed maintenance claim: %w", err)
 		}
 	}
-	if _, err := tx.ExecContext(ctx, `UPDATE maintenance_runs SET status='failed',error_code='MAINTENANCE_LEASE_EXPIRED',
-		lease_expires_at=$1,updated_at=$2,completed_at=$3 WHERE status='running' AND lease_expires_at<=$4`,
-		stamp(now), stamp(now), stamp(now), stamp(now)); err != nil {
-		return "", false, fmt.Errorf("expire maintenance claims: %w", err)
+	if len(expired) > 0 {
+		if _, err := tx.ExecContext(ctx, `UPDATE maintenance_runs SET status='failed',error_code='MAINTENANCE_LEASE_EXPIRED',
+			lease_expires_at=$1,updated_at=$1,completed_at=$1 WHERE id=ANY($2) AND status='running'`,
+			stamp(now), expired); err != nil {
+			return "", false, fmt.Errorf("expire maintenance claims: %w", err)
+		}
 	}
 	runID, err := ids.New()
 	if err != nil {
@@ -72,6 +71,37 @@ func (s *Store) retryAttempt_ClaimMaintenanceRun(ctx context.Context, localDate,
 		return "", false, fmt.Errorf("commit maintenance claim: %w", err)
 	}
 	return runID, true, nil
+}
+
+// Lock the running set before parsing exact retained lease deadlines. The
+// serializable transaction also fences concurrent first claims of an empty set.
+func maintenanceLeaseCandidatesTx(ctx context.Context, tx *sql.Tx, now time.Time) (string, []string, error) {
+	rows, err := tx.QueryContext(ctx, `SELECT id,lease_expires_at FROM maintenance_runs
+		WHERE status='running' ORDER BY id FOR UPDATE`)
+	if err != nil {
+		return "", nil, err
+	}
+	defer rows.Close()
+	var active string
+	var expired []string
+	for rows.Next() {
+		var id, raw string
+		if err := rows.Scan(&id, &raw); err != nil {
+			return "", nil, err
+		}
+		deadline, err := parseStamp(raw)
+		if err != nil {
+			return "", nil, err
+		}
+		if deadline.After(now) {
+			if active == "" {
+				active = id
+			}
+		} else {
+			expired = append(expired, id)
+		}
+	}
+	return active, expired, rows.Err()
 }
 
 // CompleteMaintenanceRun records sanitized outcome and aggregate deletion counts.

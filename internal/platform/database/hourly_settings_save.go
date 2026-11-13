@@ -17,6 +17,9 @@ func (s *Store) CompareAndSwapHourlyPolicy(ctx context.Context, actor, expectedV
 		return HourlyPolicyRecord{}, ErrConflict
 	}
 	return hourlyCreditTransaction(ctx, s, func(tx *sql.Tx) (HourlyPolicyRecord, error) {
+		if err := catalogAdminActorTx(ctx, tx, actor); err != nil {
+			return HourlyPolicyRecord{}, err
+		}
 		if _, err := tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,0))`, "settings:"+HourlyPolicySettingKey); err != nil {
 			return HourlyPolicyRecord{}, err
 		}

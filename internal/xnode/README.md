@@ -572,7 +572,7 @@ administrator document and rejection of unrelated native-core errors.
 
 - `compiler_snippets.go`: Entry points: `expandMarker`, `appendSharedSnippet`.
 
-- `controlplane_fixture_test.go`: Hosted regression coverage: `Optional`, `PutXNodeGlobal`.
+- `controlplane_fixture_test.go`: Hosted regression coverage: `Optional`, `PutXNodeGlobalAtVersion`.
 
 - `controlplane_test.go`: Hosted regression coverage: `TestRegistrationDoesNotAuthorizeProxyAccess`, `TestPaidAccountsOwnRoutingTagsAndMatchers`, `TestSubscriptionRevocationPreservesProxyCredentials`.
 
@@ -1535,3 +1535,28 @@ snippet write completes, and verifies that unfinished validation publishes no
 routing state. `master_revocation_test.go` checks that rejected administrator
 rotation/deletion cannot disconnect a peer or delete its node. `master.go`
 normalizes an omitted diagnostic logger to a discard logger.
+
+### Global candidate validation and publication
+
+`global_validation.go` merges a private credential snapshot and performs remote
+policy, routing and asset checks outside the native writer lock.
+`global_save.go` captures the full previous document, compile epoch and next
+entitlement boundary, then rejects stale validation before publication. Its
+required settings adapter also checks the epoch and boundary inside the
+administrator transaction. `automatic_lease_settings.go` merges its local field
+under the same publication fence without downloading unchanged assets.
+The compilation view publishes a private candidate before nested routing reads,
+so every global dependency uses the proposed settings without exposing them to
+serving readers.
+
+- `global_fence_test.go` covers competing global/lease edits, changed database
+  inputs and elapsed entitlement boundaries during validation.
+- `global_queue_test.go` blocks asset DNS and verifies unrelated native writes
+  remain available while the unfinished candidate stays unpublished.
+- `global_candidate_test.go` compiles against a private candidate despite an
+  obsolete stored document and verifies no serving-cache or caller mutation.
+
+`compile_purchase_selection_test.go` keeps cached entitlement selection aligned
+with parsed purchase chronology, including fractional starts, creation-time
+ties and stable identity ordering. Unordered provider snapshots cannot make
+native access disagree with the current home or database entitlement view.

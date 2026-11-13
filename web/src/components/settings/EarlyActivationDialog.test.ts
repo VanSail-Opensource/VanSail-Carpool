@@ -7,14 +7,15 @@ import EarlyActivationDialog from './EarlyActivationDialog.vue'
 
 const quote: EarlyActivationQuote = { currentPurchaseId: 'current', queuedPurchaseId: 'queued', eligible: true,
   currentValidUntil: '2026-12-01T00:00:00Z', newValidFrom: '2026-11-13T00:00:00Z', newValidUntil: '2026-12-13T00:00:00Z' }
-const stubs = {
-  UModal: { template: '<section><slot name="body" /><slot name="footer" /></section>' },
-  UFormField: { template: '<label><slot /></label>' },
-  UInput: { props: ['modelValue'], emits: ['update:modelValue'], render(this: { modelValue: string; $emit: (event: string, value: string) => void }) {
+const base = {
+  Modal: { props: { open: Boolean }, template: '<section v-if="open"><slot name="body" /><slot name="footer" /></section>' },
+  FormField: { template: '<label><slot /></label>' },
+  Input: { props: ['modelValue'], emits: ['update:modelValue'], render(this: { modelValue: string; $emit: (event: string, value: string) => void }) {
     return h('input', { value: this.modelValue, onInput: (event: Event) => this.$emit('update:modelValue', (event.target as HTMLInputElement).value) })
   } },
-  UButton: { props: ['label', 'disabled'], render(this: { label: string; disabled: boolean }) { return h('button', { disabled: this.disabled }, this.label) } },
+  Button: { props: ['label', 'disabled'], render(this: { label: string; disabled: boolean }) { return h('button', { disabled: this.disabled }, this.label) } },
 }
+const stubs = { ...base, ...Object.fromEntries(Object.entries(base).map(([name, value]) => ['U' + name, value])) }
 
 describe('early activation reviewed terms', () => {
   it.each(['target', 'period', 'eligibility'] as const)('retires typed consent after a changed %s', async change => {

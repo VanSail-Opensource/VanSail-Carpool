@@ -18,10 +18,10 @@ Unknown counts display unavailable while independently known traffic rates remai
 - `StatisticsPaymentDonut.vue` renders EZPay outside BEPusdt, excludes failed or refunded payment facts, and centers the included payment count.
 - `StatisticsCharts.test.ts` covers donut, labeled-pie, and normalized stacked-bar semantics.
 - `StatisticsPaymentDonut.test.ts` covers concentric payment-ring order, excluded payment states, and the explicit no-payment state.
-- `statisticsFormat.ts` owns stable chart colors plus localized number, percentage, date, and byte formatting.
-- `statisticsFormat.test.ts` covers UTC weekday buckets and invalid chart fact filtering.
+- `statisticsFormat.ts` owns stable chart colors plus localized number, percentage and signed-number formatting.
+- `statisticsFormat.test.ts` covers invalid chart fact filtering and shared ring weights.
 - `StatisticsChartDetail.vue` provides the stable exact-value readout shared by every chart.
-- `useStatisticsChartSelection.ts` centralizes hover, focus, and pinned tap selection state, emitting one semantic pulse only when a selection is committed or cleared.
+- `useStatisticsChartSelection.ts` centralizes hover, focus and pinned selection state without Telegram controls or haptics.
 - Chart components animate data geometry, rankings, selected detail, and freshness only. `StatisticsPage.vue` stays static so refreshes never replay the whole route.
 
 `StatisticsNodes.vue` and `StatisticsNodes.test.ts` retain readable live node rates and health without retired image actions. `StatisticsPage.test.ts` covers tab-panel separation.
@@ -29,3 +29,10 @@ Unknown counts display unavailable while independently known traffic rates remai
 TX Statistics is browser-administrator-only, under `/admin/statistics`. Its API routes use `/api/v1/admin/statistics`; Mini App routes, navigation, preloads, Telegram controls and haptic imports are removed. Live node reads use only native telemetry; historical aggregates use existing exact native/reconciled source accounting.
 
 Observed statistics summary without retired credit projections: `StatisticsOverview.vue`.
+
+Seven-day traffic keeps the original decimal byte string alongside approximate
+numeric chart coordinates. Tooltips and keyboard/touch readouts use the exact
+source; malformed or missing buckets remain unavailable rather than becoming
+zero. `StatisticsTrafficChart.test.ts` covers values beyond JavaScript safe
+integers and incomplete observations. Retired date/byte helper exports and unused
+selection flags have been removed after caller review.

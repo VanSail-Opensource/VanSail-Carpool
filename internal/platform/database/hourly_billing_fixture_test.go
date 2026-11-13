@@ -17,18 +17,24 @@ func hourlyBillingFixture(t *testing.T) (*Store, model.HourlyPolicySnapshot, Hou
 	policy := model.DefaultHourlyPolicy()
 	policy.SalesEnabled, policy.DailyAllowanceBytes = true, 1000
 	policy.ReducedRateBytesPerSecond, policy.ExtraGBPriceTXBMinor = 1024, 25
-	record, err := s.CompareAndSwapHourlyPolicy(ctx, u.ID, "", "opaque-billing-policy-fixture")
+	record, err := s.CompareAndSwapHourlyPolicy(ctx, hourlyBillingAdmin(t, s), "", "opaque-billing-policy-fixture")
 	if err != nil {
 		t.Fatal(err)
 	}
 	snapshot := model.HourlyPolicySnapshot{Version: record.Version, Policy: policy}
 	input := HourlyActivationInput{OwnerID: u.ID, AccountGeneration: u.AccountGeneration, GroupID: "billing-hourly-a",
 		ActivationKey: "activation-one", ExpectedPolicyVersion: record.Version, ExpectedOfferRevision: 1}
-	addHourlyBillingOffer(t, s, u.ID, input.GroupID, 100)
+	addHourlyBillingOffer(t, s, hourlyBillingAdmin(t, s), input.GroupID, 100)
 	if _, err := s.AdjustBalance(ctx, u.ID, 100000, "hourly-seed", "fixture", time.Now()); err != nil {
 		t.Fatal(err)
 	}
 	return s, snapshot, input
+}
+
+// Configuration authority is separate from the ordinary paid member fixture.
+func hourlyBillingAdmin(t *testing.T, s *Store) string {
+	t.Helper()
+	return createTestAdmin(t, s, 9_897_000_001).ID
 }
 
 func addHourlyBillingOffer(t *testing.T, s *Store, actor, group string, price int64) {

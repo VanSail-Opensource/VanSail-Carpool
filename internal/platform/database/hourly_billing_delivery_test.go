@@ -19,7 +19,7 @@ func TestHourlyStaleDeliverySkipsOnlyThatSquadWithoutBackbilling(t *testing.T) {
 	a := makeDueHourlyBillingFixture(t, s, input, policy, now.Add(-5*time.Hour))
 	second := input
 	second.GroupID, second.ActivationKey = "billing-hourly-b", "available-sibling"
-	addHourlyBillingOffer(t, s, input.OwnerID, second.GroupID, 100)
+	addHourlyBillingOffer(t, s, hourlyBillingAdmin(t, s), second.GroupID, 100)
 	b := makeDueHourlyBillingFixture(t, s, second, policy, now.Add(-4*time.Hour))
 	guards := hourlyBillingDelivery(t, s, a.ID, b.ID)
 	guards[0].ObservedAt = guards[0].ObservedAt.Add(-5 * time.Second)

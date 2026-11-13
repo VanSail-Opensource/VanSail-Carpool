@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
@@ -39,6 +40,7 @@ func (s *Store) ListPurchases(ctx context.Context, userID string) ([]model.Purch
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+	sort.Slice(purchases, func(i, j int) bool { return moreRecentPurchase(purchases[i], purchases[j]) })
 	for index := range purchases {
 		purchases[index].SquadUUIDs, err = s.purchaseSquads(ctx, purchases[index].ID)
 		if err != nil {

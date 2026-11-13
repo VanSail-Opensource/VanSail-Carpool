@@ -33,3 +33,8 @@ samples have distinct labels; day histories retain UTC calendar labels.
 
 `LivePrice.test.ts` covers invalid expiry, replacement validity and rescheduling
 beyond the browser timer limit; ready indicators expire at the actual deadline.
+
+`MetricLineChart.vue` adds exact byte detail only for safe, nonnegative integer
+samples. Numeric telemetry or forecasts outside that range keep their formatted
+magnitude without claiming to recover lost precision; `MetricLineChart.test.ts`
+covers unsafe, fractional and exact byte/rate samples.

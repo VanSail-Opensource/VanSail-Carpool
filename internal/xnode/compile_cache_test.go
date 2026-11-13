@@ -37,8 +37,10 @@ func (r *cacheTestRepository) XNodeNode(context.Context, string) (Node, error) {
 
 type cacheTestSettings struct{}
 
-func (cacheTestSettings) Optional(context.Context, string) (string, error)     { return "", nil }
-func (cacheTestSettings) PutXNodeGlobal(context.Context, string, string) error { return nil }
+func (cacheTestSettings) Optional(context.Context, string) (string, error) { return "", nil }
+func (cacheTestSettings) PutXNodeGlobalAtVersion(context.Context, string, string, int64, time.Time) error {
+	return nil
+}
 
 func TestCompileCacheInvalidatesEpochAndAccessBoundary(t *testing.T) {
 	vault, err := secret.NewVault(make([]byte, 32))

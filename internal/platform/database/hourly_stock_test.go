@@ -26,7 +26,7 @@ func TestHourlyStockProjectionIsIndependentOfLegacyPAYGMode(t *testing.T) {
 	if err != nil || remaining[principal.GroupID] != 0 {
 		t.Fatal("hourly offer ignored its stock on a PAYG-marked product", remaining, err)
 	}
-	actor := createTestUser(t, s, 61931)
+	actor := createTestAdmin(t, s, 61931)
 	if _, err := s.SaveHourlyOffer(ctx, actor.ID, model.HourlyOffer{GroupID: principal.GroupID, Enabled: false, HourlyPriceTXBMinor: 1}, 1); err != nil {
 		t.Fatal(err)
 	}

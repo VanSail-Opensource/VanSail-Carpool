@@ -14,10 +14,10 @@ func TestHourlyPausingNewSalesDoesNotCancelExistingRenewals(t *testing.T) {
 	s, policy, input := hourlyBillingFixture(t)
 	ctx := context.Background()
 	e := makeDueHourlyBillingFixture(t, s, input, policy, hourlyBillingNow(t, s).Add(-4*time.Hour))
-	if _, err := s.SaveHourlyOffer(ctx, input.OwnerID, model.HourlyOffer{GroupID: input.GroupID, Enabled: false, HourlyPriceTXBMinor: 100}, 1); err != nil {
+	if _, err := s.SaveHourlyOffer(ctx, hourlyBillingAdmin(t, s), model.HourlyOffer{GroupID: input.GroupID, Enabled: false, HourlyPriceTXBMinor: 100}, 1); err != nil {
 		t.Fatal(err)
 	}
-	record, err := s.CompareAndSwapHourlyPolicy(ctx, input.OwnerID, policy.Version, "sales-paused")
+	record, err := s.CompareAndSwapHourlyPolicy(ctx, hourlyBillingAdmin(t, s), policy.Version, "sales-paused")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,7 +40,7 @@ func TestHourlyPriceChangeAppliesToExistingEnrollmentNextHour(t *testing.T) {
 	s, policy, input := hourlyBillingFixture(t)
 	ctx := context.Background()
 	enrollment, boundary := prefetchHourlyBillingFixture(t, s, input, policy)
-	if _, err := s.SaveHourlyOffer(ctx, input.OwnerID, model.HourlyOffer{GroupID: input.GroupID, Enabled: true, HourlyPriceTXBMinor: 250}, 1); err != nil {
+	if _, err := s.SaveHourlyOffer(ctx, hourlyBillingAdmin(t, s), model.HourlyOffer{GroupID: input.GroupID, Enabled: true, HourlyPriceTXBMinor: 250}, 1); err != nil {
 		t.Fatal(err)
 	}
 	result, err := s.SettleHourlyOwnerAvailable(ctx, input.OwnerID, input.AccountGeneration, policy,

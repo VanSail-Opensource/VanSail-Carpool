@@ -35,7 +35,7 @@ func TestHourlyViewKeepsUnavailableOwnedSquadAndCooldown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := f.server.deps.Store.SaveHourlyOffer(ctx, f.user.ID, model.HourlyOffer{GroupID: input.GroupID, Enabled: false, HourlyPriceTXBMinor: 100}, 1); err != nil {
+	if _, err := f.server.deps.Store.SaveHourlyOffer(ctx, f.admin.ID, model.HourlyOffer{GroupID: input.GroupID, Enabled: false, HourlyPriceTXBMinor: 100}, 1); err != nil {
 		t.Fatal(err)
 	}
 	if err := f.server.deps.Store.SaveXNodeGroup(ctx, xnode.Group{ID: input.GroupID, Name: "Unavailable owned", Enabled: false}); err != nil {
@@ -52,7 +52,7 @@ func TestHourlyViewKeepsUnavailableOwnedSquadAndCooldown(t *testing.T) {
 func TestHourlyViewUsesPerOfferRequiredHours(t *testing.T) {
 	f := newMemberHourlyFixture(t)
 	ctx := context.Background()
-	if _, err := f.server.deps.Store.SaveHourlyOffer(ctx, f.user.ID,
+	if _, err := f.server.deps.Store.SaveHourlyOffer(ctx, f.admin.ID,
 		model.HourlyOffer{GroupID: "member-hourly", Enabled: true, HourlyPriceTXBMinor: 100, RequiredHours: 2}, 1); err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +71,7 @@ func TestHourlyViewReportsPausedSalesAndAcceptedFreeLegacyTerm(t *testing.T) {
 	ctx := context.Background()
 	policy := f.policy.Policy
 	policy.SalesEnabled = false
-	if _, err := f.server.deps.Settings.SaveHourlyPolicy(ctx, f.user.ID, f.policy.Version, policy); err != nil {
+	if _, err := f.server.deps.Settings.SaveHourlyPolicy(ctx, f.admin.ID, f.policy.Version, policy); err != nil {
 		t.Fatal(err)
 	}
 	combo, err := f.server.deps.Store.SaveCombo(ctx, database.ComboInput{Name: "Historical free term", ValidityDays: 30,

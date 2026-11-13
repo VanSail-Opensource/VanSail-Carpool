@@ -196,7 +196,7 @@ func TestHourlyDueOwnersAdmitOnlyFundedPrefetchWindows(t *testing.T) {
 	second := input
 	second.OwnerID, second.AccountGeneration, second.ActivationKey = other.ID, other.AccountGeneration, "unfunded-prefetch"
 	second.GroupID = "billing-hourly-b"
-	addHourlyBillingOffer(t, s, other.ID, second.GroupID, 100)
+	addHourlyBillingOffer(t, s, hourlyBillingAdmin(t, s), second.GroupID, 100)
 	prefetchHourlyBillingFixture(t, s, second, policy)
 	if _, err := s.DB().Exec(`UPDATE balances SET txb_minor=50 WHERE user_id=$1`, other.ID); err != nil {
 		t.Fatal(err)
