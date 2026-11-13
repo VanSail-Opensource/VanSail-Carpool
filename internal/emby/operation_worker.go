@@ -3,6 +3,7 @@ package emby
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
@@ -43,12 +44,22 @@ func (s *OperationService) handleSetup(ctx context.Context, operation providerop
 }
 
 func (s *OperationService) handleProvisionRetry(ctx context.Context, operation providerops.Operation) error {
-	operation, item, _, err := s.start(ctx, operation, "emby_account")
+	item, err := s.operationItem(ctx, operation, "emby_account")
+	if err != nil {
+		return err
+	}
+	if providerops.Terminal(item.Status) {
+		return s.completeRecordedItem(ctx, operation, item)
+	}
+	record, loadErr := s.core.repository.EmbyProvisioningByID(ctx, item.TargetID)
+	if loadErr != nil && !errors.Is(loadErr, ErrNotFound) {
+		return fmt.Errorf("load Emby retry target: %w", loadErr)
+	}
+	operation, item, _, err = s.start(ctx, operation, "emby_account")
 	if err != nil || providerops.Terminal(item.Status) {
 		return err
 	}
-	record, err := s.core.repository.EmbyProvisioningByID(ctx, item.TargetID)
-	if err != nil {
+	if errors.Is(loadErr, ErrNotFound) {
 		return s.complete(ctx, operation, item, providerops.StatusFailed, "EMBY_RETRY_REJECTED")
 	}
 	switch record.Status {

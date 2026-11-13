@@ -39,10 +39,11 @@ const drawerUi = {
   body: 'database-record-editor__scroll-body',
   footer: 'database-record-editor__footer',
 } as const
-const workflowState = computed(() => props.busy ? 'processing' : props.review ? 'review' : props.action)
+const workflowState = computed(() => props.review ? 'review' : props.action)
 const { reducedMotion } = useMotionPreferences()
 
 watch([() => props.row, () => props.action, () => props.table], ([row]) => {
+  emit('invalidate')
   for (const key of Object.keys(draft)) delete draft[key]
   for (const key of Object.keys(textDraft)) delete textDraft[key]
   for (const key of Object.keys(nullDraft)) delete nullDraft[key]
@@ -56,11 +57,18 @@ watch([() => props.row, () => props.action, () => props.table], ([row]) => {
   confirmation.value = ''
 }, { immediate: true })
 
-watch(() => props.review, (review) => { if (!review) confirmation.value = '' })
+watch(() => props.review, () => { confirmation.value = '' })
 
-function updateText(column: string, value: string): void { textDraft[column] = value; emit('invalidate') }
-function updateBoolean(column: string, value: boolean): void { draft[column] = value; emit('invalidate') }
-function updateNull(column: string, value: boolean): void { nullDraft[column] = value; emit('invalidate') }
+function updateText(column: string, value: string): void { if (!props.busy) { textDraft[column] = value; emit('invalidate') } }
+function updateBoolean(column: string, value: boolean): void { if (!props.busy) { draft[column] = value; emit('invalidate') } }
+function updateNull(column: string, value: boolean): void {
+  if (props.busy) return
+  nullDraft[column] = value
+  if (!value && draft[column] === null && /BOOL/i.test(props.table.columns.find(item => item.name === column)?.declaredType ?? '')) draft[column] = false
+  emit('invalidate')
+}
+
+function updateReason(value: string): void { if (!props.busy) { reason.value = value.trim(); emit('invalidate') } }
 
 function values(): Record<string, DatabaseValue> {
   const output: Record<string, DatabaseValue> = {}
@@ -70,12 +78,13 @@ function values(): Record<string, DatabaseValue> {
     if (props.action === 'insert' && column.hasDefault && !textDraft[column.name] && typeof current !== 'boolean' && !nullDraft[column.name]) continue
     if (nullDraft[column.name]) output[column.name] = null
     else if ((typeof current === 'object' && current !== null) || /BLOB|BINARY/i.test(column.declaredType)) output[column.name] = { blobBase64: textDraft[column.name] ?? '' }
-    else output[column.name] = typeof current === 'boolean' ? current : textDraft[column.name]
+    else output[column.name] = typeof current === 'boolean' || /BOOL/i.test(column.declaredType) ? current === true : textDraft[column.name]
   }
   return output
 }
 
 function submit(): void {
+  if (props.busy) return
   const payload = { action: props.action, row: props.row, values: values(), reason: reason.value.trim() }
   if (!props.review && canReview.value) emit('review', payload)
   else if (props.review && canApply.value) emit('apply', { ...payload, confirmation: confirmation.value })
@@ -90,10 +99,10 @@ function submit(): void {
     :description="t('databaseRecord.copy')"
     :dismissible="!busy"
     :ui="drawerUi"
-    @update:open="!$event && emit('cancel')"
+    @update:open="!$event && !busy && emit('cancel')"
   >
     <template #close>
-      <UButton icon="i-ph-x" color="neutral" variant="ghost" :aria-label="t('databaseRecord.close')" />
+      <UButton icon="i-ph-x" color="neutral" variant="ghost" :aria-label="t('databaseRecord.close')" :disabled="busy" />
     </template>
     <template #body>
       <UAlert v-if="error" color="warning" variant="soft" :title="error" />
@@ -102,35 +111,37 @@ function submit(): void {
           <motion.div :key="workflowState" class="database-record-editor__workflow" layout :initial="reducedMotion ? { opacity: 0 } : { opacity: 0, y: 4 }" :animate="{ opacity: 1, y: 0 }" :exit="{ opacity: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }">
             <UAlert v-if="!review" color="warning" variant="soft" icon="i-ph-warning" :description="table.warning || t('databaseRecord.warning')" />
             <form :id="formId" class="database-form" @submit.prevent="submit">
-              <DatabaseMutationReviewPanel v-if="review" v-model="confirmation" :review="review" />
-              <template v-else>
-                <div v-if="action === 'delete'" class="database-delete-summary">
-                  <strong>{{ t('databaseRecord.recordKey') }}</strong>
-                  <code>{{ JSON.stringify(row?.key ?? {}) }}</code>
-                  <p>{{ t('databaseRecord.deleteHint') }}</p>
-                </div>
-                <DatabaseRecordFields
-                  v-else
-                  :columns="table.columns"
-                  :insert="action === 'insert'"
-                  :draft="draft"
-                  :text-draft="textDraft"
-                  :null-draft="nullDraft"
-                  @update:text="updateText"
-                  @update:boolean="updateBoolean"
-                  @update:null="updateNull"
-                />
-                <UFormField name="reason" :label="t('databaseRecord.reason')" required>
-                  <UTextarea
-                    v-model.trim="reason"
-                    class="database-record-editor__reason"
-                    :rows="3"
-                    :minlength="4"
-                    :placeholder="t('databaseRecord.reasonPlaceholder')"
-                    @update:model-value="emit('invalidate')"
+              <fieldset class="database-form__fields" :disabled="busy">
+                <DatabaseMutationReviewPanel v-if="review" v-model="confirmation" :review="review" />
+                <template v-else>
+                  <div v-if="action === 'delete'" class="database-delete-summary">
+                    <strong>{{ t('databaseRecord.recordKey') }}</strong>
+                    <code>{{ JSON.stringify(row?.key ?? {}) }}</code>
+                    <p>{{ t('databaseRecord.deleteHint') }}</p>
+                  </div>
+                  <DatabaseRecordFields
+                    v-else
+                    :columns="table.columns"
+                    :insert="action === 'insert'"
+                    :draft="draft"
+                    :text-draft="textDraft"
+                    :null-draft="nullDraft"
+                    @update:text="updateText"
+                    @update:boolean="updateBoolean"
+                    @update:null="updateNull"
                   />
-                </UFormField>
-              </template>
+                  <UFormField name="reason" :label="t('databaseRecord.reason')" required>
+                    <UTextarea
+                      :model-value="reason"
+                      class="database-record-editor__reason"
+                      :rows="3"
+                      :minlength="4"
+                      :placeholder="t('databaseRecord.reasonPlaceholder')"
+                      @update:model-value="updateReason"
+                    />
+                  </UFormField>
+                </template>
+              </fieldset>
             </form>
           </motion.div>
         </AnimatePresence>
@@ -148,7 +159,9 @@ function submit(): void {
 <style scoped>
 .database-record-editor__body,
 .database-record-editor__workflow,
-.database-form { display: grid; min-width: 0; gap: 0.8rem; }
+.database-form,
+.database-form__fields { display: grid; min-width: 0; gap: 0.8rem; }
+.database-form__fields { margin: 0; padding: 0; border: 0; }
 .database-record-editor__reason :deep(textarea) { font-size: 1rem; }
 .database-delete-summary { display: grid; gap: 0.45rem; padding: 0.8rem; border: 1px solid var(--danger); border-radius: var(--radius-control); background: var(--danger-soft); }
 .database-delete-summary strong { color: var(--danger); font-size: 0.78rem; }

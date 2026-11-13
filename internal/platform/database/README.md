@@ -1116,6 +1116,7 @@ Provider requests remain outside every transaction.
 - `emby_operations_retry_generated.go` wraps the transactional methods in `emby_operations.go`.
 - `emby_provisioning_part2_retry_generated.go` wraps the transactional methods in `emby_provisioning_part2.go`.
 - `emby_provisioning_retry_generated.go` wraps the transactional methods in `emby_provisioning.go`.
+- `emby_refund_cas_retry_generated.go` wraps the transactional methods in `emby_refund_cas.go`.
 - `emby_setup_retry_generated.go` wraps the transactional methods in `emby_setup.go`.
 - `host_pricing_retry_generated.go` wraps the transactional methods in `host_pricing.go`.
 - `hourly_admin_operation_retry_generated.go` wraps the transactional methods in `hourly_admin_operation.go`.
@@ -2068,3 +2069,15 @@ and missing traffic forecasts retain their existing unavailable representation.
 margins beyond signed 64-bit range, large finite revenue/cost projections, and
 nonfinite cost arithmetic using finite stored forecasts. Historical ledger,
 payment and forecast rows are not rewritten.
+
+`emby_refund_cas.go` admits production setup refunds only for the exact retained
+attempt, revision and mutable material. Its transaction returns the committed
+account snapshot and preserves one reversal per attempt. The legacy raw helper
+remains for trusted historical fixtures. `emby_refund_cas_test.go` covers stale
+stage, revision and replacement-attempt rejection; `emby_refund_recovery_test.go`
+uses the production HTTP client to verify that a policy rejection after an
+accepted password retains the debit and can recover without a second account.
+
+`emby_retry_preflight_test.go` verifies that temporary account reads and deadlines
+leave reviewed retries queued with zero attempts, permit later recovery, and keep
+typed missing-account rejection distinct from storage unavailability.

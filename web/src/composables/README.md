@@ -90,3 +90,11 @@ separate. Action quotes and permission decisions still await the backend.
 `useClipboard.ts` fences feedback by copy attempt, exposes an owner reset and
 cancels its feedback timer on scope disposal. `useClipboard.test.ts` covers
 out-of-order results, owner replacement and timer cleanup in hosted CI.
+
+`useAdminDatabaseMutation.ts` snapshots the exact reviewed request, rejects a
+changed draft before Apply, retires invalidated/disposed reviews, and keeps one
+pending mutation bound to its selected table. Successful server rows and rescue
+backup IDs are retained. `useAdminDatabase.ts` retires metadata reads when a
+mutation begins and stops restoring pre-mutation row snapshots. Dedicated hosted
+regressions cover metadata ordering, exact reviewed values, single-flight Apply,
+confirmation, disposal and successful updates followed by read failure.

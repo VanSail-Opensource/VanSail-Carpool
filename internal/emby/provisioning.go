@@ -32,29 +32,29 @@ func (s *Service) Provision(ctx context.Context, accountID string) error {
 		return ErrPendingReview
 	}
 	if record.PasswordCiphertext == "" || record.PasswordContext != passwordContext(record.UserID) {
-		return s.failTerminal(ctx, record.ID, errors.New("temporary provisioning secret is unavailable"))
+		return s.failTerminal(ctx, record, errors.New("temporary provisioning secret is unavailable"))
 	}
 	password, err := s.secrets.Open(record.PasswordContext, record.PasswordCiphertext)
 	if err != nil {
-		return s.failTerminal(ctx, record.ID, fmt.Errorf("open temporary provisioning secret: %w", err))
+		return s.failTerminal(ctx, record, fmt.Errorf("open temporary provisioning secret: %w", err))
 	}
 	defer zero(password)
 
 	remoteUser, err := s.resolveOrCreate(ctx, &record)
 	if err != nil {
-		return s.handleProvisionError(ctx, record.ID, err)
+		return s.handleProvisionError(ctx, record, err)
 	}
 	if err := s.repository.SetEmbyRemoteIdentity(ctx, record.ID, remoteUser.ID, remoteUser.Name, s.now().UTC()); err != nil {
-		return s.handleProvisionError(ctx, record.ID, fmt.Errorf("persist Emby remote identity: %w", err))
+		return s.handleProvisionError(ctx, record, fmt.Errorf("persist Emby remote identity: %w", err))
 	}
 	current, err := s.remote.GetUser(ctx, remoteUser.ID)
 	if err != nil {
-		return s.handleProvisionError(ctx, record.ID, fmt.Errorf("load created Emby user: %w", err))
+		return s.handleProvisionError(ctx, record, fmt.Errorf("load created Emby user: %w", err))
 	}
 	if err := s.remote.SetPassword(ctx, current.ID, nil, password); err != nil {
 		wrapped := fmt.Errorf("set Emby password: %w", redactRemoteError(err, "remote password update failed"))
 		if s.remote.IsTerminal(err) {
-			return s.handleProvisionError(ctx, record.ID, wrapped)
+			return s.handleProvisionError(ctx, record, wrapped)
 		}
 		if retryErr := s.repository.RequeueEmbyProvisioning(ctx, record.ID, wrapped, s.now().UTC()); retryErr != nil {
 			return fmt.Errorf("record Emby password retry: %w", retryErr)
@@ -68,16 +68,16 @@ func (s *Service) Provision(ctx context.Context, accountID string) error {
 			return s.repository.MarkEmbyProvisioned(ctx, record.ID, record.Preferences, s.now().UTC())
 		}
 		if s.remote.IsTerminal(err) {
-			return s.handleProvisionError(ctx, record.ID, wrapped)
+			return s.handleProvisionError(ctx, record, wrapped)
 		}
 		return s.pendingReview(ctx, record.ID, wrapped)
 	}
 	verified, err := s.remote.GetUser(ctx, current.ID)
 	if err != nil {
-		return s.handleProvisionError(ctx, record.ID, fmt.Errorf("verify Emby policy: %w", err))
+		return s.handleProvisionError(ctx, record, fmt.Errorf("verify Emby policy: %w", err))
 	}
 	if !PolicyMatchesPreferences(verified.Policy, record.Preferences) {
-		return s.handleProvisionError(ctx, record.ID, errors.New("Emby policy verification failed"))
+		return s.handleProvisionError(ctx, record, errors.New("Emby policy verification failed"))
 	}
 	if err := s.repository.MarkEmbyProvisioned(ctx, record.ID, record.Preferences, s.now().UTC()); err != nil {
 		return fmt.Errorf("complete Emby provisioning: %w", err)

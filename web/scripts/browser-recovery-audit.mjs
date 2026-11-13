@@ -16,6 +16,7 @@ import { adminSettingsRecoveryScenarios } from './browser-admin-settings-recover
 import { backupRecoveryScenarios } from './browser-backup-recovery.mjs'
 import { adminActivityRecoveryScenarios } from './browser-admin-activity-recovery.mjs'
 import { adminCouponRecoveryScenarios } from './browser-admin-coupon-recovery.mjs'
+import { adminDatabaseRecoveryScenarios } from './browser-admin-database-recovery.mjs'
 
 // Hosted browser validation only; AGENTS.md prohibits running suites locally.
 const output = resolve(globalThis.process.env.BROWSER_AUDIT_OUTPUT ?? 'browser-audit-artifacts')
@@ -177,6 +178,7 @@ try {
     await backupRecoveryScenarios(scenario, size)
     await adminActivityRecoveryScenarios(scenario, size)
     await adminCouponRecoveryScenarios(scenario, size)
+    await adminDatabaseRecoveryScenarios(scenario, size)
   }
   globalThis.console.log(JSON.stringify(results, null, 2))
   if (results.some(result => !result.passed)) globalThis.process.exitCode = 1

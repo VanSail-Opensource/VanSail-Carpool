@@ -30,3 +30,15 @@ Terminal operation items are replayed into their parent receipt before secret
 decryption or live account/provider reads. Retry preserves the recorded status,
 reference, error code and result; a known successful password write cannot be
 reclassified as ambiguous after a parent-receipt storage failure.
+
+`provisioning_failure.go` separates terminal request errors from proof that no
+remote account remains. A password or policy rejection after creation retains
+the paid setup and sealed recovery state for review. Explicitly rejected creates
+refund only after exact-name absence is confirmed; stored identities require
+authoritative identity/candidate absence. `provisioning_refund_test.go` covers
+these distinctions, including unavailable absence checks and retired secrets.
+
+Reviewed provisioning retries read the durable account before marking a provider
+attempt. Temporary storage failures remain retryable; only typed missing-account
+evidence completes a rejected retry. Retained terminal items still win without
+consulting mutable account state.

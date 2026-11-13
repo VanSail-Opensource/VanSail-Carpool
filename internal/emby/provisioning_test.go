@@ -43,9 +43,9 @@ func TestPasswordErrorsCannotPersistOrReturnEchoedPlaintext(t *testing.T) {
 	for _, test := range []struct {
 		name       string
 		cause      error
-		wantRefund bool
+		wantReview bool
 	}{
-		{name: "terminal", cause: fmt.Errorf("%w: rejected temporary", terminalServiceError), wantRefund: true},
+		{name: "terminal", cause: fmt.Errorf("%w: rejected temporary", terminalServiceError), wantReview: true},
 		{name: "transient", cause: fmt.Errorf("%w: rejected temporary", transientServiceError)},
 	} {
 		test := test
@@ -58,8 +58,8 @@ func TestPasswordErrorsCannotPersistOrReturnEchoedPlaintext(t *testing.T) {
 			remote.passwordErr = test.cause
 			service := NewService(repository, remote, fixedPrice(100), &serviceSecrets{})
 			err := service.Provision(context.Background(), "account")
-			if test.wantRefund {
-				if err != nil || repository.refundCalls != 1 || repository.retryCalls != 0 {
+			if test.wantReview {
+				if !errors.Is(err, ErrPendingReview) || repository.refundCalls != 0 || repository.retryCalls != 0 {
 					t.Fatalf("Provision() error=%v refund=%d retry=%d", err, repository.refundCalls, repository.retryCalls)
 				}
 			} else if !errors.Is(err, transientServiceError) || repository.retryCalls != 1 || repository.refundCalls != 0 {

@@ -92,3 +92,8 @@ and forecast recovery in desktop/mobile browser editors.
 refusal/retry, retained save/deactivation effects after read failures, option
 retry and retired write completions in desktop/mobile Chromium. Exact recorded
 payloads verify that unrelated expiry and financial terms are omitted.
+
+`browser-admin-database-recovery.mjs` checks exact large numeric values, locked
+pending review/apply, visible failure and reviewed retry, retired metadata,
+nullable booleans and disposed Apply completions on desktop and mobile. It uses
+constructed rows and records both review and apply payloads without a database.

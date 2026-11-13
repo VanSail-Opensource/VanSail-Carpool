@@ -2,6 +2,7 @@ package xnode
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -64,11 +65,16 @@ func TestRoutingReconciliationRetainsCommittedFullAccessPrune(t *testing.T) {
 			repo := &prunedRoutingRepository{routingScopeRepository: &routingScopeRepository{plans: []RoutingPlan{plan}}}
 			settings := &prunedRoutingSettings{}
 			service := NewService(repo, settings, vault, nil, nil)
+			var wantErr error
+			if step.inputReads > 0 {
+				// Dependency failures stay observable so reconciliation retries.
+				wantErr = ErrUnavailable
+			}
 			for range 3 {
 				// Recheck after edits/startup rather than relying on a cached skip.
 				repo.version++
-				if err := service.reconcileRoutingPlans(context.Background()); err != nil {
-					t.Fatal(err)
+				if err := service.reconcileRoutingPlans(context.Background()); !errors.Is(err, wantErr) {
+					t.Fatalf("reconciliation error = %v, want %v", err, wantErr)
 				}
 			}
 			if settings.reads != step.inputReads || repo.wakes != 3 {

@@ -109,7 +109,7 @@
     "databaseMetadata": "Database schema is unavailable.",
     "databaseRows": "Rows could not be loaded.",
     "mutationReview": "Change review failed.",
-    "mutationApply": "Change was not applied. Refresh and try again.",
+    "mutationApply": "The change could not be confirmed. Refresh the record before retrying.",
     "balanceUnavailable": "Balance is unavailable.",
     "catalogUnavailable": "Catalog is unavailable.",
     "quoteFailed": "Quote could not be loaded.",

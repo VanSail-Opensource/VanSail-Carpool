@@ -109,7 +109,7 @@
     "databaseMetadata": "数据库结构暂不可用。",
     "databaseRows": "无法加载数据行。",
     "mutationReview": "变更审核失败。",
-    "mutationApply": "变更未应用，请刷新后重试。",
+    "mutationApply": "暂时无法确认变更结果，请刷新记录后再重试。",
     "balanceUnavailable": "余额暂不可用。",
     "catalogUnavailable": "目录暂不可用。",
     "quoteFailed": "无法加载价格。",

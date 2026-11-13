@@ -515,3 +515,9 @@ definitions and deferred mutations. `slow`, `defer`, `refresh-error`,
 `options-error` and `zh` select states. `__couponRecoveryAudit` records exact
 changed-field payloads, releases failures/successes and retires the owner view.
 No grant, wallet or payment operation is issued.
+
+Database audit adds `defer-review`, `defer-apply` and `cached-metadata` states.
+`databaseAudit` records exact review/apply inputs, releases constructed outcomes
+and retires the workspace. Its row includes an exact numeric string beyond the
+JavaScript safe-integer range and a nullable BOOLEAN. The cached metadata mode
+releases an obsolete table list after a current review has begun.

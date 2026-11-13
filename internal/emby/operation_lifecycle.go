@@ -9,14 +9,10 @@ import (
 
 func (s *OperationService) start(ctx context.Context, operation providerops.Operation,
 	targetType string) (providerops.Operation, providerops.Item, bool, error) {
-	items, err := s.repository.ProviderOperationItems(ctx, operation.Receipt.ID)
-	if err != nil || len(items) != 1 || items[0].TargetType != targetType {
-		if err == nil {
-			err = errors.New("Emby operation has an invalid target")
-		}
+	item, err := s.operationItem(ctx, operation, targetType)
+	if err != nil {
 		return providerops.Operation{}, providerops.Item{}, false, err
 	}
-	item := items[0]
 	if providerops.Terminal(item.Status) {
 		return operation, item, false, s.completeRecordedItem(ctx, operation, item)
 	}
@@ -78,4 +74,15 @@ func (s *OperationService) completeRecordedItem(ctx context.Context, operation p
 		ErrorCode: item.ErrorCode, ResultJSON: item.ResultJSON,
 	}, s.now().UTC())
 	return err
+}
+
+func (s *OperationService) operationItem(ctx context.Context, operation providerops.Operation, targetType string) (providerops.Item, error) {
+	items, err := s.repository.ProviderOperationItems(ctx, operation.Receipt.ID)
+	if err != nil {
+		return providerops.Item{}, err
+	}
+	if len(items) != 1 || items[0].TargetType != targetType {
+		return providerops.Item{}, errors.New("Emby operation has an invalid target")
+	}
+	return items[0], nil
 }
