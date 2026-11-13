@@ -91,9 +91,6 @@ func (s *Service) endpointProxyCredentials(ctx context.Context, endpoint Endpoin
 	if err = applyEndpointOptions(&result, overrides); err != nil {
 		return result, err
 	}
-	if err = applyEndpointClient(&result, overrides, inbound); err != nil {
-		return result, err
-	}
 	result.EndpointTuning = &subscription.EndpointOptions{}
 	if value, exists := overrides["clientOptions"]; exists {
 		encoded, err := json.Marshal(value)
@@ -121,6 +118,9 @@ func (s *Service) endpointProxyCredentials(ctx context.Context, endpoint Endpoin
 			}
 			result.Account[name] = item
 		}
+	}
+	if err = applyEndpointClient(&result, overrides, inbound); err != nil {
+		return result, err
 	}
 	return result, nil
 }

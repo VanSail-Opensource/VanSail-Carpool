@@ -4083,6 +4083,12 @@
           "notNull": true,
           "default": null,
           "primaryKey": 0
+        },
+        {
+          "name": "claim_generation",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
         }
       ]
     },
@@ -4635,6 +4641,24 @@
           "type": "text",
           "notNull": true,
           "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "sealed",
+          "type": "boolean",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "stale",
+          "type": "boolean",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "dirty",
+          "type": "boolean",
+          "notNull": true,
           "primaryKey": 0
         }
       ]
@@ -5390,6 +5414,24 @@
           "type": "bigint",
           "notNull": true,
           "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "sealed",
+          "type": "boolean",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "stale",
+          "type": "boolean",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "dirty",
+          "type": "boolean",
+          "notNull": true,
           "primaryKey": 0
         }
       ]
@@ -11099,6 +11141,12 @@
     "account_cleanup_evidence_guard",
     "xnode_multiplier_retired",
     "xnode_legacy_rate_retired",
-    "xnode_stream_rate_retired"
+    "xnode_stream_rate_retired",
+    "pricing_calibration_sealed_guard",
+    "pricing_validation_sealed_guard",
+    "pricing_offer_calibration_lock",
+    "pricing_quote_calibration_lock",
+    "pricing_offer_calibration_changed",
+    "pricing_quote_calibration_changed"
   ]
 }

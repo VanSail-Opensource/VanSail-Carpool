@@ -6,7 +6,6 @@ import { isResponseCompatible } from './contracts/responses'
 type Schema = components['schemas']
 export type XNodeSubscription = Schema['XNodeSubscription']
 export type XNodeUserMetrics = Schema['XNodeUserMetrics']
-export type XNodeCustomization = Schema['XNodeCustomization']
 export type RoutingChoice = Schema['XNodeRoutingChoice']
 export type RoutingView = Schema['XNodeRoutingView']
 export type RoutingPath = Schema['XNodeRoutingPath']

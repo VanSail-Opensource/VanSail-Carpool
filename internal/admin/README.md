@@ -1,5 +1,4 @@
 # Admin package
-- `connectivity_settings.go` validates atomic connectivity settings through the queued account adapter and cancels obsolete runs after successful writes; `connectivity_settings_test.go` covers generic writes and disabling during upstream outages.
 - `settings_part2.go` continues the focused implementation from its original package module.
 
 Audited administrative operations for catalog data, settings, balances, refunds, purchases, backups, and durable jobs live here.
@@ -16,9 +15,9 @@ Audited administrative operations for catalog data, settings, balances, refunds,
   Payment refunds and outbox retries use the durable mutation queue.
 - `settings.go` defines editable settings, encrypted storage access, masked payment profiles, safe listing, and readiness checks.
 - `settings_emby.go` uses the existing versioned connection-pair transaction for both encrypted values and the redacted administrator audit. `settings_emby_test.go` covers retargeting with a fresh token, stale drafts, and propagation of the atomic audit result without a second write.
-- `payment_profiles.go` validates, encrypts, resolves, and resolves provider-account profiles. Retained order references protect account identity and credentials from retargeting or deletion.
+- `payment_profiles.go` validates, encrypts, and resolves provider-account profiles. Retained order references protect account identity and credentials from retargeting or deletion.
 - `payment_profile_channels.go` discovers BEPUSDT currency/network rails through the queued readiness probe and disables profiles whose probe fails.
-- `payment_profile_readiness.go` maps enabled provider profiles to stable readiness diagnostics.
+- `payment_profile_readiness.go` checks every enabled provider account, deduplicates readiness diagnostics, and reports unavailable profile storage without falling back to legacy settings. `payment_profile_readiness_test.go` covers disabled or ready first accounts hiding later broken accounts.
 - `setting_validators.go` contains the individual setting-value validators.
 - `mutation_operations.go` creates idempotent administrator outbox-retry, payment-refund, and manual-maintenance receipts.
 - `mutation_worker.go` dispatches administrator mutation commands from the shared provider-operation lane.
@@ -47,7 +46,7 @@ Audited administrative operations for catalog data, settings, balances, refunds,
 - `catalog_test_helpers_test.go` supplies atomic catalog mutation fixtures, including audit failure rollback semantics.
 - `settings_test.go` covers secret handling, safe listing, readiness, and validators.
 - `payment_profiles_test.go` covers provider profile validation, encryption, masking, and readiness behavior.
-- `zero_coverage_test.go` covers backup deletion, balance deductions, stable-ID payment-profile lookups and runtimes, legacy EZPay validation, and refusal of individual activity-setting writes.
+- `zero_coverage_test.go` covers backup deletion, balance deductions, stable-ID payment-profile lookups and runtimes, refusal of individual activity-setting writes.
 - `catalog_test.go` covers optional setting validators.
 - `user_profiles_test.go` covers aggregate selection, ordering, and synchronization projection.
 - `user_profiles_test_helpers_test.go` contains focused aggregate-profile repository doubles.

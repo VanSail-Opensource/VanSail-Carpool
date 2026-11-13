@@ -86,6 +86,10 @@ function close(): void {
   open.value = false
 }
 
+function backToSelection(): void {
+  if (!purchasing.value && !activationPrompting.value) step.value = 1
+}
+
 function goHome(): void {
   close()
   void router.push('/home')
@@ -107,7 +111,7 @@ onScopeDispose(() => { generation++; if (activationResolver) resolveActivation(n
               <CatalogSquadStep :squads="visibleSquads" :selected-ids="selectedSquadIds" :included-ids="emptyIncludedIds" :ordered-ids="orderedIds" @toggle="toggleSquad" />
               <CatalogCouponStep v-model:coupon-grant-id="selectedCouponGrantId" :coupons="couponGrants" :eligible-ids="eligibleCoupons.map(grant => grant.id)" :quoting="quoting" @redeemed="load()" />
             </template>
-            <SquadAdditionCheckout v-else :squads="selectedSquads" :quote="quote" :quote-ready="quoteUsable" :purchase="purchase" :quoting="quoting" :purchasing="purchasing || activationPrompting" :needs-balance="needsBalance" :error="error" @back="step = 1" @confirm="confirm" @home="goHome" />
+            <SquadAdditionCheckout v-else :squads="selectedSquads" :quote="quote" :quote-ready="quoteUsable" :purchase="purchase" :quoting="quoting" :purchasing="purchasing || activationPrompting" :needs-balance="needsBalance" :error="error" @back="backToSelection" @confirm="confirm" @home="goHome" />
           </div>
         </Transition>
         <PricingQuoteNotice :state="quoteStatus" :valid-until="quote?.quoteValidUntil" @retry="refreshQuote()" />

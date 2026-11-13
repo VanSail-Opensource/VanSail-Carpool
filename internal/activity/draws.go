@@ -113,6 +113,9 @@ func (input LuckyDrawInput) MaximumPrizeDeduction() int64 {
 	var maximum int64
 	for _, prize := range input.Prizes {
 		if prize.Reward.Kind == RewardTXBDelta && prize.Reward.Range != nil && prize.Reward.Range.Min < 0 {
+			if prize.Reward.Range.Min == math.MinInt64 {
+				return math.MaxInt64
+			}
 			if -prize.Reward.Range.Min > maximum {
 				maximum = -prize.Reward.Range.Min
 			}

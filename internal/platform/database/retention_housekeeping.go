@@ -11,7 +11,7 @@ func pruneHousekeepingTx(ctx context.Context, tx *sql.Tx, cutoff7Days, cutoff24H
 	counts map[string]int64) error {
 	var err error
 	if counts["user_notification_events"], err = deleteCount(ctx, tx, `DELETE FROM user_notification_events
-		WHERE queued_at IS NOT NULL AND queued_at<$1`, stamp(now.Add(-3*24*time.Hour))); err != nil {
+		WHERE queued_at IS NOT NULL AND queued_at<$1 AND `+purchaseTimestampOrderSQL("queued_at")+`<$2`, retentionCandidateUpperBound(now.Add(-3*24*time.Hour)), purchaseTimestampOrder(now.Add(-3*24*time.Hour))); err != nil {
 		return fmt.Errorf("prune completed user notifications: %w", err)
 	}
 	if err := pruneAuthTokensTx(ctx, tx, now, counts); err != nil {
@@ -38,8 +38,8 @@ func pruneHousekeepingTx(ctx context.Context, tx *sql.Tx, cutoff7Days, cutoff24H
 	// Account deletion belongs exclusively to verified seven-day cleanup.
 	// Incomplete onboarding and elapsed age are never deletion authority.
 	counts["abandoned_users"] = 0
-	if counts["maintenance_runs"], err = deleteCount(ctx, tx, `DELETE FROM maintenance_runs WHERE started_at<$1`,
-		stamp(cutoff7Days)); err != nil {
+	if counts["maintenance_runs"], err = deleteCount(ctx, tx, `DELETE FROM maintenance_runs WHERE started_at<$1 AND `+purchaseTimestampOrderSQL("started_at")+`<$2`,
+		retentionCandidateUpperBound(cutoff7Days), purchaseTimestampOrder(cutoff7Days)); err != nil {
 		return fmt.Errorf("prune maintenance runs: %w", err)
 	}
 	return nil

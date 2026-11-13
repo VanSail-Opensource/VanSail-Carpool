@@ -71,3 +71,30 @@ func TestReopenedClosureRejectsOldParticipantEvidenceAtIdenticalTime(t *testing.
 		})
 	}
 }
+
+func TestPeriodFinalizationAcceptsEquivalentRetainedTimestamp(t *testing.T) {
+	s, _, period := xnodeTrafficFixture(t)
+	ctx := context.Background()
+	at := time.Date(2030, 1, 2, 3, 4, 5, 0, time.UTC)
+	closing, err := s.BeginXNodePeriodClosure(ctx, period, at)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = s.db.ExecContext(ctx, `UPDATE xnode_periods SET ended_at=$1 WHERE id=$2`, stamp(at.Add(time.Nanosecond)), period.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err = s.FinalizeXNodePeriod(ctx, closing); !errors.Is(err, xnode.ErrConflict) {
+		t.Fatal("changed exact closure instant accepted stale proof", err)
+	}
+	retained := at.Format("2006-01-02T15:04:05.000000000Z")
+	if _, err = s.db.ExecContext(ctx, `UPDATE xnode_periods SET ended_at=$1 WHERE id=$2`, retained, period.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err = s.FinalizeXNodePeriod(ctx, closing); err != nil {
+		t.Fatal("equivalent timestamp spelling blocked retained closure", err)
+	}
+	var actual, status string
+	if err = s.db.QueryRowContext(ctx, `SELECT ended_at,status FROM xnode_periods WHERE id=$1`, period.ID).Scan(&actual, &status); err != nil || actual != retained || status != "closed" {
+		t.Fatal("finalization rewrote retained timestamp evidence", actual, status, err)
+	}
+}

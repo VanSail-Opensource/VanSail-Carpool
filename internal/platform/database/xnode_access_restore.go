@@ -12,22 +12,31 @@ import (
 
 // RepairXNodeAccessPeriod restores an unsettled allowance or creates its missing initial period. The
 // serializable transaction fences entitlement/operation changes and pointer races.
-func (s *Store) RepairXNodeAccessPeriod(ctx context.Context, identity xnode.Identity, purchase model.Purchase, period xnode.Period, at time.Time, create bool) error {
+func (s *Store) RepairXNodeAccessPeriod(ctx context.Context, identity xnode.Identity, purchase model.Purchase, period xnode.Period, generation int64, at time.Time, create bool) error {
 	for attempt := 0; ; attempt++ {
-		err := s.restoreXNodeAccessPeriod(ctx, identity, purchase, period, at, create)
+		err := s.restoreXNodeAccessPeriod(ctx, identity, purchase, period, generation, at, create)
 		if !s.retryTransaction(ctx, err, attempt) {
 			return err
 		}
 	}
 }
 
-func (s *Store) restoreXNodeAccessPeriod(ctx context.Context, identity xnode.Identity, purchase model.Purchase, period xnode.Period, at time.Time, create bool) error {
-
+func (s *Store) restoreXNodeAccessPeriod(ctx context.Context, identity xnode.Identity, purchase model.Purchase, period xnode.Period, generation int64, at time.Time, create bool) error {
+	if identity.UserID == "" || identity.ServiceName != "" || purchase.UserID != identity.UserID || generation < 0 ||
+		period.ID == "" || period.ProxyUserID != identity.ProxyUserID || period.PurchaseID != purchase.ID {
+		return xnode.ErrConflict
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
+	if err = lockNativeMemberIdentityTx(ctx, tx, identity.UserID, generation, true); err != nil {
+		return err
+	}
+	if err = lockMemberPurchaseTx(ctx, tx, identity.UserID); err != nil {
+		return err
+	}
 	blocked, err := comboControlConflictFrom(ctx, tx, identity.UserID)
 	if err != nil {
 		return err
@@ -35,10 +44,17 @@ func (s *Store) restoreXNodeAccessPeriod(ctx context.Context, identity xnode.Ide
 	if blocked {
 		return xnode.ErrAccessOperationPending
 	}
-	current, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.user_id=$1 AND purchases.status IN ('active','activating') AND purchases.valid_from<=$2 AND purchases.valid_until>$3 ORDER BY purchases.valid_from DESC LIMIT 1`, identity.UserID, stamp(at), stamp(at)))
+	current, err := activePurchaseAt(ctx, tx, identity.UserID, at)
 	if errors.Is(err, ErrNotFound) {
 		// Match EffectivePurchase's already-paid queued successor lineage.
-		current, err = scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=$1 AND purchases.user_id=$2 AND purchases.status IN ('active','activating') AND EXISTS(SELECT 1 FROM purchases next WHERE next.user_id=purchases.user_id AND next.status='queued' AND next.valid_from=purchases.valid_until AND next.valid_from<=$3 AND next.valid_until=$4 AND next.valid_until>$5)`, purchase.ID, identity.UserID, stamp(at), stamp(purchase.ValidUntil), stamp(at)))
+		current, err = scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=$1 AND purchases.user_id=$2 AND purchases.status IN ('active','activating')`, purchase.ID, identity.UserID))
+		if err == nil {
+			var linked bool
+			linked, err = purchasePeriodContinuityTx(ctx, tx, current, purchase.ValidUntil)
+			if err == nil && (!linked || at.Before(current.ValidUntil) || !at.Before(purchase.ValidUntil)) {
+				return xnode.ErrConflict
+			}
+		}
 	}
 	if errors.Is(err, ErrNotFound) {
 		return xnode.ErrConflict
@@ -64,7 +80,7 @@ func (s *Store) restoreXNodeAccessPeriod(ctx context.Context, identity xnode.Ide
 	if create {
 		result, err = tx.ExecContext(ctx, `INSERT INTO xnode_periods(id,proxy_user_id,purchase_id,started_at,limit_bytes,strategy,last_reset_at,status) SELECT $1,$2,$3,$4,$5,$6,$7,'open' WHERE NOT EXISTS(SELECT 1 FROM xnode_periods WHERE proxy_user_id=$8 AND purchase_id=$9)`, period.ID, identity.ProxyUserID, purchase.ID, stamp(at), purchase.TrafficLimitBytes, purchase.ResetStrategy, stamp(at), identity.ProxyUserID, purchase.ID)
 	} else {
-		result, err = tx.ExecContext(ctx, `UPDATE xnode_periods SET status='open',ended_at=NULL WHERE id=$1 AND proxy_user_id=$2 AND purchase_id=$3 AND status=$4`, period.ID, identity.ProxyUserID, purchase.ID, period.Status)
+		result, err = tx.ExecContext(ctx, `UPDATE xnode_periods SET status='open',ended_at=NULL WHERE id=$1 AND proxy_user_id=$2 AND purchase_id=$3 AND status=$4 AND closure_generation=$5`, period.ID, identity.ProxyUserID, purchase.ID, period.Status, period.ClosureGeneration)
 	}
 	if err != nil {
 		return err
@@ -73,7 +89,9 @@ func (s *Store) restoreXNodeAccessPeriod(ctx context.Context, identity xnode.Ide
 		return err
 	}
 	if period.Status == "closing" {
-		if _, err = tx.ExecContext(ctx, `UPDATE xnode_period_nodes SET flushed_sequence=NULL WHERE period_id=$1`, period.ID); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE xnode_period_nodes p SET flushed_sequence=NULL,flushed_stream_id='',flushed_legacy_sequence=0
+			WHERE p.period_id=$1 AND NOT EXISTS(SELECT 1 FROM xnode_nodes n WHERE n.id=p.node_id AND n.enabled=0
+			AND (n.removing_at IS NOT NULL OR n.retired_at IS NOT NULL) AND p.flushed_sequence IS NOT NULL)`, period.ID); err != nil {
 			return err
 		}
 	}

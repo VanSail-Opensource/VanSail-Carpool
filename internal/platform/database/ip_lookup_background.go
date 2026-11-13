@@ -10,7 +10,7 @@ import (
 
 // PendingIPLookupOperations recovers durable runs after process interruption.
 func (s *Store) PendingIPLookupOperations(ctx context.Context) ([]string, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT (SELECT c.operation_id FROM ip_lookup_checks c JOIN provider_operations o ON o.id=c.operation_id WHERE c.report_id=r.id ORDER BY o.created_at,o.record_order LIMIT 1) FROM ip_lookup_reports r WHERE r.status='processing' AND EXISTS(SELECT 1 FROM ip_lookup_checks c WHERE c.report_id=r.id) ORDER BY r.created_at,r.record_order LIMIT 1`)
+	rows, err := s.db.QueryContext(ctx, `SELECT (SELECT c.operation_id FROM ip_lookup_checks c JOIN provider_operations o ON o.id=c.operation_id WHERE c.report_id=r.id ORDER BY `+purchaseTimestampOrderSQL("o.created_at")+`,o.record_order LIMIT 1) FROM ip_lookup_reports r WHERE r.status='processing' AND EXISTS(SELECT 1 FROM ip_lookup_checks c WHERE c.report_id=r.id) ORDER BY `+purchaseTimestampOrderSQL("r.created_at")+`,r.record_order LIMIT 1`)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (s *Store) HeartbeatIPLookup(ctx context.Context, id, owner string, now tim
 	}
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_reports SET heartbeat_at=$1,lease_expires_at=$2 WHERE status='processing' AND lease_owner=$3 AND vansail_timestamp(lease_expires_at)>vansail_timestamp($1) AND id=(SELECT report_id FROM ip_lookup_checks WHERE operation_id=$4)`, stamp(now), stamp(now.Add(time.Minute)), owner, id)
+	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_reports SET heartbeat_at=$1,lease_expires_at=$2 WHERE status='processing' AND lease_owner=$3 AND `+purchaseTimestampOrderSQL("lease_expires_at")+`>$5 AND id=(SELECT report_id FROM ip_lookup_checks WHERE operation_id=$4)`, stamp(now), stamp(now.Add(time.Minute)), owner, id, purchaseTimestampOrder(now))
 	if err != nil {
 		return err
 	}
@@ -62,10 +62,10 @@ func (s *Store) ClaimIPLookupLease(ctx context.Context, id, owner string, now ti
 	defer s.writeMu.Unlock()
 	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_reports SET lease_owner=$1,lease_expires_at=$2,heartbeat_at=$3
 		WHERE status='processing' AND id=(SELECT report_id FROM ip_lookup_checks WHERE operation_id=$4)
-		AND id=(SELECT r.id FROM ip_lookup_reports r WHERE r.status='processing' AND EXISTS(SELECT 1 FROM ip_lookup_checks c WHERE c.report_id=r.id) ORDER BY r.created_at,r.record_order LIMIT 1)
-		AND (lease_owner=$5 OR lease_expires_at IS NULL OR vansail_timestamp(lease_expires_at)<=vansail_timestamp($6))
-		AND NOT EXISTS(SELECT 1 FROM ip_lookup_reports other WHERE other.status='processing' AND other.id<>ip_lookup_reports.id AND vansail_timestamp(other.lease_expires_at)>vansail_timestamp($7))
-		AND NOT EXISTS(SELECT 1 FROM outbox_jobs WHERE kind IN ('ip_lookup_report_retry','ip_lookup_live_retry') AND status='processing')`, owner, stamp(now.Add(time.Minute)), stamp(now), id, owner, stamp(now), stamp(now))
+		AND id=(SELECT r.id FROM ip_lookup_reports r WHERE r.status='processing' AND EXISTS(SELECT 1 FROM ip_lookup_checks c WHERE c.report_id=r.id) ORDER BY `+purchaseTimestampOrderSQL("r.created_at")+`,r.record_order LIMIT 1)
+		AND (lease_owner=$5 OR lease_expires_at IS NULL OR `+purchaseTimestampOrderSQL("lease_expires_at")+`<=$6)
+		AND NOT EXISTS(SELECT 1 FROM ip_lookup_reports other WHERE other.status='processing' AND other.id<>ip_lookup_reports.id AND `+purchaseTimestampOrderSQL("other.lease_expires_at")+`>$7)
+		AND NOT EXISTS(SELECT 1 FROM outbox_jobs WHERE kind IN ('ip_lookup_report_retry','ip_lookup_live_retry') AND status='processing')`, owner, stamp(now.Add(time.Minute)), stamp(now), id, owner, purchaseTimestampOrder(now), purchaseTimestampOrder(now))
 	if err != nil {
 		return false, err
 	}

@@ -66,8 +66,8 @@ func (s *scanner) checkAptos(ctx context.Context) error {
 
 func (s *scanner) scanAptos(ctx context.Context, cursor Cursor, addresses []string) (Batch, error) {
 	var cur aptosCursor
-	if cursor.Value != "" && json.Unmarshal([]byte(cursor.Value), &cur) != nil {
-		return Batch{}, ErrProof
+	if err := decodeCursor(cursor.Value, &cur); err != nil {
+		return Batch{}, err
 	}
 	if cur.Version == "" {
 		var status struct {

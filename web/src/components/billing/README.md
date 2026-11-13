@@ -27,3 +27,10 @@ credited balance. Pending and terminal receipts identify the order value, and
 crypto amounts use a neutral label rather than implying settlement.
 `CryptoPaymentInstructions.vue` resets address/amount copy feedback when the
 order or payment target changes.
+
+Closing the funding sheet suspends both order and operation observers and retires
+any pending receipt/QR presentation or delayed paid callback. Reopening prepares
+a fresh authoritative view while unresolved create keys remain reusable. Coupon
+entry is locked during submission and late responses from a retired configuration
+cannot publish a grant into another sheet. `BalancePaymentSheet.test.ts` covers
+this coupon lifecycle; the payment composable tests cover closed-sheet recovery.

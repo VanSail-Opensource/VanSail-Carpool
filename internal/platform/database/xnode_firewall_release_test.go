@@ -12,6 +12,7 @@ import (
 
 func TestZeroHourUnbanIsGenerationSafeIdempotentAndPreservesExemptions(t *testing.T) {
 	store, owner, _ := xnodeTrafficFixture(t)
+	actor := createTestAdmin(t, store, 95111)
 	ctx := context.Background()
 	now := time.Now().UTC()
 	if err := store.ReconcileFirewallMember(ctx, "node", true, true, 0); err != nil {
@@ -26,7 +27,7 @@ func TestZeroHourUnbanIsGenerationSafeIdempotentAndPreservesExemptions(t *testin
 		t.Fatal(bans, err)
 	}
 	// A positive grant remains immutable and must survive the ban release.
-	if _, err = store.GrantAdminFirewallExemption(ctx, owner.UserID, xnode.AdminFirewallExemption{Prefix: "8.8.8.8/32", Hours: 24, Key: "positive"}, now); err != nil {
+	if _, err = store.GrantAdminFirewallExemption(ctx, actor.ID, xnode.AdminFirewallExemption{Prefix: "8.8.8.8/32", Hours: 24, Key: "positive"}, now); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = store.AdjustBalance(ctx, owner.UserID, 10000, "seed", "", now); err != nil {
@@ -38,15 +39,15 @@ func TestZeroHourUnbanIsGenerationSafeIdempotentAndPreservesExemptions(t *testin
 		t.Fatal(err)
 	}
 	input := xnode.AdminFirewallExemption{Prefix: bans[0].Prefix, Generation: "stale", Hours: 0, Key: "zero"}
-	if _, err = store.GrantAdminFirewallExemption(ctx, owner.UserID, input, now); !errors.Is(err, xnode.ErrConflict) {
+	if _, err = store.GrantAdminFirewallExemption(ctx, actor.ID, input, now); !errors.Is(err, xnode.ErrConflict) {
 		t.Fatal("stale generation accepted", err)
 	}
 	input.Generation = bans[0].Generation
-	receipt, err := store.GrantAdminFirewallExemption(ctx, owner.UserID, input, now)
+	receipt, err := store.GrantAdminFirewallExemption(ctx, actor.ID, input, now)
 	if err != nil {
 		t.Fatal(err)
 	}
-	replay, err := store.GrantAdminFirewallExemption(ctx, owner.UserID, input, now)
+	replay, err := store.GrantAdminFirewallExemption(ctx, actor.ID, input, now)
 	if err != nil || replay.ID != receipt.ID {
 		t.Fatal("release replay", replay, err)
 	}
@@ -76,7 +77,7 @@ func TestZeroHourUnbanIsGenerationSafeIdempotentAndPreservesExemptions(t *testin
 		t.Fatal(err)
 	}
 	input.Key = "old-generation-new-key"
-	if _, err = store.GrantAdminFirewallExemption(ctx, owner.UserID, input, now); !errors.Is(err, xnode.ErrConflict) {
+	if _, err = store.GrantAdminFirewallExemption(ctx, actor.ID, input, now); !errors.Is(err, xnode.ErrConflict) {
 		t.Fatal("old generation released a successor ban", err)
 	}
 }

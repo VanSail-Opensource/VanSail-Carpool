@@ -14,7 +14,7 @@ func TestDeleteOutboxPreservesUnfinishedCommandAndItsEncryptedContinuation(t *te
 	t.Parallel()
 	ctx, store := context.Background(), newTestStore(t)
 	now := time.Now().UTC()
-	owner := createTestUser(t, store, 497710)
+	owner := createTestAdmin(t, store, 497710)
 	input := providerops.CreateInput{ActorUserID: owner.ID, OwnerUserID: owner.ID, Kind: "test_recovery",
 		IdempotencyKey: "delete-recovery", RequestFingerprint: "delete-recovery-proof", SealedTarget: "encrypted-continuation",
 		Items: []providerops.ItemInput{{Key: "remote", TargetType: "user", TargetID: owner.ID}}}
@@ -67,7 +67,7 @@ func TestDeleteOutboxKeepsFinancialAndCleanupLanesButAllowsSettledArtifacts(t *t
 	t.Parallel()
 	ctx, store := context.Background(), newTestStore(t)
 	now := time.Now().UTC()
-	owner := createTestUser(t, store, 497713)
+	owner := createTestAdmin(t, store, 497713)
 	for _, kind := range []string{"xnode_hourly_settle", "draw_raffle_settle", "account_purge", "account_cleanup_probe"} {
 		if err := store.EnqueueOutbox(ctx, kind, `{"userId":"retained-owner"}`, now); err != nil {
 			t.Fatal(err)
@@ -92,7 +92,7 @@ func TestLegacyEmbyRetrySurvivesManualAndAutomaticJobCleanup(t *testing.T) {
 	t.Parallel()
 	ctx, store := context.Background(), newTestStore(t)
 	now, old := time.Now().UTC(), time.Now().UTC().Add(-10*24*time.Hour)
-	owner := createTestUser(t, store, 497711)
+	owner := createTestAdmin(t, store, 497711)
 	if _, err := store.AdjustBalance(ctx, owner.ID, 1000, "legacy-recovery-seed", "seed", old); err != nil {
 		t.Fatal(err)
 	}
@@ -129,7 +129,7 @@ func TestLegacyEmbyRetrySurvivesManualAndAutomaticJobCleanup(t *testing.T) {
 func TestOutboxDeletionAndActorAuditCommitTogether(t *testing.T) {
 	t.Parallel()
 	ctx, store := context.Background(), newTestStore(t)
-	owner := createTestUser(t, store, 497714)
+	owner := createTestAdmin(t, store, 497714)
 	if err := store.EnqueueOutbox(ctx, "xnode_sync_user", `{"userId":"retained-owner"}`, time.Now().UTC()); err != nil {
 		t.Fatal(err)
 	}

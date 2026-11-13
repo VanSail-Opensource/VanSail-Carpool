@@ -40,7 +40,7 @@ func trafficNodeTx(ctx context.Context, tx *sql.Tx, batch *trafficBatchState, no
 func trafficCursorTx(ctx context.Context, tx *sql.Tx, batch *trafficBatchState, node string, key trafficCursorKey) (*trafficCursorValue, error) {
 	if batch != nil {
 		v := batch.cursors[key]
-		if v == nil || key.stream != "" && v.node != node {
+		if v == nil || v.node != node {
 			return nil, xnode.ErrTrafficAgentMismatch
 		}
 		return v, nil

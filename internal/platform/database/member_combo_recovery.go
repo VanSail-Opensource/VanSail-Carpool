@@ -14,11 +14,11 @@ func liveComboControlPredicate(first int) string {
 	return fmt.Sprintf(`operation.kind IN ('member_squad_switch','member_early_activation') AND EXISTS(
 	SELECT 1 FROM provider_operation_items item JOIN purchases purchase ON purchase.id=item.target_id
 	WHERE item.operation_id=operation.id AND item.target_type='purchase' AND purchase.user_id=operation.owner_user_id
-	AND vansail_timestamp(purchase.valid_from)<=vansail_timestamp($%d) AND vansail_timestamp(purchase.valid_until)>vansail_timestamp($%d) AND
+	AND `+purchaseTimestampOrderSQL("purchase.valid_from")+`<=`+purchaseTimestampOrderSQL("$%d")+` AND `+purchaseTimestampOrderSQL("purchase.valid_until")+`>`+purchaseTimestampOrderSQL("$%d")+` AND
 	((operation.kind='member_squad_switch' AND purchase.status='active') OR
 	 (operation.kind='member_early_activation' AND purchase.status IN ('active','activating','failed')))
 	AND NOT EXISTS(SELECT 1 FROM purchases other WHERE other.user_id=purchase.user_id AND other.id<>purchase.id
-		AND other.status IN ('active','activating') AND vansail_timestamp(other.valid_from)<=vansail_timestamp($%d) AND vansail_timestamp(other.valid_until)>vansail_timestamp($%d)))`, first, first+1, first+2, first+3)
+		AND other.status IN ('active','activating') AND `+purchaseTimestampOrderSQL("other.valid_from")+`<=`+purchaseTimestampOrderSQL("$%d")+` AND `+purchaseTimestampOrderSQL("other.valid_until")+`>`+purchaseTimestampOrderSQL("$%d")+`))`, first, first, first+1, first+1, first+2, first+2, first+3, first+3)
 }
 
 func recoverComboControlJobTx(ctx context.Context, tx *sql.Tx, jobID string, now time.Time) error {

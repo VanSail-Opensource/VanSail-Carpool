@@ -17,17 +17,19 @@ import (
 
 func TestManagedRoutingSupportsProductionContextsWithoutWeakeningCycles(t *testing.T) {
 	for _, test := range []struct {
-		name, strategy         string
-		sniff, fallback, cycle bool
-		valid                  bool
+		name, strategy                 string
+		sniff, fallback, cycle, shared bool
+		valid                          bool
 	}{
-		{"sniffed one-way", "AsIs", true, false, false, true},
-		{"DNS one-way", "IPOnDemand", false, false, false, true},
-		{"production one-way", "IPOnDemand", true, true, false, true},
-		{"fixed disjoint cycle", "AsIs", false, false, true, true},
-		{"sniffed disjoint cycle", "AsIs", true, false, true, false},
-		{"DNS disjoint cycle", "IPOnDemand", false, false, true, false},
-		{"untracked disjoint cycle", "AsIs", false, true, true, false},
+		{name: "sniffed one-way", strategy: "AsIs", sniff: true, valid: true},
+		{name: "DNS one-way", strategy: "IPOnDemand", valid: true},
+		{name: "production one-way", strategy: "IPOnDemand", sniff: true, fallback: true, valid: true},
+		{name: "fixed disjoint cycle", strategy: "AsIs", cycle: true, valid: true},
+		{name: "sniffed disjoint cycle", strategy: "AsIs", sniff: true, cycle: true},
+		{name: "DNS disjoint cycle", strategy: "IPOnDemand", cycle: true},
+		{name: "untracked disjoint cycle", strategy: "AsIs", fallback: true, cycle: true},
+		{name: "shared untracked disjoint cycle", strategy: "AsIs", fallback: true, cycle: true, shared: true},
+		{name: "shared one-way fallback", strategy: "AsIs", fallback: true, shared: true, valid: true},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			f := controlFixture(t, true)
@@ -56,8 +58,26 @@ func TestManagedRoutingSupportsProductionContextsWithoutWeakeningCycles(t *testi
 			}
 			if test.fallback {
 				proxy := map[string]any{"tag": "admin-exit", "protocol": "socks", "settings": map[string]any{"servers": []any{map[string]any{"address": "127.0.0.1", "port": 1080}}}}
-				native["outbounds"] = append([]any{proxy}, native["outbounds"].([]any)...)
-				routing["rules"] = append(routing["rules"].([]any), map[string]any{"type": "field", "network": "tcp,udp", "outboundTag": "admin-exit"})
+				fallback := map[string]any{"type": "field", "network": "tcp,udp", "outboundTag": "admin-exit"}
+				if test.shared {
+					for _, item := range []struct {
+						kind  string
+						value map[string]any
+					}{{"outbound", proxy}, {"routing", fallback}} {
+						document, err := json.Marshal([]any{item.value})
+						if err != nil {
+							t.Fatal(err)
+						}
+						snippet, err := f.service.SaveSnippet(ctx, xnode.Snippet{Name: "shared-" + item.kind, Kind: item.kind, Document: document})
+						if err != nil {
+							t.Fatal(err)
+						}
+						profile.SnippetIDs = append(profile.SnippetIDs, snippet.ID)
+					}
+				} else {
+					native["outbounds"] = append([]any{proxy}, native["outbounds"].([]any)...)
+					routing["rules"] = append(routing["rules"].([]any), fallback)
+				}
 			}
 			profile.Document, err = json.Marshal(native)
 			if err != nil {

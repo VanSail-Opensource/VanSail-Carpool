@@ -56,3 +56,41 @@ func TestPricingCouponInputsUseExactExpiry(t *testing.T) {
 		}
 	}
 }
+
+func TestPricingAddonCouponScopeExcludesExpiredCurrentPurchase(t *testing.T) {
+	s, ctx := newTestStore(t), context.Background()
+	user := createTestUser(t, s, 32_208)
+	now := time.Now().UTC()
+	combo := saveTestCombo(t, s, "Coupon source", 100, 30)
+	addon := saveTestSquad(t, s, "Scoped add-on", 300, true)
+	if _, err := s.AdjustBalance(ctx, user.ID, 1000, "scope-seed", "seed", now); err != nil {
+		t.Fatal(err)
+	}
+	source, err := s.CreatePurchase(ctx, PurchaseInput{UserID: user.ID, ComboID: combo.ID, IdempotencyKey: "scope-source"}, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	coupon, err := s.SaveCoupon(ctx, coupons.CouponInput{Code: "CURRENT_SCOPE", Name: "Owned combo",
+		Kind: coupons.KindPurchaseRecurring, DiscountMode: coupons.DiscountFixed,
+		ValueMinorOrBPS: 20, EligibleComboIDs: []string{combo.ID}, Active: true}, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.GrantCoupon(ctx, user.ID, coupon.ID, "test", "scope-grant", now); err != nil {
+		t.Fatal(err)
+	}
+	at := now.Add(time.Hour).Truncate(time.Second)
+	for _, live := range []bool{false, true} {
+		until := at
+		if live {
+			until = until.Add(time.Nanosecond)
+		}
+		if _, err := s.db.ExecContext(ctx, `UPDATE purchases SET valid_until=$1 WHERE id=$2`, stamp(until), source.ID); err != nil {
+			t.Fatal(err)
+		}
+		grants, err := s.offerCouponInputs(ctx, user.ID, "addon", addon.GroupID, at)
+		if err != nil || (len(grants) == 1) != live || len(grants) > 1 {
+			t.Fatal("expired purchase lent its combo scope to an add-on offer", live, grants, err)
+		}
+	}
+}

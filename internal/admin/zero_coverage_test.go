@@ -176,19 +176,6 @@ func TestPaymentProfileByIDAndRuntimes(t *testing.T) {
 	}
 }
 
-func TestLegacyEZPayTypeValidator(t *testing.T) {
-	t.Parallel()
-
-	for _, value := range []string{"alipay", "wxpay,bank"} {
-		if err := validateEZPayType(value); err != nil {
-			t.Errorf("validateEZPayType(%q): %v", value, err)
-		}
-	}
-	if err := validateEZPayType("unknown"); err == nil {
-		t.Fatal("validateEZPayType() accepted an unknown rail")
-	}
-}
-
 func TestSettingsRequireAtomicActivityBundle(t *testing.T) {
 	t.Parallel()
 	repository := newAdminSettingsRepository()

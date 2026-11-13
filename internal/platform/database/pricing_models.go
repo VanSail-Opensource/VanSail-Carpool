@@ -61,8 +61,11 @@ func (s *Store) TrainPricingResponse(ctx context.Context, kind, product string, 
 	if err != nil {
 		return pricing.ResponseModel{}, id, err
 	}
+	// The wire budget can trim the oldest observations before fitting. Support
+	// must describe that exact retained sample set, not discarded price ranges.
+	samples = samples[max(0, len(samples)-m.Samples):]
 	couponSamples := 0
-	for _, sample := range samples[max(0, len(samples)-m.Samples):] {
+	for _, sample := range samples {
 		if sample.CouponPresent > 0 && sample.CouponDiscount > 0 {
 			couponSamples++
 		}

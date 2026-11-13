@@ -109,3 +109,29 @@ func TestNewLegacyTermsRetainPurchasedDurationWithoutBackfill(t *testing.T) {
 		t.Fatal("accepted historical purchased duration backfill")
 	}
 }
+
+func TestHourlyLegacyExclusionPreservesNanosecondExpiry(t *testing.T) {
+	t.Parallel()
+	ctx, store := context.Background(), newTestStore(t)
+	now := time.Date(2030, 10, 8, 0, 0, 0, 0, time.UTC)
+	combo := saveTestCombo(t, store, "Legacy boundary", 100, 30)
+	user, purchase := createAdminWorkflowPurchase(t, store, 89712, combo, now)
+	for _, remaining := range []time.Duration{time.Nanosecond, 0, -time.Nanosecond} {
+		if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET valid_until=$1 WHERE id=$2`, stamp(now.Add(remaining)), purchase.ID); err != nil {
+			t.Fatal(err)
+		}
+		blocked, err := store.HourlyLegacyBlocked(ctx, user.ID, now)
+		if err != nil || blocked != (remaining > 0) {
+			t.Fatalf("legacy view at %v = %v, %v", remaining, blocked, err)
+		}
+		tx, err := store.DB().BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = rejectLegacyHourlyActivationTx(ctx, tx, user.ID, now)
+		_ = tx.Rollback()
+		if remaining > 0 && !errors.Is(err, ErrHourlyLegacyConflict) || remaining <= 0 && err != nil {
+			t.Fatalf("legacy admission at %v = %v", remaining, err)
+		}
+	}
+}

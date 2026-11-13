@@ -36,6 +36,9 @@ func (w *UnblockWorker) HandleProviderOperation(ctx context.Context, operation p
 	if err != nil {
 		return err
 	}
+	if item.Status != providerops.StatusProcessing {
+		return nil
+	}
 	scoped, callErr := scopedControl(ctx, w.remote, block.UserID, ip, block.NodeUUID, false, 0, true)
 	if !scoped {
 		callErr = w.remote.UnblockIP(ctx, ip, block.NodeUUID)

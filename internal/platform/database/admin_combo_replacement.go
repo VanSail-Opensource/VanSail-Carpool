@@ -33,9 +33,7 @@ func (s *Store) retryAttempt_ReplaceAdminCombo(ctx context.Context, input AdminC
 		}
 		return operation.Receipt, nil
 	}
-	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.user_id=$1
-		AND purchases.status IN ('activating','active') AND purchases.valid_from<=$2 AND purchases.valid_until>$3
-		ORDER BY purchases.valid_from DESC LIMIT 1`, input.UserID, stamp(now), stamp(now)))
+	purchase, err := activePurchaseAt(ctx, tx, input.UserID, now)
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}

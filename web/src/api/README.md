@@ -109,3 +109,5 @@ transport/body deadline. Public reads never enter the signed session transport.
 Public metadata uses `contracts/responses.ts` before returning any 2xx body.
 Malformed required shapes become a retryable read failure without entering Vue
 state; validation stores neither bearer tokens nor response payloads.
+
+`httpIdentity.test.ts` verifies that late JSON, blob, stream and response errors from a previous session cannot expire or redirect the current account.

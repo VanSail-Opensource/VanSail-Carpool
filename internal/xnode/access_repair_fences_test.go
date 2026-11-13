@@ -67,7 +67,7 @@ func TestTransactionalRepairRejectsStalePointer(t *testing.T) {
 	}
 	stale := identity
 	stale.CurrentPeriodID = "obsolete-pointer"
-	if err = f.store.RepairXNodeAccessPeriod(ctx, stale, *purchase, period, time.Now(), false); !errors.Is(err, xnode.ErrConflict) {
+	if err = f.store.RepairXNodeAccessPeriod(ctx, stale, *purchase, period, f.user.AccountGeneration, time.Now(), false); !errors.Is(err, xnode.ErrConflict) {
 		t.Fatalf("stale pointer accepted: %v", err)
 	}
 	after, err := f.store.XNodeIdentityByUser(ctx, f.user.ID)

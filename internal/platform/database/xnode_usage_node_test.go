@@ -44,3 +44,26 @@ func TestNodeHistoryRetainsRawOnlyAndCoverageOnlyLabels(t *testing.T) {
 		}
 	}
 }
+
+func TestUsageHistoryAndCoverageDoNotWidenFractionalBounds(t *testing.T) {
+	s, owner, _ := xnodeTrafficFixture(t)
+	ctx, minute := context.Background(), time.Now().UTC().Truncate(time.Minute)
+	if _, err := s.db.ExecContext(ctx, `INSERT INTO xnode_usage_minutes(owner_id,account_generation,billing_mode,reference_id,proxy_user_id,period_id,node_id,minute,observed_from,observed_through,upload_bytes,download_bytes)
+ VALUES($1,0,'hourly','retained-enrollment',1,'retained-period','node',$2,$2,$2,17,0)`, owner.UserID, minute); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.db.ExecContext(ctx, `INSERT INTO xnode_usage_coverage(node_id,agent_id,stream_id,sequence,digest,reason,observed_at,dropped_native,dropped_hourly)
+ VALUES('node','agent','retained-stream',0,'known','history-loss',$1,0,1)`, minute); err != nil {
+		t.Fatal(err)
+	}
+	for _, at := range []time.Time{minute.Add(-time.Nanosecond), minute.Add(time.Nanosecond)} {
+		rows, coverage, err := s.XNodeUsageHistory(ctx, owner.UserID, at, at)
+		if err != nil || len(rows) != 0 || coverage.GapCount != "0" {
+			t.Fatal("parameter rounding widened raw history or gap coverage", at, rows, coverage, err)
+		}
+	}
+	rows, coverage, err := s.XNodeUsageHistory(ctx, owner.UserID, minute, minute)
+	if err != nil || len(rows) != 1 || rows[0].UploadBytes != "17" || coverage.GapCount != "1" {
+		t.Fatal("exact history/coverage instant was excluded", rows, coverage, err)
+	}
+}

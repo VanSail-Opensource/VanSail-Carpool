@@ -2,7 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { nextTick, reactive } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NamedService } from '@/api/xnode'
-import type { XNodeCustomization } from '@/api/xnodeMember'
+import type { XNodeCustomization } from '@/api/xnode'
 import XNodeServiceRouting from './XNodeServiceRouting.vue'
 
 const { read, save } = vi.hoisted(() => ({ read: vi.fn(), save: vi.fn() }))

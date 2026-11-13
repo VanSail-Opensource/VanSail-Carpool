@@ -21,7 +21,7 @@ func (s *Store) retryAttempt_QueueProxyRepair(ctx context.Context, userID, missi
 	}
 	defer func() { _ = tx.Rollback() }()
 	result, err := tx.ExecContext(ctx, `UPDATE users SET proxy_user_id=NULL,recovery_reason='',updated_at=$1
-		WHERE id=$2 AND onboarding_state='complete' AND proxy_user_id=$3`, stamp(now), userID, missingID)
+		WHERE id=$2 AND onboarding_state='complete' AND account_status='active' AND proxy_user_id=$3`, stamp(now), userID, missingID)
 	if err != nil {
 		return model.User{}, fmt.Errorf("clear missing Proxy link: %w", err)
 	}
@@ -31,7 +31,7 @@ func (s *Store) retryAttempt_QueueProxyRepair(ctx context.Context, userID, missi
 	}
 	if affected == 1 {
 		var purchased int
-		if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE user_id=$1 AND status IN ('active','activating','queued') AND valid_until>$2))::integer", userID, stamp(now)).Scan(&purchased); err != nil {
+		if err := tx.QueryRowContext(ctx, `SELECT (EXISTS(SELECT 1 FROM purchases WHERE user_id=$1 AND status IN ('active','activating','queued') AND `+purchaseTimestampOrderSQL("valid_until")+`>$2))::integer`, userID, purchaseTimestampOrder(now)).Scan(&purchased); err != nil {
 			return model.User{}, err
 		}
 		if purchased == 1 {
@@ -48,7 +48,7 @@ func (s *Store) retryAttempt_QueueProxyRepair(ctx context.Context, userID, missi
 
 // BeginAgreement advances the authenticated member to the published agreements.
 func (s *Store) BeginAgreement(ctx context.Context, userID string) error {
-	result, err := s.db.ExecContext(ctx, `UPDATE users SET onboarding_state='agreement',updated_at=$1 WHERE id=$2 AND onboarding_state IN ('intro','membership','username','agreement')`, stamp(time.Now().UTC()), userID)
+	result, err := s.db.ExecContext(ctx, `UPDATE users SET onboarding_state='agreement',updated_at=$1 WHERE id=$2 AND account_status='active' AND onboarding_state IN ('intro','membership','username','agreement')`, stamp(time.Now().UTC()), userID)
 	if err != nil {
 		return err
 	}

@@ -11,10 +11,15 @@ import (
 )
 
 func (s *Store) LuckyDrawStatistics(ctx context.Context, drawID string, from, to time.Time, bucket string, location *time.Location) (model.AdminStatistics, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT result.user_id,result.fee_minor,COALESCE(reward.delta_txb_minor,0),result.created_at
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
+	if err != nil {
+		return model.AdminStatistics{}, err
+	}
+	defer tx.Rollback()
+	rows, err := tx.QueryContext(ctx, `SELECT result.user_id,result.fee_minor,COALESCE(reward.delta_txb_minor,0),result.created_at
 		FROM activity_draw_results result LEFT JOIN ledger_entries reward ON reward.kind='activity_draw_reward'
 		AND reward.reference_id=result.id AND reward.user_id=result.user_id
-		WHERE result.draw_id=$1 AND result.created_at>=$2 AND result.created_at<$3 ORDER BY result.created_at`, drawID, stamp(from), stamp(to))
+		WHERE result.draw_id=$1 AND `+statisticTimeRangeSQL("result.created_at", "$2", "$3")+` ORDER BY result.created_at`, drawID, purchaseTimestampOrder(from), purchaseTimestampOrder(to))
 	if err != nil {
 		return model.AdminStatistics{}, err
 	}
@@ -30,7 +35,7 @@ func (s *Store) LuckyDrawStatistics(ctx context.Context, drawID string, from, to
 	if err != nil {
 		return model.AdminStatistics{}, err
 	}
-	distributionRows, err := s.db.QueryContext(ctx, `SELECT prize_id,prize_name,COUNT(*) FROM activity_draw_results WHERE draw_id=$1 AND created_at>=$2 AND created_at<$3 GROUP BY prize_id,prize_name ORDER BY COUNT(*) DESC,prize_name`, drawID, stamp(from), stamp(to))
+	distributionRows, err := tx.QueryContext(ctx, `SELECT prize_id,prize_name,COUNT(*) FROM activity_draw_results WHERE draw_id=$1 AND `+statisticTimeRangeSQL("created_at", "$2", "$3")+` GROUP BY prize_id,prize_name ORDER BY COUNT(*) DESC,prize_name`, drawID, purchaseTimestampOrder(from), purchaseTimestampOrder(to))
 	if err != nil {
 		return model.AdminStatistics{}, err
 	}
@@ -44,6 +49,9 @@ func (s *Store) LuckyDrawStatistics(ctx context.Context, drawID string, from, to
 		distribution = append(distribution, item)
 	}
 	if err := distributionRows.Err(); err != nil {
+		return model.AdminStatistics{}, err
+	}
+	if err = tx.Commit(); err != nil {
 		return model.AdminStatistics{}, err
 	}
 	return aggregateStatistics(drawID, from, to, bucket, location, events, distribution)

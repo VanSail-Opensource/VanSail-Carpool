@@ -13,7 +13,7 @@ import (
 func pruneNativeMaintenanceTx(ctx context.Context, tx *sql.Tx, cutoff time.Time, counts map[string]int64) error {
 	var err error
 	counts["xnode_service_bindings"], err = deleteCount(ctx, tx, `DELETE FROM xnode_service_bindings WHERE (proxy_user_id,node_id,inbound_tag) IN
-		(SELECT proxy_user_id,node_id,inbound_tag FROM xnode_service_bindings WHERE valid_until<$1 ORDER BY valid_until,proxy_user_id,node_id,inbound_tag LIMIT 1000)`, stamp(cutoff))
+		(SELECT proxy_user_id,node_id,inbound_tag FROM xnode_service_bindings WHERE valid_until<$1 AND `+purchaseTimestampOrderSQL("valid_until")+`<$2 ORDER BY valid_until,proxy_user_id,node_id,inbound_tag LIMIT 1000)`, retentionCandidateUpperBound(cutoff), purchaseTimestampOrder(cutoff))
 	if err != nil {
 		return fmt.Errorf("prune expired native service access: %w", err)
 	}

@@ -87,7 +87,7 @@ func (s *Store) retryAttempt_CompleteOnboardingRevision(ctx context.Context, use
 	if revision != bundle.PublishedRevision || !slices.Equal(provided, requiredIDs) {
 		return model.User{}, ErrConflict
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE users SET onboarding_state='complete',policy_accepted_at=$1,accepted_agreement_revision=$2,recovery_reason='',updated_at=$3 WHERE id=$4 AND onboarding_state='agreement'`, stamp(acceptedAt), revision, stamp(acceptedAt), userID)
+	result, err := tx.ExecContext(ctx, `UPDATE users SET onboarding_state='complete',policy_accepted_at=$1,accepted_agreement_revision=$2,recovery_reason='',updated_at=$3 WHERE id=$4 AND onboarding_state='agreement' AND account_status='active'`, stamp(acceptedAt), revision, stamp(acceptedAt), userID)
 	if err != nil {
 		return model.User{}, err
 	}
@@ -105,7 +105,7 @@ func (s *Store) retryAttempt_CompleteOnboardingRevision(ctx context.Context, use
 		return model.User{}, err
 	}
 	var purchased int
-	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE user_id=$1 AND status IN ('active','activating','queued') AND valid_until>$2))::integer", userID, stamp(acceptedAt)).Scan(&purchased); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT (EXISTS(SELECT 1 FROM purchases WHERE user_id=$1 AND status IN ('active','activating','queued') AND `+purchaseTimestampOrderSQL("valid_until")+`>$2))::integer`, userID, purchaseTimestampOrder(acceptedAt)).Scan(&purchased); err != nil {
 		return model.User{}, err
 	}
 	if purchased == 1 {

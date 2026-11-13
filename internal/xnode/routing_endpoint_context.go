@@ -2,7 +2,6 @@ package xnode
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"slices"
 	"sort"
@@ -38,9 +37,9 @@ func (s *Service) prepareRoutingContexts(ctx context.Context, identity Identity,
 		if err != nil {
 			return nil, err
 		}
-		var root map[string]any
-		if json.Unmarshal(config.Document, &root) != nil {
-			return nil, ErrInvalid
+		root, expanded, err := s.routingContextDocument(ctx, config)
+		if err != nil {
+			return nil, err
 		}
 		routing, _ := root["routing"].(map[string]any)
 		if strategy, _ := routing["domainStrategy"].(string); stableMetadata && strategy != "" && strategy != "AsIs" {
@@ -85,9 +84,9 @@ func (s *Service) prepareRoutingContexts(ctx context.Context, identity Identity,
 			}
 		}
 		if in.legacy {
-			dependencies = append(dependencies, in.endpoints[id], config.Document, config.SnippetIDs, settings.InboundCertificates, settings.Certificates)
+			dependencies = append(dependencies, in.endpoints[id], expanded, config.SnippetIDs, settings.InboundCertificates, settings.Certificates)
 		} else {
-			dependencies = append(dependencies, selected, config.Document, config.SnippetIDs, settings.InboundCertificates, settings.Certificates)
+			dependencies = append(dependencies, selected, expanded, config.SnippetIDs, settings.InboundCertificates, settings.Certificates)
 		}
 	}
 	return dependencies, nil

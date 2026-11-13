@@ -152,6 +152,60 @@ describe('payment order polling', () => {
     scope.stop()
   })
 
+  it('suspends a closed sheet before a create reply and retains its original retry key', async () => {
+    vi.useFakeTimers()
+    let finish!: (value: PaymentOperation) => void
+    createPaymentOrder.mockReturnValueOnce(new Promise(resolve => { finish = resolve }))
+      .mockResolvedValueOnce(accepted('payment_create'))
+    const scope = effectScope()
+    const payment = scope.run(() => usePaymentOrder({ onPaid: vi.fn() }))!
+    payment.chooseMethod('ezpay:alipay')
+    const pending = payment.createOrder()
+    const key = createPaymentOrder.mock.calls[0]?.[2]
+    payment.suspend()
+    finish(accepted('payment_create'))
+    await pending
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(getOperation).not.toHaveBeenCalled()
+    expect(getPaymentOrder).not.toHaveBeenCalled()
+    expect(payment.order.value).toBeNull()
+    payment.reset([])
+    payment.chooseMethod('ezpay:alipay')
+    await payment.createOrder()
+    expect(createPaymentOrder.mock.calls[1]?.[2]).toBe(key)
+    scope.stop()
+  })
+
+  it('retires a pending order lookup and delayed paid callback when the sheet closes', async () => {
+    vi.useFakeTimers()
+    createPaymentOrder.mockResolvedValue(accepted('payment_create'))
+    let finish!: (value: FeaturePaymentOrder) => void
+    getPaymentOrder.mockReturnValueOnce(new Promise(resolve => { finish = resolve }))
+    const onPaid = vi.fn()
+    const scope = effectScope()
+    const payment = scope.run(() => usePaymentOrder({ onPaid }))!
+    payment.chooseMethod('ezpay:alipay')
+    await payment.createOrder()
+    await finishOperation('payment_create')
+    payment.suspend()
+    finish({ ...pendingOrder, status: 'paid', paidAt: timestamp })
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(payment.order.value).toBeNull()
+    expect(onPaid).not.toHaveBeenCalled()
+
+    payment.reset([])
+    payment.chooseMethod('ezpay:alipay')
+    getPaymentOrder.mockResolvedValueOnce({ ...pendingOrder, status: 'paid', paidAt: timestamp })
+    await payment.createOrder()
+    await finishOperation('payment_create')
+    expect(payment.stage.value).toBe('paid')
+    payment.suspend()
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(onPaid).not.toHaveBeenCalled()
+    scope.stop()
+  })
+
   it('queues cancellation and waits for its receipt', async () => {
     vi.useFakeTimers()
     createPaymentOrder.mockResolvedValue(accepted('payment_create'))

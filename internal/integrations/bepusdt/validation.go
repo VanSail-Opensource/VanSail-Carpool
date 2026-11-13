@@ -8,6 +8,7 @@ import (
 )
 
 var decimalPattern = regexp.MustCompile(`^-?(0|[1-9][0-9]*)(\.[0-9]+)?$`)
+var responseDecimalPattern = regexp.MustCompile(`^-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]{1,2})?$`)
 
 func validateCallbackURL(rawURL string) error {
 	u, err := url.Parse(rawURL)
@@ -45,6 +46,11 @@ func validateDecimal(value string) error {
 }
 
 func decimalEquivalent(left, right string) bool {
+	// Provider response fields are untrusted. Bound both operands before big.Rat
+	// can expand a compact exponent or allocate an arbitrarily large integer.
+	if len(left) > 64 || len(right) > 64 || !responseDecimalPattern.MatchString(left) || !responseDecimalPattern.MatchString(right) {
+		return false
+	}
 	leftValue, leftOK := new(big.Rat).SetString(left)
 	rightValue, rightOK := new(big.Rat).SetString(right)
 	return leftOK && rightOK && leftValue.Cmp(rightValue) == 0

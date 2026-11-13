@@ -58,6 +58,7 @@ func (s *scanner) scanTON(ctx context.Context, cursor Cursor, owners []string) (
 	if err != nil {
 		return Batch{}, err
 	}
+	p = bindTimePage(p, owners)
 	q := url.Values{"jetton_master": {s.client.spec.Token}, "owner_address": owners, "direction": {"in"}, "sort": {"asc"}, "limit": {"100"}, "offset": {strconv.Itoa(p.Offset)}, "start_utime": {strconv.FormatInt(p.Start, 10)}, "end_utime": {strconv.FormatInt(p.End, 10)}}
 	var page struct {
 		Items transferPage[tonTransfer] `json:"jetton_transfers"`

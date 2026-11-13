@@ -67,7 +67,7 @@ func saveLuckyDrawTx(ctx context.Context, tx *sql.Tx, input activity.LuckyDrawIn
 		if err := validateRaffleTrafficForEntriesTx(ctx, tx, activity.LuckyDraw{LuckyDrawInput: input}, now); err != nil {
 			return activity.LuckyDraw{}, err
 		}
-		if err := reconcileRaffleReservationsTx(ctx, tx, input.ID, input.MaximumPrizeDeduction(), input.Name, now); err != nil {
+		if err := reconcileRaffleReservationsTx(ctx, tx, input.ID, input.MaximumPrizeDeduction(), input.Name, input.Revision, now); err != nil {
 			return activity.LuckyDraw{}, err
 		}
 	}

@@ -10,6 +10,7 @@ const props = defineProps<{
   options: readonly PaymentProviderOption[]
   selectedValue: string | undefined
   canContinue: boolean
+  disabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -21,7 +22,7 @@ const { t } = useI18n()
 const { reducedMotion } = useMotionPreferences()
 
 function choose(value: string): void {
-  if (value === props.selectedValue) return
+  if (props.disabled || value === props.selectedValue) return
   selectionHaptic()
   emit('choose', value)
 }
@@ -38,7 +39,7 @@ function choose(value: string): void {
       :class="{ 'provider-option--selected': selectedValue === item.value }"
       color="neutral"
       variant="ghost"
-      :disabled="!item.available"
+      :disabled="disabled || !item.available"
       :aria-pressed="selectedValue === item.value"
       @click="choose(item.value)"
     >
@@ -62,7 +63,7 @@ function choose(value: string): void {
   <UButton
     v-if="options.length && selectedValue !== 'coupon'"
     block
-    :disabled="!canContinue"
+    :disabled="disabled || !canContinue"
     :label="t('payment.continueToChannel')"
     data-test="choose-channel"
     data-haptic="navigate"

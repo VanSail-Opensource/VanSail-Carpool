@@ -107,7 +107,7 @@ func (s *Store) retryAttempt_FinalizeMemberRefund(ctx context.Context, operation
 func activateRefundSuccessorTx(ctx context.Context, tx *sql.Tx, userID string, now time.Time) (string, error) {
 	var id, fromRaw string
 	err := tx.QueryRowContext(ctx, `SELECT id,valid_from FROM purchases WHERE user_id=$1 AND status='queued'
-		AND auto_renew_source_purchase_id IS NULL ORDER BY vansail_timestamp(valid_from),created_at,id LIMIT 1`, userID).Scan(&id, &fromRaw)
+		AND auto_renew_source_purchase_id IS NULL ORDER BY `+purchaseTimestampOrderSQL("valid_from")+`,`+purchaseTimestampOrderSQL("created_at")+`,id LIMIT 1`, userID).Scan(&id, &fromRaw)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", nil
 	}

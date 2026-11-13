@@ -70,7 +70,7 @@ func (s *Store) retryAttempt_PersonalRenewalDecision(ctx context.Context, user s
 
 func (s *Store) preparePersonalRenewalDecision(ctx context.Context, user string, now time.Time) (*model.PricingDecision, error) {
 	var current string
-	err := s.db.QueryRowContext(ctx, `SELECT id FROM purchases WHERE user_id=$1 AND status IN ('active','activating') AND valid_until>$2 ORDER BY valid_until DESC LIMIT 1`, user, pricingStamp(now)).Scan(&current)
+	err := s.db.QueryRowContext(ctx, `SELECT id FROM purchases WHERE user_id=$1 AND status IN ('active','activating') AND `+purchaseTimestampOrderSQL("valid_until")+`>$2 ORDER BY `+purchaseTimestampOrderSQL("valid_until")+` DESC,id LIMIT 1`, user, purchaseTimestampOrder(now)).Scan(&current)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}

@@ -42,9 +42,31 @@ func (s *Store) ListPaymentOrders(ctx context.Context, userID string, limit int)
 
 // LatestValidUnpaidPaymentOrder returns the newest checkout that can still be paid.
 func (s *Store) LatestValidUnpaidPaymentOrder(ctx context.Context, userID string, now time.Time) (model.PaymentOrder, error) {
-	return scanPaymentOrder(s.db.QueryRowContext(ctx, paymentSelect+` WHERE user_id=$1 AND status='pending'
-		AND paid_at IS NULL AND cancelled_at IS NULL AND expires_at>$2 ORDER BY created_at DESC,id DESC LIMIT 1`,
-		userID, stamp(now.UTC())))
+	lower, _ := purchaseWindowCandidateBounds(now)
+	rows, err := s.db.QueryContext(ctx, paymentSelect+` WHERE user_id=$1 AND status='pending'
+		AND paid_at IS NULL AND cancelled_at IS NULL AND expires_at>$2`, userID, lower)
+	if err != nil {
+		return model.PaymentOrder{}, err
+	}
+	defer func() { _ = rows.Close() }()
+	var latest model.PaymentOrder
+	for rows.Next() {
+		order, err := scanPaymentOrder(rows)
+		if err != nil {
+			return model.PaymentOrder{}, err
+		}
+		if order.ExpiresAt.After(now) && (latest.ID == "" || order.CreatedAt.After(latest.CreatedAt) ||
+			order.CreatedAt.Equal(latest.CreatedAt) && order.ID > latest.ID) {
+			latest = order
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return model.PaymentOrder{}, err
+	}
+	if latest.ID == "" {
+		return model.PaymentOrder{}, ErrNotFound
+	}
+	return latest, nil
 }
 
 const paymentSelect = `SELECT id,user_id,provider,method_id,provider_rail,status,txb_minor,payable_amount,payable_currency,rate_snapshot,rate_direction,provider_trade_id,provider_charge_id,payment_url,qr_payload,receiving_address,actual_crypto_amount,actual_crypto_currency,expires_at,paid_at,refunded_at,cancelled_at,cancel_reason,provider_cancel_status,created_at,updated_at FROM payment_orders`

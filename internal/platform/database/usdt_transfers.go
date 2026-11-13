@@ -14,7 +14,9 @@ import (
 
 // SaveUSDTBatch durably stores verified receiving events before advancing progress.
 func (s *Store) retryAttempt_SaveUSDTBatch(ctx context.Context, network string, b usdt.Batch) error {
-
+	if err := usdt.ValidateCursor(b.Cursor); err != nil {
+		return err
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

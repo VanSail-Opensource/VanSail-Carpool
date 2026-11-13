@@ -639,7 +639,7 @@ administrator document and rejection of unrelated native-core errors.
 
 `configuration_preview.go` expands saved snippets for read-only pinned-core validation. Base validation reports bounded technical core diagnostics to the administrator editor.
 
-`metric_numbers.go` preserves large unsigned telemetry integers as decimal strings at the browser boundary; `metric_numbers_test.go` guards values beyond 2^53. `subscription_templates.go` persists encrypted template documents plus native user references, validates revision/default/assignment constraints and uses synthetic previews. Xray preview validation omits the client display-only `remarks` field from the server-core validator while retaining it in rendered output. `subscription_render.go` selects subscription-specific, format-default or built-in rendering and respects enabled formats. `template_repair.go` adds missing converted per-host client templates before cutover without replacing administrator overrides.
+`metric_numbers.go` preserves large unsigned telemetry integers as decimal strings at the browser boundary; `metric_numbers_test.go` guards values beyond 2^53. `subscription_templates.go` persists encrypted template documents plus native user references, validates revision/default/assignment constraints and uses synthetic previews. Xray preview validation omits the client display-only `remarks` field from the server-core validator while retaining it in rendered output. `subscription_render.go` selects subscription-specific, format-default or built-in rendering and respects enabled formats.
 
 `subscription_templates_test.go` covers preview validation, native subscription assignments, stale revisions and dangling default rejection.
 
@@ -667,7 +667,7 @@ Task 2 pins protocol/native validation at signed X-Node v2.0.5, source commit `5
 
 Master policy extensions: `native_policy_types.go` owns country, completion-schedule and per-user node-speed contracts. `geoip_asset.go` streams verified public GeoIP data through the existing validation queue and temporary files; `geoip_decode.go` decodes bounded country messages with the pinned Xray protobuf and compacts selected prefixes without expanding addresses. `policy_assets.go` caches parsed generations across global-save validation and compiler views, with completion deadlines and bounded retries, so one save does not download the same full asset repeatedly. `geoip_delivery.go` queues country preparation durably, streams 256-prefix chunks through the per-node command queue for `source_geoip_stream_v1`, then activates a generation reference; older agents keep inline data when it fits the frame limit. `routing_preflight.go` uses that same reference when validating member route changes. `geoip_delivery_test.go`, `geoip_decode_test.go` and `native_policy_test.go` cover chunk bounds, compatibility, asset precision and selector validation. `source_listeners.go` derives country source-filter listeners from the same document with Hysteria inbounds removed, so direct Hysteria clients rely on the node's probe protection instead of the country rule; `source_listeners_test.go` covers that exclusion and preserves unrelated native sections.
 
-`live_availability.go` excludes rolled-back, stale and non-sampled agents from live activity decisions. Service identities are excluded from global connection controls; open-handler limits and exact accounting remain agent-owned. `node_decode.go` requires explicit nonnegative multipliers with at most six fractional digits. Global/node/compiler changes negotiate typed native capabilities against signed X-Node v2.0.6; byte counters remain decimal strings for browser transport.
+`live_availability.go` excludes rolled-back, stale and non-sampled agents from live activity decisions. Service identities are excluded from global connection controls; open-handler limits and exact accounting remain agent-owned. `node_decode.go` ignores retired multiplier inputs and publishes the fixed multiplier of 1. Global/node/compiler changes negotiate typed native capabilities; byte counters remain decimal strings for browser transport.
 
 `client_document_validation.go` validates administrator client subscription documents independently of the agent IP-geodata prohibition. It removes only the client display label `remarks` from the analysis copy for both DIY exports and template previews; server configurations retain their strict root schema. Client-local assets remain in the actual output; analysis-only replacements perform no downloads. Shared geosite block selectors also defer file contents to agent preflight. `client_document_validation_test.go` covers the label-only relaxation, client-local asset preflight and strict server-root rejection.
 
@@ -1563,9 +1563,10 @@ native access disagree with the current home or database entitlement view.
 
 `metric_totals.go` saturates validated nonnegative connection and rate aggregates at their existing numeric field limits. Across-node addition cannot wrap negative to disable connection controls or produce infinite JSON rates. Member open-connection totals use exact decimal arithmetic, matching fleet totals. `metric_totals_test.go` covers individually valid reports whose fleet sums exceed numeric bounds, exact member totals, encodable responses and clearing the limit after fresh zero snapshots. `master_socket_test.go` waits for the telemetry snapshot itself because durable traffic acknowledgements use a separate receive lane.
 
-Named standalone services reject the reserved `member-probe-` namespace before
-creating credentials or quota. Those identities are dispatched exclusively through
-immutable metered-probe attribution and cannot represent standalone access.
+Named standalone services reject the reserved `member-probe-`, `member-payg-`,
+`member-hourly-` and underscore namespaces case-insensitively before creating
+credentials or quota. These names belong to internal principal dispatch and
+cannot represent standalone access.
 `named_services_test.go` verifies rejection leaves principal and period counts unchanged.
 
 `route_speedtest_recovery_test.go` verifies that transient routing-plan reads,
@@ -1581,3 +1582,59 @@ revision. Proven invalid graphs retain the existing rejection behavior.
 `routing_read_failure_fixtures_test.go` supplies isolated settings/repository
 failures; `routing_read_failure_test.go` verifies migration/deployment outcomes,
 and `routing_validation_retry_test.go` checks compilation and recovery scheduling.
+
+### Native audit recovery and publication boundaries
+
+`access_window.go` sorts a private purchase snapshot before extending an access
+window through contiguous paid successors. Provider history order cannot shorten
+an otherwise uninterrupted paid term, and the caller's snapshot is unchanged.
+`access_window_test.go` covers descending and arbitrary order, multiple successors
+and failed, cancelled or expired gaps.
+
+`command_outcomes.go` derives the deferred provider-operation deadline from the
+longest supported command deadline plus preflight and delivery allowance.
+`operation_deadline_test.go` checks the actual outbox renewal context for update
+and certificate work. A durable update can use its full native execution budget.
+
+`compile_cache.go` rechecks the captured access boundary after repository reads
+and after compilation. A slow read cannot publish or reuse authorization after
+its paid boundary; a conflict retains the last cache without a retry penalty.
+`compile_boundary_test.go` advances the injected clock across each publication
+boundary and verifies immediate recovery with a current snapshot.
+
+`profile_metrics.go` aggregates owner-principal sampled connections with exact
+decimal arithmetic. `profile_connection_totals_test.go` verifies that individually
+valid counters cannot overflow the public total or hide active connections.
+
+`endpoint_client_options.go` supplies legacy client mappers only a fresh projection
+of the current client's account and sanitized transport, plus public inbound
+tag, protocol and port. Saved native listener documents and their private server
+materials never become mapper input. `endpoint_mapper_secrets_test.go` covers
+whole transport copies for TLS and REALITY, current client credentials, public
+metadata, arbitrary server fields and unchanged source documents.
+
+`routing_context_document.go` expands saved outbound and routing snippets before
+conditional-cycle context validation and dependency hashing. Untracked shared
+fallbacks obey the same proof as base configuration fallbacks, and snippet content
+changes invalidate dependencies even when their IDs remain stable. Candidate
+configuration and snippet validation use the same private request-scoped documents
+for nested reads. `routing_context_document_test.go` checks expansion, changed
+dependency material, read failures, source isolation and candidate restoration;
+`routing_context_integration_test.go` covers shared fallbacks in cyclic and
+one-way managed graphs through real native endpoint inventory.
+
+Standalone access honors its exact half-open encrypted term: admission begins at
+`StartedAt` and stops at `ExpiresAt`. Retained future terms cannot activate early
+through either compilation or bearer exports. `service_access_boundary_test.go`
+checks nanosecond boundary behavior; `service_access_policy_test.go` exercises
+retained future terms through both public service entry points. The unused
+importer-era endpoint-template repair entry point has been removed; saved native
+client templates and encrypted historical settings remain readable.
+
+Access repair carries the captured owner account generation into the atomic
+period adapter. That transaction locks the current active lifecycle and purchase
+writer, compares closure generation, and preserves permanently retired-node
+barrier evidence while clearing live participants for the next closure.
+Stale repairs cannot reopen a purged generation or replace a newer closure.
+Paid-window selection and compile deadlines preserve nanoseconds from stored
+terms, including fractional and whole-second boundaries.

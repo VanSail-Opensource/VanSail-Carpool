@@ -47,7 +47,7 @@ func (s *Store) retryAttempt_ObservePricingWorker(ctx context.Context, now time.
 
 // ClosePricingOffers assigns nonpurchase only after the actual exposure window.
 func (s *Store) ClosePricingOffers(ctx context.Context, now time.Time) error {
-	_, err := s.db.ExecContext(ctx, `UPDATE pricing_offers SET outcome=0,observed_at=$1 WHERE id IN (SELECT id FROM pricing_offers WHERE outcome IS NULL AND expires_at<=$2 ORDER BY expires_at LIMIT 256)`, pricingStamp(now), pricingStamp(now))
+	_, err := s.db.ExecContext(ctx, `UPDATE pricing_offers SET outcome=0,observed_at=$1 WHERE outcome IS NULL AND id IN (SELECT id FROM pricing_offers WHERE outcome IS NULL AND expires_at<=$2 ORDER BY expires_at LIMIT 256)`, pricingStamp(now), pricingStamp(now))
 	return err
 }
 

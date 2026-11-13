@@ -21,6 +21,8 @@ func TestAdminEntitlementFiltersUseDisplayValidityWithoutSettling(t *testing.T) 
 		{"future-active", "active", "queued", now.Add(time.Hour), now.Add(2 * time.Hour)},
 		{"future-activating", "activating", "queued", now.Add(time.Hour), now.Add(2 * time.Hour)},
 		{"current", "active", "active", now, now.Add(time.Hour)},
+		{"fractional-current", "active", "active", now.Add(-time.Hour), now.Add(time.Nanosecond)},
+		{"fractional-future", "active", "queued", now.Add(time.Nanosecond), now.Add(time.Hour)},
 		{"applying", "activating", "activating", now, now.Add(time.Hour)},
 		{"cancelled", "cancelled", "cancelled", now.Add(-time.Hour), now},
 		{"failed", "failed", "failed", now.Add(-time.Hour), now},

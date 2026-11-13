@@ -38,7 +38,7 @@ func (s *Store) SaveIPLookupProgress(ctx context.Context, report iplookup.Report
 		return err
 	}
 	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_reports SET report_json=$1 WHERE id=$2 AND status='processing'
-		AND ((COALESCE(lease_owner,'')='' AND $3='') OR (lease_owner=$3 AND vansail_timestamp(lease_expires_at)>clock_timestamp()))`, string(raw), report.ID, iplookup.RunLeaseOwner(ctx))
+		AND ((COALESCE(lease_owner,'')='' AND $3='') OR (lease_owner=$3 AND `+purchaseTimestampOrderSQL("lease_expires_at")+`>`+databaseClockTimestampOrderSQL+`))`, string(raw), report.ID, iplookup.RunLeaseOwner(ctx))
 	if err != nil {
 		return err
 	}

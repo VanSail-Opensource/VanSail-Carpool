@@ -16,7 +16,7 @@ func compactPaymentsTx(ctx context.Context, tx *sql.Tx, cutoff, now time.Time, c
 	// aggregate counts and callback tombstones cannot authenticate that refund.
 	_, err := tx.ExecContext(ctx, `INSERT INTO maintenance_payment_candidates(id)
 		SELECT payment.id FROM payment_orders payment
-		WHERE payment.updated_at<$1 AND (payment.status IN ('expired','failed') OR payment.cancelled_at IS NOT NULL)
+		WHERE payment.updated_at<$1 AND `+purchaseTimestampOrderSQL("payment.updated_at")+`<$2 AND (payment.status IN ('expired','failed') OR payment.cancelled_at IS NOT NULL)
 		AND payment.status NOT IN ('paid','refunded') AND payment.paid_at IS NULL AND payment.refunded_at IS NULL
 		AND NOT EXISTS (
 			SELECT 1 FROM provider_operation_items item JOIN provider_operations operation ON operation.id=item.operation_id
@@ -26,7 +26,7 @@ func compactPaymentsTx(ctx context.Context, tx *sql.Tx, cutoff, now time.Time, c
 		AND NOT EXISTS (SELECT 1 FROM courtesy_credits credit WHERE credit.payment_order_id=payment.id)
 		AND NOT (payment.provider='builtin_usdt' AND payment.paid_at IS NULL
 			AND EXISTS (SELECT 1 FROM usdt_quotes quote WHERE quote.order_id=payment.id))
-		AND NOT EXISTS (SELECT 1 FROM usdt_transfers transfer WHERE transfer.order_id=payment.id AND transfer.status='review')`, stamp(cutoff))
+		AND NOT EXISTS (SELECT 1 FROM usdt_transfers transfer WHERE transfer.order_id=payment.id AND transfer.status='review')`, retentionCandidateUpperBound(cutoff), purchaseTimestampOrder(cutoff))
 	if err != nil {
 		return fmt.Errorf("select payment cleanup set: %w", err)
 	}

@@ -10,7 +10,7 @@ import (
 const couponSelect = `SELECT id,code,name,kind,discount_mode,value_minor_or_bps,percent_cap_minor,
 	eligible_combo_ids,eligible_squad_ids,expires_at,global_use_limit,per_user_use_limit,active,created_at,updated_at,
 	(SELECT COUNT(*) FROM coupon_uses WHERE coupon_id=coupon_definitions.id) +
-	(SELECT COUNT(*) FROM coupon_redemptions WHERE coupon_id=coupon_definitions.id AND balance_delta_minor<>0)
+	(SELECT COUNT(*) FROM coupon_redemptions WHERE coupon_id=coupon_definitions.id AND coupon_definitions.kind IN ('balance_add','balance_multiply'))
 	FROM coupon_definitions`
 
 // SaveCoupon is the raw definition writer used by internal fixtures. Administrator

@@ -6,7 +6,7 @@ Priced Emby setup, durable provisioning, policy hardening, preference updates, a
 ## Files
 
 - `types.go` defines safe domain types, dependency interfaces, secret adapters, and policy-hardening helpers.
-- `service.go` constructs the service and handles account lookup, options, retries, and setup queueing.
+- `service.go` constructs the service and handles account lookup, options, and preparation for durable setup commands.
 - `operations.go` validates and creates durable setup, preference, password, and reviewed-retry commands.
 - `operation_targets.go` HMAC-fingerprints desired state and encrypts write-only command payloads.
 - `operation_worker.go` owns setup and reviewed-retry reconciliation through provider-operation receipts.
@@ -47,3 +47,9 @@ consulting mutable account state.
 old remote ID is absent and the retained exact username resolves to a replacement.
 The production persistence adapter binds that observation to the current owner,
 account, setup attempt, revision and identity, and preserves an audit of both IDs.
+
+The unused direct `Service.Setup` and `Service.RetryProvisioning` entrypoints have
+been removed. Setup and administrator retries enter through `OperationService`,
+which binds idempotency keys to exact intent and atomically records the receipt
+with the charge or retry. The legacy provisioning outbox handler remains active
+so previously queued work can still be recovered.

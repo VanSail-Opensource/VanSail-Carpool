@@ -67,7 +67,7 @@ watch(() => props.combos, (combos) => {
 })
 
 function submit(): void {
-  if (!canSave.value) return
+  if (props.busy || !canSave.value) return
   emit('save', {
     comboId: draft.comboId,
     validFrom: fromLocalDateTime(draft.validFrom),
@@ -81,7 +81,7 @@ function submit(): void {
 </script>
 
 <template>
-  <USlideover :open="open" :title="t('adminUserProfile.manualGrant.title')" :description="t('adminUserProfile.manualGrant.hint')" :dismissible="!busy" :ui="{ footer: 'justify-end' }" @update:open="emit('update:open', $event)">
+  <USlideover :open="open" :title="t('adminUserProfile.manualGrant.title')" :description="t('adminUserProfile.manualGrant.hint')" :dismissible="!busy" :close="!busy" :ui="{ footer: 'justify-end' }" @update:open="!busy && emit('update:open', $event)">
     <template #body>
       <UAlert color="warning" variant="soft" icon="i-ph-warning-circle" :title="t('adminUserProfile.manualGrant.warning')" :description="t('adminUserProfile.manualGrant.warningHint')" />
       <AnimatePresence mode="wait" :initial="false">

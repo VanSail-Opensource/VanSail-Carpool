@@ -47,6 +47,9 @@ func (s *Store) retryAttempt_SettleRaffle(ctx context.Context, id string, rng ac
 	if draw.Kind != "raffle" || draw.Status != "settling" {
 		return activity.RaffleSettlement{}, ErrConflict
 	}
+	if err := draw.LuckyDrawInput.Validate(); err != nil {
+		return activity.RaffleSettlement{}, err
+	}
 	tickets, err := activeRaffleTicketsTx(ctx, tx, id)
 	if err != nil {
 		return activity.RaffleSettlement{}, err

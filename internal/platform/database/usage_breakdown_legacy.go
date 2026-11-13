@@ -21,8 +21,8 @@ func usageBreakdownLegacyTx(ctx context.Context, tx *sql.Tx, scope usageBreakdow
 	// charged_txb_minor already includes all paid addon adjustments. Joining
 	// addon rows again would double count; catalog validity is intentionally absent.
 	err := tx.QueryRowContext(ctx, `SELECT id,charged_txb_minor,purchased_term_seconds FROM purchases WHERE user_id=$1
- AND status IN('active','activating') AND valid_from::timestamptz<=$2 AND valid_until::timestamptz>$2
- AND created_at::timestamptz>=$3 ORDER BY valid_from::timestamptz DESC,created_at::timestamptz DESC,id LIMIT 1`, scope.owner, scope.to, scope.lifecycle).Scan(&legacy.id, &price, &seconds)
+ AND status IN('active','activating') AND `+purchaseTimestampOrderSQL("valid_from")+`<=$2 AND `+purchaseTimestampOrderSQL("valid_until")+`>$2
+ AND `+purchaseTimestampOrderSQL("created_at")+`>=$3 ORDER BY `+purchaseTimestampOrderSQL("valid_from")+` DESC,`+purchaseTimestampOrderSQL("created_at")+` DESC,id LIMIT 1`, scope.owner, purchaseTimestampOrder(scope.to), purchaseTimestampOrder(scope.lifecycle)).Scan(&legacy.id, &price, &seconds)
 	if errors.Is(err, sql.ErrNoRows) {
 		return legacy, nil
 	}

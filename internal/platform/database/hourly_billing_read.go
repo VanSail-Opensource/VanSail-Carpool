@@ -95,7 +95,7 @@ func (s *Store) HourlyLegacyBlocked(ctx context.Context, owner string, at time.T
 	}
 	var blocked bool
 	err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases WHERE user_id=$1
-		AND status IN ('active','activating','queued') AND valid_until::timestamptz>$2)`, owner, at.UTC()).Scan(&blocked)
+		AND status IN ('active','activating','queued') AND `+purchaseTimestampOrderSQL("valid_until")+`>$2)`, owner, purchaseTimestampOrder(at)).Scan(&blocked)
 	return blocked, err
 }
 

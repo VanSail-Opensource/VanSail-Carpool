@@ -36,9 +36,10 @@ func (s *Store) AdminEntitlementGrantByKey(ctx context.Context, actorID, userID,
 
 func adminEntitlementGrantReplayTx(ctx context.Context, tx *sql.Tx, actorID, userID, key string) (AdminEntitlementGrantReplay, bool, error) {
 	var replay AdminEntitlementGrantReplay
+	var retainedTerm sql.NullInt64
 	key = adminGrantKeyPrefix + actorID + ":" + key
-	err := tx.QueryRowContext(ctx, `SELECT id,request_fingerprint FROM purchases WHERE user_id=$1 AND idempotency_key=$2`, userID, key).
-		Scan(&replay.Purchase.ID, &replay.RequestFingerprint)
+	err := tx.QueryRowContext(ctx, `SELECT id,request_fingerprint,purchased_term_seconds FROM purchases WHERE user_id=$1 AND idempotency_key=$2`, userID, key).
+		Scan(&replay.Purchase.ID, &replay.RequestFingerprint, &retainedTerm)
 	if errors.Is(err, sql.ErrNoRows) {
 		return replay, false, nil
 	}
@@ -77,7 +78,9 @@ func adminEntitlementGrantReplayTx(ctx context.Context, tx *sql.Tx, actorID, use
 	if err != nil {
 		return replay, true, err
 	}
-	term := int64(after.ValidUntil.Sub(after.ValidFrom) / time.Second)
+	if retainedTerm.Valid && retainedTerm.Int64 <= 0 {
+		return replay, true, ErrConflict
+	}
 	squads := append([]string{}, after.SquadUUIDs...)
 	slices.Sort(squads)
 	squads = slices.Compact(squads)
@@ -85,7 +88,7 @@ func adminEntitlementGrantReplayTx(ctx context.Context, tx *sql.Tx, actorID, use
 		Price: model.TXBMoney(0), GrossPrice: model.TXBMoney(0), CouponDiscount: model.TXBMoney(0),
 		ValidFrom: after.ValidFrom, ValidUntil: after.ValidUntil, Status: after.Status,
 		TrafficLimitBytes: after.TrafficLimitBytes, TrafficLimit: strconv.FormatInt(after.TrafficLimitBytes, 10),
-		ResetStrategy: after.ResetStrategy, PurchasedTermSeconds: &term, SquadUUIDs: squads, CreatedAt: at, UpdatedAt: at}
+		ResetStrategy: after.ResetStrategy, PurchasedTermSeconds: int64Pointer(retainedTerm), SquadUUIDs: squads, CreatedAt: at, UpdatedAt: at}
 	return replay, true, nil
 }
 

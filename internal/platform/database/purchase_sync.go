@@ -99,36 +99,13 @@ func (s *Store) UserForPurchase(ctx context.Context, purchaseID string) (model.U
 
 // DesiredEntitlement returns the currently effective purchase, if any.
 func (s *Store) DesiredEntitlement(ctx context.Context, userID string, now time.Time) (*model.Purchase, error) {
-	lower, upper := purchaseWindowCandidateBounds(now)
-	rows, err := s.db.QueryContext(ctx, purchaseSelect+` WHERE purchases.user_id=$1
-		AND purchases.status IN ('activating','active') AND purchases.valid_from<$2 AND purchases.valid_until>$3`, userID, upper, lower)
+	selected, err := activePurchaseAt(ctx, s.db, userID, now)
+	if errors.Is(err, ErrNotFound) {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	var selected *model.Purchase
-	for rows.Next() {
-		purchase, err := scanPurchase(rows)
-		if err != nil {
-			return nil, err
-		}
-		if now.Before(purchase.ValidFrom) || !now.Before(purchase.ValidUntil) {
-			continue
-		}
-		if selected == nil || moreRecentPurchase(purchase, *selected) {
-			copy := purchase
-			selected = &copy
-		}
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if selected == nil {
-		return nil, nil
-	}
 	selected.SquadUUIDs, err = s.purchaseSquads(ctx, selected.ID)
-	return selected, err
+	return &selected, err
 }

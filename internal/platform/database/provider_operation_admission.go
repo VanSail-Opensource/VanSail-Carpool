@@ -15,7 +15,8 @@ func providerOperationAdminActorTx(ctx context.Context, tx *sql.Tx, input provid
 	case providerops.KindAdminEntitlementEdit, providerops.KindAdminEntitlementRefund,
 		providerops.KindAdminComboReplacement, providerops.KindAdminBulkExtension,
 		providerops.KindAdminTemporaryBan, providerops.KindAdminTemporaryUnban,
-		providerops.KindAdminMaintenance, providerops.KindPaymentRefund, providerops.KindOutboxRetry:
+		providerops.KindAdminMaintenance, providerops.KindPaymentRefund, providerops.KindOutboxRetry,
+		"xnode_command", "xnode_firewall_exemption":
 		return catalogAdminActorTx(ctx, tx, input.ActorUserID)
 	default:
 		return nil

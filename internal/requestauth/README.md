@@ -29,3 +29,9 @@ Explicit protocol exceptions are the Telegram `initData` bootstrap, Telegram/EZP
 expiry boundary cannot enter an already-expired nonce reservation. Timestamp
 freshness is checked both before reading the bounded body and immediately before
 recording the authenticated nonce, including a delayed replay of a prior request.
+
+The replay cache retains at most 512 nonces per session and 32,768 per process.
+Exhaustion rejects new requests without evicting live replay evidence or creating
+empty sessions. Expired entries are reclaimed periodically and when a session
+reaches its budget. `replay_capacity_test.go` covers process-wide admission,
+expiry accounting, and concurrent capacity enforcement.

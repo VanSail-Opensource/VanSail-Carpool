@@ -8,8 +8,8 @@ import (
 
 func shiftRefundQueueTx(ctx context.Context, tx *sql.Tx, userID string, firstFrom, targetFrom, now time.Time) error {
 	rows, err := tx.QueryContext(ctx, `SELECT id,valid_from,valid_until FROM purchases
-		WHERE user_id=$1 AND status='queued' AND vansail_timestamp(valid_from)>=vansail_timestamp($2)
-		ORDER BY vansail_timestamp(valid_from),created_at,id`, userID, stamp(firstFrom))
+		WHERE user_id=$1 AND status='queued' AND `+purchaseTimestampOrderSQL("valid_from")+`>=$2
+		ORDER BY `+purchaseTimestampOrderSQL("valid_from")+`,`+purchaseTimestampOrderSQL("created_at")+`,id`, userID, purchaseTimestampOrder(firstFrom))
 	if err != nil {
 		return err
 	}

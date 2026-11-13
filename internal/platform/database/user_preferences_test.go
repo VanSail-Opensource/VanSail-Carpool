@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/preferences"
 	"testing"
 	"time"
@@ -81,5 +82,28 @@ func TestReferralPreferenceHidesOnlyAttribution(t *testing.T) {
 	invitee, err := s.UserByTelegramID(ctx, 55105)
 	if err != nil || invitee.InviterID == nil || *invitee.InviterID != u.TelegramID {
 		t.Fatalf("tracking: %+v %v", invitee, err)
+	}
+}
+
+func TestPreferenceMutationCannotRecreateClosedAccountState(t *testing.T) {
+	for _, status := range []string{"purging", "purged"} {
+		t.Run(status, func(t *testing.T) {
+			t.Parallel()
+			ctx, store := context.Background(), newTestStore(t)
+			user := createTestUser(t, store, 55106)
+			if _, err := store.DB().ExecContext(ctx, `UPDATE users SET account_status=$1 WHERE id=$2`, status, user.ID); err != nil {
+				t.Fatal(err)
+			}
+			off := false
+			if _, err := store.UpdateUserPreferences(ctx, user.ID, preferences.Patch{PAYGEnabled: &off, ShowReferralUsername: &off}, time.Now().UTC()); !errors.Is(err, ErrAccountUnavailable) {
+				t.Fatal("closed owner changed preferences", err)
+			}
+			var preferences, jobs int
+			if err := store.DB().QueryRowContext(ctx, `SELECT
+				(SELECT COUNT(*) FROM user_preferences WHERE user_id=$1),
+				(SELECT COUNT(*) FROM outbox_jobs WHERE payload::jsonb->>'userId'=$1)`, user.ID).Scan(&preferences, &jobs); err != nil || preferences != 0 || jobs != 0 {
+				t.Fatal("closed owner gained new preference or repair state", preferences, jobs, err)
+			}
+		})
 	}
 }

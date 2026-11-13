@@ -64,7 +64,7 @@ onScopeDispose(() => { latest.dispose(); attempts.clear() })
     </div>
     <p v-if="detail.temporaryBan" class="admin-profile-empty">{{ t('adminUserProfile.temporaryBanUntil', { date: formatDateTime(detail.temporaryBan.expiresAt) }) }}</p>
     <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
-    <USlideover :open="panel !== null" :title="panel === 'ban' ? t('adminUserProfile.temporaryBan') : t('adminUserProfile.temporaryUnban')" :dismissible="!busy" @update:open="!$event && (panel = null)">
+    <USlideover :open="panel !== null" :title="panel === 'ban' ? t('adminUserProfile.temporaryBan') : t('adminUserProfile.temporaryUnban')" :dismissible="!busy" :close="!busy" @update:open="!$event && !busy && (panel = null)">
       <template #body><InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice><div class="form-stack"><UFormField v-if="panel === 'ban'" name="duration" :label="t('adminUserProfile.banDuration')"><UInputNumber v-model="form.durationMinutes" :disabled="busy" :min="1" :max="525600" :step="1" class="w-full" /></UFormField><UFormField name="reason" :label="t('adminReason.reason')" required><UTextarea v-model.trim="form.reason" :disabled="busy" :rows="3" :minlength="4" :maxlength="300" /></UFormField></div></template>
       <template #footer><UButton color="neutral" variant="outline" :label="t('common.cancel')" :disabled="busy" @click="panel = null" /><UButton :color="panel === 'ban' ? 'error' : 'primary'" :label="t('common.confirm')" :loading="busy" :disabled="busy || form.reason.length < 4" @click="submit" /></template>
     </USlideover>

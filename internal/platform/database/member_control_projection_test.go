@@ -78,6 +78,8 @@ func TestLiveComboControlUsesInstantsAtFractionalBoundaries(t *testing.T) {
 	}{
 		{name: "future fractional start", from: now.Add(500 * time.Millisecond), until: now.Add(time.Hour), at: now},
 		{name: "future fractional expiry", from: now.Add(-time.Hour), until: now.Add(500 * time.Millisecond), at: now, want: true},
+		{name: "future nanosecond start", from: now.Add(time.Nanosecond), until: now.Add(time.Hour), at: now},
+		{name: "future nanosecond expiry", from: now.Add(-time.Hour), until: now.Add(time.Nanosecond), at: now, want: true},
 		{name: "whole-second start before fractional read", from: now, until: now.Add(time.Hour), at: now.Add(500 * time.Millisecond), want: true},
 		{name: "exact expiry", from: now.Add(-time.Hour), until: now, at: now},
 	} {

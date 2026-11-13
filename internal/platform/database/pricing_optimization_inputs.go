@@ -24,10 +24,10 @@ func pricingOptimizationInputsTx(ctx context.Context, tx *sql.Tx, p pricing.Poli
 	day := now.UTC().Truncate(24 * time.Hour).Add(24 * time.Hour)
 	rows, err := tx.QueryContext(ctx, `SELECT c.node_id,c.cycle_cost_minor,c.cycle_days,c.capacity_bytes,c.charge_mode,c.hourly_rate_micros,c.traffic_rate_micros,c.capacity_unlimited,c.version,
  (SELECT f.predicted_p90 FROM pricing_forecast_vintages f WHERE f.entity_type='node' AND f.entity_id=c.node_id AND f.metric='traffic_bytes' AND f.model_version='empirical-daily-v1' AND f.horizon_seconds=86400 AND f.target_from=$1 AND f.target_until=$2 AND f.generated_at<=$3 AND f.generated_at>=$4 ORDER BY f.generated_at DESC LIMIT 1),
- (SELECT COALESCE(SUM(a.credit_bytes),0) FROM xnode_payg_accounts a WHERE a.node_id=c.node_id AND a.credit_started_at>$5),
+ (SELECT COALESCE(SUM(a.credit_bytes),0) FROM xnode_payg_accounts a WHERE a.node_id=c.node_id AND `+purchaseTimestampOrderSQL("a.credit_started_at")+`>$5),
  (SELECT COALESCE(SUM(CASE WHEN t.limit_bytes>t.used_bytes THEN t.limit_bytes-t.used_bytes ELSE 0 END),0) FROM xnode_periods t JOIN xnode_period_nodes pn ON pn.period_id=t.id WHERE pn.node_id=c.node_id AND t.status IN ('open','closing') AND t.purchase_id IS NOT NULL),
- (SELECT COALESCE(SUM(a.credit_bytes),0) FROM xnode_payg_accounts a WHERE a.node_id=c.node_id AND a.group_id=$6 AND a.credit_started_at>$7)
- FROM pricing_cost_metadata c WHERE c.effective_at<=$8 ORDER BY c.node_id LIMIT 4097`, pricingStamp(day), pricingStamp(day.Add(24*time.Hour)), pricingStamp(now), pricingStamp(now.Add(-48*time.Hour)), pricingStamp(now.Add(-xnode.PAYGWindow)), p.ProductID, pricingStamp(now.Add(-xnode.PAYGWindow)), pricingStamp(now))
+ (SELECT COALESCE(SUM(a.credit_bytes),0) FROM xnode_payg_accounts a WHERE a.node_id=c.node_id AND a.group_id=$6 AND `+purchaseTimestampOrderSQL("a.credit_started_at")+`>$7)
+ FROM pricing_cost_metadata c WHERE c.effective_at<=$8 ORDER BY c.node_id LIMIT 4097`, pricingStamp(day), pricingStamp(day.Add(24*time.Hour)), pricingStamp(now), pricingStamp(now.Add(-48*time.Hour)), purchaseTimestampOrder(now.Add(-xnode.PAYGWindow)), p.ProductID, purchaseTimestampOrder(now.Add(-xnode.PAYGWindow)), pricingStamp(now))
 	if err != nil {
 		return in, err
 	}

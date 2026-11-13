@@ -3,6 +3,7 @@ package xnode
 import (
 	"encoding/json"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
+	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
 
 func optionObject(value any) (map[string]any, error) {
@@ -61,7 +62,13 @@ func applyEndpointClient(proxy *subscription.Proxy, overrides, inbound map[strin
 			proxy.ExcludedFormats = append(proxy.ExcludedFormats, text)
 		}
 	}
-	// The original server account lists were removed before this projection.
+	// Mapper copy operations can select entire objects. Expose only this
+	// client's credentials and sanitized transport, never native account lists,
+	// REALITY private keys or TLS certificate/key material from the server.
+	mapperInbound := map[string]any{
+		"tag": inbound["tag"], "protocol": inbound["protocol"], "port": inbound["port"],
+		"settings": wire.Clone(proxy.Account), "streamSettings": wire.Clone(proxy.Stream),
+	}
 	proxy.MapperHost = map[string]any{
 		"address": proxy.Address, "port": proxy.Port, "finalRemark": proxy.Name, "protocol": proxy.Protocol,
 		"transport": proxy.Stream["network"], "security": proxy.Stream["security"], "protocolOptions": proxy.Account,
@@ -69,7 +76,7 @@ func applyEndpointClient(proxy *subscription.Proxy, overrides, inbound map[strin
 		"securityOptions":  proxy.Stream[stringField(proxy.Stream, "security")+"Settings"], "mux": proxy.Mux,
 		"streamOverrides": map[string]any{"sockopt": proxy.Stream["sockopt"], "finalMask": proxy.Stream["finalmask"]},
 		"clientOverrides": map[string]any{"mapper": host["mapper"], "serverDescription": host["serverDescription"]},
-		"metadata":        map[string]any{"rawInbound": inbound, "remark": host["remark"], "tags": host["tags"], "inboundTag": inbound["tag"]},
+		"metadata":        map[string]any{"rawInbound": mapperInbound, "remark": host["remark"], "tags": host["tags"], "inboundTag": inbound["tag"]},
 	}
 	return nil
 }

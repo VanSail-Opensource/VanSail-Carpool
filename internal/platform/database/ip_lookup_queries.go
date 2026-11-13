@@ -20,7 +20,7 @@ func ipConfigTx(ctx context.Context, tx *sql.Tx) (iplookup.Config, error) {
 func ipAllowanceTx(ctx context.Context, tx *sql.Tx, user string, now time.Time) (*iplookup.Allowance, error) {
 	var a iplookup.Allowance
 	err := tx.QueryRowContext(ctx, `SELECT p.id,a.total,a.total-a.used,p.valid_until FROM purchases p JOIN ip_lookup_allowances a ON a.purchase_id=p.id
-		WHERE p.user_id=$1 AND p.status='active' AND vansail_timestamp(p.valid_from)<=vansail_timestamp($2) AND vansail_timestamp(p.valid_until)>vansail_timestamp($3) ORDER BY p.valid_from DESC,p.id LIMIT 1`, user, stamp(now), stamp(now)).Scan(&a.PurchaseID, &a.Total, &a.Remaining, &a.ValidUntil)
+		WHERE p.user_id=$1 AND p.status='active' AND `+purchaseTimestampOrderSQL("p.valid_from")+`<=$2 AND `+purchaseTimestampOrderSQL("p.valid_until")+`>$3 ORDER BY `+purchaseTimestampOrderSQL("p.valid_from")+` DESC,p.id LIMIT 1`, user, purchaseTimestampOrder(now), purchaseTimestampOrder(now)).Scan(&a.PurchaseID, &a.Total, &a.Remaining, &a.ValidUntil)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}

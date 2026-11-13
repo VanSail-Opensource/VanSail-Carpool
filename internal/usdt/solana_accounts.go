@@ -41,7 +41,9 @@ func (s *scanner) solanaAccounts(ctx context.Context, owners []string) (map[stri
 		if err != nil {
 			return nil, err
 		}
-		result[ata] = owner
+		if err := trackSolanaAccount(result, ata, owner); err != nil {
+			return nil, err
+		}
 		var reply struct {
 			Value accountPage[struct {
 				Pubkey  string `json:"pubkey"`
@@ -72,7 +74,9 @@ func (s *scanner) solanaAccounts(ctx context.Context, owners []string) (map[stri
 			if _, err := NormalizeAddress(s.client.spec, item.Pubkey); err != nil {
 				return nil, ErrProof
 			}
-			result[item.Pubkey] = owner
+			if err := trackSolanaAccount(result, item.Pubkey, owner); err != nil {
+				return nil, err
+			}
 		}
 	}
 	return result, nil

@@ -2,8 +2,8 @@ package xnode
 
 import (
 	"context"
+	"math/big"
 	"sort"
-	"strconv"
 	"time"
 )
 
@@ -85,16 +85,16 @@ func (m *Master) UserNodeMetrics(ctx context.Context, userID string) ([]UserNode
 		profileNodeActivity(&item, snapshot, live.peer, principals, now, ipBudget)
 		ipBudget -= len(item.ActiveIPs)
 		if item.Available {
-			count := int64(0)
+			var count big.Int
 			for _, principal := range principals {
 				id := int(principal)
-				count += int64(snapshot.report.Users.Connections[id])
+				count.Add(&count, big.NewInt(int64(snapshot.report.Users.Connections[id])))
 				rate := snapshot.report.Users.Rates[id]
 				item.UploadBytesPerSecond = addMetricRate(item.UploadBytesPerSecond, rate.UploadBytesPerSecond)
 				item.DownloadBytesPerSecond = addMetricRate(item.DownloadBytesPerSecond, rate.DownloadBytesPerSecond)
 			}
-			item.Connections = strconv.FormatInt(count, 10)
-			item.CurrentUse = count > 0 || item.UploadBytesPerSecond > 0 || item.DownloadBytesPerSecond > 0
+			item.Connections = count.String()
+			item.CurrentUse = count.Sign() > 0 || item.UploadBytesPerSecond > 0 || item.DownloadBytesPerSecond > 0
 		}
 		result = append(result, item)
 	}

@@ -14,6 +14,7 @@ export function useSharedIPProgress(address: () => string, completed: () => void
   async function read(): Promise<void> {
     const ip = address()
     if (!ip || !session.user?.id || disposed || document.hidden) return
+    clearTimeout(timer)
     controller?.abort()
     const request = controller = new AbortController()
     const current = revision
@@ -26,7 +27,7 @@ export function useSharedIPProgress(address: () => string, completed: () => void
       if (wasRunning && !result) completed()
     } catch { if (current === revision && !request.signal.aborted) unavailable.value = true }
     finally {
-      if (current === revision && !disposed) {
+      if (current === revision && !disposed && !request.signal.aborted) {
         loading.value = false
         clearTimeout(timer)
         if (activeRun.value || unavailable.value) timer = setTimeout(() => void read(), 5000)

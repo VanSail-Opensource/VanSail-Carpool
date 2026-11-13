@@ -57,8 +57,8 @@ func TestPaymentProfilesReadinessAndListing(t *testing.T) {
 		t.Fatalf("disabled readiness = (%v, %v)", issues, found)
 	}
 	repository.listErr = errors.New("list failed")
-	if _, found = service.paymentProfileReadiness(ctx, "ezpay"); found {
-		t.Fatal("readiness reported a profile after list failure")
+	if issues, found = service.paymentProfileReadiness(ctx, "ezpay"); !found || len(issues) != 1 || issues[0] != "unavailable:payment_profile.ezpay" {
+		t.Fatal("profile storage outage fell back to legacy disabled settings", issues, found)
 	}
 }
 

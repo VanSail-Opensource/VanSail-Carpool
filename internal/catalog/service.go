@@ -40,6 +40,12 @@ type cachedDashboard struct {
 	value     RemoteDashboard
 	fetchedAt time.Time
 	bytes     int
+	scope     dashboardScope
+}
+
+type dashboardScope struct {
+	generation int64
+	proxyID    string
 }
 
 // Service owns price selection and short-lived statistics caching.
@@ -51,6 +57,7 @@ type Service struct {
 	cacheMu    sync.RWMutex
 	cache      map[string]cachedDashboard
 	cacheBytes int
+	cacheEpoch uint64
 }
 
 // NewService creates a catalog service.

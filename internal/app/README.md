@@ -205,7 +205,7 @@ PAYG jobs use the existing durable outbox and master executor. Startup and 30-se
 
 - `pricing_compute.go`: Connects durable numerical jobs to negotiated master/local execution without blocking the observer.
 
-- `pricing_model_actions.go`: Schedules bounded pricing model work.
+- `pricing_model_actions.go`: Runs bounded pricing model work from its durable outbox claim. Global and non-product model actions checkpoint each completed product, resume at most four products per pass, and keep pending compute/resource waits from exhausting delivery attempts.
 
 - `purchase_expiry.go`: Purchase expiry and successor lifecycle orchestration.
 

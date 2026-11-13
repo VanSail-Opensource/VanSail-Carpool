@@ -36,7 +36,7 @@ func (s *Store) ReleaseAutomaticLeaseBans(ctx context.Context, items []xnode.Aut
 			asOf = wall
 		}
 		var found bool
-		if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM xnode_firewall_bans b JOIN unnest($1::text[],$2::text[],$3::timestamptz[]) AS l(ip,prefix,until_at) ON b.ip=l.ip AND b.prefix=l.prefix WHERE b.released_version=0 AND l.until_at>$4::timestamptz)`, ips, prefixes, deadlines, stamp(asOf)).Scan(&found); err != nil {
+		if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM xnode_firewall_bans b JOIN unnest($1::text[],$2::text[],$3::text[]) AS l(ip,prefix,until_at) ON b.ip=l.ip AND b.prefix=l.prefix WHERE b.released_version=0 AND `+purchaseTimestampOrderSQL("l.until_at")+`>$4)`, ips, prefixes, deadlines, purchaseTimestampOrder(asOf)).Scan(&found); err != nil {
 			return err
 		}
 		if !found {
@@ -51,7 +51,7 @@ func (s *Store) ReleaseAutomaticLeaseBans(ctx context.Context, items []xnode.Aut
 		if wall := time.Now().UTC(); wall.After(asOf) {
 			asOf = wall
 		}
-		if _, err := tx.ExecContext(ctx, `UPDATE xnode_firewall_bans b SET released_version=$1,released_at=$2 FROM unnest($3::text[],$4::text[],$5::timestamptz[]) AS l(ip,prefix,until_at) WHERE b.released_version=0 AND b.ip=l.ip AND b.prefix=l.prefix AND l.until_at>$6::timestamptz`, version, stamp(now), ips, prefixes, deadlines, stamp(asOf)); err != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE xnode_firewall_bans b SET released_version=$1,released_at=$2 FROM unnest($3::text[],$4::text[],$5::text[]) AS l(ip,prefix,until_at) WHERE b.released_version=0 AND b.ip=l.ip AND b.prefix=l.prefix AND `+purchaseTimestampOrderSQL("l.until_at")+`>$6`, version, stamp(now), ips, prefixes, deadlines, purchaseTimestampOrder(asOf)); err != nil {
 			return err
 		}
 		return queueFirewallFleetTx(ctx, tx, now)

@@ -55,6 +55,10 @@ func TestLuckyDrawMaximumPrizeDeductionDoesNotOverflow(t *testing.T) {
 	if got := input.MaximumPrizeDeduction(); got != math.MaxInt64 {
 		t.Fatalf("MaximumPrizeDeduction() = %d, want %d", got, int64(math.MaxInt64))
 	}
+	input.Prizes[0].Reward = Reward{Kind: RewardTXBDelta, Range: &ValueRange{Min: math.MinInt64, Max: -1}}
+	if got := input.MaximumPrizeDeduction(); got != math.MaxInt64 {
+		t.Fatalf("MaximumPrizeDeduction() for range = %d, want %d", got, int64(math.MaxInt64))
+	}
 }
 
 func validInstantDraw(description string) LuckyDrawInput {

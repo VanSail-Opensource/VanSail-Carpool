@@ -110,3 +110,5 @@ administrator leaves. Disposal clears private drafts and suppresses aggregate
 success feedback. The Emby connection editor also retires delayed load/save
 responses and erases URL/token drafts on teardown; its dedicated test covers
 completion after disposal.
+
+`AdminEmbyConnection.test.ts` covers private connection draft disposal and prevents a late save from reporting success after its editor is removed.

@@ -58,6 +58,7 @@ func (s *scanner) scanTron(ctx context.Context, cursor Cursor, addresses []strin
 	if err != nil {
 		return Batch{}, err
 	}
+	p = bindTimePage(p, addresses)
 	if p.Address >= len(addresses) {
 		return Batch{Cursor: finishTimePage(p), CaughtUp: true}, nil
 	}

@@ -18,6 +18,11 @@ fields and exclude credentials or native configuration output.
 
 - `responseSchemas.json` contains generated response shapes from OpenAPI. `responses.ts` lazily builds Zod validators for optional rendering snapshots, accepts new optional fields, and rejects malformed cached data before restoration. Live responses remain authoritative during rolling deploys. `responses.test.ts` covers additive changes and malformed snapshot shapes.
 
+Ledger response validation accepts the server's active add-on, refund, affiliate,
+raffle, IP lookup and Telegram deduction categories, along with retained retired
+financial evidence. The contract regression rejects unknown ledger categories
+without discarding known historical transactions.
+
 Retired node traffic multiplier response properties remain constant 1. The
 generated shapes and `responses.test.ts` reject obsolete nonconstant values in
 current node/catalog responses. Their separate write contract accepts arbitrary

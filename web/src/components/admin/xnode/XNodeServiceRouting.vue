@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onScopeDispose, shallowRef, toRaw, watch } from 'vue'
 import { xnodeApi, type NamedService, type XNode, type XNodeGroup } from '@/api/xnode'
-import type { XNodeCustomization } from '@/api/xnodeMember'
+import type { XNodeCustomization } from '@/api/xnode'
 import JsonDocumentField from '@/components/common/JsonDocumentField.vue'
 import { localizedError, useI18n } from '@/i18n'
 import { cloneForEditing } from '@/utils/browserCompatibility'

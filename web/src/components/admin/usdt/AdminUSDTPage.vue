@@ -57,7 +57,7 @@ const progress = computed(() => {
             </div>
             <div class="usdt-status" aria-live="polite"><span>{{ t(`adminUsdt.connections.${currentStatus?.connection || 'none'}`) }}</span><span>{{ t('adminUsdt.progress') }} <code>{{ progress }}</code></span><time v-if="currentStatus?.updatedAt">{{ formatDateTime(currentStatus.updatedAt) }}</time><UButton color="neutral" variant="ghost" icon="i-ph-arrows-clockwise" :aria-label="t('common.refresh')" @click="refresh" /></div>
             <InlineNotice v-if="currentStatus?.errorCode" tone="warning">{{ t(`errors.api.${currentStatus.errorCode}`) }}</InlineNotice>
-            <InlineNotice v-if="probe" tone="info">{{ probe }}</InlineNotice>
+            <InlineNotice v-if="probe?.rail === rail" tone="info">{{ probe.text }}</InlineNotice>
             <USDTNetworkSettings v-if="network" v-model="network" :index="index" />
           </section>
         </fieldset>

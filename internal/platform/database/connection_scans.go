@@ -41,6 +41,9 @@ func (s *Store) retryAttempt_CreateConnectionScan(ctx context.Context, input pro
 	if !errors.Is(loadErr, ErrNotFound) {
 		return providerops.ConnectionScan{}, false, loadErr
 	}
+	if err := lockProviderOperationAccountsTx(ctx, tx, input.UserID, ""); err != nil {
+		return providerops.ConnectionScan{}, false, err
+	}
 	scanID, err := ids.New()
 	if err != nil {
 		return providerops.ConnectionScan{}, false, err

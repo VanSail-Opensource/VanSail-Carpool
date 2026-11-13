@@ -1,6 +1,28 @@
 import assert from 'node:assert/strict'
 
 export async function adminSettingsRecoveryScenarios(scenario, size) {
+  await scenario(size, 'stablecoin-fixture-actions', 'stablecoin-audit.html?stored&purged-review&action-error', async (page, capture) => {
+    await page.getByRole('tab', { name: 'Network', exact: true }).click()
+    await page.getByRole('button', { name: 'Check server', exact: true }).click()
+    await page.getByText('Mainnet and native token precision verified.', { exact: true }).waitFor()
+    assert.deepEqual(await page.evaluate(() => globalThis.__stablecoinAudit.checks), [{ network: 'ethereum', rail: 'usdt.erc20' }])
+    await page.getByRole('combobox', { name: 'Token', exact: true }).click()
+    await page.getByRole('option', { name: 'USDC', exact: true }).click()
+    assert.equal(await page.getByText('Mainnet and native token precision verified.', { exact: true }).count(), 0)
+    await page.getByRole('tab', { name: 'Transfer review', exact: true }).click()
+    await page.getByRole('button', { name: 'Details', exact: true }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByRole('textbox', { name: 'Dismissal reason', exact: true }).fill('Constructed evidence review')
+    await dialog.getByRole('button', { name: 'Dismiss permanently', exact: true }).click()
+    await page.waitForFunction(() => globalThis.__stablecoinAudit.dismissals.length === 1)
+    assert.equal(await dialog.getByRole('textbox', { name: 'Dismissal reason', exact: true }).inputValue(), 'Constructed evidence review')
+    await capture('retained-failure')
+    await page.evaluate(() => { globalThis.__stablecoinAudit.recover = true })
+    await dialog.getByRole('button', { name: 'Dismiss permanently', exact: true }).click()
+    await dialog.waitFor({ state: 'hidden' })
+    await page.getByText('No transfers need review.', { exact: true }).waitFor()
+    assert.deepEqual(await page.evaluate(() => globalThis.__stablecoinAudit.dismissals), Array.from({ length: 2 }, () => ({ id: 'purged-transfer', reason: 'Constructed evidence review' })))
+  })
   for (const outcome of ['success', 'failure']) {
     await scenario(size, 'admin-settings-retired-read-' + outcome, 'emby-connection-audit.html?cached-refresh', async (page, capture) => {
       await page.waitForFunction(() => globalThis.__embyConnectionAudit.pendingReads === 3)

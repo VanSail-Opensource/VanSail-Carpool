@@ -107,7 +107,7 @@ func (s *Store) retryAttempt_SaveIPDetails(ctx context.Context, run string, r ip
 	}
 	if run == "" {
 		var fetched string
-		err := tx.QueryRowContext(ctx, `SELECT (CASE ((details_json)::jsonb #> '{fetchedAt}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (details_json)::jsonb #>> '{fetchedAt}' END) FROM ip_lookup_live_snapshots WHERE ip=$1 ORDER BY vansail_timestamp(completed_at) DESC,record_order DESC LIMIT 1`, r.IP).Scan(&fetched)
+		err := tx.QueryRowContext(ctx, `SELECT (CASE ((details_json)::jsonb #> '{fetchedAt}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (details_json)::jsonb #>> '{fetchedAt}' END) FROM ip_lookup_live_snapshots WHERE ip=$1 ORDER BY `+purchaseTimestampOrderSQL("completed_at")+` DESC,record_order DESC LIMIT 1`, r.IP).Scan(&fetched)
 		if err != nil && err != sql.ErrNoRows {
 			return "", err
 		}

@@ -46,7 +46,7 @@ func prepareTrafficBatch(ctx context.Context, tx *sql.Tx, items []xnode.TrafficC
 	billable := make([]xnode.TrafficCommit, 0, len(valid))
 	for _, item := range valid {
 		cursor := b.cursors[trafficCursorKey{item.AgentID, item.Report.StreamID}]
-		if cursor != nil && !cursor.closed && item.Sequence > cursor.sequence {
+		if cursor != nil && cursor.node == item.NodeID && !cursor.closed && item.Sequence > cursor.sequence {
 			billable = append(billable, item)
 		}
 	}

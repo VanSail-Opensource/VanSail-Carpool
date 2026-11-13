@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, shallowRef, watch } from 'vue'
+import { computed, onScopeDispose, shallowRef, watch } from 'vue'
 import type { CouponRedemption, FeaturePaymentMethod, FeaturePaymentOrder } from '@/api/features'
 import BalancePaymentConfiguration from '@/components/billing/BalancePaymentConfiguration.vue'
 import CryptoPaymentInstructions from '@/components/billing/CryptoPaymentInstructions.vue'
@@ -45,7 +45,7 @@ const {
   recreateOrder,
   retryOperation,
   openPaymentTarget,
-  stopPolling,
+  suspend,
 } = usePaymentOrder({
   onPaid: () => {
     open.value = false
@@ -61,11 +61,14 @@ const description = computed(() => stage.value === 'configure'
     ? t('payment.cancelledHint')
     : t('payment.providerHint'))
 
+let preparation = 0
 async function prepareOrder(): Promise<void> {
+  const ticket = ++preparation
   couponRedemption.value = null
   paymentStep.value = 'provider'
   reset(externalMethods.value)
   if (props.pendingOrder && await hydratePendingOrder(props.pendingOrder, externalMethods.value)) return
+  if (ticket !== preparation || !open.value) return
   if (props.reissueOrder) hydrateReissueOrder(props.reissueOrder, externalMethods.value)
 }
 
@@ -79,10 +82,12 @@ useTelegramBackButton(showTelegramBack, closeSheet)
 watch(open, (next, previous) => {
   if (next) void prepareOrder()
   else {
-    stopPolling()
+    preparation++
+    suspend()
     if (previous && couponRedemption.value) emit('paid')
   }
-})
+}, { immediate: true })
+onScopeDispose(() => { preparation++ })
 </script>
 
 <template>
@@ -101,6 +106,7 @@ watch(open, (next, previous) => {
         variant="ghost"
         icon="i-ph-arrow-left"
         :aria-label="t('payment.backToProvider')"
+        :disabled="stage === 'creating'"
         data-haptic="navigate"
         @click="paymentStep = 'provider'"
       />

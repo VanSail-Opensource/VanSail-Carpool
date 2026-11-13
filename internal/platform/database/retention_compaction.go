@@ -47,7 +47,7 @@ func (s *Store) retryAttempt_CompactAndPrune(ctx context.Context, cutoff7Days, c
 		return nil, err
 	}
 	if counts["connection_scans"], err = deleteCount(ctx, tx,
-		`DELETE FROM connection_scans WHERE expires_at<=$1 AND status IN ('succeeded','failed')`, stamp(now)); err != nil {
+		`DELETE FROM connection_scans WHERE expires_at<$1 AND `+purchaseTimestampOrderSQL("expires_at")+`<=$2 AND status IN ('succeeded','failed')`, retentionCandidateUpperBound(now), purchaseTimestampOrder(now)); err != nil {
 		return nil, fmt.Errorf("prune expired connection scans: %w", err)
 	}
 	if err := pruneHousekeepingTx(ctx, tx, cutoff7Days, cutoff24Hours, now, counts); err != nil {

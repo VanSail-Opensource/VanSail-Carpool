@@ -32,7 +32,7 @@ func (s *Store) WithHourlyOwnerLifecycle(ctx context.Context, intent xnode.Hourl
 		}
 	} else {
 		var newer bool
-		err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM hourly_enrollments WHERE owner_id=$1 AND account_generation=$2 AND (status='preparing' OR status='active' AND paid_through>clock_timestamp())) OR EXISTS(SELECT 1 FROM purchases WHERE user_id=$1 AND status IN('active','activating','queued') AND valid_until::timestamptz>clock_timestamp())`, intent.OwnerID, current).Scan(&newer)
+		err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM hourly_enrollments WHERE owner_id=$1 AND account_generation=$2 AND (status='preparing' OR status='active' AND paid_through>clock_timestamp())) OR EXISTS(SELECT 1 FROM purchases WHERE user_id=$1 AND status IN('active','activating','queued') AND `+purchaseTimestampOrderSQL("valid_until")+`>`+databaseClockTimestampOrderSQL+`)`, intent.OwnerID, current).Scan(&newer)
 		allowed = current == intent.CurrentGeneration && status == "active" && !newer
 	}
 	if err != nil {

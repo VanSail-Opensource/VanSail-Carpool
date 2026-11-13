@@ -99,7 +99,7 @@ func TestGroupDeletionRejectsStaleServiceAndCatalogRead(t *testing.T) {
 }
 
 func TestGroupDeletionCountsPAYGFundingCreditAndAccounting(t *testing.T) {
-	ctx, now := context.Background(), time.Now().UTC()
+	ctx, now := context.Background(), time.Now().UTC().Truncate(time.Second)
 	s, parent, _, a := paygBillingFixture(t)
 	saveDeletionGroup(t, s, a.GroupID)
 	if _, err := s.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='complete' WHERE id=$1`, parent.UserID); err != nil {
@@ -121,6 +121,10 @@ func TestGroupDeletionCountsPAYGFundingCreditAndAccounting(t *testing.T) {
 	}
 	assertUsage(0, false)
 	if _, err := s.DB().ExecContext(ctx, `UPDATE xnode_payg_accounts SET credit_bytes=1,credit_started_at=$1 WHERE proxy_user_id=$2`, stamp(now), a.ProxyUserID); err != nil {
+		t.Fatal(err)
+	}
+	assertUsage(1, false)
+	if _, err := s.DB().ExecContext(ctx, `UPDATE xnode_payg_accounts SET credit_started_at=$1 WHERE proxy_user_id=$2`, stamp(now.Add(-72*time.Hour+time.Nanosecond)), a.ProxyUserID); err != nil {
 		t.Fatal(err)
 	}
 	assertUsage(1, false)

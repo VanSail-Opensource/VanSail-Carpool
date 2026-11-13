@@ -77,3 +77,24 @@ func TestRoutingPlanTransactionRetainsBarriersAndReplay(t *testing.T) {
 		t.Fatal("routing audit evidence missing", err)
 	}
 }
+
+func TestUnmanagedRoutingCutoffPreservesNanoseconds(t *testing.T) {
+	s, identity, _ := xnodeTrafficFixture(t)
+	ctx := context.Background()
+	if err := s.SaveXNodeCustomization(ctx, xnode.Customization{ProxyUserID: identity.ProxyUserID, UserID: identity.UserID, NodeID: "node", OutboundsCipher: "retained-outbounds", RoutingCipher: "retained-routing"}); err != nil {
+		t.Fatal(err)
+	}
+	at := time.Date(2030, 1, 2, 3, 4, 5, 0, time.UTC)
+	if _, err := s.db.ExecContext(ctx, `UPDATE xnode_customizations SET updated_at=$1 WHERE proxy_user_id=$2`, stamp(at), identity.ProxyUserID); err != nil {
+		t.Fatal(err)
+	}
+	for _, step := range []struct {
+		before time.Time
+		want   int
+	}{{at, 0}, {at.Add(time.Nanosecond), 1}} {
+		items, err := s.XNodeUnmanagedRoutes(ctx, step.before)
+		if err != nil || len(items) != step.want {
+			t.Fatal("legacy conversion cutoff rounded past retained route", step, items, err)
+		}
+	}
+}

@@ -11,6 +11,7 @@ import (
 
 func TestAutomaticLeasesReleaseExactBansAndPreserveRangesAndFinancialGrants(t *testing.T) {
 	s, owner, _ := xnodeTrafficFixture(t)
+	actor := createTestAdmin(t, s, 95112)
 	ctx, now := context.Background(), time.Now().UTC()
 	if err := s.ReconcileFirewallMember(ctx, "node", true, true, 0); err != nil {
 		t.Fatal(err)
@@ -27,7 +28,7 @@ func TestAutomaticLeasesReleaseExactBansAndPreserveRangesAndFinancialGrants(t *t
 		t.Fatal(err)
 	}
 	paidID := seedHistoricalFirewallGrant(t, s, owner.UserID, "paid-auto", now)
-	if _, err := s.GrantAdminFirewallExemption(ctx, owner.UserID, xnode.AdminFirewallExemption{Prefix: "8.8.8.0/24", Hours: 24, Key: "manual-auto"}, now); err != nil {
+	if _, err := s.GrantAdminFirewallExemption(ctx, actor.ID, xnode.AdminFirewallExemption{Prefix: "8.8.8.0/24", Hours: 24, Key: "manual-auto"}, now); err != nil {
 		t.Fatal(err)
 	}
 	items := []xnode.AutomaticLeaseGrant{{IP: "8.8.8.8", Generation: 1, Until: now.Add(time.Hour)}, {IP: "2001:4860::19", Generation: 2, Until: now.Add(time.Hour)}, {IP: "9.9.9.9", Generation: 3, Until: now.Add(-time.Nanosecond)}}
@@ -62,5 +63,28 @@ func TestAutomaticLeasesReleaseExactBansAndPreserveRangesAndFinancialGrants(t *t
 	}
 	if err := s.db.QueryRowContext(ctx, `SELECT version FROM xnode_firewall_clock WHERE singleton=1`).Scan(&after); err != nil || after != version {
 		t.Fatal("no-op replay changed the durable firewall clock", version, after, err)
+	}
+}
+
+func TestAutomaticLeaseReleasePreservesFractionalDeadline(t *testing.T) {
+	s, _, _ := xnodeTrafficFixture(t)
+	ctx := context.Background()
+	now := time.Date(2030, 1, 2, 3, 4, 5, 0, time.UTC)
+	if err := s.ReconcileFirewallMember(ctx, "node", true, true, 0); err != nil {
+		t.Fatal(err)
+	}
+	event := wire.FirewallEvent{ID: "nano-00000000000000000001", Kind: "detected", IP: "8.8.8.8", Rule: "xray_tcp_probe", Count: 3, FirstSeen: now, Time: now}
+	if err := s.RecordFirewallEvents(ctx, "node", "nano", []wire.FirewallEvent{event}, wire.FirewallPolicy{Enabled: true, Protect: true}, now); err != nil {
+		t.Fatal(err)
+	}
+	if bans, err := s.FirewallBans(ctx, 100); err != nil || len(bans) != 1 {
+		t.Fatal("fixture did not establish a release target", bans, err)
+	}
+	grant := xnode.AutomaticLeaseGrant{IP: event.IP, Generation: 1, Until: now.Add(time.Nanosecond)}
+	if err := s.ReleaseAutomaticLeaseBans(ctx, []xnode.AutomaticLeaseGrant{grant}, now); err != nil {
+		t.Fatal(err)
+	}
+	if bans, err := s.FirewallBans(ctx, 100); err != nil || len(bans) != 0 {
+		t.Fatal("valid fractional lease rounded to expired", bans, err)
 	}
 }

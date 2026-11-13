@@ -80,7 +80,7 @@ func (s *Store) ListLedger(ctx context.Context, userID string, limit int) ([]mod
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
-	rows, err := s.db.QueryContext(ctx, ledgerSelect+` WHERE user_id=$1 ORDER BY created_at DESC LIMIT $2`, userID, limit)
+	rows, err := s.db.QueryContext(ctx, ledgerSelect+` WHERE user_id=$1 ORDER BY `+purchaseTimestampOrderSQL("created_at")+` DESC,id DESC LIMIT $2`, userID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list ledger: %w", err)
 	}

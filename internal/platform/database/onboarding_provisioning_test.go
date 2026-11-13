@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -63,5 +64,28 @@ func TestAccessRepairBackfillsOnlyCompletedMembersWithoutPurchases(t *testing.T)
 		if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1 AND (CASE ((payload)::jsonb #> '{userId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{userId}' END)=$2 AND status='pending'`, xnode.AccessRepairJob, user).Scan(&count); err != nil || count != want {
 			t.Fatalf("member %s repair jobs = %d, want %d: %v", user, count, want, err)
 		}
+	}
+}
+
+func TestOnboardingCannotCompleteAfterAccountClosure(t *testing.T) {
+	t.Parallel()
+	ctx, store := context.Background(), newTestStore(t)
+	user := createTestUser(t, store, 31923)
+	if err := store.BeginAgreement(ctx, user.ID); err != nil {
+		t.Fatal(err)
+	}
+	revision, ids, err := store.CurrentAgreementContract(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET account_status='purging' WHERE id=$1`, user.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.CompleteOnboardingRevision(ctx, user.ID, revision, ids, time.Now().UTC()); !errors.Is(err, ErrConflict) {
+		t.Fatal("closed owner completed onboarding", err)
+	}
+	var jobs int
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE payload::jsonb->>'userId'=$1`, user.ID).Scan(&jobs); err != nil || jobs != 0 {
+		t.Fatal("closed owner gained new repair work", jobs, err)
 	}
 }

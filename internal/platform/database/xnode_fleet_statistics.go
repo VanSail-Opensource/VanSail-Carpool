@@ -39,6 +39,8 @@ func (s *Store) XNodeFleetUsage(ctx context.Context, from, to time.Time) ([]xnod
 }
 func (s *Store) XNodeIdentityGrowth(ctx context.Context, from, to time.Time) (int64, error) {
 	var count int64
-	err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM xnode_identities WHERE user_id IS NOT NULL AND created_at>=$1 AND created_at<=$2`, stamp(from), stamp(to)).Scan(&count)
+	lower, _ := purchaseWindowCandidateBounds(from)
+	_, upper := purchaseWindowCandidateBounds(to)
+	err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM xnode_identities WHERE user_id IS NOT NULL AND created_at>$1 AND created_at<$2 AND `+purchaseTimestampOrderSQL("created_at")+`>=$3 AND `+purchaseTimestampOrderSQL("created_at")+`<=$4`, lower, upper, purchaseTimestampOrder(from), purchaseTimestampOrder(to)).Scan(&count)
 	return count, err
 }

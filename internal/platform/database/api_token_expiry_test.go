@@ -64,3 +64,39 @@ func TestAPITokenLimitUsesExactExpiry(t *testing.T) {
 		})
 	}
 }
+
+func TestAPITokenUsageThrottleKeepsExactBoundary(t *testing.T) {
+	t.Parallel()
+	ctx, store := context.Background(), newTestStore(t)
+	actor := createTestAdmin(t, store, 81705)
+	base := time.Date(2026, 11, 13, 12, 0, 0, 0, time.UTC)
+	for _, scenario := range []struct {
+		id          string
+		now, used   time.Time
+		wantTouched bool
+	}{
+		{"fractional-not-due", base.Add(5 * time.Minute), base.Add(time.Nanosecond), false},
+		{"whole-already-due", base.Add(5*time.Minute + time.Nanosecond), base, true},
+	} {
+		hash := sha256.Sum256([]byte(scenario.id))
+		item := apitoken.Token{ID: scenario.id, UserID: actor.ID, Name: "touch boundary", Prefix: "vsc_boundary",
+			Hash: hash[:], Scopes: []string{"admin:read"}, CreatedAt: base.Add(-time.Hour)}
+		if err := store.CreateAdminAPIToken(ctx, item); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := store.DB().ExecContext(ctx, `UPDATE admin_api_tokens SET last_used_at=$1 WHERE id=$2`, stamp(scenario.used), item.ID); err != nil {
+			t.Fatal(err)
+		}
+		if err := store.TouchAdminAPIToken(ctx, item.ID, scenario.now); err != nil {
+			t.Fatal(err)
+		}
+		current, err := store.AdminAPITokenByHash(ctx, hash[:])
+		want := scenario.used
+		if scenario.wantTouched {
+			want = scenario.now
+		}
+		if err != nil || current.LastUsedAt == nil || !current.LastUsedAt.Equal(want) {
+			t.Fatalf("%s usage = %+v, %v; want %s", scenario.id, current.LastUsedAt, err, want)
+		}
+	}
+}

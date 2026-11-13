@@ -2,6 +2,8 @@
 
 - `coupons.go` defines coupon/grant types, validation, and normalization.
 - `coupons_part2.go` contains eligibility and fixed-point discount math.
+  Calculation revalidates stored discount values and caps before arithmetic, so
+  malformed historical definitions cannot become surcharges or broader discounts.
 - `service.go` coordinates definitions, redemptions, wallet reads, member
   soft-discard, and purchase quotes. Administrator handlers use `SaveAdmin` with
   the exact `UpdatedAt` revision loaded before merging partial fields; creation

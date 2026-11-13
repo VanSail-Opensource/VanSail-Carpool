@@ -50,13 +50,16 @@ func (s *scanner) checkSolana(ctx context.Context) error {
 
 func (s *scanner) scanSolana(ctx context.Context, cursor Cursor, owners []string) (Batch, error) {
 	cur := solCursor{Accounts: map[string]solHistory{}}
-	if cursor.Value != "" && json.Unmarshal([]byte(cursor.Value), &cur) != nil {
-		return Batch{}, ErrProof
+	if err := decodeCursor(cursor.Value, &cur); err != nil {
+		return Batch{}, err
 	}
 	if cur.Accounts == nil {
 		cur.Accounts = map[string]solHistory{}
 	}
 	pruneSolanaOwners(&cur, owners)
+	if len(cur.Accounts) > maxSolanaCursorAccounts {
+		return Batch{}, ErrCapacity
+	}
 	if cur.Baseline == 0 {
 		if err := s.client.rpc(ctx, "getSlot", []any{map[string]string{"commitment": "finalized"}}, &cur.Baseline); err != nil {
 			return Batch{}, err
@@ -71,7 +74,10 @@ func (s *scanner) scanSolana(ctx context.Context, cursor Cursor, owners []string
 			return Batch{}, err
 		}
 		for account, owner := range accounts {
-			history := cur.Accounts[account]
+			history, exists := cur.Accounts[account]
+			if !exists && len(cur.Accounts) >= maxSolanaCursorAccounts {
+				return Batch{}, ErrCapacity
+			}
 			history.Owner = owner
 			cur.Accounts[account] = history
 		}

@@ -49,6 +49,9 @@ func (s *Store) retryAttempt_PlayLuckyDraw(ctx context.Context, userID, drawID, 
 	if len(draw.Prizes) == 0 || hasRetiredResetReward(draw) {
 		return activity.DrawResult{}, ErrConflict
 	}
+	if err := draw.LuckyDrawInput.Validate(); err != nil {
+		return activity.DrawResult{}, err
+	}
 	maxLoss := draw.MaximumPrizeDeduction()
 	if maxLoss > math.MaxInt64-draw.FeeMinor {
 		return activity.DrawResult{}, activity.ErrInvalidInput

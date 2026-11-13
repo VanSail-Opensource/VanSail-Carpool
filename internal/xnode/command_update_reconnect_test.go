@@ -17,6 +17,9 @@ func TestLostUpgradeResultReconcilesTransactionAfterReconnect(t *testing.T) {
 	f := controlFixture(t, false)
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
+	if _, err := f.store.DB().ExecContext(ctx, `UPDATE users SET role='admin' WHERE id=$1`, f.user.ID); err != nil {
+		t.Fatal(err)
+	}
 	server := httptest.NewServer(f.master)
 	defer server.Close()
 	_, token, err := f.service.Enrollment(ctx, f.node.ID)

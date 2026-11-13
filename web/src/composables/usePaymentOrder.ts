@@ -32,10 +32,16 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
   const operations = usePaymentOrderOperations({ onTerminal: handleOperationTerminal })
   const error = computed(() => operations.error.value ?? localError.value)
 
-  function reset(methods: readonly FeaturePaymentMethod[]): void {
+  function suspend(): void {
     latest.invalidate()
     if (closeTimer !== undefined) clearTimeout(closeTimer)
+    closeTimer = undefined
     operations.reset()
+    target.stop()
+  }
+
+  function reset(methods: readonly FeaturePaymentMethod[]): void {
+    suspend()
     target.reset()
     localError.value = null
     canReissue.value = false
@@ -213,6 +219,6 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
     recreateOrder,
     retryOperation: operations.retry,
     openPaymentTarget: target.open,
-    stopPolling: target.stop,
+    suspend,
   }
 }

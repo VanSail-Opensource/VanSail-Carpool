@@ -32,31 +32,6 @@ func validatePricingForecast(f pricing.Forecast) error {
 	return nil
 }
 
-// EvaluatePricingForecast saves actuals separately and rejects incomplete/early zeroes.
-func (s *Store) EvaluatePricingForecast(ctx context.Context, id, status string, actual *float64, observed, now time.Time) error {
-	id = pricingForecastID(id)
-	var until string
-	if err := s.db.QueryRowContext(ctx, `SELECT target_until FROM pricing_forecast_vintages WHERE forecast_id=$1`, id).Scan(&until); err != nil {
-		return err
-	}
-	end, err := parseStamp(until)
-	if err != nil {
-		return err
-	}
-	if end.After(now) || observed.Before(end) {
-		return ErrConflict
-	}
-	if status != "COMPLETE" && status != "MISSING" && status != "CENSORED" && status != "INCOMPLETE" {
-		return ErrConflict
-	}
-	if (status == "COMPLETE") != (actual != nil) || actual != nil && (math.IsNaN(*actual) || math.IsInf(*actual, 0)) {
-		return ErrConflict
-	}
-	code := map[string]int{"COMPLETE": 0, "MISSING": 1, "CENSORED": 2, "INCOMPLETE": 3}[status]
-	_, err = s.db.ExecContext(ctx, `INSERT INTO pricing_forecast_actuals(forecast_id,actual,status_code,observed_until_ns,evaluated_at_ns) VALUES($1,$2,$3,$4,$5) ON CONFLICT(forecast_id) DO UPDATE SET actual=excluded.actual,status_code=excluded.status_code,observed_until_ns=excluded.observed_until_ns,evaluated_at_ns=excluded.evaluated_at_ns WHERE pricing_forecast_actuals.observed_until_ns<=excluded.observed_until_ns AND pricing_forecast_actuals.evaluated_at_ns<=excluded.evaluated_at_ns`, id, actual, code, observed.UnixNano(), now.UnixNano())
-	return err
-}
-
 // PricingFeatureBatch generates only present-day predictions from retained accounting.
 // A restart cannot fabricate a past vintage; daily uniqueness suppresses duplicates.
 func (s *Store) PricingFeatureBatch(ctx context.Context, now time.Time, cursor string) (string, error) {

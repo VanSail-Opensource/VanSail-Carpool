@@ -77,3 +77,9 @@ current-credential lifecycle state independently of wallet funding. Pending
 first deployment, retained failure and missing provisioning remain visible.
 `AdminSynchronization.test.ts` covers all four statuses with positive balances;
 these labels describe historical deployment evidence rather than node liveness.
+
+Pending financial and entitlement dialogs keep their reviewed amount, terms,
+reason and target locked. Native overlay close controls cannot discard pending
+grant/edit/credit/provider requests. `AdminEntitlementEditor.test.ts` and the
+pending adjustment case in `AdminUserBalanceAdjustment.test.ts` cover these
+review boundaries alongside the existing idempotent retry coverage.

@@ -51,7 +51,7 @@ const creditedTxb = computed(() => /^\d+$/.test(props.amountMinor) && BigInt(pro
 const showCredited = computed(() => props.amountValid && Boolean(creditedTxb.value) && inputCurrency.value !== 'TXB')
 
 function chooseMethod(id: string): void {
-  if (id === props.selectedMethodId) return
+  if (props.stage !== 'configure' || id === props.selectedMethodId) return
   selectionHaptic()
   emit('chooseMethod', id)
 }
@@ -62,6 +62,7 @@ function chooseMethod(id: string): void {
     <TxbAmountField
       id="txb-amount"
       :model-value="amount"
+      :disabled="stage !== 'configure'"
       :label="t('payment.amount')"
       :hint="rangeHint"
       :min-minor="minimumMinor"
@@ -72,7 +73,7 @@ function chooseMethod(id: string): void {
       :parse-display-value="parseDisplayValue"
       slider
       required
-      @update:model-value="emit('update:amount', String($event))"
+      @update:model-value="stage === 'configure' && emit('update:amount', String($event))"
     />
     <p v-if="showCredited" class="payment-credit">{{ t('payment.creditEstimate', { amount: creditedTxb }) }}</p>
     <UAlert v-if="!channels.length" color="warning" variant="soft" icon="i-ph-warning-circle" :description="t('payment.noChannel')" />
@@ -80,6 +81,7 @@ function chooseMethod(id: string): void {
       v-else-if="isCrypto"
       :channels="channels"
       :selected-method-id="selectedMethodId"
+      :disabled="stage !== 'configure'"
       @choose="chooseMethod"
     />
     <fieldset v-else class="provider-picker" role="radiogroup">
@@ -91,7 +93,7 @@ function chooseMethod(id: string): void {
         :class="{ 'provider-option--selected': selectedMethodId === item.value }"
         color="neutral"
         variant="ghost"
-        :disabled="item.disabled"
+        :disabled="stage !== 'configure' || item.disabled"
         :aria-pressed="selectedMethodId === item.value"
         @click="chooseMethod(item.value)"
       >

@@ -106,3 +106,10 @@ remains successful if only its refresh fails. `useAdminSection.test.ts` covers
 these boundaries. Emby snapshots retain only the newest read, and disposed Emby
 and coupon views cannot publish a previous owner's result or start new writes.
 `useEmby.test.ts` and `useCouponRedemption.test.ts` cover delayed responses.
+
+`useTelegramBackButton.test.ts` verifies stacked back-button owners, reactive visibility and final native button cleanup.
+
+`usePaymentOrder.ts` suspends all payment observers when a sheet closes, including
+a create reply, terminal-order lookup and delayed paid notification. It retains
+unresolved original request keys for reopening; `usePaymentOrder.test.ts` covers
+these close/reopen races without resubmitting a new attempt.

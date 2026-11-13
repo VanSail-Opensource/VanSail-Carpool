@@ -39,7 +39,7 @@ var (
 	ErrInvalid = errors.New("request signature is invalid")
 	// ErrReplay marks a nonce already accepted for the same session.
 	ErrReplay = errors.New("request signature nonce was replayed")
-	// ErrRateLimited marks a session that exhausted its bounded nonce window.
+	// ErrRateLimited marks exhaustion of a session or process nonce budget.
 	ErrRateLimited = errors.New("request signature rate limit exceeded")
 	// ErrBodyTooLarge marks a body beyond the signed-request limit.
 	ErrBodyTooLarge = errors.New("request body is too large")

@@ -4,9 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"strings"
 	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/pricing"
 )
 
@@ -42,9 +45,22 @@ func pricingCommandEffectTx(ctx context.Context, tx *sql.Tx, in PricingIntervent
 
 // ExecutePricingModelAction runs from the existing durable outbox, sharing the
 // scheduled intelligence compute slot without touching authoritative billing.
-func (s *Store) ExecutePricingModelAction(ctx context.Context, id string, now time.Time) error {
+func (s *Store) ExecutePricingModelAction(ctx context.Context, job model.OutboxJob, now time.Time) error {
+	err := s.executePricingModelAction(ctx, job, now, s.PricingOptimizeProduct)
+	if errors.Is(err, ErrPricingComputePending) || errors.Is(err, pricing.WorkerResourceLimit) || errors.Is(err, context.DeadlineExceeded) {
+		return &outbox.WaitError{Reason: "pricing model action is awaiting bounded compute", Cause: err, After: time.Second}
+	}
+	return err
+}
+
+func (s *Store) executePricingModelAction(ctx context.Context, job model.OutboxJob, now time.Time,
+	optimize func(context.Context, string, string, time.Time) error) error {
+	payload, err := s.pricingActionProgress(ctx, job)
+	if err != nil {
+		return err
+	}
 	var raw, status string
-	if err := s.db.QueryRowContext(ctx, `SELECT proposed_json,status FROM pricing_admin_overrides WHERE id=$1`, id).Scan(&raw, &status); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT proposed_json,status FROM pricing_admin_overrides WHERE id=$1`, payload.InterventionID).Scan(&raw, &status); err != nil {
 		return err
 	}
 	if status != "ACTIVE" {
@@ -53,6 +69,9 @@ func (s *Store) ExecutePricingModelAction(ctx context.Context, id string, now ti
 	var in PricingIntervention
 	if err := json.Unmarshal([]byte(raw), &in); err != nil {
 		return err
+	}
+	if in.ID != payload.InterventionID || (in.Command != "RETRY_MODEL" && in.Command != "RECALIBRATE") {
+		return ErrConflict
 	}
 	if !in.ExpiresAt.After(now) {
 		return nil
@@ -65,7 +84,7 @@ func (s *Store) ExecutePricingModelAction(ctx context.Context, id string, now ti
 		if len(parts) != 2 {
 			return ErrConflict
 		}
-		return s.PricingOptimizeProduct(ctx, parts[0], parts[1], now)
+		return optimize(ctx, parts[0], parts[1], now)
 	}
 	if in.ScopeType == "model" {
 		var kind string
@@ -74,34 +93,13 @@ func (s *Store) ExecutePricingModelAction(ctx context.Context, id string, now ti
 		}
 		parts := strings.SplitN(kind, ":", 3)
 		if len(parts) == 3 && parts[0] == "response" {
-			return s.PricingOptimizeProduct(ctx, parts[1], parts[2], now)
+			return optimize(ctx, parts[1], parts[2], now)
 		}
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT product_type,product_id FROM pricing_product_settings WHERE dynamic_enabled=1 ORDER BY product_type,product_id LIMIT 512`)
-	if err != nil {
-		return err
+	if in.ScopeType != "global" && in.ScopeType != "model" {
+		return ErrConflict
 	}
-	type target struct{ kind, id string }
-	targets := []target{}
-	for rows.Next() {
-		var t target
-		if err = rows.Scan(&t.kind, &t.id); err != nil {
-			rows.Close()
-			return err
-		}
-		targets = append(targets, t)
-	}
-	err = rows.Err()
-	rows.Close()
-	if err != nil {
-		return err
-	}
-	for _, t := range targets {
-		if err = s.PricingOptimizeProduct(ctx, t.kind, t.id, now); err != nil {
-			return err
-		}
-	}
-	return nil
+	return s.continuePricingModelAction(ctx, job, payload, now, optimize)
 }
 
 func (s *Store) acquirePricingCompute() (func(), error) {

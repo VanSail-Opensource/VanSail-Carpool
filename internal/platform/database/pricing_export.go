@@ -74,7 +74,7 @@ func (s *Store) StreamPricingExport(ctx context.Context, writer io.Writer, scope
 	if err = jsonFile("schema/tables.json", datasets); err != nil {
 		return err
 	}
-	if err = jsonFile("schema/units.json", map[string]any{"integers": "decimal strings preserving signed 64-bit precision", "money": "TXB minor units (1/100 TXB)", "traffic": "bytes", "probability": "unit interval", "timezone": "UTC", "timestampSuffix_ns": "Unix nanoseconds, exact decimal strings", "missing": "null; never fabricated zero"}); err != nil {
+	if err = jsonFile("schema/units.json", map[string]any{"integers": "decimal strings preserving signed 64-bit precision", "money": "TXB minor units (1/100 TXB)", "traffic": "bytes", "probability": "unit interval", "timezone": "UTC", "timestampSuffix_ns": "Unix nanoseconds, exact decimal strings", "missing": "null; never fabricated zero", "summaryState": map[string]string{"dirty": "source changed; a complete summary rebuild is pending", "sealed": "original metrics are preserved after source retention begins", "stale": "historical completeness cannot be verified, or later source evidence differs"}}); err != nil {
 		return err
 	}
 	if err = jsonFile("schema/features.json", map[string]any{"definitionSource": "forecasts/model_versions", "lineage": "feature_snapshot_hash joins immutable forecast inputs to features.snapshot_hash", "rawMachineTelemetry": "memory only; never collected into retained SQL history"}); err != nil {
@@ -96,7 +96,7 @@ func (s *Store) StreamPricingExport(ctx context.Context, writer io.Writer, scope
 		digest.Write([]byte(meta.Name + ":" + meta.SHA256 + "\n"))
 	}
 	var watermark sql.NullString
-	if err = tx.QueryRowContext(ctx, `SELECT MAX(updated_at) FROM xnode_report_cursors`).Scan(&watermark); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT MAX(`+purchaseTimestampOrderSQL("updated_at")+`)||'Z' FROM (SELECT updated_at FROM xnode_report_cursors UNION ALL SELECT updated_at FROM xnode_traffic_streams) cursors`).Scan(&watermark); err != nil {
 		return err
 	}
 	manifestScope := scope

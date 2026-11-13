@@ -99,6 +99,9 @@ func (s *Store) retryAttempt_DeleteOutboxJob(ctx context.Context, jobID, actorID
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
+	if err := catalogAdminActorTx(ctx, tx, actorID); err != nil {
+		return err
+	}
 	var kind, status string
 	if err := tx.QueryRowContext(ctx, `SELECT kind,status FROM outbox_jobs WHERE id=$1 FOR UPDATE`, jobID).Scan(&kind, &status); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

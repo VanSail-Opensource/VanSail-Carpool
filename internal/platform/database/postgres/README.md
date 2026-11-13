@@ -61,6 +61,10 @@ entry or settlement receipt is converted.
   without changing table rows, including `is_called` and increment changes.
   Sequences are not MVCC snapshots: recovery verification still requires stopped
   writers as documented by the offline recovery procedure.
+  The schema and table digest also include the outbox `claim_generation`, so a
+  changed or missing durable attempt fence cannot pass recovery verification.
+  `recovery_outbox_test.go` covers a fence-only change with all other rows and
+  sequence states unchanged, plus a missing-column schema failure.
 
 Schema 32 replaces the live JSON checks, time/string expression indexes and paid
 access trigger functions, then drops obsolete compatibility functions without
@@ -140,3 +144,19 @@ when the native digest is unchanged. No financial or credential data is migrated
 checks member-proof invalidation and retained service proof, fingerprints all other
 native/financial fields and sequences, and verifies repeated migration preserves
 newly confirmed readiness.
+
+## Pricing summary recovery state
+
+Schema 50 preserves compacted analytics as sealed snapshots and marks later
+material source changes stale. Unsealed complete-source summaries become dirty
+until their next full rebuild. Legacy groups that might already have lost detail
+are conservatively sealed/stale; recent metrics stay visible as dirty until
+recomputed. All three flags are part of the native schema and recovery digest.
+The migration changes only derived summary state and adds guards/triggers; source
+facts, contracts, purchases and financial records remain untouched.
+
+`pricing_summary_upgrade_test.go` rehearses the populated 49-to-50 transition,
+compares every source/financial table fingerprint, verifies preserved old metrics
+and explicit uncertainty, rejects sealed rewrites, and checks restart idempotency.
+The database-level `pricing_summary_*_test.go` fixtures cover shared writer gates,
+late source updates, conflict-ignored inserts and retained metric evidence.

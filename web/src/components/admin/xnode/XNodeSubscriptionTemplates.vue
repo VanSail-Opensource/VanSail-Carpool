@@ -67,6 +67,6 @@ onScopeDispose(() => { active = false; generation++; controller?.abort() })
         <UButton type="submit" class="justify-self-end" :disabled="!loaded || loading" :loading="busy" :label="t('common.save')" />
       </form>
     </template>
-    <XNodeSubscriptionTemplateEditor v-if="editing" :key="editing.id" :item="editing" :format-locked="assigned.has(editing.id)" :busy="busy" :error="error" @save="saveTemplate" @close="editing = null" />
+    <XNodeSubscriptionTemplateEditor v-if="editing" :key="editing.id" :item="editing" :format-locked="assigned.has(editing.id)" :busy="busy" :error="error" @save="saveTemplate" @close="!busy && (editing = null)" />
   </div>
 </template>

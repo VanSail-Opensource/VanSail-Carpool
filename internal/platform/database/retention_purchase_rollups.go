@@ -16,7 +16,7 @@ func compactPurchasesTx(ctx context.Context, tx *sql.Tx, cutoff, now time.Time, 
 	// Keep keyed purchases, adjustment parents and complete renewal receipts.
 	_, err := tx.ExecContext(ctx, `INSERT INTO maintenance_purchase_candidates(id)
 		SELECT purchase.id FROM purchases purchase
-		WHERE purchase.status IN ('expired','cancelled','failed') AND purchase.updated_at<$1
+		WHERE purchase.status IN ('expired','cancelled','failed') AND purchase.updated_at<$1 AND `+purchaseTimestampOrderSQL("purchase.updated_at")+`<$2
 		AND purchase.idempotency_key IS NULL AND purchase.renewal_batch_id IS NULL
 		AND purchase.auto_renew_source_purchase_id IS NULL
 		AND NOT EXISTS (SELECT 1 FROM purchase_addon_adjustments adjustment WHERE adjustment.purchase_id=purchase.id)
@@ -27,7 +27,7 @@ func compactPurchasesTx(ctx context.Context, tx *sql.Tx, cutoff, now time.Time, 
 		AND NOT EXISTS (SELECT 1 FROM provider_operation_items item
 			JOIN provider_operations operation ON operation.id=item.operation_id
 			WHERE item.target_type='purchase' AND item.target_id=purchase.id
-			AND operation.status IN ('queued','processing','pending_review','partial'))`, stamp(cutoff))
+			AND operation.status IN ('queued','processing','pending_review','partial'))`, retentionCandidateUpperBound(cutoff), purchaseTimestampOrder(cutoff))
 	if err != nil {
 		return fmt.Errorf("select purchase cleanup set: %w", err)
 	}

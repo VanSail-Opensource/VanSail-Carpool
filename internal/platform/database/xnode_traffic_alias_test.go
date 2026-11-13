@@ -70,12 +70,12 @@ func TestXNodeTrafficRekeyedAggregatesDoNotReplayCumulativeCounters(t *testing.T
 }
 
 func TestXNodeTrafficAliasRequiresOwnerAndPeriodNodeEvidence(t *testing.T) {
-	for _, scenario := range []string{"foreign-alias", "foreign-canonical-alias", "unmapped-member", "untracked-node", "tracked-node"} {
+	for _, scenario := range []string{"foreign-alias", "foreign-canonical-alias", "foreign-alias-sample", "unmapped-member", "untracked-node", "tracked-node"} {
 		t.Run(scenario, func(t *testing.T) {
 			store, identity, period := xnodeTrafficFixture(t)
 			ctx := context.Background()
 			owner := identity.UserID
-			if scenario == "foreign-alias" || scenario == "foreign-canonical-alias" {
+			if scenario == "foreign-alias" || scenario == "foreign-canonical-alias" || scenario == "foreign-alias-sample" {
 				owner = "another-member"
 			}
 			if scenario != "unmapped-member" {
@@ -88,11 +88,11 @@ func TestXNodeTrafficAliasRequiresOwnerAndPeriodNodeEvidence(t *testing.T) {
 				user = int(identity.ProxyUserID)
 			}
 			report := wire.TrafficReport{ID: "agent:1", Traffic: wire.Traffic{user: {4, 0}}}
-			if scenario == "untracked-node" || scenario == "tracked-node" {
+			if scenario == "untracked-node" || scenario == "tracked-node" || scenario == "foreign-alias-sample" {
 				at := time.Now().UTC()
 				report.Samples = []wire.TrafficSample{{UserID: user, AccountingPeriod: period.ID, From: at, Through: at, UploadBytes: 4}}
 			}
-			if scenario == "tracked-node" {
+			if scenario == "tracked-node" || scenario == "foreign-alias-sample" {
 				if err := store.TrackXNodePeriodNode(ctx, period.ID, "node"); err != nil {
 					t.Fatal(err)
 				}

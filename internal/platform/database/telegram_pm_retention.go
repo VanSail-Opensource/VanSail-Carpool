@@ -29,7 +29,8 @@ func reconcileExpiredPMOperationsTx(ctx context.Context, tx *sql.Tx, now time.Ti
 		OR (item.target_type='pm_topic_recovery' AND item.target_id ILIKE telegram_pm_conversations.id||':%')))`, stamp(now)); err != nil {
 		return fmt.Errorf("retain uncertain PM profile state: %w", err)
 	}
-	if counts["telegram_pm_updates"], err = deleteCount(ctx, tx, `DELETE FROM telegram_pm_updates WHERE created_at<=$1`, stamp(now.Add(-pmReceiptRetention))); err != nil {
+	cutoff := now.Add(-pmReceiptRetention)
+	if counts["telegram_pm_updates"], err = deleteCount(ctx, tx, `DELETE FROM telegram_pm_updates WHERE created_at<$1 AND `+purchaseTimestampOrderSQL("created_at")+`<=$2`, retentionCandidateUpperBound(cutoff), purchaseTimestampOrder(cutoff)); err != nil {
 		return fmt.Errorf("prune PM update receipts: %w", err)
 	}
 	return nil

@@ -122,6 +122,17 @@ typed expansion, retaining the 2 MiB HTTP/WS document limit. Cancellation joins
 started executor callbacks before output is released or replacement work starts.
 `solana_cursor.go` compacts only owners outside the complete watched recipient
 set; closed accounts and unpaid late-payment recipients remain monitored.
+`cursor_limits.go` bounds serialized progress to 2 MiB and its decoding graph,
+with at most 4,096 retained Solana account histories per token rail. Discovery
+or persistence beyond these bounds closes readiness and retains the earlier
+cursor and payment evidence for operator review; it never evicts a watched
+owner's archived history. `cursor_limits_test.go` and the database cursor-bound
+regression cover rejection before allocation/provider work or durable mutation.
+`time_page_recipients.go` binds TRON fingerprints and TON offsets to the exact
+ordered recipient query. A changed set restarts the same saved time window;
+durable event identities deduplicate repeated proof. Invalid negative indexes
+or impossible time windows fail proof instead of panicking or skipping history.
+`time_page_recipients_test.go` verifies the actual restarted provider queries.
 `memory_test.go` covers graph/page limits, cursor retention and callback joining.
 The single shared concurrency setting, settlement and durable evidence retention
 are unchanged. Lifecycle logs memory and goroutines once per minute.

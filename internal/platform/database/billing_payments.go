@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"time"
@@ -56,13 +57,10 @@ func (s *Store) ExpirePaymentOrder(ctx context.Context, orderID, provider string
 // ExpireStalePaymentOrders closes locally expired attempts without crediting them.
 
 func (s *Store) ExpireStalePaymentOrders(ctx context.Context, now time.Time) error {
-	_, err := s.db.ExecContext(ctx, `UPDATE payment_orders SET status='expired',provider_payload='{}',payment_url=NULL,
-		qr_payload=CASE WHEN receiving_address IS NOT NULL THEN NULL ELSE qr_payload END,updated_at=$1
-		WHERE provider<>'bepusdt' AND status IN ('creating','pending') AND cancelled_at IS NULL AND expires_at<=$2`, stamp(now), stamp(now))
-	if err != nil {
-		return fmt.Errorf("expire stale payment orders: %w", err)
-	}
-	return nil
+	_, err := hourlyCreditTransaction(ctx, s, func(tx *sql.Tx) (struct{}, error) {
+		return struct{}{}, expireStalePaymentsTx(ctx, tx, now)
+	})
+	return err
 }
 
 // PaymentOrderByID loads one payment order.

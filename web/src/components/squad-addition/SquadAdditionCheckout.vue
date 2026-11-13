@@ -34,7 +34,7 @@ function goToBalance(): void {
       <UButton block trailing-icon="i-ph-house" :label="$t('catalog.returnHome')" data-haptic="navigate" @click="emit('home')" />
     </template>
     <template v-else>
-      <UButton class="squad-addition-checkout__back" color="neutral" variant="ghost" icon="i-ph-arrow-left" :label="$t('catalog.back')" data-haptic="navigate" @click="emit('back')" />
+      <UButton class="squad-addition-checkout__back" color="neutral" variant="ghost" icon="i-ph-arrow-left" :label="$t('catalog.back')" :disabled="purchasing" data-haptic="navigate" @click="emit('back')" />
       <div class="squad-addition-checkout__intro">
         <div class="section-heading section-heading--stacked"><h2>{{ $t('home.squadAddition.checkoutTitle') }}</h2><p>{{ $t('home.squadAddition.checkoutDescription') }}</p></div>
       </div>

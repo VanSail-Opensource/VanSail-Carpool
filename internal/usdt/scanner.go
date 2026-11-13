@@ -39,24 +39,37 @@ func (s *scanner) check(ctx context.Context) error {
 }
 
 func (s *scanner) scan(ctx context.Context, c Cursor, addresses []string) (Batch, error) {
+	if err := ValidateCursor(c); err != nil {
+		return Batch{}, err
+	}
 	if !s.checked {
 		if err := s.check(ctx); err != nil {
 			return Batch{}, err
 		}
 	}
+	var batch Batch
+	var err error
 	switch s.client.spec.Family {
 	case "evm":
-		return s.scanEVM(ctx, c, addresses)
+		batch, err = s.scanEVM(ctx, c, addresses)
 	case "tron":
-		return s.scanTron(ctx, c, addresses)
+		batch, err = s.scanTron(ctx, c, addresses)
 	case "solana":
-		return s.scanSolana(ctx, c, addresses)
+		batch, err = s.scanSolana(ctx, c, addresses)
 	case "aptos":
-		return s.scanAptos(ctx, c, addresses)
+		batch, err = s.scanAptos(ctx, c, addresses)
 	case "ton":
-		return s.scanTON(ctx, c, addresses)
+		batch, err = s.scanTON(ctx, c, addresses)
+	default:
+		return Batch{}, ErrConfiguration
 	}
-	return Batch{}, ErrConfiguration
+	if err != nil {
+		return Batch{}, err
+	}
+	if err := ValidateCursor(batch.Cursor); err != nil {
+		return Batch{}, err
+	}
+	return batch, nil
 }
 
 func hexNumber(raw string) (uint64, error) {
@@ -103,11 +116,17 @@ type timePage struct {
 	Offset      int    `json:"offset"`
 	Fingerprint string `json:"fingerprint"`
 	Completed   int64  `json:"completed"`
+	Recipients  string `json:"recipients,omitempty"`
 }
 
 func loadTimePage(c Cursor) (timePage, error) {
 	var p timePage
-	if c.Value != "" && json.Unmarshal([]byte(c.Value), &p) != nil {
+	if err := decodeCursor(c.Value, &p); err != nil {
+		return p, err
+	}
+	latest := time.Now().UTC().Add(2 * time.Minute).Unix()
+	if p.Start < 0 || p.End < 0 || p.Completed < 0 || p.Address < 0 || p.Offset < 0 ||
+		p.End > 0 && p.Start > p.End || p.End > latest || p.Completed > latest {
 		return p, ErrProof
 	}
 	if p.End == 0 {

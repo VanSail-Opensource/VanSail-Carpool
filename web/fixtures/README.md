@@ -258,13 +258,11 @@ existing empty/slow/error/multiple-origin/large modes cover the new sections too
 
 `ip-lookup-rating-audit.ts` constructs all six report tiers (`rating=perfect|excellent|good|average|poor|incomplete`). `many-transfers` and `long-labels` exercise pagination and graph clipping. These are constructed browser evidence, not upstream collection or billing proof.
 
-- `XNodeAudit.vue`, `xnode-audit.ts` and `xnode-audit.html` provide constructed X-Node workspace and migration browser states. Query flags cover empty, slow, error, source preview, unsupported methods, pending receipts, recovery and Chinese localization. They never connect to production agents.
+- `XNodeAudit.vue`, `xnode-audit.ts` and `xnode-audit.html` provide constructed X-Node workspace browser states. Query flags cover empty, slow, error, native configuration previews, pending receipts, recovery and Chinese localization. They never connect to production agents.
   `legacy-source-rule` supplies an old enabled inventory-match rule to verify
   that the global firewall editor still exposes only supported detection rules.
   `not-ready` and `stale-metrics` exercise connected-but-unavailable node badges;
   the default ready fixture deliberately represents an older activity capability set.
-  `final` selects all-native checkpoints; `final-error` rejects completion to
-  exercise export review and retry without changing provider ownership.
 
 - `public-subscription-audit.ts` and `public-subscription-audit.html` supply populated, loading, empty, partial and invalid/revoked-link browser cases. Metadata requests record credential omission; copy and QR remain local.
 
@@ -272,11 +270,9 @@ existing empty/slow/error/multiple-origin/large modes cover the new sections too
 
 - `DetectorRetirementAudit.vue`, `detector-retirement-audit.ts`, and `detector-retirement-audit.html` exercise the retained browser navigation and affiliate profile at desktop/mobile sizes. Query flags `empty`, `slow`, `error`, `member`, and `zh` cover empty/loading/retry/localized states without detector resources.
 
-X-Node audit flags `source&shared` and `shared-error` exercise the localized shared SS-2022 preview warning and a refused handover that retains source ownership.
-
 - `RetiredControlsAudit.vue` exercises real catalog-node, statistics, administrator account-action and squad-editor components through the legacy mode of `detector-retirement-audit.ts`, including constructed loading, empty and error states.
 
-`MemberNodesAudit.vue` exercises member metrics, formats and revision-aware routing in native mode of the retirement fixture.
+`MemberNodesAudit.vue` exercises member metrics, formats and revision-aware routing in native mode of the retirement fixture. Its routing mock implements current endpoint/template choices, previews and durable save receipts; the retired raw member outbounds/template methods are removed. The hosted member recovery suite verifies the exact versioned save payload and operation key.
 
 The X-Node fixture also supplies named service users, access edits, isolated routing and subscription rotation. Flags `services-empty`, `service-error` and `service-save-error` exercise its browser states without contacting agents.
 
@@ -292,7 +288,7 @@ configured backend. This exercises timeout errors and retained drafts without
 requiring manual network interception. Initial-load timeout retries use the
 normal fixture data.
 
-`stablecoin-audit.ts` and `stablecoin-audit.html` mount actual token settings, review dismissal and selected-payment credit dialogs with constructed data. Flags `credit`, `zh`, `dark`, `slow`, `empty`, `error`, `save-error` and `action-error` cover both outcomes, failed loads/saves and retry. `window.__stablecoinAudit` records requests; it never contacts a chain.
+`stablecoin-audit.ts` and `stablecoin-audit.html` mount actual token settings, transfer review and payment instructions with constructed data. `stored` supplies an endpoint for the mocked server probe; `check-error` returns its constructed failure. `purged-review&action-error` retains a failed dismissal until `window.__stablecoinAudit.recover=true`, then retry removes the constructed transfer. The trace records checks, dismissals, settings and copies. The hosted browser suite checks these actions under its network-denial guard; no chain or backend request is made.
 
 `NativeAdminAudit.vue`, `native-admin-audit.ts` and `native-admin-audit.html` mount actual profile metrics/TXB controls, machine tables/charts and browser statistics with constructed signed-request data. Flags `view=machine`, `view=statistics`, `empty`, `slow`, `error`, `save-error`, `dark` and `zh` exercise states; `window.__nativeAdminTarget` steers profile races and `window.__nativeAdminAudit` records scoped calls.
 

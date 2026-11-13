@@ -5,6 +5,16 @@ fact and returns that committed user snapshot. A single-space Telegram refresh
 cannot overwrite a newer fact for the other space from its stale request user.
 The SQL column comes from an exact allowlist; onboarding remains independent.
 
+Built-in stablecoin evidence discovery checks the original parsed order creation
+instant after a coarse SQL candidate bound. Whole-second and fractional retained
+timestamps cannot hide a valid receiving event or expose an earlier one as a
+matching payment. `usdt_evidence_boundary_test.go` covers inclusive and nanosecond
+boundaries; settlement continues to recheck its own financial conditions.
+Stablecoin batches validate the shared cursor size limits before any mutation.
+Cursor reads bound SQL materialization and reject oversized retained state.
+`usdt_cursor_bounds_test.go` preserves the prior cursor and transfer inventory
+when a proposed batch exceeds the limit; no payment obligation is discarded.
+
 Purchase queue admission compares parsed paid boundaries at nanosecond precision;
 variable-width timestamp strings and PostgreSQL's microsecond timestamps must
 not shorten an existing term. Active-term add-on settlement rechecks the squad's
@@ -491,7 +501,7 @@ competing partial writers, stale work, revision advancement and identity changes
 
 - `billing_purchase_addon_fingerprint.go`, `billing_purchase_addon_quote.go`, and `billing_purchase_addons.go` validate, price, replay-protect, debit, record, and queue active-term squad additions in one transaction.
 
-- `timestamp_cursor.go` signs filter-bound timestamp/ID cursor payloads shared by administrative inventories.
+- `timestamp_cursor.go` encodes filter-bound timestamp/ID cursor payloads shared by administrative inventories.
 - `admin_users_page.go`, `admin_entitlements_page.go`, `admin_finance_pages.go`, and `admin_jobs_page.go` provide stable filtered pages without fixed-cap truncation.
 - `open_configured.go` opens PostgreSQL; `postgres/` owns migrations, native schema
   contracts, ownership fencing and recovery fingerprints.
@@ -1016,7 +1026,6 @@ the original before-refund amount.
 `pricing_worker_state_test.go` rejects a delayed observation as a source of false
 continuity gaps while preserving the original recorded outage interval.
 
-Renewal contracts, numerical snapshots, coupon economics and settlement: `pricing_renewal_budget.go`, `pricing_renewal_candidates.go`, `pricing_cost_evidence.go`, `pricing_renewal_reads.go`, `pricing_renewal_schedule.go`, `pricing_renewal_settlement.go`, `pricing_renewal_snapshot.go`.
 
 Bounded retention of settled or summarized operational records: `retention_node_events.go`, `retention_sync_jobs.go`, `retention_timestamps.go`.
 
@@ -1116,7 +1125,6 @@ Provider requests remain outside every transaction.
 - `connection_ip_block_expiry_retry_generated.go` wraps the transactional methods in `connection_ip_block_expiry.go`.
 - `connection_ip_blocks_mutations_retry_generated.go` wraps the transactional methods in `connection_ip_blocks_mutations.go`.
 - `connection_scan_lifecycle_retry_generated.go` wraps the transactional methods in `connection_scan_lifecycle.go`.
-- `connection_scan_start_retry_generated.go` wraps the transactional methods in `connection_scan_start.go`.
 - `connection_scans_retry_generated.go` wraps the transactional methods in `connection_scans.go`.
 - `coupon_grant_listing_retry_generated.go` wraps the transactional methods in `coupon_grant_listing.go`.
 - `coupon_purchase_retry_generated.go` wraps the transactional methods in `coupon_purchase.go`.
@@ -2029,9 +2037,11 @@ preserving prior ownership and discard evidence.
 purging beneficiaries, accepted replay and unchanged retained wallet/history.
 
 `connection_scan_start.go` records queued-to-processing external-start intent
-under the scan row lock; ordinary progress updates cannot admit a second worker
-through that API. `connection_scan_start_retry_generated.go` preserves the
-standard serializable retry policy. `connection_scan_start_test.go` synchronizes
+under owner and scan row locks; ordinary progress updates cannot admit a second
+worker through that API. Its complete-transaction retry helper preserves elapsed
+lock/backoff time when checking immutable request expiry. A closed owner or
+expired request returns its committed failed receipt before remote work.
+`connection_scan_start_test.go` synchronizes
 eight DB-backed workers after their queued reads and proves one native job,
 one retained delivery and unchanged winning evidence. `connection_scan_lookup_test.go`
 checks typed owner-scoped absence without relabeling query cancellation/outage.
@@ -2102,3 +2112,151 @@ prevent cross-owner adoption; the old/new ID audit commits with the replacement.
 audit rollback, replay and replacement setup attempts;
 `emby_identity_restore_http_test.go` exercises missing-old-ID and exact-name
 recovery through the production HTTP client without creating another account.
+
+Automatic renewal scans and failure settlement parse exact stored instants after
+indexed coarse candidate selection. The whole-second boundary of an RFC3339Nano
+value cannot revoke a fractional paid term early, defer a due renewal, or hide a
+later paid successor. A superseded source preference is retired without emitting
+a failure notice; failure projections compare the same exact successor windows.
+
+Payment expiry scans and checkout insertion share one row-locked exact-deadline
+implementation. The indexed timestamp predicate only selects candidates; stored
+RFC3339Nano values are parsed before any checkout is expired. Resumable checkout
+selection also compares exact expiry and creation times, including whole-second
+and fractional boundaries.
+
+### Additional persistence audit coverage
+
+- `automatic_renewal_boundaries.go`, `automatic_renewal_failure_read.go`, and
+  `automatic_renewal_boundaries_test.go` preserve exact expiry, replacement and
+  failure semantics across variable timestamp precision.
+- `payment_expiry_boundary_test.go` covers exact payment expiry through both
+  scanner and checkout admission, plus resumable checkout creation ordering.
+- `purchase_active_window.go` shares exact current purchase selection between
+  entitlement projection, draw rewards, subscription extensions and message rewards.
+- `purchase_extension_queue.go` shifts only actual queued successors at exact
+  boundaries; `activity_purchase_boundary_test.go` covers reward eligibility and
+  queue continuity across whole-second/fractional timestamps.
+- `activity_stored_definition_test.go` rejects malformed stored draw rewards and
+  aggregate stock before sampling, fees, reservations or settlement expansion.
+  Committed receipts and retired-draw refunds retain their recovery paths.
+- `activity_reservation_revisions_test.go` covers multiple open-raffle reservation
+  increases and releases, with one immutable ledger reference per ticket/revision.
+- `coupon_stored_discount_test.go` covers schema-legal malformed percentage,
+  fixed-cap and missing-mode definitions. Checkout and attached renewal refuse
+  these values before debit instead of silently charging the undiscounted amount.
+- `usdt_cursor_bounds_test.go` covers oversized cursor save rollback and bounded
+  legacy cursor materialization; `usdt_evidence_boundary_test.go` covers exact
+  order creation boundaries when projecting stablecoin payment evidence.
+
+### Exact purchase boundary audit
+
+- `purchase_timestamp_order.go` normalizes canonical UTC purchase stamps to nine fractional digits for exact SQL ordering without changing retained evidence.
+- `member_control_boundaries_test.go` covers fractional overlap eligibility, nanosecond queued selection and exact refund/activation rebase boundaries.
+- `xnode_timestamp_boundaries_test.go` covers exact fractional purchase repair, queued continuity and inclusive member growth.
+- `xnode_access_repair_generation_test.go` covers owner generation/status, closure generation and retained retired-node barriers.
+
+The native command audit also verifies fresh administrator authority inside the creation transaction while replaying previously accepted intent; certificate command tests exercise both paths. Native IP purge proof and automatic lease deadlines now retain exact fractional purchase stamp precision, and certificate receipt ordering uses the same exact UTC comparison.
+
+- `admin_entitlement_boundaries_test.go` covers exact long-duration grant receipts, nanosecond overlap, active bulk/replacement/member facets and canonical date bounds. Manual grants retain exact purchased seconds beyond `time.Duration`'s representable interval; live administrative eligibility uses the shared UTC timestamp ordering helper.
+
+- `affiliate_recovery_test.go` verifies malformed stored tiers fail closed without partial payment credit, stay repairable through ordinary administrator configuration changes, and replay original commission receipts without aborting the surrounding transaction. Referral pages beyond the known count return an empty page before offset arithmetic.
+
+Native firewall exemptions and retained ban deadlines use exact stamp ordering for payment authority, retention and chronological pagination. Fresh `xnode_command` and `xnode_firewall_exemption` creation rechecks current administrator authority in the transaction while preserving previously committed command replay.
+
+- `ip_lookup_boundaries_test.go` covers exact paid quota admission and cash fallback, final-nanosecond lease heartbeat, and takeover at exact expiry. Report publication compares retained nanosecond deadlines against the actual database clock without rounding the deadline.
+- `xnode_payg_jobs_test.go` covers eligible-owner repair scheduling past earlier purging, purged or bot-blocked owners, with removal/retirement admission and durable queue deduplication. Native PAYG retained-credit deletion fences, ledger history/cost bounds and notification candidates preserve exact purchase stamp precision.
+
+API-token last-use throttling and active-token priority preserve exact expiration and five-minute boundaries across whole-second and fractional stamps.
+
+- `notification_boundaries_test.go` covers exact 48-hour expiry reminders, paid successor suppression, nanosecond traffic-reset rearming and long-duration administrator extension facts. Native threshold notices retain the locked current owner/generation/identity/period and live counter fences. Typed hourly warnings compare floored clocks so a future paid boundary is never rounded to expired.
+
+Coupon administrator usage counts include zero-credit balance multiplier redemptions, matching the use-limit admission rule.
+
+- `member_combo_control_conflicts.go` shares the authoritative in-flight operation/job/temporary-ban predicate between direct admission and bounded native repair candidate selection, so blocked early candidates cannot starve eligible owners.
+- `retention_boundaries_test.go` covers exact unpaid payment/activity grace windows, live terminal scan TTL, conserved rollup totals and live IP execution leases that must not be refunded. Large retention scans keep a widened indexed candidate bound before exact nanosecond comparison; retained evidence is never reformatted.
+
+Native recovery preserves stored-node ownership for legacy cursors and canonical owner equality for identity aliases. Raw usage and coverage reports retain exact request bounds against stored microsecond samples; period finalization compares the exact ended-at instant independent of equivalent stamp spelling. Access repair filters current combo conflicts before its page limit, and incomplete bot-blocked identities cannot starve later eligible repairs; complete paid identities remain repairable.
+
+- `outbox_boundaries_test.go` covers exact scheduled-start and heartbeat recovery deadlines, stale generation fencing, valid bounded Unicode failure persistence, and current-administrator deletion admission. Resource-serialized claims retain chronological order across variable timestamp precision.
+- `pricing_purchase_boundaries_test.go` covers exact current-term selection, expired-source preparation rejection, and the 72-hour/seven-day preparation windows at nanosecond boundaries.
+- `statistics_time_bounds.go` shares indexed broad candidates plus exact stamp-owned reporting intervals; `statistics_snapshots_test.go` protects retained integer JSON values above the floating-point exact range.
+
+- `telegram_pm_boundaries_test.go` covers exact inferred read evidence, latest route selection, chronological conversation pagination, and the complete 30-day webhook deduplication window.
+- `statistics_time_bounds_test.go`, `product_statistics_time_bounds_test.go`, and `usage_breakdown_time_bounds_test.go` verify exact reporting intervals across stamp-owned evidence and typed PostgreSQL observations/lifecycles. Activity report averages retain exact wide SUM/count arithmetic before rounding their final result.
+- `pricing_model_support_test.go` binds model diagnostics and sample lineage to the retained compute observations after the wire budget is applied. The active optimizer retains exact cost versions; the unused cost-evidence loader and obsolete noncursor PAYG batch wrapper were retired.
+
+Onboarding completion, preference changes and legacy paid identity linking recheck active account lifecycle at the persistence boundary. Paid provisioning and startup backlog candidates preserve exact remaining purchase time, including the final nanosecond.
+
+- `statistics_read_snapshot_test.go` verifies multi-query product and commerce reports use a consistent repeatable-read snapshot while concurrent changes become visible to the next request.
+- `connection_scan_admission_test.go` covers replay-safe fresh admission, inactive-owner rejection and exact request TTL before the durable external-start marker. A stopped queued scan becomes a retained terminal failure without provider work.
+- `finance_chronology_test.go` verifies exact ledger list/keyset chronology and refund unwinding of the newest queued term across whole-second and fractional boundaries.
+
+- `admin_timestamp_fixture_test.go` creates canonical cursor-bound whole-second, nanosecond and equal-time records for administrative chronology regressions.
+- `admin_timestamp_pages_test.go` verifies exact timestamp/ID ordering across five administrative paged APIs and six recent receipt projections, retaining cursor filter binding and immutable values.
+
+- `pricing_dataset_keys.go` shares exact chronological dataset seek keys, keeping timestamp scope and deterministic identity ordering consistent across export pages.
+
+Matching stablecoin evidence applies its exact order-creation bound before the 100-row cap, so older whole-second transfers cannot starve eligible fractional receipts. `usdt_evidence_boundary_test.go` covers the adversarial full-page boundary. Inline group-message deduplication pruning uses the same precise cutoff as scheduled retention.
+
+
+## Pricing summary compaction and late facts
+
+Daily calibration and model-validation records expose three distinct states.
+`dirty` records still have complete raw source but require a full rebuild before
+being treated as current. `sealed` records preserve an aggregate whose source has
+begun compaction. A later material fact sets `stale` on the sealed snapshot;
+metrics and original source watermark remain unchanged, and partial detail can
+never replace that retained evidence. Existing groups that may already have been
+compacted migrate conservatively to sealed/stale. This state is exported with
+the datasets; historical uncertainty is not fabricated into fresh metrics.
+
+Calibration INSERT/UPDATE statements acquire a shared advisory gate before any
+source tuple. After-row triggers mark actual eligible material changes, while
+no-op writes and conflict-ignored insertion retries preserve state. Summarizers
+and source-only compaction try an exclusive gate and defer when writers are
+active. Financial expiry/override mutations remain outside that critical section.
+Sealing and stale flags are durable; sealed metric, scope and watermark rewrites,
+unsealing and stale clearing are forbidden by PostgreSQL guards.
+
+- `pricing_summary_fixture_test.go` supplies isolated retained summary/source records and exact evidence assertions.
+- `pricing_summary_triggers_test.go` covers dirty invalidation, sealed late-fact markers, excluded outcomes, no-op/conflict replay, retention deletion and ordinary late renewal cleanup.
+- `pricing_summary_lock_test.go` verifies the source writer waits before acquiring a tuple lock and observes a summary committed while its outer statement was blocked.
+- `postgres/pricing_summary_upgrade_test.go` verifies populated upgrade preservation, conservative legacy state and one-time recovery initialization.
+
+- `pricing_forecast_actuals.go` publishes forecast evaluations with their source watermark and marks complete-source groups dirty or materially changed sealed groups stale.
+- `pricing_summary_lock.go` centralizes shared writer gates and nonblocking exclusive summary/compaction admission.
+- `pricing_retention_seal.go` verifies complete clean cohorts and seals their retained metrics before bounded source deletion.
+- `pricing_summary_recovery_test.go` covers backdated corrections, dirty cohort rebuilds and retained sealed metrics with explicit staleness.
+- `pricing_summary_retention_test.go` covers summary publication, bounded source compaction and late-fact recovery across retention boundaries.
+- `pricing_forecast_admission_test.go` verifies forecast publication participates in summary admission before writing source rows, preventing source/summary lock inversion.
+
+Renewal quote responsibilities remain split into focused transaction helpers:
+
+- `pricing_renewal_budget.go` releases invalidated basket reservations and reserves bounded historical campaign term budgets.
+- `pricing_renewal_candidates.go` selects current public prices within contract ceilings, configured change limits and addon cost floors.
+- `pricing_renewal_reads.go` reads immutable quotes and owner-scoped renewal contracts with exact pricing timestamps.
+- `pricing_renewal_schedule.go` selects bounded due renewals and defers preparation without extending purchased access.
+- `pricing_renewal_settlement.go` verifies contract, quote, addon, hold and health facts before applying renewal charges.
+- `pricing_renewal_snapshot.go` captures deterministic public pricing, coupon, cost and health evidence for renewal computation.
+
+Renewal calibration compares derived eligibility and the zero/one settled
+contribution. Equivalent operational state changes, non-exclusion reason updates
+and a refreshed non-null authorization timestamp preserve clean summary state;
+real eligibility or settled-outcome changes still invalidate currentness.
+
+## Concurrent diagnostics and displayed offer evidence
+
+Connection-scan progress updates lock their exact scan row before checking the
+accepted provider identity, monotonic progress and terminal outcome. A delayed
+poll cannot reopen a completed scan or replace newer progress.
+`connection_scan_concurrency_test.go` holds a real competing row update until the
+stale poll waits, then verifies both progress and terminal receipts survive.
+
+Catalog exposure collection bounds the enabled-settings query to the actual
+shown combo IDs. Inventory size cannot silently exclude a displayed dynamic
+offer before the per-response 64-item budget is applied.
+`pricing_exposure_inventory_test.go` records all 513 displayed products in
+bounded responses and verifies same-response replays do not duplicate evidence.
+
+`pricing_command_progress.go` retains bounded global/model recalibration progress in the existing outbox payload. Every target checkpoint compares the exact current status, attempt, claim generation and previous payload; stale claims cannot advance progress. `pricing_command_progress_test.go` verifies continuation beyond 512 products, pending-compute recovery without prefix repetition, and lease fencing.

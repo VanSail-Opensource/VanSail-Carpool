@@ -13,6 +13,8 @@ func (s *Service) Compile(ctx context.Context, nodeID string) (wire.Config, erro
 }
 func (s *Service) compile(ctx context.Context, nodeID string, replacement *Configuration, shared *Snippet, fleet *GlobalConfig, member *Customization) (wire.Config, error) {
 	s = s.withCompileReads(nodeID)
+	restoreDocuments := s.repo.(*compileReads).useDocuments(replacement, shared)
+	defer restoreDocuments()
 	if fleet != nil {
 		s.globalSettings.publish(*fleet)
 	}
@@ -23,9 +25,6 @@ func (s *Service) compile(ctx context.Context, nodeID string, replacement *Confi
 	profile, err := s.repo.XNodeConfiguration(ctx, node.ConfigID)
 	if err != nil {
 		return wire.Config{}, err
-	}
-	if replacement != nil && replacement.ID == profile.ID {
-		profile = *replacement
 	}
 	raw, err := s.vault.Decrypt("xnode.config."+profile.ID, profile.DocumentCipher)
 	if err != nil {
@@ -45,9 +44,6 @@ func (s *Service) compile(ctx context.Context, nodeID string, replacement *Confi
 		snippet, err := s.repo.XNodeSnippet(ctx, id)
 		if err != nil {
 			return wire.Config{}, err
-		}
-		if shared != nil && shared.ID == id {
-			snippet = *shared
 		}
 		text, err := s.vault.Decrypt("xnode.snippet."+id, snippet.DocumentCipher)
 		if err != nil {

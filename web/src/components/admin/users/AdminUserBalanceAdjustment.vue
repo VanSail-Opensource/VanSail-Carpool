@@ -38,8 +38,8 @@ async function adjust(sign: 1 | -1): Promise<void> {
 }
 </script>
 <template>
-  <div><UButton :label="t('adminUsers.adjust')" icon="i-ph-coins" color="neutral" variant="outline" @click="open = true" /></div>
-  <USlideover v-model:open="open" :title="t('adminUsers.adjust')" :description="t('adminUsers.adjustHint')" :dismissible="!busy">
-    <template #body><div class="grid gap-4"><InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice><TxbAmountField id="profile-balance-adjustment" v-model="form.amountTxb" :label="t('adminUsers.amount')" min-minor="1" required /><UFormField :label="t('adminReason.reason')" required><UInput v-model.trim="form.reason" :maxlength="300" :disabled="busy" /></UFormField><div class="row-actions"><UButton :label="t('adminUsers.add')" icon="i-ph-plus" :disabled="!valid || busy" :loading="busy" @click="adjust(1)" /><UButton :label="t('adminUsers.deduct')" icon="i-ph-minus" color="error" variant="outline" :disabled="!valid || busy" @click="adjust(-1)" /></div></div></template>
+  <div><UButton :label="t('adminUsers.adjust')" :disabled="busy" icon="i-ph-coins" color="neutral" variant="outline" @click="open = true" /></div>
+  <USlideover v-model:open="open" :title="t('adminUsers.adjust')" :description="t('adminUsers.adjustHint')" :dismissible="!busy" :close="!busy">
+    <template #body><div class="grid gap-4"><InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice><TxbAmountField id="profile-balance-adjustment" v-model="form.amountTxb" :label="t('adminUsers.amount')" min-minor="1" :disabled="busy" required /><UFormField :label="t('adminReason.reason')" required><UInput v-model.trim="form.reason" :maxlength="300" :disabled="busy" /></UFormField><div class="row-actions"><UButton :label="t('adminUsers.add')" icon="i-ph-plus" :disabled="!valid || busy" :loading="busy" @click="adjust(1)" /><UButton :label="t('adminUsers.deduct')" icon="i-ph-minus" color="error" variant="outline" :disabled="!valid || busy" @click="adjust(-1)" /></div></div></template>
   </USlideover>
 </template>

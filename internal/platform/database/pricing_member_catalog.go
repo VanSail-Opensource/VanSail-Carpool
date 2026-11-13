@@ -39,7 +39,7 @@ func (s *Store) ApplyCatalogPricing(ctx context.Context, user string, c model.Ca
 		p.Price = model.TXBMoney(p.PriceTXBMinor)
 	}
 	var current string
-	err = s.db.QueryRowContext(ctx, `SELECT combo_id FROM purchases WHERE user_id=$1 AND status IN ('active','activating') AND valid_until>$2 ORDER BY valid_until DESC LIMIT 1`, user, pricingStamp(now)).Scan(&current)
+	err = s.db.QueryRowContext(ctx, `SELECT combo_id FROM purchases WHERE user_id=$1 AND status IN ('active','activating') AND `+purchaseTimestampOrderSQL("valid_until")+`>$2 ORDER BY `+purchaseTimestampOrderSQL("valid_until")+` DESC,id LIMIT 1`, user, purchaseTimestampOrder(now)).Scan(&current)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return c, err
 	}

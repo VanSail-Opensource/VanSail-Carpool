@@ -10,7 +10,7 @@ Network context and streaming: `IPASNDetails.vue`, `IPBGPFocus.vue`, `IPBGPTopol
 
 Feature implementation and contracts: `IPLocationMap.vue`, `IPLookupForm.vue`, `IPLookupPage.vue`, `IPLookupProgress.vue`, `IPLookupProgressTasks.vue`, `IPLookupReport.vue`, `IPRPKIStatus.vue`, `IPRefusals.vue`, `IPShodanDetails.vue`, `IPTrafficBars.vue`, `IPTransferHistory.vue`, `map.ts`, `presentation.ts`, `refusalPresentation.ts`, `reportPresentation.ts`, `useBGPGraph.ts`, `useGraphViewport.ts`, `useIPLookup.ts`, `useSharedIPProgress.ts`.
 
-Hosted regression coverage: `bgpGraph.test.ts`, `bgpLayout.test.ts`, `presentation.test.ts`, `refusalPresentation.test.ts`, `useGraphViewport.test.ts`, `IPBGPTopology.test.ts`, `useIPLookup.test.ts`, `useLiveIPDetails.test.ts`.
+Hosted regression coverage: `bgpGraph.test.ts`, `bgpLayout.test.ts`, `presentation.test.ts`, `refusalPresentation.test.ts`, `useGraphViewport.test.ts`, `IPBGPTopology.test.ts`, `useIPLookup.test.ts`, `useLiveIPDetails.test.ts`, `useSharedIPProgress.test.ts`.
 
 `useGraphViewport.ts` leaves wheel scrolling, browser pinch zoom and touch page
 scrolling native by default. Mouse drag, centered toolbar zoom and focused
@@ -45,3 +45,7 @@ Live-detail snapshots retire synchronously on logout or account replacement;
 the replacement account must supply a new snapshot or complete its own read.
 Late streams cannot restore retired details, and disposed views cannot restart
 requests. Hosted IP recovery fixtures exercise these boundaries without providers.
+
+Shared progress refreshes cancel the previous scheduled poll. Only the current,
+unaborted request can schedule another poll, so an obsolete request cannot interrupt
+a slow replacement refresh. `useSharedIPProgress.test.ts` covers this overlap.

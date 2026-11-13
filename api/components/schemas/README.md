@@ -42,6 +42,11 @@ full-duration early-activation quote.
 
 Schema definitions are grouped into bounded sequential shards. The root component registry references each definition by JSON Pointer.
 
+`LedgerKind` includes every active financial writer's category, including add-ons,
+refunds, affiliate and raffle settlements, IP lookups and Telegram deductions.
+Retired questionnaire and traffic-reset categories remain readable as immutable
+financial evidence.
+
 - `schemas-01.yaml`: `ID`, `Timestamp`, `DecimalInteger`, `ApiError`, `TelegramAuthRequest`, `OnboardingStep`, `User`, `AuthState`, `JoinInvite`, `CommunityMembership`, `AgreementRequest`, `WelcomeMessage`, `OnboardingAgreement`, `LocalizedOnboardingContent`, `PublishedOnboarding`, `OnboardingBundle`
 - `schemas-02.yaml`: `OnboardingDraftWrite`, `OnboardingPublishRequest`, `Money`, `ResetStrategy`, typed squad profiles, `SquadProduct` with live accessible nodes, `Combo`, nullable-provider `CatalogNode`, `Catalog`, `ComboWrite`, `SquadProductWrite`
 - `schemas-03.yaml`: `ProxyNode`, `PurchaseRequest`, `PurchaseQuote`, `EntitlementStatus`, `Entitlement`, `Purchase`, `SubscriptionRotation`, `TopNode`, `Statistics`, `StatisticPoint`

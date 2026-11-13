@@ -19,7 +19,7 @@ var ErrAccessAmbiguous = errors.New("XNODE_ACCESS_ALLOWANCE_AMBIGUOUS")
 
 type accessRepairRepository interface {
 	ComboControlConflict(context.Context, string) (bool, error)
-	RepairXNodeAccessPeriod(context.Context, Identity, model.Purchase, Period, time.Time, bool) error
+	RepairXNodeAccessPeriod(context.Context, Identity, model.Purchase, Period, int64, time.Time, bool) error
 }
 
 // RepairAccess runs only in the shared durable outbox, never in compilation or
@@ -114,10 +114,10 @@ func (s *Service) repairAccess(ctx context.Context, userID string) error {
 	if open != nil {
 		// Earlier resets can already be settled. Restore only the existing open
 		// period pointer and retain its counters and all historical evidence.
-		return r.RepairXNodeAccessPeriod(ctx, identity, *purchase, *open, s.now(), false)
+		return r.RepairXNodeAccessPeriod(ctx, identity, *purchase, *open, user.AccountGeneration, s.now(), false)
 	}
 	if closing != nil {
-		return r.RepairXNodeAccessPeriod(ctx, identity, *purchase, *closing, s.now(), false)
+		return r.RepairXNodeAccessPeriod(ctx, identity, *purchase, *closing, user.AccountGeneration, s.now(), false)
 	}
 	if found {
 		return ErrAccessAccountingPending
@@ -142,5 +142,5 @@ func (s *Service) repairAccess(ctx context.Context, userID string) error {
 	}
 	at := s.now().UTC()
 	period := Period{ID: id, ProxyUserID: identity.ProxyUserID, PurchaseID: purchase.ID, StartedAt: at, LastResetAt: &at, LimitBytes: purchase.TrafficLimitBytes, Strategy: purchase.ResetStrategy, Status: "open"}
-	return r.RepairXNodeAccessPeriod(ctx, identity, *purchase, period, at, true)
+	return r.RepairXNodeAccessPeriod(ctx, identity, *purchase, period, user.AccountGeneration, at, true)
 }

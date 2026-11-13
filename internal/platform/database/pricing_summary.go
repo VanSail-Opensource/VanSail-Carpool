@@ -17,7 +17,7 @@ func (s *Store) pricingSummary(ctx context.Context, now time.Time) (map[string]a
 	from := now.AddDate(0, 0, -30)
 	var revenue, paid string
 	var costCount int
-	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(-SUM(delta_txb_minor),0)::text FROM ledger_entries WHERE created_at>=$1 AND created_at<$2 AND kind IN ('purchase_debit','purchase_addon_debit','automatic_renewal','payg_gb','purchase_cancellation','admin_entitlement_cancellation','admin_entitlement_refund','member_refund_credit')`, pricingStamp(from), pricingStamp(now)).Scan(&revenue); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(-SUM(delta_txb_minor),0)::text FROM ledger_entries WHERE created_at>=LEFT($1,19) AND created_at<=LEFT($2,19)||'Z' AND `+purchaseTimestampOrderSQL("created_at")+`>=$1 AND `+purchaseTimestampOrderSQL("created_at")+`<$2 AND kind IN ('purchase_debit','purchase_addon_debit','automatic_renewal','payg_gb','purchase_cancellation','admin_entitlement_cancellation','admin_entitlement_refund','member_refund_credit')`, purchaseTimestampOrder(from), purchaseTimestampOrder(now)).Scan(&revenue); err != nil {
 		return nil, err
 	}
 	// Actual payments have a recording time, not a separate payment date. The
@@ -64,10 +64,10 @@ func (s *Store) pricingSummary(ctx context.Context, now time.Time) (map[string]a
 	}
 	var interventions int
 	var discount string
-	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM pricing_admin_overrides WHERE created_at>=$1`, pricingStamp(from)).Scan(&interventions); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM pricing_admin_overrides WHERE created_at>=$1 AND created_at<$2`, pricingStamp(from), pricingStamp(now)).Scan(&interventions); err != nil {
 		return nil, err
 	}
-	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(discount_minor),0)::text FROM pricing_discount_spend WHERE status='CONSUMED' AND created_at>=$1`, pricingStamp(from)).Scan(&discount); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(discount_minor),0)::text FROM pricing_discount_spend WHERE status='CONSUMED' AND created_at>=$1 AND created_at<$2`, pricingStamp(from), pricingStamp(now)).Scan(&discount); err != nil {
 		return nil, err
 	}
 	overhead, err := s.pricingUnallocatedOverhead(ctx, now)

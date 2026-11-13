@@ -150,13 +150,6 @@ func TestProvisionReconcilesCommittedCreateTimeout(t *testing.T) {
 
 func TestSetupAndLinkedValidationBranches(t *testing.T) {
 	t.Parallel()
-	activeRepository := &serviceRepository{record: ProvisioningRecord{Account: Account{ID: "existing", UserID: "user", Status: StatusActive}}}
-	activeRemote := newServiceRemote()
-	service := NewService(activeRepository, activeRemote, fixedPrice(100), &serviceSecrets{})
-	if account, created, err := service.Setup(context.Background(), "user", "password", Preferences{}); err != nil || created || account.ID != "existing" {
-		t.Fatalf("Setup(existing) = (%+v, %v, %v)", account, created, err)
-	}
-
 	validationRepository := &serviceRepository{baseUsername: "ada"}
 	validationService := NewService(validationRepository, newServiceRemote(), fixedPrice(100), &serviceSecrets{})
 	tests := []struct {
@@ -171,8 +164,8 @@ func TestSetupAndLinkedValidationBranches(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			if _, _, err := validationService.Setup(context.Background(), "user", test.password, test.preferences); err == nil {
-				t.Fatal("Setup() error = nil")
+			if _, err := validationService.prepareSetup(context.Background(), "user", test.password, test.preferences); err == nil {
+				t.Fatal("prepareSetup() error = nil")
 			}
 		})
 	}

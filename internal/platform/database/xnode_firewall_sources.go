@@ -69,7 +69,8 @@ func (s *Store) SweepFirewall(ctx context.Context, now time.Time) error {
 		if err := s.sweepRetiredFirewallTx(ctx, tx); err != nil {
 			return err
 		}
-		if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM xnode_firewall_exemptions WHERE released_version=0 AND until_at<=$1`, stamp(now)).Scan(&count); err != nil {
+		expired := purchaseTimestampOrderSQL("until_at") + ` <= $1`
+		if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM xnode_firewall_exemptions WHERE released_version=0 AND `+expired, purchaseTimestampOrder(now)).Scan(&count); err != nil {
 			return err
 		}
 		if count > 0 {
@@ -77,7 +78,7 @@ func (s *Store) SweepFirewall(ctx context.Context, now time.Time) error {
 			if err != nil {
 				return err
 			}
-			if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_exemptions SET released_version=$1 WHERE released_version=0 AND until_at<=$2`, v, stamp(now)); err != nil {
+			if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_exemptions SET released_version=$2 WHERE released_version=0 AND `+expired, purchaseTimestampOrder(now), v); err != nil {
 				return err
 			}
 		}
@@ -85,7 +86,7 @@ func (s *Store) SweepFirewall(ctx context.Context, now time.Time) error {
 		// snapshot lifetime; lagging nodes receive a full snapshot after seven days.
 		if prune {
 			for _, table := range []string{"xnode_firewall_bans", "xnode_firewall_sources"} {
-				if _, err := tx.ExecContext(ctx, `DELETE FROM `+table+` WHERE released_version>0 AND released_at<$1`, stamp(now.Add(-7*24*time.Hour))); err != nil {
+				if _, err := tx.ExecContext(ctx, `DELETE FROM `+table+` WHERE released_version>0 AND `+purchaseTimestampOrderSQL("released_at")+` < $1`, purchaseTimestampOrder(now.Add(-7*24*time.Hour))); err != nil {
 					return err
 				}
 			}

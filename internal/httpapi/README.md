@@ -394,3 +394,12 @@ poll handler. Missing or foreign scans remain 404; transient storage reads retur
 paths return a noncacheable 404 before embedded files or HTML fallbacks are read.
 `static_assets_test.go` covers unknown methods/paths, accidental API assets,
 registered handlers and neighboring browser routes.
+
+`admin_backup_authorization_test.go` verifies that a revoked administrator at the
+backup transaction boundary receives `403 FORBIDDEN`, before filesystem changes.
+`authentication_storage_test.go` distinguishes retryable account/session storage
+failures from invalid Telegram authentication and preserves existing cookies.
+`onboarding_storage_test.go` verifies local agreement/continuation storage failures
+return retryable availability errors while actual state conflicts remain distinct.
+
+`admin_backup_authorization_test.go` verifies revoked backup-deletion authority maps to a forbidden response. `authentication_storage_test.go` and `onboarding_storage_test.go` preserve retryable local storage failures without corrupting authentication or onboarding state.

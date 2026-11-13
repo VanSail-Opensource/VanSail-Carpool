@@ -30,11 +30,23 @@ func pricingRelatedScope(d pricing.Dataset, dimension string, values []string, f
 		return `EXISTS(SELECT 1 FROM xnode_daily_usage usage JOIN xnode_identities identity ON identity.proxy_user_id=usage.proxy_user_id LEFT JOIN xnode_payg_accounts payg ON payg.proxy_user_id=usage.proxy_user_id WHERE usage.node_id IN (` + marks + `) AND COALESCE(identity.user_id,payg.user_id)=export_rows.` + column(d.User) + `)`, args
 	}
 	if dimension == "user" && d.Product != "" {
-		query := `EXISTS(SELECT 1 FROM pricing_offers offers WHERE offers.user_id IN (` + marks + `) AND offers.product_id=export_rows.` + column(d.Product) + `) OR EXISTS(SELECT 1 FROM purchases owned WHERE owned.user_id IN (` + secondMarks + `) AND owned.combo_id=export_rows.` + column(d.Product) + `)`
+		kind := pricingDatasetProductType(d)
+		query := `EXISTS(SELECT 1 FROM pricing_offers offers WHERE offers.user_id IN (` + marks + `) AND offers.product_type=` + kind + ` AND offers.product_id=export_rows.` + column(d.Product) + `) OR EXISTS(SELECT 1 FROM purchases owned WHERE owned.user_id IN (` + secondMarks + `) AND ` + kind + `='combo' AND owned.combo_id=export_rows.` + column(d.Product) + `)`
 		return "(" + query + ")", append(append([]any(nil), args...), args...)
 	}
 	if dimension == "node" && d.Product != "" {
-		return `EXISTS(SELECT 1 FROM xnode_group_bindings binding WHERE binding.node_id IN (` + marks + `) AND (binding.group_id=export_rows.` + column(d.Product) + ` OR EXISTS(SELECT 1 FROM combos combo JOIN jsonb_array_elements_text((combo.included_squad_uuids)::jsonb) included ON included.value=binding.group_id WHERE combo.id=export_rows.` + column(d.Product) + `)))`, args
+		kind := pricingDatasetProductType(d)
+		return `EXISTS(SELECT 1 FROM xnode_group_bindings binding WHERE binding.node_id IN (` + marks + `) AND (` + kind + ` IN ('addon','payg') AND binding.group_id=export_rows.` + column(d.Product) + ` OR ` + kind + `='combo' AND EXISTS(SELECT 1 FROM combos combo JOIN jsonb_array_elements_text((combo.included_squad_uuids)::jsonb) included ON included.value=binding.group_id WHERE combo.id=export_rows.` + column(d.Product) + `)))`, args
 	}
 	return "", nil
+}
+
+func pricingDatasetProductType(d pricing.Dataset) string {
+	if strings.Contains(d.Query, "product_type") {
+		return "export_rows.product_type"
+	}
+	if d.Name == "raw/payg_charges" {
+		return "'payg'"
+	}
+	return "'combo'"
 }

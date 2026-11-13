@@ -15,7 +15,8 @@ import (
 // SaveStatisticsPartition atomically replaces one independent last-good JSON part.
 func (s *Store) SaveStatisticsPartition(ctx context.Context, partition string, payload []byte, generatedAt time.Time) error {
 	partition = strings.TrimSpace(partition)
-	var object map[string]any
+	// Preserve exact numeric tokens, including integers above float64 precision.
+	var object map[string]json.RawMessage
 	if partition == "" || len(partition) > 80 || len(payload) == 0 || len(payload) > 2*1024*1024 ||
 		json.Unmarshal(payload, &object) != nil || object == nil {
 		return fmt.Errorf("save statistics partition: invalid partition payload")

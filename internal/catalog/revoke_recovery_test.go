@@ -19,7 +19,7 @@ func TestSubscriptionRevokeRecoversRecordedTerminalItem(t *testing.T) {
 				TargetID: "owner", Status: status, ErrorCode: "RECORDED_OUTCOME", ProviderReference: "provider-receipt",
 				ResultJSON: `{"sequence":9007199254740993}`}}
 			service := NewService(repository, nil, time.Minute)
-			service.cacheDashboard("owner", RemoteDashboard{SubscriptionURL: "old-credential"}, time.Now())
+			service.cacheDashboard(model.User{ID: "owner"}, RemoteDashboard{SubscriptionURL: "old-credential"}, time.Now(), service.cacheEpoch)
 			operation := providerops.Operation{Receipt: model.OperationReceipt{ID: "operation",
 				Kind: providerops.KindSubscriptionRevoke, Status: string(providerops.StatusProcessing)}}
 			want := providerops.Completion{Status: status, ErrorCode: repository.item.ErrorCode,

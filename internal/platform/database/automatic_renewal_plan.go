@@ -79,11 +79,11 @@ func automaticRenewalPlanTx(ctx context.Context, tx *sql.Tx, userID, purchaseID 
 			return plan, nil
 		}
 	}
-	var queued int
-	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE user_id=$1\n\t\tAND status IN ('active','activating','queued') AND id<>$2 AND valid_until>$3))::integer", userID, purchaseID, stamp(now)).Scan(&queued); err != nil {
+	queued, err := otherRenewalPurchaseEndsAfter(ctx, tx, userID, purchaseID, now)
+	if err != nil {
 		return AutoRenewalPlan{}, fmt.Errorf("check queued purchase: %w", err)
 	}
-	if queued == 1 {
+	if queued {
 		plan.IneligibleReason = AutoRenewalReasonQueuedPurchase
 	}
 	// Owned renewal: a hidden or inactive combo stays renewable (the same
@@ -157,7 +157,7 @@ func automaticRenewalPlanTx(ctx context.Context, tx *sql.Tx, userID, purchaseID 
 			return plan, nil
 		}
 		discount, err = quoteAttachedRecurringDiscountTx(ctx, tx, userID, *purchase.CouponGrantID, plan.GrossMinor)
-		if errors.Is(err, ErrNotFound) || errors.Is(err, ErrConflict) {
+		if errors.Is(err, ErrNotFound) || errors.Is(err, ErrConflict) || errors.Is(err, coupons.ErrInvalidInput) {
 			plan.IneligibleReason = AutoRenewalReasonDiscountUnavailable
 			return plan, nil
 		}

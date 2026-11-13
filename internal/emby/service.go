@@ -2,7 +2,6 @@ package emby
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -36,12 +35,6 @@ func (s *Service) ListAccounts(ctx context.Context, limit int) ([]Account, error
 	return s.repository.ListEmbyAccounts(ctx, limit)
 }
 
-// RetryProvisioning re-enqueues a retained transient setup by account id.
-// Refunded terminal failures cannot be retried because their secret is erased.
-func (s *Service) RetryProvisioning(ctx context.Context, accountID string) (Account, error) {
-	return s.repository.RetryEmbyProvisioning(ctx, accountID, s.now().UTC())
-}
-
 // Options retrieves the current selectable folders and parental ratings.
 func (s *Service) Options(ctx context.Context) (Options, error) {
 	folders, err := s.remote.ListSelectableFolders(ctx)
@@ -53,30 +46,6 @@ func (s *Service) Options(ctx context.Context) (Options, error) {
 		return Options{}, fmt.Errorf("list Emby parental ratings: %w", err)
 	}
 	return Options{Folders: folders, Ratings: ratings}, nil
-}
-
-// Setup validates current Emby choices, seals the temporary password, and
-// atomically debits the setup price while queueing provisioning.
-func (s *Service) Setup(ctx context.Context, userID, password string, preferences Preferences) (Account, bool, error) {
-	if strings.TrimSpace(userID) == "" || len(password) == 0 || len(password) > maxPasswordBytes {
-		return Account{}, false, ErrInvalidSetup
-	}
-	existing, err := s.repository.EmbyAccountForUser(ctx, userID)
-	if err == nil && existing.Status != StatusFailed {
-		return existing, false, nil
-	}
-	if err != nil && !errors.Is(err, ErrNotFound) {
-		return Account{}, false, err
-	}
-	input, err := s.prepareSetup(ctx, userID, password, preferences)
-	if err != nil {
-		return Account{}, false, err
-	}
-	account, created, err := s.repository.QueueEmbySetup(ctx, input, s.now().UTC())
-	if err != nil {
-		return Account{}, false, err
-	}
-	return account, created, nil
 }
 
 func (s *Service) prepareSetup(ctx context.Context, userID, password string,

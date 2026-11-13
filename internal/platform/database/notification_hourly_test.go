@@ -140,3 +140,19 @@ func TestHourlyFundingWarningsAdvancePastAlreadyNotifiedPage(t *testing.T) {
 	}
 	assertNotificationCounts(t, s, hourlyFundingWarningLimit+1, hourlyFundingWarningLimit+1)
 }
+
+func TestHourlyFundingWarningRetainsFinalNanosecond(t *testing.T) {
+	s, policy, input := hourlyBillingFixture(t)
+	ctx := context.Background()
+	e := makeDueHourlyBillingFixture(t, s, input, policy, hourlyBillingNow(t, s).Add(-4*time.Hour))
+	boundary := hourlyBillingNow(t, s).Truncate(time.Microsecond).Add(time.Hour)
+	if _, err := s.DB().Exec(`UPDATE hourly_enrollments SET paid_through=$1 WHERE id=$2`, boundary, e.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.DB().Exec(`UPDATE balances SET txb_minor=50 WHERE user_id=$1`, input.OwnerID); err != nil {
+		t.Fatal(err)
+	}
+	if count, err := s.EnqueueHourlyFundingWarnings(ctx, boundary.Add(-time.Nanosecond)); err != nil || count != 1 {
+		t.Fatal("future microsecond boundary rounded to expired", count, err)
+	}
+}

@@ -138,20 +138,32 @@ func pricingDatasetQuery(d pricing.Dataset, s PricingExportScope) (string, []any
 		}
 	}
 	if d.Date != "" && !d.Shared {
-		var from, until any = pricingStamp(s.From), pricingStamp(s.Until)
+		timestamp := true
+		expression := purchaseTimestampOrderSQL(column(d.Date))
+		var from, until any = purchaseTimestampOrder(s.From), purchaseTimestampOrder(s.Until)
 		if strings.HasSuffix(d.Date, "_ns") {
+			timestamp = false
+			expression = column(d.Date)
 			from, until = s.From.UnixNano(), s.Until.UnixNano()
 		}
 		if d.Date == "day" || d.Date == "d.date" {
+			timestamp = false
+			expression = column(d.Date)
 			from = s.From.UTC().Format("2006-01-02")
 			until = s.Until.UTC().Format("2006-01-02")
 		}
 		if !s.From.IsZero() {
-			conditions = append(conditions, column(d.Date)+fmt.Sprintf(">=$%d", len(args)+1))
+			if timestamp {
+				conditions = append(conditions, column(d.Date)+fmt.Sprintf(">=LEFT($%d,19)", len(args)+1))
+			}
+			conditions = append(conditions, expression+fmt.Sprintf(">=$%d", len(args)+1))
 			args = append(args, from)
 		}
 		if !s.Until.IsZero() {
-			conditions = append(conditions, column(d.Date)+fmt.Sprintf("<$%d", len(args)+1))
+			if timestamp {
+				conditions = append(conditions, column(d.Date)+fmt.Sprintf("<=LEFT($%d,19)||'Z'", len(args)+1))
+			}
+			conditions = append(conditions, expression+fmt.Sprintf("<$%d", len(args)+1))
 			args = append(args, until)
 		}
 	}

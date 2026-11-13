@@ -88,7 +88,7 @@ func (s *Store) LatestXNodeCertificateOperation(ctx context.Context, node, profi
 		WHERE kind='xnode_command' AND EXISTS(SELECT 1 FROM provider_operation_items item
 		WHERE item.operation_id=provider_operations.id AND item.item_key=$1
 		AND item.target_type='xnode' AND item.target_id=$2)
-		ORDER BY created_at DESC,id DESC LIMIT 1`, "certificate:"+profile, node))
+		ORDER BY `+purchaseTimestampOrderSQL("created_at")+` DESC,id DESC LIMIT 1`, "certificate:"+profile, node))
 	if errors.Is(err, ErrNotFound) {
 		return providerops.Operation{}, errors.Join(err, xnode.ErrNotFound)
 	}

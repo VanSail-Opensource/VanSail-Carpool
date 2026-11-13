@@ -34,11 +34,13 @@ func (s *Store) ListLedgerPage(ctx context.Context, userID, cursor string, limit
 		if err != nil {
 			return nil, nil, err
 		}
-		query += fmt.Sprintf(" AND (created_at<$%d OR (created_at=$%d AND id<$%d))", len(args)+1, len(args)+2, len(args)+3)
+		ordered := purchaseTimestampOrderSQL("created_at")
+		cutoff := purchaseTimestampOrderSQL(fmt.Sprintf("$%d", len(args)+1))
+		query += fmt.Sprintf(" AND (%s<%s OR (%s=%s AND id<$%d))", ordered, cutoff, ordered, cutoff, len(args)+2)
 
-		args = append(args, decoded.CreatedAt, decoded.CreatedAt, decoded.ID)
+		args = append(args, decoded.CreatedAt, decoded.ID)
 	}
-	query += fmt.Sprintf(" ORDER BY created_at DESC,id DESC LIMIT $%d", len(args)+1)
+	query += fmt.Sprintf(" ORDER BY %s DESC,id DESC LIMIT $%d", purchaseTimestampOrderSQL("created_at"), len(args)+1)
 
 	args = append(args, limit+1)
 	rows, err := s.db.QueryContext(ctx, query, args...)

@@ -15,10 +15,27 @@ func validAdminEntitlementCreate(input AdminEntitlementCreateInput) bool {
 	if input.ActorUserID == "" || input.UserID == "" || input.ComboID == "" || input.IdempotencyKey == "" ||
 		len(input.IdempotencyKey) > 128 || input.TrafficLimitBytes <= 0 ||
 		(input.ResetStrategy != "DAY" && input.ResetStrategy != "WEEK" && input.ResetStrategy != "MONTH_ROLLING") ||
-		input.ValidUntil.Sub(input.ValidFrom) < time.Second || len(input.Reason) < 3 || len(input.Reason) > 500 {
+		len(input.Reason) < 3 || len(input.Reason) > 500 {
 		return false
 	}
-	return true
+	_, err := adminEntitlementTermSeconds(input.ValidFrom, input.ValidUntil)
+	return err == nil
+}
+
+// Accepted term evidence must not saturate at time.Duration's 292-year limit.
+// Canonical RFC3339 years keep this second difference well within int64.
+func adminEntitlementTermSeconds(from, until time.Time) (int64, error) {
+	if from.UTC().Year() < 1 || from.UTC().Year() > 9999 || until.UTC().Year() < 1 || until.UTC().Year() > 9999 || !until.After(from) {
+		return 0, ErrConflict
+	}
+	seconds := until.Unix() - from.Unix()
+	if until.Nanosecond() < from.Nanosecond() {
+		seconds--
+	}
+	if seconds < 1 {
+		return 0, ErrConflict
+	}
+	return seconds, nil
 }
 
 // lockPurchaseOwnerTx serializes grants with member checkout and other grants,

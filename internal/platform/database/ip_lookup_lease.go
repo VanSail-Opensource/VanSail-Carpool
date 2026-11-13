@@ -14,7 +14,7 @@ func lockIPLookupRunTx(ctx context.Context, tx *sql.Tx, id string) (status, raw 
 	var owned bool
 	err = tx.QueryRowContext(ctx, `SELECT status,report_json,
 		COALESCE((COALESCE(lease_owner,'')='' AND $2='') OR
-		(lease_owner=$2 AND vansail_timestamp(lease_expires_at)>clock_timestamp()),false)
+		(lease_owner=$2 AND `+purchaseTimestampOrderSQL("lease_expires_at")+`>`+databaseClockTimestampOrderSQL+`),false)
 		FROM ip_lookup_reports WHERE id=$1 FOR UPDATE`, id, iplookup.RunLeaseOwner(ctx)).Scan(&status, &raw, &owned)
 	if err == sql.ErrNoRows || (err == nil && status == "processing" && !owned) {
 		err = ErrConflict

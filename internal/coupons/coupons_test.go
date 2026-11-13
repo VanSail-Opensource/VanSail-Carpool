@@ -34,6 +34,7 @@ func TestCalculateDiscount(t *testing.T) {
 	t.Parallel()
 
 	capMinor := int64(225)
+	negativeCap, zeroCap := int64(-1), int64(0)
 	tests := []struct {
 		name    string
 		coupon  Coupon
@@ -46,6 +47,14 @@ func TestCalculateDiscount(t *testing.T) {
 		{name: "percentage floor", coupon: Coupon{CouponInput: CouponInput{Kind: KindPurchaseRecurring, DiscountMode: DiscountPercent, ValueMinorOrBPS: 2_500}}, gross: 999, want: 249},
 		{name: "percentage cap", coupon: Coupon{CouponInput: CouponInput{Kind: KindPurchaseRecurring, DiscountMode: DiscountPercent, ValueMinorOrBPS: 5_000, PercentCapMinor: &capMinor}}, gross: 1_000, want: 225},
 		{name: "wrong kind", coupon: Coupon{CouponInput: CouponInput{Kind: KindBalanceAdd}}, gross: 1_000, wantErr: true},
+		{name: "negative fixed cannot surcharge", coupon: Coupon{CouponInput: CouponInput{Kind: KindPurchaseOnce, DiscountMode: DiscountFixed, ValueMinorOrBPS: -300}}, gross: 1_000, wantErr: true},
+		{name: "zero fixed fails closed", coupon: Coupon{CouponInput: CouponInput{Kind: KindPurchaseOnce, DiscountMode: DiscountFixed}}, gross: 1_000, wantErr: true},
+		{name: "fixed cannot carry cap", coupon: Coupon{CouponInput: CouponInput{Kind: KindPurchaseOnce, DiscountMode: DiscountFixed, ValueMinorOrBPS: 300, PercentCapMinor: &capMinor}}, gross: 1_000, wantErr: true},
+		{name: "negative percentage cap cannot surcharge", coupon: Coupon{CouponInput: CouponInput{Kind: KindPurchaseRecurring, DiscountMode: DiscountPercent, ValueMinorOrBPS: 5_000, PercentCapMinor: &negativeCap}}, gross: 1_000, wantErr: true},
+		{name: "zero percentage cap fails closed", coupon: Coupon{CouponInput: CouponInput{Kind: KindPurchaseRecurring, DiscountMode: DiscountPercent, ValueMinorOrBPS: 5_000, PercentCapMinor: &zeroCap}}, gross: 1_000, wantErr: true},
+		{name: "percentage above limit fails closed", coupon: Coupon{CouponInput: CouponInput{Kind: KindPurchaseRecurring, DiscountMode: DiscountPercent, ValueMinorOrBPS: 10_001}}, gross: 1_000, wantErr: true},
+		{name: "full discount remains valid", coupon: Coupon{CouponInput: CouponInput{Kind: KindPurchaseRecurring, DiscountMode: DiscountPercent, ValueMinorOrBPS: 10_000}}, gross: 1_000, want: 1_000},
+		{name: "invalid definition at zero gross", coupon: Coupon{CouponInput: CouponInput{Kind: KindPurchaseRecurring, DiscountMode: DiscountPercent, ValueMinorOrBPS: -1}}, wantErr: true},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

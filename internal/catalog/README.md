@@ -13,6 +13,11 @@ financial state and permissions precede cache lookup. `dashboard_cache_test.go`
 covers owner isolation, eviction, invalidation budget and oversized snapshots.
 Queued subscription rotation uses the same invalidator as entitlement changes,
 releasing both the owner entry and its byte budget after credential replacement.
+Invalidation retires in-flight reads and stale fallbacks as well. Cache entries
+bind the account generation and legacy identity; a replacement account cannot
+reuse an earlier generation's bearer. `dashboard_invalidation_test.go` covers
+rotation during a successful or failed read, newer-cache preservation and both
+identity boundaries.
 
 Dashboard includes optional ordered `activeSquadNames` resolved from local squad
 references for its active term. This avoids fetching the full purchasable catalog

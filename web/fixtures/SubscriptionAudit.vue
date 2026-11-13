@@ -12,4 +12,4 @@ defineProps<{ mode: string }>()
 const { locale, t } = useI18n()
 const uiLocale = computed(() => locale.value === 'zh-CN' ? zh_cn : en)
 </script>
-<template><UApp :locale="uiLocale"><div v-if="mode === 'navigation'" class="p-4 grid gap-4"><UNavigationMenu orientation="vertical" :items="desktopNavigationItems(t, true, true, true)" /><ComingSoonLinks :has-valid-combo="true" /><MobileNavigation :is-admin="true" /></div><HomeSubscriptionEntrance v-else-if="mode === 'entrance'" /><UserHome v-else-if="mode === 'home'" /><SubscriptionPage v-else /></UApp></template>
+<template><UApp :locale="uiLocale"><div v-if="mode === 'navigation'" class="p-4 grid gap-4"><UNavigationMenu orientation="vertical" :items="desktopNavigationItems(t, true, true, true)" /><ComingSoonLinks :has-valid-combo="true" /><MobileNavigation :is-admin="true" :is-new-user="false" /></div><HomeSubscriptionEntrance v-else-if="mode === 'entrance'" /><UserHome v-else-if="mode === 'home'" /><SubscriptionPage v-else /></UApp></template>

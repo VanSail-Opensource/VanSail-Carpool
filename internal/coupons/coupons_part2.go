@@ -59,11 +59,22 @@ func CalculateDiscount(coupon Coupon, grossMinor int64) (int64, error) {
 	if coupon.Kind != KindPurchaseRecurring && coupon.Kind != KindPurchaseOnce {
 		return 0, fmt.Errorf("%w: coupon is not a purchase discount", ErrInvalidInput)
 	}
+	// Stored definitions can predate current administrator validation. Never turn
+	// an invalid discount into a surcharge or silently widen its allowed value.
+	if coupon.ValueMinorOrBPS <= 0 {
+		return 0, fmt.Errorf("%w: purchase discount must be positive", ErrInvalidInput)
+	}
 	var discount int64
 	switch coupon.DiscountMode {
 	case DiscountFixed:
+		if coupon.PercentCapMinor != nil {
+			return 0, fmt.Errorf("%w: fixed discount cannot have a percentage cap", ErrInvalidInput)
+		}
 		discount = coupon.ValueMinorOrBPS
 	case DiscountPercent:
+		if coupon.ValueMinorOrBPS > 10_000 || coupon.PercentCapMinor != nil && *coupon.PercentCapMinor <= 0 {
+			return 0, fmt.Errorf("%w: invalid percentage discount or cap", ErrInvalidInput)
+		}
 		value, err := multiplyDivideFloor(grossMinor, coupon.ValueMinorOrBPS, 10_000)
 		if err != nil {
 			return 0, err

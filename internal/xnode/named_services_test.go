@@ -59,7 +59,7 @@ func TestNamedServicePreservesUsageAndScopesRouting(t *testing.T) {
 	}
 }
 
-func TestNamedServiceRejectsReservedMeteredProbeNamespaceWithoutState(t *testing.T) {
+func TestNamedServiceRejectsPrivatePrincipalNamespacesWithoutState(t *testing.T) {
 	f := controlFixture(t, false)
 	ctx := context.Background()
 	access := xnode.ServiceAccess{LimitBytes: 1000, Strategy: "NO_RESET", StartedAt: time.Now().UTC(), ExpiresAt: time.Now().Add(time.Hour), GroupIDs: []string{f.group.ID}}
@@ -67,8 +67,12 @@ func TestNamedServiceRejectsReservedMeteredProbeNamespaceWithoutState(t *testing
 	if err := f.store.DB().QueryRowContext(ctx, `SELECT (SELECT COUNT(*) FROM xnode_identities),(SELECT COUNT(*) FROM xnode_periods)`).Scan(&beforeIdentities, &beforePeriods); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := f.service.SaveNamedService(ctx, "", "member-probe-accidental-service", access); !errors.Is(err, xnode.ErrInvalid) {
-		t.Fatal("standalone access accepted a reserved probe identity", err)
+	for _, name := range []string{"_private", "member-payg-service", "member-hourly-service", "member-probe-service", "MEMBER-PAYG-service", "Member-Hourly-service", "Member-Probe-service"} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := f.service.SaveNamedService(ctx, "", name, access); !errors.Is(err, xnode.ErrInvalid) {
+				t.Fatal("standalone access accepted a private principal namespace", err)
+			}
+		})
 	}
 	var afterIdentities, afterPeriods int
 	if err := f.store.DB().QueryRowContext(ctx, `SELECT (SELECT COUNT(*) FROM xnode_identities),(SELECT COUNT(*) FROM xnode_periods)`).Scan(&afterIdentities, &afterPeriods); err != nil || afterIdentities != beforeIdentities || afterPeriods != beforePeriods {

@@ -15,7 +15,7 @@ import (
 const routingPlanSelect = `SELECT proxy_user_id,cipher,previous_cipher,legacy_cipher,revision,phase,operation_id,reason FROM xnode_routing_plans`
 
 func (s *Store) XNodeUnmanagedRoutes(ctx context.Context, before time.Time) ([]xnode.Customization, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT c.proxy_user_id,c.user_id,c.node_id,c.outbounds_cipher,c.routing_cipher,c.revision FROM xnode_customizations c WHERE c.user_id IS NOT NULL AND vansail_timestamp(c.updated_at)<vansail_timestamp($1) AND NOT EXISTS(SELECT 1 FROM xnode_routing_plans p WHERE p.proxy_user_id=c.proxy_user_id) ORDER BY c.proxy_user_id,c.node_id`, stamp(before))
+	rows, err := s.db.QueryContext(ctx, `SELECT c.proxy_user_id,c.user_id,c.node_id,c.outbounds_cipher,c.routing_cipher,c.revision FROM xnode_customizations c WHERE c.user_id IS NOT NULL AND `+purchaseTimestampOrderSQL("c.updated_at")+` < $1 AND NOT EXISTS(SELECT 1 FROM xnode_routing_plans p WHERE p.proxy_user_id=c.proxy_user_id) ORDER BY c.proxy_user_id,c.node_id`, purchaseTimestampOrder(before))
 	if err != nil {
 		return nil, err
 	}

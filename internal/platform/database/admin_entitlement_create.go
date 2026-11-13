@@ -115,8 +115,8 @@ func (s *Store) createAdminEntitlementAttempt(ctx context.Context, input AdminEn
 	}
 	var overlap bool
 	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases WHERE user_id=$1
-		AND status IN ('activating','active','queued') AND valid_from::timestamptz<$2 AND valid_until::timestamptz>$3)`,
-		input.UserID, stamp(input.ValidUntil), stamp(input.ValidFrom)).Scan(&overlap); err != nil {
+		AND status IN ('activating','active','queued') AND `+purchaseTimestampOrderSQL("valid_from")+`<$2 AND `+purchaseTimestampOrderSQL("valid_until")+`>$3)`,
+		input.UserID, purchaseTimestampOrder(input.ValidUntil), purchaseTimestampOrder(input.ValidFrom)).Scan(&overlap); err != nil {
 		return model.Purchase{}, err
 	}
 	if overlap {
@@ -130,7 +130,10 @@ func (s *Store) createAdminEntitlementAttempt(ctx context.Context, input AdminEn
 	if !input.ValidFrom.After(now) {
 		status = "active"
 	}
-	termSeconds := int64(input.ValidUntil.Sub(input.ValidFrom) / time.Second)
+	termSeconds, err := adminEntitlementTermSeconds(input.ValidFrom, input.ValidUntil)
+	if err != nil {
+		return model.Purchase{}, err
+	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO purchases(id,user_id,combo_id,charged_txb_minor,valid_from,valid_until,status,
 		coupon_grant_id,gross_price_txb_minor,core_gross_txb_minor,coupon_discount_txb_minor,auto_renew_enabled,
 		recurring_discount_attached,idempotency_key,request_fingerprint,created_at,updated_at,purchased_term_seconds,

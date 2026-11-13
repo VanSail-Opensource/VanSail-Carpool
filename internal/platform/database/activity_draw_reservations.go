@@ -3,10 +3,11 @@ package database
 import (
 	"context"
 	"database/sql"
+	"strconv"
 	"time"
 )
 
-func reconcileRaffleReservationsTx(ctx context.Context, tx *sql.Tx, drawID string, required int64, name string, now time.Time) error {
+func reconcileRaffleReservationsTx(ctx context.Context, tx *sql.Tx, drawID string, required int64, name string, revision int, now time.Time) error {
 	tickets, err := activeRaffleTicketsTx(ctx, tx, drawID)
 	if err != nil {
 		return err
@@ -29,7 +30,7 @@ func reconcileRaffleReservationsTx(ctx context.Context, tx *sql.Tx, drawID strin
 		if changeErr != nil {
 			return changeErr
 		}
-		if _, err = insertLedgerTx(ctx, tx, ticket.UserID, -delta, balance, "activity_raffle_reserve_adjust", ticket.ID, name, now); err != nil {
+		if _, err = insertLedgerTx(ctx, tx, ticket.UserID, -delta, balance, "activity_raffle_reserve_adjust", ticket.ID+":"+strconv.Itoa(revision), name, now); err != nil {
 			return err
 		}
 		if _, err = tx.ExecContext(ctx, `UPDATE activity_raffle_tickets SET reserve_minor=$1,updated_at=$2 WHERE id=$3`, required, stamp(now), ticket.ID); err != nil {

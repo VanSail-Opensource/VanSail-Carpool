@@ -6,11 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 func (s *Store) RecoverOutbox(ctx context.Context, staleBefore, now time.Time) error {
-	_, err := s.db.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',available_at=$1,last_error='worker interrupted',updated_at=$2 ,claim_generation=claim_generation+1 WHERE status='processing' AND updated_at<$3`, stamp(now), stamp(now), stamp(staleBefore))
+	_, err := s.db.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',available_at=$1,last_error='worker interrupted',updated_at=$2 ,claim_generation=claim_generation+1 WHERE status='processing' AND updated_at<$3 AND `+purchaseTimestampOrderSQL("updated_at")+`<$4`, stamp(now), stamp(now), retentionCandidateUpperBound(staleBefore), purchaseTimestampOrder(staleBefore))
 	if err != nil {
 		return fmt.Errorf("recover outbox leases: %w", err)
 	}
@@ -23,7 +25,7 @@ func (s *Store) ListOutboxJobs(ctx context.Context, limit int) ([]model.OutboxJo
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
-	rows, err := s.db.QueryContext(ctx, outboxSelect+` ORDER BY created_at DESC LIMIT $1`, limit)
+	rows, err := s.db.QueryContext(ctx, outboxSelect+` ORDER BY `+purchaseTimestampOrderSQL("created_at")+` DESC,record_order DESC LIMIT $1`, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -62,9 +64,18 @@ func scanOutbox(row rowScanner) (model.OutboxJob, error) {
 }
 
 func sanitizeError(err error) string {
-	value := err.Error()
+	return truncateErrorText(err.Error())
+}
+
+// Error evidence must remain valid UTF-8 after the byte cap: PostgreSQL rejects
+// a split multibyte character, which would otherwise prevent claim completion.
+func truncateErrorText(value string) string {
+	value = strings.ToValidUTF8(strings.ReplaceAll(value, "\x00", "\uFFFD"), "\uFFFD")
 	if len(value) > 500 {
-		return value[:500]
+		value = value[:500]
+		for !utf8.ValidString(value) {
+			value = value[:len(value)-1]
+		}
 	}
 	return value
 }

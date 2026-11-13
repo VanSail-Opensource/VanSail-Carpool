@@ -21,10 +21,10 @@ func (s *Store) retryAttempt_EnqueueExpiryReminderNotifications(ctx context.Cont
 	defer func() { _ = tx.Rollback() }()
 	rows, err := tx.QueryContext(ctx, `SELECT purchases.id,purchases.user_id,combos.name,purchases.valid_until
 		FROM purchases JOIN combos ON combos.id=purchases.combo_id
-		WHERE purchases.status='active' AND purchases.valid_until>$1 AND purchases.valid_until<=$2
+		WHERE purchases.status='active' AND `+purchaseTimestampOrderSQL("purchases.valid_until")+`>$1 AND `+purchaseTimestampOrderSQL("purchases.valid_until")+`<=$2
 		AND purchases.auto_renew_enabled=0 AND NOT EXISTS (
-			SELECT 1 FROM purchases queued WHERE queued.user_id=purchases.user_id AND queued.status='queued' AND queued.valid_until>$3
-		) ORDER BY purchases.valid_until,purchases.id`, stamp(now), stamp(now.Add(48*time.Hour)), stamp(now))
+			SELECT 1 FROM purchases queued WHERE queued.user_id=purchases.user_id AND queued.status='queued' AND `+purchaseTimestampOrderSQL("queued.valid_until")+`>$3
+		) ORDER BY `+purchaseTimestampOrderSQL("purchases.valid_until")+`,purchases.id`, purchaseTimestampOrder(now), purchaseTimestampOrder(now.Add(48*time.Hour)), purchaseTimestampOrder(now))
 	if err != nil {
 		return 0, err
 	}
@@ -97,7 +97,7 @@ func (s *Store) retryAttempt_EnqueueTrafficThresholdNotification(ctx context.Con
 		JOIN combos c ON c.id=b.combo_id
 		WHERE i.user_id=$1 AND i.proxy_user_id=$2 AND p.id=$3
 		AND i.credentials_cipher<>'' AND i.access_disabled=0 AND p.status='open' AND b.status='active'
-		AND b.valid_from::timestamptz<=CURRENT_TIMESTAMP AND b.valid_until::timestamptz>CURRENT_TIMESTAMP
+		AND `+purchaseTimestampOrderSQL("b.valid_from")+`<=`+databaseClockTimestampOrderSQL+` AND `+purchaseTimestampOrderSQL("b.valid_until")+`>`+databaseClockTimestampOrderSQL+`
 		FOR SHARE OF i,p,b`, user.OwnerID, user.ID, user.PeriodID).Scan(
 		&purchaseID, &combo, &validFrom, &reset, &used, &limit, &lastReset)
 	if err == sql.ErrNoRows {
@@ -121,7 +121,7 @@ func (s *Store) retryAttempt_EnqueueTrafficThresholdNotification(ctx context.Con
 	var alreadyQueued bool
 	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM user_notification_events
 		WHERE source_kind='traffic-90' AND source_id=$1
-		AND vansail_timestamp(created_at)>=vansail_timestamp($2))`, purchaseID, anchor).Scan(&alreadyQueued); err != nil {
+		AND `+purchaseTimestampOrderSQL("created_at")+`>=`+purchaseTimestampOrderSQL("$2")+`)`, purchaseID, anchor).Scan(&alreadyQueued); err != nil {
 		return false, err
 	}
 	if alreadyQueued {

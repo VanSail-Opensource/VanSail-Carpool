@@ -36,11 +36,27 @@ func (s *Store) USDTCursor(ctx context.Context, network string) (usdt.Cursor, er
 	if !ok {
 		return c, usdt.ErrConfiguration
 	}
-	err := s.db.QueryRowContext(ctx, "SELECT value,hash FROM usdt_scan_cursors WHERE network=$1 AND token=$2", spec.Network, spec.Token).Scan(&c.Value, &c.Hash)
+	// Bound materialization too: a retained legacy/corrupt cursor must not
+	// allocate an unbounded string before validation can refuse it.
+	var oversized bool
+	err := s.db.QueryRowContext(ctx, `SELECT
+ CASE WHEN octet_length(value)<=$3 THEN value ELSE '' END,
+ CASE WHEN octet_length(hash)<=$4 THEN hash ELSE '' END,
+ octet_length(value)>$3 OR octet_length(hash)>$4
+ FROM usdt_scan_cursors WHERE network=$1 AND token=$2`, spec.Network, spec.Token, usdt.MaxCursorBytes, usdt.MaxCursorHashBytes).Scan(&c.Value, &c.Hash, &oversized)
 	if errors.Is(err, sql.ErrNoRows) {
 		return c, nil
 	}
-	return c, err
+	if err != nil {
+		return usdt.Cursor{}, err
+	}
+	if oversized {
+		return usdt.Cursor{}, usdt.ErrCapacity
+	}
+	if err := usdt.ValidateCursor(c); err != nil {
+		return usdt.Cursor{}, err
+	}
+	return c, nil
 }
 
 // USDTReady recovers transfers committed immediately before process interruption.

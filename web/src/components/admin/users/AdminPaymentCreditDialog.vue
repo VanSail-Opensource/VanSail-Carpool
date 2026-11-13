@@ -38,7 +38,7 @@ onScopeDispose(() => { controller?.abort(); latest.dispose(); evidence.value = [
 </script>
 
 <template>
-  <UModal :open="payment !== null" :title="t('adminUserProfile.courtesyCreditTitle')" :description="t('adminUsdt.creditChoiceHint')" :dismissible="!busy" @update:open="!$event && emit('close')">
+  <UModal :open="payment !== null" :title="t('adminUserProfile.courtesyCreditTitle')" :description="t('adminUsdt.creditChoiceHint')" :dismissible="!busy" :close="!busy" @update:open="!$event && !busy && emit('close')">
     <template #body>
       <div class="credit-form">
         <USkeleton v-if="loading" class="h-12" />

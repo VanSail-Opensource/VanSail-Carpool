@@ -88,8 +88,29 @@ func TestStatisticMoneyNeverWrapsAcrossSignedBoundaries(t *testing.T) {
 func TestAverageStatisticAmountRoundsWithoutOverflow(t *testing.T) {
 	t.Parallel()
 	store := newTestStore(t)
-	average, err := aggregateAverageMinor(context.Background(), store.DB(), `SELECT 9223372036854775807::bigint,2::bigint`)
-	if err != nil || average != math.MaxInt64/2+1 {
-		t.Fatalf("rounded maximum statistic amount = %d, %v", average, err)
+	for _, item := range []struct {
+		name, query string
+		want        int64
+	}{
+		{"half maximum", `SELECT 9223372036854775807::bigint,2::bigint`, math.MaxInt64/2 + 1},
+		{"large total", `SELECT 18446744073709551614::numeric,2::bigint`, math.MaxInt64},
+		{"large count", `SELECT 18446744073709551614::numeric,18446744073709551614::numeric`, 1},
+		{"empty", `SELECT 0::bigint,0::bigint`, 0},
+	} {
+		t.Run(item.name, func(t *testing.T) {
+			average, err := aggregateAverageMinor(context.Background(), store.DB(), item.query)
+			if err != nil || average != item.want {
+				t.Fatalf("average statistic amount = %d, %v; want %d", average, err, item.want)
+			}
+		})
+	}
+	for _, query := range []string{
+		`SELECT 18446744073709551615::numeric,2::bigint`,
+		`SELECT -1::bigint,1::bigint`,
+		`SELECT 1::bigint,-1::bigint`,
+	} {
+		if _, err := aggregateAverageMinor(context.Background(), store.DB(), query); !errors.Is(err, ErrConflict) {
+			t.Fatalf("invalid or unrepresentable average = %v", err)
+		}
 	}
 }

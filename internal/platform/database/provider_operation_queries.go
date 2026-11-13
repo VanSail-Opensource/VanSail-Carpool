@@ -40,7 +40,7 @@ func (s *Store) ListProviderOperationsForOwner(ctx context.Context, ownerID stri
 		limit = 50
 	}
 	rows, err := s.db.QueryContext(ctx, providerOperationSelect+
-		` WHERE owner_user_id=$1 ORDER BY created_at DESC,id DESC LIMIT $2`, ownerID, limit)
+		` WHERE owner_user_id=$1 ORDER BY `+purchaseTimestampOrderSQL("created_at")+` DESC,id DESC LIMIT $2`, ownerID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list provider operations: %w", err)
 	}

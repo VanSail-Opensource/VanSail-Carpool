@@ -17,6 +17,7 @@ import (
 
 // RecordPricingExposures records shown offers, never synthetic training samples.
 func (s *Store) RecordPricingExposures(ctx context.Context, user string, catalog model.Catalog, now time.Time) error {
+	shownIDs := make([]string, 0, min(64, len(catalog.Combos)))
 	shown := []struct {
 		ID      string
 		Price   int64
@@ -26,6 +27,7 @@ func (s *Store) RecordPricingExposures(ctx context.Context, user string, catalog
 		if i >= 64 {
 			break
 		}
+		shownIDs = append(shownIDs, c.ID)
 		shown = append(shown, struct {
 			ID      string
 			Price   int64
@@ -40,7 +42,7 @@ func (s *Store) RecordPricingExposures(ctx context.Context, user string, catalog
 	raw, _ := json.Marshal(shown)
 	fingerprint := sha256.Sum256(raw)
 	_, err := s.pricingExposureCache.Load(ctx, "catalog:"+user+":"+hex.EncodeToString(fingerprint[:])+":"+now.UTC().Format("2006-01-02"), 24*time.Hour, func() ([]byte, error) {
-		rows, e := s.db.QueryContext(ctx, `SELECT product_id FROM pricing_product_settings WHERE product_type='combo' AND dynamic_enabled=1 LIMIT 512`)
+		rows, e := s.db.QueryContext(ctx, `SELECT product_id FROM pricing_product_settings WHERE product_type='combo' AND dynamic_enabled=1 AND product_id=ANY($1::text[])`, shownIDs)
 		if e != nil {
 			return nil, e
 		}

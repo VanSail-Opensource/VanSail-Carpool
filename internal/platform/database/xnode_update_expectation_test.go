@@ -13,7 +13,7 @@ import (
 
 func TestUpdateIntentIsImmutableBeforeAttemptAndSurvivesRestart(t *testing.T) {
 	ctx, store := context.Background(), newTestStore(t)
-	user := createTestUser(t, store, 498033)
+	user := createTestAdmin(t, store, 498033)
 	create := func(key string) providerops.Operation {
 		t.Helper()
 		operation, _, err := store.CreateProviderOperation(ctx, providerops.CreateInput{ActorUserID: user.ID, Kind: xnode.OperationKind, IdempotencyKey: key, RequestFingerprint: strings.Repeat("a", 64), Items: []providerops.ItemInput{{Key: "node", TargetType: "xnode", TargetID: "node"}}}, time.Now())

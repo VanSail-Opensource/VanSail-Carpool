@@ -1,6 +1,19 @@
 import assert from 'node:assert/strict'
 
 export async function memberRecoveryScenarios(scenario, size) {
+  await scenario(size, 'member-current-routing-contract', 'detector-retirement-audit.html?native', async (page, capture) => {
+    const save = page.getByRole('button', { name: 'Save', exact: true })
+    await save.waitFor()
+    await page.getByText('Work services', { exact: true }).first().waitFor()
+    await capture('current-routing')
+    await save.click()
+    await page.waitForFunction(() => globalThis.memberNodesAudit.saves.length === 1)
+    const write = await page.evaluate(() => globalThis.memberNodesAudit.saves[0])
+    assert.equal(write.body.revision, 1)
+    assert.deepEqual(write.body.choices, [{ id: 'constructed-route', inboundNodeId: 'tokyo', outboundNodeId: 'singapore', inboundEndpointId: 'tokyo-host', outboundEndpointId: 'singapore-host', templateId: 'work' }])
+    assert.ok(write.key)
+    await page.waitForFunction(() => !globalThis.document.querySelector('form button[type="submit"]')?.disabled)
+  })
   await scenario(size, 'captcha-owner', 'recovery-audit.html?captcha', async (page, capture) => {
     await page.getByRole('button', { name: 'Complete constructed verification', exact: true }).click()
     await page.waitForFunction(() => globalThis.__recoveryAudit.state.captchaReads === 1)

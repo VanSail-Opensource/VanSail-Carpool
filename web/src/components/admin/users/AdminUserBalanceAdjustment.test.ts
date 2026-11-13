@@ -6,6 +6,29 @@ import AdminUserBalanceAdjustment from './AdminUserBalanceAdjustment.vue'
 afterEach(() => vi.restoreAllMocks())
 
 describe('administrator balance adjustment recovery', () => {
+  it('locks the reviewed amount while an adjustment is pending', async () => {
+    let finish!: (value: Awaited<ReturnType<typeof api.adjustBalance>>) => void
+    const adjust = vi.spyOn(api, 'adjustBalance').mockReturnValue(new Promise(resolve => { finish = resolve }))
+    const wrapper = mount(AdminUserBalanceAdjustment, {
+      props: { userId: 'member-1' },
+      global: { stubs: {
+        Slideover: { props: ['open'], template: '<section v-if="open"><slot name="body" /></section>' },
+        FormField: { template: '<div><slot /></div>' }, InlineNotice: true,
+      } },
+    })
+    await wrapper.get('button').trigger('click')
+    await wrapper.get('#profile-balance-adjustment').setValue('12.50')
+    await wrapper.get('input[maxlength="300"]').setValue('Reviewed adjustment')
+    await wrapper.findAll('.row-actions button')[0]!.trigger('click')
+    await flushPromises()
+    expect(wrapper.get('#profile-balance-adjustment').attributes('disabled')).toBeDefined()
+    await wrapper.findAll('.row-actions button')[0]!.trigger('click')
+    expect(adjust).toHaveBeenCalledExactlyOnceWith('member-1', '1250', 'Reviewed adjustment', expect.any(String))
+    finish({} as Awaited<ReturnType<typeof api.adjustBalance>>)
+    await flushPromises()
+    wrapper.unmount()
+  })
+
   it('reuses an ambiguous attempt only for the same member, delta and reason', async () => {
     const adjust = vi.spyOn(api, 'adjustBalance').mockRejectedValue(new Error('connection closed after commit'))
     const wrapper = mount(AdminUserBalanceAdjustment, {

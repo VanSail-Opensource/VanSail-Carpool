@@ -42,11 +42,11 @@ func (s *Store) retryAttempt_PutAdminXNodeGlobalAtVersion(ctx context.Context, a
 	// Check the actual database clock after every write that may have waited
 	// for a lock. A timestamp captured before waiting is not an expiry fence.
 	if !until.IsZero() {
-		var valid bool
-		if err = tx.QueryRowContext(ctx, `SELECT clock_timestamp() < $1::timestamptz`, until).Scan(&valid); err != nil {
+		var observed time.Time
+		if err = tx.QueryRowContext(ctx, `SELECT clock_timestamp()`).Scan(&observed); err != nil {
 			return err
 		}
-		if !valid {
+		if !observed.Before(until) {
 			return xnode.ErrConflict
 		}
 	}

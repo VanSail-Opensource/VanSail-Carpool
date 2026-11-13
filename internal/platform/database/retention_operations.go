@@ -27,14 +27,14 @@ func pruneProviderOperationsTx(ctx context.Context, tx *sql.Tx, cutoff, now time
 		return fmt.Errorf("create stale operation set: %w", err)
 	}
 	_, err := tx.ExecContext(ctx, `INSERT INTO maintenance_operation_candidates(id)
-		SELECT id FROM provider_operations operation WHERE status IN ('queued','processing','pending_review','partial') AND created_at<$1
+		SELECT id FROM provider_operations operation WHERE status IN ('queued','processing','pending_review','partial') AND created_at<$1 AND `+purchaseTimestampOrderSQL("operation.created_at")+`<$7
 		AND kind<>'node_compensation'
 		AND NOT EXISTS (SELECT 1 FROM xnode_ddns_changes change WHERE change.operation_id=operation.id AND change.phase IN ('staging','routes'))
-		AND (kind NOT ILIKE 'telegram_pm_%' OR created_at<=$2) AND NOT (`+liveComboControlPredicate(3)+`)`, stamp(cutoff), stamp(now.Add(-pmReceiptRetention)), stamp(now), stamp(now), stamp(now), stamp(now))
+		AND (kind NOT ILIKE 'telegram_pm_%' OR `+purchaseTimestampOrderSQL("operation.created_at")+`<=$2) AND NOT (`+liveComboControlPredicate(3)+`)`, retentionCandidateUpperBound(cutoff), purchaseTimestampOrder(now.Add(-pmReceiptRetention)), stamp(now), stamp(now), stamp(now), stamp(now), purchaseTimestampOrder(cutoff))
 	if err != nil {
 		return fmt.Errorf("select stale operations: %w", err)
 	}
-	if _, err := tx.ExecContext(ctx, `DELETE FROM maintenance_operation_candidates WHERE id IN (SELECT c.operation_id FROM ip_lookup_checks c JOIN ip_lookup_reports r ON r.id=c.report_id WHERE r.status='processing' AND (r.lease_owner IS NULL OR vansail_timestamp(r.heartbeat_at)>vansail_timestamp($1) OR vansail_timestamp(r.lease_expires_at)>vansail_timestamp($2)))`, stamp(now.Add(-2*time.Minute)), stamp(now)); err != nil {
+	if _, err := tx.ExecContext(ctx, `DELETE FROM maintenance_operation_candidates WHERE id IN (SELECT c.operation_id FROM ip_lookup_checks c JOIN ip_lookup_reports r ON r.id=c.report_id WHERE r.status='processing' AND (r.lease_owner IS NULL OR `+purchaseTimestampOrderSQL("r.heartbeat_at")+`>$1 OR `+purchaseTimestampOrderSQL("r.lease_expires_at")+`>$2))`, purchaseTimestampOrder(now.Add(-2*time.Minute)), purchaseTimestampOrder(now)); err != nil {
 		return err
 	}
 	if err := reconcileExpiredPMOperationsTx(ctx, tx, now, counts); err != nil {
@@ -80,8 +80,8 @@ func pruneProviderOperationsTx(ctx context.Context, tx *sql.Tx, cutoff, now time
 	}
 	if counts["provider_operation_jobs"], err = deleteCount(ctx, tx, `DELETE FROM outbox_jobs WHERE kind='provider_operation'
 		AND (CASE ((payload)::jsonb #> '{operationId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{operationId}' END) IN (SELECT id FROM provider_operations operation
-			WHERE `+settledProviderOperation+` AND (kind NOT ILIKE 'telegram_pm_%' OR created_at<=$1)
-			AND NOT (status='failed' AND (`+liveComboControlPredicate(2)+`)))`, stamp(now.Add(-pmReceiptRetention)), stamp(now), stamp(now), stamp(now), stamp(now)); err != nil {
+			WHERE `+settledProviderOperation+` AND (kind NOT ILIKE 'telegram_pm_%' OR `+purchaseTimestampOrderSQL("operation.created_at")+`<=$1)
+			AND NOT (status='failed' AND (`+liveComboControlPredicate(2)+`)))`, purchaseTimestampOrder(now.Add(-pmReceiptRetention)), stamp(now), stamp(now), stamp(now), stamp(now)); err != nil {
 		return fmt.Errorf("prune provider operation jobs: %w", err)
 	}
 	// Command keys have no expiry: their sanitized receipts and target facts are
@@ -90,7 +90,7 @@ func pruneProviderOperationsTx(ctx context.Context, tx *sql.Tx, cutoff, now time
 	// an explicit bounded retention contract, and referenced records stay intact.
 	if counts["provider_operations"], err = deleteCount(ctx, tx, `DELETE FROM provider_operations AS operation
 		WHERE `+settledProviderOperation+`
-		AND kind ILIKE 'telegram_pm_%' AND created_at<=$1
+		AND kind ILIKE 'telegram_pm_%' AND created_at<$6 AND `+purchaseTimestampOrderSQL("operation.created_at")+`<=$1
 		AND NOT (status='failed' AND (`+liveComboControlPredicate(2)+`))
 		AND NOT EXISTS (SELECT 1 FROM admin_temporary_bans ban
 			WHERE ban.ban_operation_id=operation.id OR ban.unban_operation_id=operation.id)
@@ -99,7 +99,7 @@ func pruneProviderOperationsTx(ctx context.Context, tx *sql.Tx, cutoff, now time
 		AND NOT EXISTS (SELECT 1 FROM xnode_routing_plans plan WHERE plan.operation_id=operation.id)
 		AND NOT EXISTS (SELECT 1 FROM xnode_metered_probes probe WHERE probe.operation_id=operation.id)
 		AND NOT EXISTS (SELECT 1 FROM xnode_ddns_changes change WHERE change.operation_id=operation.id)
-		AND NOT EXISTS (SELECT 1 FROM ip_lookup_checks check_record WHERE check_record.operation_id=operation.id)`, stamp(now.Add(-pmReceiptRetention)), stamp(now), stamp(now), stamp(now), stamp(now)); err != nil {
+		AND NOT EXISTS (SELECT 1 FROM ip_lookup_checks check_record WHERE check_record.operation_id=operation.id)`, purchaseTimestampOrder(now.Add(-pmReceiptRetention)), stamp(now), stamp(now), stamp(now), stamp(now), retentionCandidateUpperBound(now.Add(-pmReceiptRetention))); err != nil {
 		return fmt.Errorf("prune processed provider operations: %w", err)
 	}
 	if _, err := tx.ExecContext(ctx, `DROP TABLE maintenance_operation_candidates`); err != nil {

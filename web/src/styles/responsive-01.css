@@ -8,11 +8,6 @@
   50% { opacity: 1; transform: scale(1); }
 }
 
-@keyframes gentle-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-7px); }
-}
-
 @keyframes icon-spin {
   to { transform: rotate(360deg); }
 }

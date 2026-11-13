@@ -19,14 +19,15 @@ func (s *Store) PricingProductForecasts(ctx context.Context, kind, id string, no
 	if err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_features WHERE entity_type='product' AND entity_id=$1 AND day=$2))::integer", entity, day.Format("2006-01-02")).Scan(&exists); err != nil || exists == 1 {
 		return err
 	}
-	query := `SELECT SUBSTR(l.created_at,1,10),-SUM(l.delta_txb_minor)` + pricingComboReceiptJoins + ` WHERE ` + pricingComboReceiptScope + ` AND l.created_at>=$2 AND l.created_at<$3 GROUP BY SUBSTR(l.created_at,1,10)`
+	window := ` AND l.created_at>=LEFT($2,19) AND l.created_at<=LEFT($3,19)||'Z' AND ` + purchaseTimestampOrderSQL("l.created_at") + `>=$2 AND ` + purchaseTimestampOrderSQL("l.created_at") + `<$3`
+	query := `SELECT SUBSTR(l.created_at,1,10),-SUM(l.delta_txb_minor)` + pricingComboReceiptJoins + ` WHERE ` + pricingComboReceiptScope + window + ` GROUP BY SUBSTR(l.created_at,1,10)`
 	if kind == "payg" {
-		query = `SELECT SUBSTR(l.created_at,1,10),SUM(c.blocks*c.unit_price_minor) FROM xnode_payg_charges c JOIN xnode_payg_accounts a ON a.proxy_user_id=c.proxy_user_id JOIN ledger_entries l ON l.id=c.ledger_id WHERE a.group_id=$1 AND l.created_at>=$2 AND l.created_at<$3 GROUP BY SUBSTR(l.created_at,1,10)`
+		query = `SELECT SUBSTR(l.created_at,1,10),SUM(c.blocks*c.unit_price_minor) FROM xnode_payg_charges c JOIN xnode_payg_accounts a ON a.proxy_user_id=c.proxy_user_id JOIN ledger_entries l ON l.id=c.ledger_id WHERE a.group_id=$1` + window + ` GROUP BY SUBSTR(l.created_at,1,10)`
 	}
 	if kind == "addon" {
 		return nil
 	}
-	rows, err := s.db.QueryContext(ctx, query, id, pricingStamp(day.AddDate(0, 0, -30)), pricingStamp(day))
+	rows, err := s.db.QueryContext(ctx, query, id, purchaseTimestampOrder(day.AddDate(0, 0, -30)), purchaseTimestampOrder(day))
 	if err != nil {
 		return err
 	}

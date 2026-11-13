@@ -39,3 +39,8 @@ A competing start returns a conflict before provider work. Already-processing
 receipts keep their existing job or ambiguous-start review behavior.
 `recovery_test.go` covers transient recovery and unattempted owner reads;
 database lookup and concurrent-worker regressions verify the persistence fence.
+
+Admission also rejects expired requests and unavailable owners. The worker uses
+a fresh clock after owner reads and honors the returned terminal record before
+calling a provider. `admission_test.go` covers both refusals and a concurrent
+terminal unblock claim; neither path repeats or overwrites the durable outcome.

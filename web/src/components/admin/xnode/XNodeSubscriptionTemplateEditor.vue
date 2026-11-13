@@ -43,13 +43,13 @@ onScopeDispose(() => { generation++; controller?.abort() })
 </script>
 
 <template>
-  <UModal :open="true" :title="t('nodeTemplates.editor')" :dismissible="!busy" :ui="{ content: 'max-w-5xl' }" @update:open="!$event && emit('close')">
+  <UModal :open="true" :title="t('nodeTemplates.editor')" :dismissible="!busy" :close="!busy" :ui="{ content: 'max-w-5xl' }" @update:open="!$event && !busy && emit('close')">
     <template #body>
       <form class="grid gap-4" @submit.prevent="save">
         <UAlert v-if="props.error || previewError" color="warning" :title="props.error ?? previewError ?? ''" />
         <UFormField :label="t('common.name')"><UInput v-model="name" required maxlength="128" :disabled="busy" class="w-full" /></UFormField>
         <UFormField :label="t('publicSubscription.format')"><USelect v-model="format" :items="formats" :disabled="busy || formatLocked" class="w-full" /></UFormField>
-        <UFormField v-if="format === 'empty-http'" :label="t('nodeTemplates.statusCode')"><UInput v-model.number="statusCode" type="number" min="200" max="599" step="1" required class="w-full" /></UFormField>
+        <UFormField v-if="format === 'empty-http'" :label="t('nodeTemplates.statusCode')"><UInput v-model.number="statusCode" type="number" min="200" max="599" step="1" :disabled="busy" required class="w-full" /></UFormField>
         <template v-else>
           <UButton type="button" class="justify-self-start" variant="outline" color="neutral" :label="t('nodeTemplates.preset')" :disabled="busy" @click="document = subscriptionPreset(format)" />
           <p class="text-sm text-muted">{{ t('nodeTemplates.markerHint') }}</p>

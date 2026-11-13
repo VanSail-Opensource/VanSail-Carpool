@@ -39,6 +39,10 @@ Loads abort on replacement/disposal, generations guard responses, and failed loa
 disable Save until retry succeeds. All transport retains shared request signing.
 
 `useUSDTAdmin.test.ts` covers aborted/superseded loads, disabled writes after failed loads, successful retry and disposal guards in hosted CI.
+Probe feedback is bound to the token rail actually checked. Replacing or saving
+configuration retires pending probes; switching rails cannot display another
+rail's verification result. Disposal also clears private drafts and prevents new
+actions. The composable and hosted browser regressions cover these boundaries.
 
 Token orders share the USD billing rate. This module has no separate rate control.
 

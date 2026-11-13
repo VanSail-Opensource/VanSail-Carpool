@@ -2,10 +2,14 @@ package database
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/pricing"
+	"github.com/VanSail-Opensource/X-Node/pkg/compute"
 )
 
 func TestPersonalForecastMissingIsNotStale(t *testing.T) {
@@ -28,6 +32,50 @@ func TestPersonalForecastMissingIsNotStale(t *testing.T) {
 	forecast, err = store.personalForecast(ctx, user.ID, now)
 	if err != nil || forecast.Stale || forecast.RefreshPending || forecast.Status != "MISSING" {
 		t.Fatalf("missing forecast: %+v, %v", forecast, err)
+	}
+}
+
+func TestPersonalFeatureRenewalsRespectExactAsOfWindow(t *testing.T) {
+	s, ctx := newTestStore(t), context.Background()
+	user := createTestUser(t, s, 78313)
+	now := time.Date(2030, 1, 31, 0, 0, 0, 0, time.UTC)
+	from := now.AddDate(0, 0, -30)
+	for i, at := range []time.Time{from.Add(-time.Nanosecond), from, now, now.Add(time.Nanosecond)} {
+		id := fmt.Sprintf("renewal-%d", i)
+		if _, err := s.db.ExecContext(ctx, `INSERT INTO ledger_entries(id,user_id,delta_txb_minor,balance_after,kind,reference_id,created_at) VALUES($1,$2,-1,0,'automatic_renewal',$1,$3)`, id, user.ID, stamp(at)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := s.pricingUserFeatures(ctx, user.ID, now); !errors.Is(err, ErrPricingComputePending) {
+		t.Fatal(err)
+	}
+	job, err := s.ClaimComputeOutboxJob(ctx, time.Now().UTC().Add(time.Second))
+	if err != nil || job == nil {
+		t.Fatal(job, err)
+	}
+	var payload struct {
+		ID string `json:"inputId"`
+	}
+	if err = json.Unmarshal([]byte(job.Payload), &payload); err != nil {
+		t.Fatal(err)
+	}
+	task, err := s.PricingComputeInput(ctx, payload.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out, err := compute.Run(ctx, compute.Batch{Version: compute.Version, Tasks: []compute.Task{task}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = s.AcceptPricingCompute(ctx, task, out.Items[0], now); err != nil {
+		t.Fatal(err)
+	}
+	if err = s.pricingUserFeatures(ctx, user.ID, now); err != nil {
+		t.Fatal(err)
+	}
+	var renewals int
+	if err = s.db.QueryRowContext(ctx, `SELECT (features_json::jsonb->>'renewals30')::integer FROM pricing_features WHERE entity_type='user' AND entity_id=$1`, user.ID).Scan(&renewals); err != nil || renewals != 2 {
+		t.Fatal("feature included future or expired renewal evidence", renewals, err)
 	}
 }
 

@@ -75,6 +75,9 @@ func (s *Store) retryAttempt_JoinRaffle(ctx context.Context, userID string, chat
 		}
 		return activity.RaffleEntry{}, true, ErrConflict
 	}
+	if err := draw.LuckyDrawInput.Validate(); err != nil {
+		return activity.RaffleEntry{}, true, err
+	}
 	if err = eligibleDrawParticipantTx(ctx, tx, userID, draw, now); err != nil {
 		return activity.RaffleEntry{}, true, err
 	}

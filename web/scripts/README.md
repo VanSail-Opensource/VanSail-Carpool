@@ -39,6 +39,8 @@ It also verifies that a different owner retires the prior payment sheet and that
 delayed combo/balance replies cannot restore the prior owner's navigation.
 The constructed captcha scenario exercises the actual App owner boundary and
 rejects prior-widget session replies and callbacks.
+The native member fixture also validates the current endpoint/template routing
+contract and durable save receipt, including the exact revisioned payload.
 
 `browser-operation-recovery.mjs` checks explicit receipt-outcome selection,
 unsupported workflow restrictions and retained drafts after evidence conflicts.
@@ -97,3 +99,5 @@ payloads verify that unrelated expiry and financial terms are omitted.
 pending review/apply, visible failure and reviewed retry, retired metadata,
 nullable booleans and disposed Apply completions on desktop and mobile. It uses
 constructed rows and records both review and apply payloads without a database.
+
+`browser-admin-settings-recovery.mjs` also verifies the stablecoin fixture server probe and failed-then-recovered transfer dismissal. Both actions are constructed, and the browser harness rejects every backend/provider request.

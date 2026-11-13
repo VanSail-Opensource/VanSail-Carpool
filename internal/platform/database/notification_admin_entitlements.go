@@ -16,7 +16,8 @@ func adminEntitlementEditNotification(before model.Purchase, input AdminEntitlem
 	facts := adminNotificationBase("entitlement_edit", input.Reason, now)
 	if input.ValidUntil.After(before.ValidUntil) {
 		kind = jobpayload.UserEventAdminExtension
-		facts[notifications.FactAddedSeconds] = strconv.FormatInt(int64(input.ValidUntil.Sub(before.ValidUntil)/time.Second), 10)
+		seconds, _ := adminEntitlementTermSeconds(before.ValidUntil, input.ValidUntil)
+		facts[notifications.FactAddedSeconds] = strconv.FormatInt(seconds, 10)
 		facts[notifications.FactPreviousExpiry] = before.ValidUntil.Format(time.RFC3339Nano)
 		facts[notifications.FactNewExpiry] = input.ValidUntil.Format(time.RFC3339Nano)
 	} else {

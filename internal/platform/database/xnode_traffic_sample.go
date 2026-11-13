@@ -37,7 +37,9 @@ func recordXNodeSample(ctx context.Context, tx *sql.Tx, node string, multiplier 
 	}
 	if owner != int64(sample.UserID) {
 		var migrated bool
-		if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM member_identity_aliases a JOIN xnode_period_nodes p ON p.period_id=$1 AND p.node_id=$2 WHERE a.old_proxy_id=$3 AND a.proxy_id=$4)`, sample.AccountingPeriod, node, sample.UserID, owner).Scan(&migrated); err != nil {
+		if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM member_identity_aliases a
+ JOIN xnode_identities i ON i.proxy_user_id=a.proxy_id AND i.user_id=a.user_id
+ JOIN xnode_period_nodes p ON p.period_id=$1 AND p.node_id=$2 WHERE a.old_proxy_id=$3 AND a.proxy_id=$4)`, sample.AccountingPeriod, node, sample.UserID, owner).Scan(&migrated); err != nil {
 			return err
 		}
 		if migrated {

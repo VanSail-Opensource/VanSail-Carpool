@@ -85,3 +85,27 @@ func TestPurgeIPLocalExpiryCannotSubstituteForNativeReceipt(t *testing.T) {
 		t.Fatal("changed encrypted target retained stale clear proof")
 	}
 }
+
+func TestPurgeIPReceiptKeepsExactExpiryIdentity(t *testing.T) {
+	s, target, jobID, control := nativePurgeIPFixture(t)
+	ctx := context.Background()
+	// Both instants round to the same PostgreSQL microsecond, but the later
+	// deadline belongs to a different native control than the captured receipt.
+	control.Block.ExpiresAt = control.Block.ExpiresAt.Truncate(time.Second)
+	if _, err := s.db.ExecContext(ctx, `UPDATE connection_ip_blocks SET expires_at=$1 WHERE id=$2`, stamp(control.Block.ExpiresAt), control.Block.ID); err != nil {
+		t.Fatal(err)
+	}
+	if ok, err := s.RecordAccountPurgeIPClear(ctx, target, jobID, control); err != nil || !ok {
+		t.Fatal(ok, err)
+	}
+	if _, err := s.db.ExecContext(ctx, `UPDATE connection_ip_blocks SET expires_at=$1 WHERE id=$2`, stamp(control.Block.ExpiresAt.Add(time.Nanosecond)), control.Block.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err := purgeIPReady(t, s, target); err == nil {
+		t.Fatal("rounded expiry reused a stale native receipt")
+	}
+	controls, active, err := s.AccountPurgeIPControls(ctx, target, jobID)
+	if err != nil || !active || len(controls) != 1 {
+		t.Fatal("changed native control disappeared from recovery", controls, active, err)
+	}
+}

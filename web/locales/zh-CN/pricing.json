@@ -165,7 +165,7 @@
     "quoteValidUntil": "报价有效至 {date}",
     "quoteStates": {"calculating": "正在计算您的价格…", "delayed": "计算时间较长，请稍后重试。", "stale": "报价已过期，请刷新后再确认。", "unavailable": "暂时无法计算价格，请重试。"},
     "summaryLabels": {"netRevenueMinor": "近 30 天净收入", "recordedCostMinor": "近 30 天已记录供应商付款", "recordedMarginMinor": "近 30 天已记录利润", "forecastRevenueMinor": "下个 UTC 日预计收入", "forecastMarginMinor": "下个 UTC 日预计利润", "unallocatedDailyCostMinor": "每日未分摊机器成本"},
-    "currentPrice": "当前含税基础价",
+    "currentPrice": "当前优惠前价格",
     "readiness": "就绪状态",
     "partialRecords": "还有更多记录，可加载下一页继续查看。",
     "loadMore": "加载更多记录",
