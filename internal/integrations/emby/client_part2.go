@@ -130,8 +130,12 @@ func (c *Client) do(ctx context.Context, method, endpoint string, input, output 
 	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
 		return decodeAPIError(response.StatusCode, responseBody)
 	}
-	if output == nil || response.StatusCode == http.StatusNoContent || len(bytes.TrimSpace(responseBody)) == 0 {
+	if output == nil {
 		return nil
+	}
+	data := bytes.TrimSpace(responseBody)
+	if response.StatusCode == http.StatusNoContent || len(data) == 0 || bytes.Equal(data, []byte("null")) {
+		return errors.New("Emby response is missing required data")
 	}
 	if err := json.Unmarshal(responseBody, output); err != nil {
 		return fmt.Errorf("decode Emby response: %w", err)

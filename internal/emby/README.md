@@ -21,3 +21,7 @@ Priced Emby setup, durable provisioning, policy hardening, preference updates, a
 - `service_test_helpers_test.go` contains shared repository, remote, price, secret, and cipher doubles.
 - `README.md` documents the package layout.
 - `types_part2.go` contains policy hardening and policy comparison helpers.
+
+`policy_proof_test.go` verifies that non-negotiable false restrictions require an
+explicit JSON boolean; null or missing proof cannot complete provisioning. The
+existing pending-review path retains ambiguous setup state for reconciliation.

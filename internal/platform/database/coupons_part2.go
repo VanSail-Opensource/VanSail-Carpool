@@ -34,6 +34,9 @@ func (s *Store) retryAttempt_RedeemCoupon(ctx context.Context, userID, code, ide
 	} else if !errors.Is(loadErr, ErrNotFound) {
 		return coupons.RedemptionResult{}, loadErr
 	}
+	if err := lockProviderOperationAccountsTx(ctx, tx, userID, ""); err != nil {
+		return coupons.RedemptionResult{}, err
+	}
 	coupon, err := couponByCodeTx(ctx, tx, canonical)
 	if err != nil {
 		return coupons.RedemptionResult{}, err
@@ -89,10 +92,14 @@ func (s *Store) retryAttempt_RedeemCoupon(ctx context.Context, userID, code, ide
 	if err != nil {
 		return coupons.RedemptionResult{}, fmt.Errorf("record coupon redemption: %w", err)
 	}
+	result, err := redemptionByIDTx(ctx, tx, redemptionID)
+	if err != nil {
+		return coupons.RedemptionResult{}, err
+	}
 	if err := tx.Commit(); err != nil {
 		return coupons.RedemptionResult{}, fmt.Errorf("commit coupon redemption: %w", err)
 	}
-	return s.redemptionByID(ctx, redemptionID)
+	return result, nil
 }
 
 // GrantCoupon idempotently puts a purchase-discount coupon in a member wallet.

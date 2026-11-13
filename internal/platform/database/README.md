@@ -2029,3 +2029,25 @@ payment creation. Historical `ResultJSON` payloads remain byte-for-byte internal
 evidence and are never promoted into member or administrator receipt messages.
 `provider_operation_projection_test.go` covers owner, principal, list, and replay
 projections while verifying retained result and completion timestamps.
+
+## Coupon definition policy boundary
+
+`coupons_admin.go` rejects administrator edits that change a stored coupon's kind
+or discount mode before saving any fields or audit. Internal historical fixture
+writers remain available. `coupons_admin_policy_test.go` exercises real grant
+redemption, one-time consumption, retained purchase totals, and mutable value/cap
+pricing for attached recurring renewals.
+
+`api_token_expiry_test.go` verifies the 50-live-token admission limit at whole and
+fractional second boundaries, including a one-nanosecond remaining lifetime and
+exclusive exact expiry. Admission parses candidate expiries before counting;
+rejected issuance writes neither a credential nor its audit event.
+
+`coupon_admission_test.go` covers fresh redemption refusal after owner retirement,
+accepted replay through lifecycle changes, and retry after recovery. Redemption
+holds the active owner's lifecycle lock through commit and decodes its complete
+response in the same transaction; a failed result read rolls back wallet grants,
+balance credits and ledger/redemption evidence together.
+
+`coupon_redemption_scan.go` decodes retained redemption amounts, grant references
+and current definition metadata for transactional responses and exact replay.

@@ -87,3 +87,8 @@ in-flight archive download when the owning workspace unmounts.
 `browser-admin-activity-recovery.mjs` checks game write locking, explicit retry,
 a confirmed save followed by read failure, retirement of cached draw inventories,
 and forecast recovery in desktop/mobile browser editors.
+
+`browser-admin-coupon-recovery.mjs` checks loading, locked pending edits,
+refusal/retry, retained save/deactivation effects after read failures, option
+retry and retired write completions in desktop/mobile Chromium. Exact recorded
+payloads verify that unrelated expiry and financial terms are omitted.

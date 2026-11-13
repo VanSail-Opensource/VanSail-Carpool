@@ -5,7 +5,7 @@
     "new": "New coupon",
     "loadFailed": "Coupons could not be loaded.",
     "saveFailed": "The coupon could not be saved.",
-    "deactivateConfirm": "Deactivate coupon {code}? Existing purchase grants will stop being eligible.",
+    "deactivateConfirm": "Deactivate coupon {code}? New uses will stop; recurring discounts already attached to purchases remain.",
     "deactivateFailed": "The coupon could not be deactivated.",
     "edit": "Edit coupon",
     "definition": "Coupon definition",
@@ -16,7 +16,7 @@
     "recurring": "Recurring discount",
     "balanceAdd": "Balance adding",
     "balanceMultiply": "Balance multiplying",
-    "financialHint": "Create a new definition to change the financial effect.",
+    "financialHint": "Kind and discount mode require a new definition. Value and cap changes affect future uses and attached renewals; eligibility and availability changes apply to new uses.",
     "discountMode": "Discount mode",
     "percent": "Percent",
     "fixed": "Fixed TXB",
@@ -40,7 +40,9 @@
     "editNamed": "Edit {code}",
     "deactivate": "Deactivate",
     "none": "No coupons",
-    "noneHint": "Create a definition or grant one as a draw prize."
+    "noneHint": "Create a definition or grant one as a draw prize.",
+    "invalidFields": "Check the coupon code, exact amount, date and positive use limits.",
+    "optionsFailed": "Eligible plans and squads could not be refreshed. Existing selections were kept."
   },
   "pm": {
     "title": "Private messages",

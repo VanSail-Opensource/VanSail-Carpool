@@ -14,3 +14,9 @@ redemption and purchase foreign keys remain available for history, while quotes
 and checkout reject discarded grants. Administrator definition deletion remains
 deactivation, so existing history is preserved there as well.
 - `coupons_test.go` verifies coupon validation, arithmetic, and application behavior.
+
+Administrator edits preserve a definition's kind and discount mode. Create a new
+definition to change either field. Value and cap edits apply to future uses and
+already attached recurring renewals. Availability, expiry, limits and eligibility
+still gate fresh uses; attached recurring renewals retain their established
+availability semantics. Settled `coupon_uses` amounts are never repriced.

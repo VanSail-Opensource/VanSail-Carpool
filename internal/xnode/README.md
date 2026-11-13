@@ -1567,3 +1567,8 @@ Named standalone services reject the reserved `member-probe-` namespace before
 creating credentials or quota. Those identities are dispatched exclusively through
 immutable metered-probe attribution and cannot represent standalone access.
 `named_services_test.go` verifies rejection leaves principal and period counts unchanged.
+
+`route_speedtest_recovery_test.go` verifies that transient routing-plan reads,
+cancellation and unavailable dependencies leave a speedtest pair unattempted.
+Only typed invalid, conflicting or missing access closes it as access-changed;
+no failed read is treated as evidence authorizing or consuming probe traffic.

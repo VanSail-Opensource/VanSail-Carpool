@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"time"
@@ -23,11 +24,11 @@ func (s *Store) retryAttempt_CreateAdminAPIToken(ctx context.Context, item apito
 		}
 		return err
 	}
-	var active int
-	if err = tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM admin_api_tokens WHERE user_id=$1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at>$2)`, item.UserID, stamp(item.CreatedAt)).Scan(&active); err != nil {
+	limited, err := adminAPITokenLimitReachedTx(ctx, tx, item.UserID, item.CreatedAt)
+	if err != nil {
 		return err
 	}
-	if active >= 50 {
+	if limited {
 		return apitoken.ErrLimit
 	}
 	scopes, err := json.Marshal(item.Scopes)
@@ -93,4 +94,34 @@ func (s *Store) retryAttempt_RevokeAdminAPIToken(ctx context.Context, id, userID
 		}
 	}
 	return tx.Commit()
+}
+
+// Candidate selection includes the entire current second. RFC3339Nano strings
+// do not sort chronologically when one instant has no fractional component.
+func adminAPITokenLimitReachedTx(ctx context.Context, tx *sql.Tx, userID string, now time.Time) (bool, error) {
+	lower := now.UTC().Truncate(time.Second).Add(-time.Second)
+	rows, err := tx.QueryContext(ctx, `SELECT expires_at FROM admin_api_tokens
+		WHERE user_id=$1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at>$2)`, userID, stamp(lower))
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+	active := 0
+	for rows.Next() {
+		var raw sql.NullString
+		if err = rows.Scan(&raw); err != nil {
+			return false, err
+		}
+		expires, err := parseOptionalStamp(raw)
+		if err != nil {
+			return false, err
+		}
+		if expires == nil || expires.After(now) {
+			active++
+			if active >= 50 {
+				return true, nil
+			}
+		}
+	}
+	return false, rows.Err()
 }

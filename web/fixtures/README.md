@@ -508,3 +508,10 @@ Lucky administrator fixtures add `stale-load`, `defer-save`, `read-after-save-er
 and `forecast-error`. `__audit.releaseReads()` and `releaseSave(fail)` control
 constructed completions; `gameWrites` and `drawWrites` record reviewed targets and
 payloads without any live reward or wallet mutation.
+
+`CouponRecoveryAudit.vue`, `coupon-recovery-audit.ts` and
+`coupon-recovery-audit.html` mount the actual coupon workspace with constructed
+definitions and deferred mutations. `slow`, `defer`, `refresh-error`,
+`options-error` and `zh` select states. `__couponRecoveryAudit` records exact
+changed-field payloads, releases failures/successes and retires the owner view.
+No grant, wallet or payment operation is issued.

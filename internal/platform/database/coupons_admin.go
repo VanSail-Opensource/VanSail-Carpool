@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
@@ -31,6 +32,9 @@ func (s *Store) retryAttempt_SaveAdminCoupon(ctx context.Context, actorID string
 		}
 		if !previous.UpdatedAt.Equal(expectedUpdatedAt) {
 			return coupons.Coupon{}, ErrConflict
+		}
+		if previous.Kind != input.Kind || previous.DiscountMode != input.DiscountMode {
+			return coupons.Coupon{}, fmt.Errorf("%w: coupon kind and discount mode require a new definition", coupons.ErrInvalidInput)
 		}
 		previousCode = previous.Code
 		previous.Code = ""

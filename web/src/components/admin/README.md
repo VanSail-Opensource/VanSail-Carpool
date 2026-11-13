@@ -85,3 +85,15 @@ prevents late archive responses from triggering a browser download.
 Activity editors lock pending writes and retain confirmed server records if the
 subsequent inventory refresh fails. The workspace exposes explicit Refresh, and
 draw forecasts retire replaced requests and expose their own retry control.
+
+`useAdminCoupons.ts` owns the coupon inventory, editor and option lifecycle. It
+retires older reads when a mutation starts, captures one pending target, preserves
+failed drafts and projects successful save/deactivation effects before refreshing.
+Unchanged expiry timestamps remain exact and existing definitions send only
+changed fields, so unrelated saves do not replace newer financial settings.
+The bilingual editor explains which changes affect attached recurring discounts;
+kind and discount mode remain fixed. `useAdminCoupons.test.ts` covers ordering,
+retained success, explicit retry, exact amounts/expiry and disposed workspaces.
+
+`couponDraft.ts` converts exact coupon amounts, dates and positive use limits,
+and computes changed-field writes independently from request and editor state.
