@@ -88,7 +88,9 @@ func (s *Server) telegramWebhook(w http.ResponseWriter, r *http.Request) {
 		payment := message.RefundedPayment
 		event := billing.ProviderEvent{Provider: "stars", OrderID: payment.InvoicePayload, TradeID: payment.TelegramPaymentChargeID,
 			PayableAmount: strconv.FormatInt(payment.TotalAmount, 10), PayableCurrency: payment.Currency}
-		if _, err := s.deps.Billing.ValidateEvent(r.Context(), event); err != nil {
+		order, err := s.deps.Billing.ValidateEvent(r.Context(), event)
+		if err != nil || event.TradeID == "" || order.ProviderTradeID == nil || *order.ProviderTradeID != event.TradeID ||
+			(order.Status != "paid" && order.Status != "refunded") {
 			s.writeError(w, r, http.StatusConflict, "REFUND_MISMATCH", "Telegram refund did not match the stored order.")
 			return
 		}

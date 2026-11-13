@@ -35,6 +35,11 @@ func (s *LiveService) trafficSummary(ctx context.Context, asn uint32, dimension,
 		return t
 	}
 	r := nested(o, "result")
+	summary := nested(r, "summary_0")
+	if summary == nil {
+		t.LiveMeta = liveMeta("cloudflare", &CodeError{"IP_DETAILS_INVALID_RESPONSE"})
+		return t
+	}
 	meta := nested(r, "meta")
 	t.ObservedAt = textField(meta, "lastUpdated")
 	for _, window := range liveList(meta, "dateRange") {
@@ -50,18 +55,18 @@ func (s *LiveService) trafficSummary(ctx context.Context, asn uint32, dimension,
 	case "IP_VERSION":
 		allowed = map[string]bool{"IPv4": true, "IPv6": true}
 	}
-	for name := range nested(r, "summary_0") {
+	for name := range summary {
 		if !allowed[name] {
 			continue
 		}
-		value, err := strconv.ParseFloat(textField(nested(r, "summary_0"), name), 64)
+		value, err := strconv.ParseFloat(textField(summary, name), 64)
 		if err != nil || math.IsNaN(value) || math.IsInf(value, 0) || value < 0 || value > 100 {
 			t.Status = "partial"
 			continue
 		}
 		t.Values[name] = value
 	}
-	if len(t.Values) == 0 {
+	if len(t.Values) == 0 && t.Status == "success" {
 		t.Status = "empty"
 	}
 	return t

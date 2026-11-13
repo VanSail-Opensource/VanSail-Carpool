@@ -117,6 +117,9 @@ func relationshipTargets(t BGPTopology) []uint32 {
 	}
 	distance := map[uint32]int{}
 	for _, route := range t.RouteSummaries {
+		if !validRouteSummary(route) {
+			continue
+		}
 		hops := 0
 		for i, asn := range route.ASNs {
 			if i > 0 {

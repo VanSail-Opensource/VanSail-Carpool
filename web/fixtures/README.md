@@ -1,5 +1,11 @@
 # Constructed browser fixtures
 
+`PMRecoveryAudit.vue` uses `pm-admin-audit.html?recovery&lost&pending` to mount the
+actual administrator profile loader and PM command owner around an ambiguous
+accepted moderation. `__pmAudit` records stable keys and exact mutations; toggle
+`recover`, `failure`, and `pending` to exercise retry, quiet-read failure and
+terminal polling. All commands and reads remain constructed in the fixture.
+
 `route-recovery-audit.html` mounts the actual browser recovery controller and
 startup failure view around a synthetic lazy user route. Open the profile control
 for client navigation, add `direct` for an initial destination failure, `permanent`

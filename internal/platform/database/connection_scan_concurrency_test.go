@@ -16,12 +16,12 @@ func TestConnectionScanUpdateRechecksConcurrentProgressAndCompletion(t *testing.
 	}{{providerops.StatusProcessing, 80}, {providerops.StatusSucceeded, 100}} {
 		t.Run(string(winner.status), func(t *testing.T) {
 			t.Parallel()
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-			defer cancel()
 			store := newTestStore(t)
 			user := createTestUser(t, store, 900_607)
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			defer cancel()
 			now := time.Now().UTC()
-			scan, _, err := store.CreateConnectionScan(ctx, providerops.ConnectionScanInput{UserID: user.ID,
+			scan, _, err := store.CreateConnectionScan(ctx, providerops.ConnectionScanInput{ActorUserID: scanAdministrator(t, store).ID, UserID: user.ID,
 				IdempotencyKey: "concurrent-progress", RequestFingerprint: "concurrent-progress-proof", ExpiresAt: now.Add(time.Hour)}, now)
 			if err != nil {
 				t.Fatal(err)

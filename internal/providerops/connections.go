@@ -4,11 +4,13 @@ import "time"
 
 // ConnectionScanInput contains only durable scan metadata; raw IPs are excluded.
 type ConnectionScanInput struct {
-	UserID             string
-	IdempotencyKey     string
-	RequestFingerprint string
-	ProviderJobID      string
-	ExpiresAt          time.Time
+	ActorUserID            string
+	ActorAccountGeneration int64
+	UserID                 string
+	IdempotencyKey         string
+	RequestFingerprint     string
+	ProviderJobID          string
+	ExpiresAt              time.Time
 }
 
 // ConnectionScan is provider job progress without connection result data.

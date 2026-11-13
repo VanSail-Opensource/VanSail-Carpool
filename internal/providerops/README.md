@@ -7,6 +7,8 @@ handles remain short-lived service data and are never stored in these records.
 
 - `types.go` defines operation states, commands, receipts, items, and results.
 - `connections.go` defines metadata-only connection scan inputs and progress.
+  New admission inputs carry the authenticated administrator and generation for
+  transactional validation/audit; no transient IP results enter storage.
 - `validation.go` canonicalizes commands and bounded JSON result objects.
 - `dispatcher.go` routes the one shared outbox lane to kind-specific handlers.
 - `dispatcher_test.go` covers kind routing without provider calls.

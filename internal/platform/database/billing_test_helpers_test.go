@@ -139,6 +139,12 @@ func assertRowCount(t *testing.T, store *Store, table string, want int) {
 		query = `SELECT COUNT(*) FROM webhook_events`
 	case "payment_callback_tombstones":
 		query = `SELECT COUNT(*) FROM payment_callback_tombstones`
+	case "coupon_uses":
+		query = `SELECT COUNT(*) FROM coupon_uses`
+	case "activity_draw_results":
+		query = `SELECT COUNT(*) FROM activity_draw_results`
+	case "activity_raffle_tickets":
+		query = `SELECT COUNT(*) FROM activity_raffle_tickets`
 	default:
 		t.Fatalf("assertRowCount called with unsupported table %q", table)
 	}

@@ -29,6 +29,8 @@ const (
 )
 
 var (
+	// ErrScanForbidden rejects stale or revoked administrator request authority.
+	ErrScanForbidden = errors.New("administrator connection scan access required")
 	// ErrScanNotFound hides scans owned by another member and expired scans.
 	ErrScanNotFound = errors.New("connection scan not found")
 	// ErrScanUnavailable preserves transient storage failures for retry.

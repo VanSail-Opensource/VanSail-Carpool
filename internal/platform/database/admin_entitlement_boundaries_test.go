@@ -81,6 +81,10 @@ func TestAdminBulkAndReplacementUseExactPaidWindow(t *testing.T) {
 		IdempotencyKey: "fractional-replace", RequestFingerprint: "fractional-replace-fingerprint", Reason: "replace current term"}, now); err != nil {
 		t.Fatalf("replacement skipped still-paid fractional term: %v", err)
 	}
+	var addons string
+	if err := store.DB().QueryRowContext(ctx, `SELECT entitlement_addon_squad_uuids FROM purchases WHERE id=$1`, purchase.ID).Scan(&addons); err != nil || addons != "[]" {
+		t.Fatalf("omitted replacement add-ons = %q, %v; want an explicit empty selection", addons, err)
+	}
 	if _, err := store.CreateAdminBulkExtension(ctx, AdminBulkExtensionInput{ActorUserID: actor.ID, IdempotencyKey: "fractional-extend",
 		RequestFingerprint: "fractional-extend-fingerprint", Reason: "extend current term", Filter: AdminBulkExtensionFilter{ComboIDs: []string{combo.ID}}, DurationMinutes: 1}, now); err != nil {
 		t.Fatalf("extension skipped still-paid fractional term: %v", err)

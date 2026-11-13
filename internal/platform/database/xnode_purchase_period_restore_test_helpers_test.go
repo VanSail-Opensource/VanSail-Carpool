@@ -17,6 +17,17 @@ type purchasePeriodRestoreFixture struct {
 	now      time.Time
 }
 
+// Access repair is admitted only for fully onboarded owners. Period-restore
+// tests separately exercise lower-level accounting without this prerequisite.
+func newAccessRepairFixture(t *testing.T, status string) purchasePeriodRestoreFixture {
+	t.Helper()
+	fixture := newPurchasePeriodRestoreFixture(t, status)
+	if _, err := fixture.store.DB().ExecContext(context.Background(), `UPDATE users SET onboarding_state='complete' WHERE id=$1`, fixture.identity.UserID); err != nil {
+		t.Fatal(err)
+	}
+	return fixture
+}
+
 func newPurchasePeriodRestoreFixture(t *testing.T, status string) purchasePeriodRestoreFixture {
 	t.Helper()
 	ctx, store, now := context.Background(), newTestStore(t), time.Now().UTC()

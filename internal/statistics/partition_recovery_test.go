@@ -14,6 +14,7 @@ import (
 type corruptPartitionRepository struct {
 	statisticsRepositoryStub
 	corrupt     string
+	corruptData []byte
 	database    model.DatabaseStatistics
 	databaseErr error
 	saved       map[string][]byte
@@ -30,6 +31,9 @@ func (r *corruptPartitionRepository) LoadStatisticsPartition(_ context.Context, 
 	}
 	if key == r.corrupt {
 		payload = []byte("{invalid")
+		if r.corruptData != nil {
+			payload = r.corruptData
+		}
 	}
 	return payload, time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC), nil
 }

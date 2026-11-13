@@ -16,11 +16,16 @@ export async function adminSettingsRecoveryScenarios(scenario, size) {
     await dialog.getByRole('button', { name: 'Dismiss permanently', exact: true }).click()
     await page.waitForFunction(() => globalThis.__stablecoinAudit.dismissals.length === 1)
     assert.equal(await dialog.getByRole('textbox', { name: 'Dismissal reason', exact: true }).inputValue(), 'Constructed evidence review')
+    assert.equal(await dialog.locator('.usdt-toolbar').evaluate(element => globalThis.getComputedStyle(element).display), 'flex')
     await capture('retained-failure')
     await page.evaluate(() => { globalThis.__stablecoinAudit.recover = true })
     await dialog.getByRole('button', { name: 'Dismiss permanently', exact: true }).click()
     await dialog.waitFor({ state: 'hidden' })
     await page.getByText('No transfers need review.', { exact: true }).waitFor()
+    assert.equal(await page.locator('.usdt-review__empty').evaluate(element => {
+      const bounds = element.getBoundingClientRect()
+      return bounds.left >= 0 && bounds.right <= globalThis.innerWidth && element.scrollWidth <= element.clientWidth
+    }), true, 'empty review message remains horizontally clipped')
     assert.deepEqual(await page.evaluate(() => globalThis.__stablecoinAudit.dismissals), Array.from({ length: 2 }, () => ({ id: 'purged-transfer', reason: 'Constructed evidence review' })))
   })
   for (const outcome of ['success', 'failure']) {

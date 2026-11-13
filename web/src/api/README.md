@@ -89,6 +89,9 @@ Generated API compatibility regression: `openapiContract.test.ts`.
 `openapiInputBoundaries.test.ts` validates source-contract callback composition,
 provider-owned rails, exact amount limits, nullable values, partial settings,
 receipt authentication and error recovery, and required response descriptions.
+Its bounded schema helper evaluates `allOf`, `anyOf`, and `oneOf` branches
+independently against the original input so Zod's object-intersection merging
+cannot suppress an `additionalProperties: false` rejection.
 
 - `pricingReads.ts`: Bounds concurrent optional analytical dataset reads to three, with abortable admission; commerce requests keep their independent transport.
 

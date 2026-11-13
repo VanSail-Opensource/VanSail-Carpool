@@ -89,6 +89,7 @@ func (p Proxy) endpointDocument(format string) (map[string]any, error) {
 		delete(object(out, "xhttp-opts"), "download-settings")
 	}
 	pruneEndpointOmissions(p, format, out)
+	enforceEndpointClientTLS(format, out)
 	// Member values overlay only the unchanged generated member allowlist.
 	base.Tuning = p.Tuning
 	if base.Tuning == nil {

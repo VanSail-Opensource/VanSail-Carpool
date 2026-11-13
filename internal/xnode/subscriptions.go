@@ -153,23 +153,3 @@ func (s *Service) readBearerSubscriptionForAgent(ctx context.Context, identity I
 	raw, err := renderSubscriptionSelection(config, owner, selection, proxies)
 	return raw, metadata, err
 }
-func (s *Service) RoutingTemplates(ctx context.Context, user string) ([]map[string]any, error) {
-	proxies, err := s.MemberProxies(ctx, user)
-	if err != nil {
-		return nil, err
-	}
-	out := []map[string]any{}
-	for _, proxy := range proxies {
-		value, err := proxy.Outbound()
-		if err != nil {
-			return nil, err
-		}
-		suffix := proxy.ID
-		if len(suffix) > 8 {
-			suffix = suffix[:8]
-		}
-		value["tag"] = "peer-" + suffix
-		out = append(out, map[string]any{"nodeId": proxy.NodeID, "name": proxy.Name, "outbound": value})
-	}
-	return out, nil
-}

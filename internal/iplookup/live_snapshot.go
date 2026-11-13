@@ -9,7 +9,7 @@ func emitCachedDetails(r LiveDetails, emit func(LiveEvent) error) (LiveDetails, 
 		if err != nil {
 			return LiveDetails{}, err
 		}
-		if err := emit(liveComplete(r.IP, data)); err != nil {
+		if err := emit(liveComplete(r, data)); err != nil {
 			return LiveDetails{}, err
 		}
 	}

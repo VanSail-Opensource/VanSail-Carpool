@@ -59,7 +59,9 @@ func (w *Worker) repair(ctx context.Context, run execution, item providerops.Ite
 			if chinese(current.Locale) {
 				label = "资料卡验证时间："
 			}
-			profile.Text += "\n" + telegramformat.Escape(label+time.Now().UTC().Format(time.RFC3339Nano))
+			// Keep the changing probe within Telegram's limit even when the
+			// profile already fills it. The prefix survives body truncation.
+			profile.Text = telegramformat.Limit(telegramformat.Escape(label+time.Now().UTC().Format(time.RFC3339Nano)) + "\n" + profile.Text)
 		}
 		return profile, nil
 	}

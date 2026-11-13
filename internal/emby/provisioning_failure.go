@@ -59,10 +59,11 @@ func (s *Service) handleProvisionError(ctx context.Context, expected Provisionin
 	if record.CreateAttempted || record.RemoteUserID != "" {
 		return s.pendingReview(ctx, record.ID, provisionErr)
 	}
-	if err := s.repository.RequeueEmbyProvisioning(ctx, record.ID, provisionErr, s.now().UTC()); err != nil {
+	safe := redactRemoteError(provisionErr, safeFailure(provisionErr))
+	if err := s.repository.RequeueEmbyProvisioning(ctx, record.ID, safe, s.now().UTC()); err != nil {
 		return fmt.Errorf("record Emby provisioning retry: %w", err)
 	}
-	return provisionErr
+	return safe
 }
 
 func (s *Service) failTerminal(ctx context.Context, expected ProvisioningRecord, cause error) error {

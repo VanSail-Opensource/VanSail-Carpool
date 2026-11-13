@@ -16,7 +16,7 @@ func TestConnectionScanLookupClassifiesOnlyMissingEvidence(t *testing.T) {
 	owner := createTestUser(t, store, 900_601)
 	ctx := context.Background()
 	now := time.Now().UTC()
-	scan, _, err := store.CreateConnectionScan(ctx, providerops.ConnectionScanInput{
+	scan, _, err := store.CreateConnectionScan(ctx, providerops.ConnectionScanInput{ActorUserID: scanAdministrator(t, store).ID,
 		UserID: owner.ID, IdempotencyKey: "lookup-contract", RequestFingerprint: "0123456789abcdef", ExpiresAt: now.Add(time.Minute),
 	}, now)
 	if err != nil {

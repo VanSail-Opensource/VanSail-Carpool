@@ -29,6 +29,9 @@ remain shared billing components. Composables guard stale responses after unmoun
 
 Command failures remain visible beside transfer-credit inputs in the evidence
 side panel. Browser administration does not load Telegram controls or haptics.
+The teleported evidence panel owns its layout styles instead of depending on a
+page ancestor. Empty review copy sits outside the horizontally scrollable table,
+so dismissing the final transfer cannot retain an off-screen empty message.
 
 Each network has independent USDT/USDC switches; USDC is hidden on TRON/BSC/TON.
 Legacy global modes populate missing network switches once. Explicit empty lists

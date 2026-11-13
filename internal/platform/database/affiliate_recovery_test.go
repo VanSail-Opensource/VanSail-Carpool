@@ -23,7 +23,17 @@ func TestMalformedAffiliateTiersFailClosedAndRemainRepairable(t *testing.T) {
 		t.Fatal(err)
 	}
 	order := createTestPaymentOrder(t, store, invitee.ID, "ezpay", 1000, now)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE affiliate_tiers SET enabled=0`); err != nil {
+	// Model a retained malformed configuration by appending a new version.
+	// Existing tier history is immutable, including in recovery fixtures.
+	if _, err := store.DB().ExecContext(ctx, `INSERT INTO affiliate_config_versions(id,version,created_by,created_at)
+		VALUES('legacy-malformed',2,$1,$2)`, actor.ID, stamp(now)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.DB().ExecContext(ctx, `INSERT INTO affiliate_tiers(id,config_id,position,name,success_threshold,enabled,commission_enabled,commission_bps,reward_kind)
+		VALUES('legacy-disabled-tier','legacy-malformed',0,'Disabled starter',0,0,0,0,'none')`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.DB().ExecContext(ctx, `UPDATE affiliate_config_current SET config_id='legacy-malformed' WHERE singleton=1`); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := store.AffiliateOverview(ctx, inviter.ID, ""); !errors.Is(err, affiliates.ErrInvalidInput) {

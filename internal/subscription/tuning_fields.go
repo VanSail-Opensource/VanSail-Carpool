@@ -40,7 +40,7 @@ var cachedTuningSpecs = sync.OnceValue(func() []tuningSpec {
 	for index := range result {
 		spec := &result[index]
 		switch spec.Key {
-		case "fingerprint":
+		case "fingerprint", "downloadFingerprint":
 			set := map[string]bool{"unsafe": true}
 			for _, name := range mihomoFingerprints {
 				set[name] = true

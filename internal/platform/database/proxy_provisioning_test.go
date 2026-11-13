@@ -124,12 +124,15 @@ func TestProvisioningUsesExactPaidWindowAndActiveOwner(t *testing.T) {
 			if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET valid_until=$1 WHERE id=$2`, stamp(now.Add(test.until)), purchase.ID); err != nil {
 				t.Fatal(err)
 			}
-			state := "active"
-			if test.closed {
-				state = "purging"
-			}
-			if _, err := store.DB().ExecContext(ctx, `UPDATE users SET account_status=$1,proxy_user_id=NULL,onboarding_state='complete' WHERE id=$2`, state, user.ID); err != nil {
+			if _, err := store.DB().ExecContext(ctx, `UPDATE users SET proxy_user_id=NULL,onboarding_state='complete' WHERE id=$1`, user.ID); err != nil {
 				t.Fatal(err)
+			}
+			if test.closed {
+				// Close an already-onboarded owner; completing onboarding on a
+				// closed owner is deliberately rejected by the lifecycle trigger.
+				if _, err := store.DB().ExecContext(ctx, `UPDATE users SET account_status='purging' WHERE id=$1`, user.ID); err != nil {
+					t.Fatal(err)
+				}
 			}
 			if live, err := store.HasProvisionablePurchase(ctx, user.ID, now); err != nil || live != test.live {
 				t.Fatal("incorrect paid admission", live, err)

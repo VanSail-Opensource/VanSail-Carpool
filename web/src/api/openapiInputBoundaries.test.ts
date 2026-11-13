@@ -67,7 +67,16 @@ function requestSchema(shard: string, method = 'post'): Document {
 }
 
 function accepts(document: unknown, value: unknown): boolean {
-  return z.fromJSONSchema(document as JSONSchema).safeParse(value).success
+  if (typeof document !== 'object' || document === null) {
+    return z.fromJSONSchema(document as JSONSchema).safeParse(value).success
+  }
+  // JSON Schema applies branches to the original value; Zod intersections merge
+  // accepted object keys and can suppress a strict branch's unknown-key error.
+  const { allOf, anyOf, oneOf, ...base } = document as Document
+  return z.fromJSONSchema(base as JSONSchema).safeParse(value).success &&
+    (allOf === undefined || (allOf as JSONSchema[]).every((branch) => accepts(branch, value))) &&
+    (anyOf === undefined || (anyOf as JSONSchema[]).some((branch) => accepts(branch, value))) &&
+    (oneOf === undefined || (oneOf as JSONSchema[]).filter((branch) => accepts(branch, value)).length === 1)
 }
 
 describe('OpenAPI input and recovery boundaries', () => {
@@ -76,23 +85,20 @@ describe('OpenAPI input and recovery boundaries', () => {
     for (const value of [{ blocked: false }, { muted: false }, { blocked: true, muted: true }]) {
       expect(accepts(contract, value)).toBe(true)
     }
-    for (const value of [{}, { blocked: 'true' }, { muted: null }, { blocked: true, unexpected: true }, 'blocked']) {
-      expect(accepts(contract, value)).toBe(false)
+    for (const value of [{}, { blocked: 'true' }, { muted: null }, { blocked: true, muted: 'false' }, { blocked: null, muted: true }, { blocked: true, unexpected: true }, 'blocked']) {
+      expect(accepts(contract, value), JSON.stringify(value)).toBe(false)
     }
   })
 
   it('keeps bulk duration alternatives exclusive and bounded', () => {
     for (const name of ['BulkExtensionRequest', 'BulkExtensionCreateRequest']) {
-      const { oneOf, ...base } = schema('schemas-18.yaml', name) as Document
-      const alternatives = oneOf as JSONSchema[]
-      const acceptsBulk = (value: unknown): boolean => accepts(base, value) &&
-        alternatives.filter(branch => accepts(branch, value)).length === 1
+      const contract = schema('schemas-18.yaml', name)
       const targets = { comboIds: [], addonSquadUuids: [], ...(name.endsWith('CreateRequest') ? { reason: 'Operator review' } : {}) }
 
-      expect(acceptsBulk({ ...targets, durationMinutes: 60 })).toBe(true)
-      expect(acceptsBulk({ ...targets, days: 1 })).toBe(true)
+      expect(accepts(contract, { ...targets, durationMinutes: 60 })).toBe(true)
+      expect(accepts(contract, { ...targets, days: 1 })).toBe(true)
       for (const duration of [{}, { durationMinutes: 60, days: 1 }, { durationMinutes: 0 }, { durationMinutes: 5_256_001 }, { days: 3651 }, { durationMinutes: '60' }]) {
-        expect(acceptsBulk({ ...targets, ...duration })).toBe(false)
+        expect(accepts(contract, { ...targets, ...duration })).toBe(false)
       }
     }
   })
@@ -100,18 +106,14 @@ describe('OpenAPI input and recovery boundaries', () => {
   it('accepts signed and capability-only BEP callbacks under JSON Schema union semantics', () => {
     const contract = requestSchema('api-v1-webhooks-bepusdt-capability.yaml')
     const alternatives = (contract.anyOf ?? contract.oneOf) as JSONSchema[]
-    const acceptsCallback = (value: unknown): boolean => {
-      const count = alternatives.filter((branch) => accepts(branch, value)).length
-      return contract.oneOf ? count === 1 : count > 0
-    }
     const unsigned = { order_id: 'order-1', amount: '3.00', actual_amount: 3, token: 'USDT', status: 2 }
     const signed = { ...unsigned, trade_id: 'trade-1', signature: 'provider-signature' }
 
     // Signed data also satisfies the unsigned shape because providers may add fields.
     expect(alternatives.filter((branch) => accepts(branch, signed))).toHaveLength(2)
-    expect(acceptsCallback(unsigned)).toBe(true)
-    expect(acceptsCallback(signed)).toBe(true)
-    expect(acceptsCallback({ ...unsigned, amount: undefined })).toBe(false)
+    expect(accepts(contract, unsigned)).toBe(true)
+    expect(accepts(contract, signed)).toBe(true)
+    expect(accepts(contract, { ...unsigned, amount: undefined })).toBe(false)
   })
 
   it('keeps each profiled payment rail with its actual provider', () => {

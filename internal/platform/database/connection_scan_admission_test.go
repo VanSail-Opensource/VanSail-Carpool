@@ -14,7 +14,7 @@ func TestConnectionScanAdmissionRetainsReplayButRejectsClosedOwner(t *testing.T)
 	ctx, store := context.Background(), newTestStore(t)
 	user := createTestUser(t, store, 900_603)
 	at := time.Now().UTC()
-	input := providerops.ConnectionScanInput{UserID: user.ID, IdempotencyKey: "admitted", RequestFingerprint: "admitted-diagnostics-proof", ExpiresAt: at.Add(time.Minute)}
+	input := providerops.ConnectionScanInput{ActorUserID: scanAdministrator(t, store).ID, UserID: user.ID, IdempotencyKey: "admitted", RequestFingerprint: "admitted-diagnostics-proof", ExpiresAt: at.Add(time.Minute)}
 	first, _, err := store.CreateConnectionScan(ctx, input, at)
 	if err != nil {
 		t.Fatal(err)
@@ -50,7 +50,7 @@ func TestConnectionScanStartFencesExpiryAndCurrentAccount(t *testing.T) {
 			ctx, store := context.Background(), newTestStore(t)
 			user := createTestUser(t, store, 900_604)
 			at := time.Date(2026, 11, 1, 12, 0, 0, 0, time.UTC)
-			created, _, err := store.CreateConnectionScan(ctx, providerops.ConnectionScanInput{UserID: user.ID,
+			created, _, err := store.CreateConnectionScan(ctx, providerops.ConnectionScanInput{ActorUserID: scanAdministrator(t, store).ID, UserID: user.ID,
 				IdempotencyKey: "delayed-start", RequestFingerprint: "delayed-diagnostics-proof", ExpiresAt: at.Add(test.remaining)}, at.Add(-time.Hour))
 			if err != nil {
 				t.Fatal(err)
@@ -77,7 +77,7 @@ func TestConnectionScanStartChargesOwnerLockWaitingTime(t *testing.T) {
 	store := newTestStore(t)
 	user := createTestUser(t, store, 900_605)
 	at := time.Date(2026, 11, 1, 12, 0, 0, 0, time.UTC)
-	created, _, err := store.CreateConnectionScan(ctx, providerops.ConnectionScanInput{UserID: user.ID,
+	created, _, err := store.CreateConnectionScan(ctx, providerops.ConnectionScanInput{ActorUserID: scanAdministrator(t, store).ID, UserID: user.ID,
 		IdempotencyKey: "lock-delayed-start", RequestFingerprint: "lock-delay-proof", ExpiresAt: at.Add(50 * time.Millisecond)}, at.Add(-time.Hour))
 	if err != nil {
 		t.Fatal(err)

@@ -12,7 +12,7 @@ import (
 func TestAccessRepairRejectsChangedLifecycleAndClosure(t *testing.T) {
 	for _, change := range []string{"purging", "purged", "generation", "closure"} {
 		t.Run(change, func(t *testing.T) {
-			f, ctx := newPurchasePeriodRestoreFixture(t, "closing"), context.Background()
+			f, ctx := newAccessRepairFixture(t, "closing"), context.Background()
 			expected := f.period
 			var err error
 			switch change {
@@ -39,7 +39,7 @@ func TestAccessRepairRejectsChangedLifecycleAndClosure(t *testing.T) {
 }
 
 func TestAccessRepairKeepsRetiredParticipantEvidence(t *testing.T) {
-	f, ctx := newPurchasePeriodRestoreFixture(t, "open"), context.Background()
+	f, ctx := newAccessRepairFixture(t, "open"), context.Background()
 	if err := f.store.SaveXNodeConfiguration(ctx, xnode.Configuration{ID: "repair-config", Name: "Repair fixture", DocumentCipher: "fixture"}); err != nil {
 		t.Fatal(err)
 	}

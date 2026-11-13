@@ -86,8 +86,9 @@ func (s *Service) Provision(ctx context.Context, accountID string) error {
 }
 
 func (s *Service) pendingReview(ctx context.Context, accountID string, cause error) error {
-	if err := s.repository.MarkEmbyPendingReview(ctx, accountID, cause, s.now().UTC()); err != nil {
+	safe := redactRemoteError(cause, "Emby provisioning requires administrator review.")
+	if err := s.repository.MarkEmbyPendingReview(ctx, accountID, safe, s.now().UTC()); err != nil {
 		return fmt.Errorf("record Emby pending review: %w", err)
 	}
-	return fmt.Errorf("%w: %v", ErrPendingReview, cause)
+	return fmt.Errorf("%w: %v", ErrPendingReview, safe)
 }

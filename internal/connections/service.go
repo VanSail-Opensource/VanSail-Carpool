@@ -47,14 +47,14 @@ func NewService(repository Repository, remote Remote, signer *Signer) *Service {
 }
 
 // RequestAdmin uses the existing durable scan/outbox with a native-only fingerprint.
-func (s *Service) RequestAdmin(ctx context.Context, user model.User, idempotencyKey string) (Scan, error) {
-	return s.request(ctx, user, idempotencyKey, nativeScanFingerprint())
-}
-
-func (s *Service) request(ctx context.Context, user model.User, idempotencyKey, fingerprint string) (Scan, error) {
+func (s *Service) RequestAdmin(ctx context.Context, actor, user model.User, idempotencyKey string) (Scan, error) {
+	if err := s.currentAdministrator(ctx, actor); err != nil {
+		return Scan{}, err
+	}
 	now := s.now().UTC()
 	record, _, err := s.repository.CreateConnectionScan(ctx, providerops.ConnectionScanInput{
-		UserID: user.ID, IdempotencyKey: idempotencyKey, RequestFingerprint: fingerprint, ExpiresAt: now.Add(ScanTTL),
+		ActorUserID: actor.ID, ActorAccountGeneration: actor.AccountGeneration,
+		UserID: user.ID, IdempotencyKey: idempotencyKey, RequestFingerprint: nativeScanFingerprint(), ExpiresAt: now.Add(ScanTTL),
 	}, now)
 	if err != nil {
 		return Scan{}, err
@@ -63,8 +63,18 @@ func (s *Service) request(ctx context.Context, user model.User, idempotencyKey, 
 }
 
 // PollAdmin refuses old bridge scans rather than initiating a legacy provider read.
-func (s *Service) PollAdmin(ctx context.Context, userID, scanID string) (Scan, error) {
-	return s.poll(ctx, userID, scanID, true)
+func (s *Service) PollAdmin(ctx context.Context, actor model.User, userID, scanID string) (Scan, error) {
+	if err := s.currentAdministrator(ctx, actor); err != nil {
+		return Scan{}, err
+	}
+	projection, err := s.poll(ctx, userID, scanID, true)
+	if err != nil {
+		return Scan{}, err
+	}
+	if err := s.currentAdministrator(ctx, actor); err != nil {
+		return Scan{}, err
+	}
+	return projection, nil
 }
 
 func (s *Service) poll(ctx context.Context, userID, scanID string, nativeOnly bool) (Scan, error) {

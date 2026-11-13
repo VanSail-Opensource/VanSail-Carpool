@@ -17,7 +17,6 @@ type liveRequestResult struct {
 type liveRequests struct {
 	mu          sync.Mutex
 	results     map[[32]byte]*liveRequestResult
-	failed      bool
 	attempted   bool
 	attemptOnce sync.Once
 	attemptErr  error
@@ -71,11 +70,6 @@ func (s *LiveService) liveHTTP(ctx context.Context, source, path string, query u
 	memo.results[key] = entry
 	memo.mu.Unlock()
 	entry.data, entry.err = s.liveHTTPRequest(ctx, source, path, query, body, credential)
-	if entry.err != nil && ErrorCode(entry.err) != "IP_DETAILS_NOT_FOUND" && ErrorCode(entry.err) != "IP_DETAILS_PLAN_RESTRICTED" {
-		memo.mu.Lock()
-		memo.failed = true
-		memo.mu.Unlock()
-	}
 	close(entry.done)
 	return entry.data, entry.err
 }

@@ -11,6 +11,7 @@ func pruneTransitContext(t BGPTopology) BGPTopology {
 	if t.ProjectionVersion != 2 {
 		return t
 	}
+	t = validateRouteSummaries(t)
 	tiers, keep := map[uint32]bool{}, map[uint32]bool{}
 	classified := true
 	for _, node := range t.Nodes {

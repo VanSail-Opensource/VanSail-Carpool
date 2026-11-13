@@ -9,7 +9,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
-func TestImportedHostACLPreventsSubscriptionAndRoutingTemplateLeakage(t *testing.T) {
+func TestImportedHostACLPreventsSubscriptionInventoryLeakage(t *testing.T) {
 	f := controlFixture(t, true)
 	ctx := context.Background()
 	endpoint := xnode.Endpoint{NodeID: f.node.ID, InboundTag: "paid", Name: "Host", Address: "proxy.example", Port: 443, Enabled: true}
@@ -34,10 +34,6 @@ func TestImportedHostACLPreventsSubscriptionAndRoutingTemplateLeakage(t *testing
 			proxies, err := f.service.MemberProxies(ctx, f.user.ID)
 			if err != nil || len(proxies) != scenario.expected {
 				t.Fatalf("proxies=%d err=%v", len(proxies), err)
-			}
-			templates, err := f.service.RoutingTemplates(ctx, f.user.ID)
-			if err != nil || len(templates) != scenario.expected {
-				t.Fatalf("routing templates=%d err=%v", len(templates), err)
 			}
 		})
 	}

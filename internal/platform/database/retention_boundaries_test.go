@@ -21,7 +21,7 @@ func TestCompactionKeepsFractionalGraceAndLiveScan(t *testing.T) {
 	if _, err := store.DB().ExecContext(ctx, `INSERT INTO activity_group_message_raw_events(chat_id,message_id,local_date,created_at) VALUES(-123,1,$1,$2)`, cutoff24.Format(time.DateOnly), stamp(cutoff24.Add(time.Nanosecond))); err != nil {
 		t.Fatal(err)
 	}
-	scan, _, err := store.CreateConnectionScan(ctx, providerops.ConnectionScanInput{UserID: owner.ID, IdempotencyKey: "retention-live-scan", RequestFingerprint: "retention-live-scan-proof", ExpiresAt: now.Add(time.Nanosecond)}, now.Add(-time.Minute))
+	scan, _, err := store.CreateConnectionScan(ctx, providerops.ConnectionScanInput{ActorUserID: scanAdministrator(t, store).ID, UserID: owner.ID, IdempotencyKey: "retention-live-scan", RequestFingerprint: "retention-live-scan-proof", ExpiresAt: now.Add(time.Nanosecond)}, now.Add(-time.Minute))
 	if err != nil {
 		t.Fatal(err)
 	}

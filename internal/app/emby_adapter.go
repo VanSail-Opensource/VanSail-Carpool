@@ -162,7 +162,7 @@ func embySetupPrice(settings *admin.SettingsService) domain.PriceSource {
 		}
 		minor, err := billing.ParseTXBMajor(raw)
 		if err != nil || minor < 0 {
-			return 0, fmt.Errorf("invalid Emby setup price")
+			return 0, fmt.Errorf("%w: invalid configured setup price", domain.ErrInvalidSetup)
 		}
 		return minor, nil
 	})

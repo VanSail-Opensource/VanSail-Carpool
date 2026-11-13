@@ -11,20 +11,68 @@ func CompactTopology(t BGPTopology) BGPTopology {
 		if t.Tier1Links == nil {
 			t.Tier1Links = []Tier1Link{}
 		}
-		return t
+		return validateRouteSummaries(t)
 	}
 	return compactLegacyTopology(t)
 }
 
+// Stored versioned projections can outlive their writer. Reject malformed hop
+// vectors before public display or repair traversals, retaining valid evidence.
+func validateRouteSummaries(t BGPTopology) BGPTopology {
+	var valid []BGPRouteSummary
+	for i, route := range t.RouteSummaries {
+		if validRouteSummary(route) {
+			if valid != nil {
+				valid = append(valid, route)
+			}
+			continue
+		}
+		if valid == nil {
+			valid = append(make([]BGPRouteSummary, 0, len(t.RouteSummaries)), t.RouteSummaries[:i]...)
+		}
+		if t.Status != "error" {
+			t.Status = "partial"
+		}
+		if t.ErrorCode == "" {
+			t.ErrorCode = "IP_DETAILS_INVALID_RESPONSE"
+		}
+		t.Truncated = true
+	}
+	if valid != nil {
+		t.RouteSummaries = valid
+	}
+	return t
+}
+
+func validRouteSummary(route BGPRouteSummary) bool {
+	if len(route.ASNs) == 0 || len(route.ASNs) > 128 || len(route.Hops) != len(route.ASNs)-1 {
+		return false
+	}
+	distance := 0
+	for i, asn := range route.ASNs {
+		if asn == 0 {
+			return false
+		}
+		if i > 0 {
+			hops := route.Hops[i-1]
+			if hops < 1 || hops > 127-distance {
+				return false
+			}
+			distance += hops
+		}
+	}
+	return true
+}
+
 // compactLegacyTopology never upgrades snapshots whose original evidence is gone.
 func compactLegacyTopology(t BGPTopology) BGPTopology {
-	origins, visible, tiers := map[uint32]bool{}, map[uint32]bool{}, map[uint32]bool{}
+	origins, visible := map[uint32]bool{}, map[uint32]bool{}
 	for _, asn := range t.Origins {
 		origins[asn], visible[asn] = true, true
 	}
 	for _, node := range t.Nodes {
 		if node.Tier1 != nil && *node.Tier1 {
-			tiers[node.ASN], visible[node.ASN] = true, true
+			visible[node.ASN] = true
 		}
 	}
 	edges := []BGPEdge{}
@@ -40,31 +88,6 @@ func compactLegacyTopology(t BGPTopology) BGPTopology {
 	links := map[[3]uint32]Tier1Link{}
 	for _, link := range t.Tier1Links {
 		links[[3]uint32{link.Origin, link.Neighbor, link.Tier1}] = link
-	}
-	for _, path := range t.Paths {
-		clean := []uint32{}
-		for _, asn := range path.ASPath {
-			if len(clean) == 0 || clean[len(clean)-1] != asn {
-				clean = append(clean, asn)
-			}
-		}
-		if len(clean) < 3 {
-			continue
-		}
-		origin, neighbor := clean[len(clean)-1], clean[len(clean)-2]
-		if !origins[origin] {
-			continue
-		}
-		for i, asn := range clean[:len(clean)-2] {
-			if !tiers[asn] || asn == origin || asn == neighbor {
-				continue
-			}
-			key := [3]uint32{origin, neighbor, asn}
-			hops := len(clean) - 2 - i
-			if previous, ok := links[key]; !ok || hops < previous.Hops {
-				links[key] = Tier1Link{origin, neighbor, asn, hops}
-			}
-		}
 	}
 	nodes := []BGPNode{}
 	for _, node := range t.Nodes {

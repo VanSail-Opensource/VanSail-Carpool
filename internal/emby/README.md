@@ -53,3 +53,9 @@ been removed. Setup and administrator retries enter through `OperationService`,
 which binds idempotency keys to exact intent and atomically records the receipt
 with the charge or retry. The legacy provisioning outbox handler remains active
 so previously queued work can still be recovered.
+
+Provisioning persists stable failure messages for all provider stages, including
+username lookup, remote identity reads and policy application. Wrapped causes
+remain available for retry/terminal classification without appearing in account
+diagnostics. `error_privacy_test.go` verifies retry, terminal refund and ambiguous
+review behavior with private provider URLs/response bodies.

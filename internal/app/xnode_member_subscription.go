@@ -10,25 +10,29 @@ import (
 )
 
 func (a proxyProvider) LoadUnifiedSubscription(ctx context.Context, user model.User, links bool) (subscription.MemberSubscription, error) {
-	identity, err := a.native.IdentityForUser(ctx, user.ID)
-	if errors.Is(err, xnode.ErrNotFound) {
-		return subscription.MemberSubscription{Hosts: []subscription.SubscriptionHost{}}, nil
-	}
-	if err != nil {
-		return subscription.MemberSubscription{}, err
-	}
-	return a.LoadMemberSubscription(ctx, strconv.FormatInt(identity.ProxyUserID, 10), nil, links)
+	return a.readAuthenticatedSubscription(ctx, user, func() (subscription.MemberSubscription, error) {
+		identity, err := a.native.IdentityForUser(ctx, user.ID)
+		if errors.Is(err, xnode.ErrNotFound) {
+			return subscription.MemberSubscription{Hosts: []subscription.SubscriptionHost{}}, nil
+		}
+		if err != nil {
+			return subscription.MemberSubscription{}, err
+		}
+		return a.LoadMemberSubscription(ctx, strconv.FormatInt(identity.ProxyUserID, 10), nil, links)
+	})
 }
 
 func (a proxyProvider) LoadSubscriptionForMember(ctx context.Context, user model.User, enabled []string, links bool) (subscription.MemberSubscription, error) {
-	identity, err := a.native.IdentityForUser(ctx, user.ID)
-	if err == nil {
-		return a.LoadMemberSubscription(ctx, strconv.FormatInt(identity.ProxyUserID, 10), enabled, links)
-	}
-	if !errors.Is(err, xnode.ErrNotFound) {
-		return subscription.MemberSubscription{}, err
-	}
-	return subscription.MemberSubscription{}, xnode.ErrUnavailable
+	return a.readAuthenticatedSubscription(ctx, user, func() (subscription.MemberSubscription, error) {
+		identity, err := a.native.IdentityForUser(ctx, user.ID)
+		if err == nil {
+			return a.LoadMemberSubscription(ctx, strconv.FormatInt(identity.ProxyUserID, 10), enabled, links)
+		}
+		if !errors.Is(err, xnode.ErrNotFound) {
+			return subscription.MemberSubscription{}, err
+		}
+		return subscription.MemberSubscription{}, xnode.ErrUnavailable
+	})
 }
 
 func (a proxyProvider) LoadMemberSubscription(ctx context.Context, id string, enabled []string, links bool) (subscription.MemberSubscription, error) {

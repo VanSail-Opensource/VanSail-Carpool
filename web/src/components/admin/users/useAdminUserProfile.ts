@@ -50,7 +50,10 @@ export function useAdminUserProfile(userId: MaybeRefOrGetter<string>) {
       const result = await adminOperationsApi.getUser(expectedId, controller.signal)
       if (active && ticket === generation && toValue(userId) === expectedId) detail.value = result
     } catch (caught) {
-      if (active && ticket === generation) { detail.value = null; loadError.value = localizedError(caught, 'adminUserProfile.loadFailed') }
+      if (active && ticket === generation) {
+        if (!quiet) detail.value = null
+        loadError.value = localizedError(caught, 'adminUserProfile.loadFailed')
+      }
     } finally {
       if (active && ticket === generation && toValue(userId) === expectedId) loading.value = false
     }

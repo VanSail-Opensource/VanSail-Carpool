@@ -44,3 +44,11 @@ Admission also rejects expired requests and unavailable owners. The worker uses
 a fresh clock after owner reads and honors the returned terminal record before
 calling a provider. `admission_test.go` covers both refusals and a concurrent
 terminal unblock claim; neither path repeats or overwrites the durable outcome.
+
+`admin_authority.go` binds fresh scan requests and both sides of result projection
+to the requesting administrator's original account generation and current active,
+unblocked role. Fresh SQL admission checks that actor again while holding account
+locks and commits actor audit attribution with the scan/outbox. Already accepted
+read-only scan work keeps its original recovery semantics after later demotion;
+polling always requires current authority before returning transient IPs.
+`admin_authority_test.go` covers revoked admission and demotion during projection.

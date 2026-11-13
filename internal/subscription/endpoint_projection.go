@@ -125,3 +125,22 @@ func enforceEndpointTLS(stream map[string]any) {
 		settings["allowInsecure"] = false
 	}
 }
+
+// Legacy format mappers run after native projection. Their output must retain
+// the same fixed-off verification policy as the canonical endpoint stream.
+func enforceEndpointClientTLS(format string, out map[string]any) {
+	switch format {
+	case "xray":
+		enforceEndpointTLS(object(out, "streamSettings"))
+	case "sing-box":
+		if tls := object(out, "tls"); tls["insecure"] == true {
+			tls["insecure"] = false
+		}
+	case "clash", "stash":
+		for _, leg := range []map[string]any{out, object(object(out, "xhttp-opts"), "download-settings")} {
+			if leg["skip-cert-verify"] == true {
+				leg["skip-cert-verify"] = false
+			}
+		}
+	}
+}

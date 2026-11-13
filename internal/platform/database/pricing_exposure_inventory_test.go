@@ -11,10 +11,10 @@ import (
 
 func TestPricingExposuresIncludeShownProductsBeyondInventoryPrefilter(t *testing.T) {
 	t.Parallel()
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
 	store := newTestStore(t)
 	user := createTestUser(t, store, 32_209)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	now := time.Date(2026, 11, 13, 0, 0, 0, 0, time.UTC)
 	for _, query := range []string{
 		`INSERT INTO combos(id,name,price_txb_minor,validity_days,traffic_limit_bytes,created_at,updated_at)

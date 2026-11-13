@@ -213,7 +213,8 @@ onboarding, signed requests and the existing idempotent operation protections.
 `xnode_nodes.go` Serves node policy, enrollment and group/endpoint mutations.
 `xnode_configurations.go` Serves config/snippet CRUD and realtime native validation.
 
-- `xnode_members.go`: Entry points: `mountXNodeMembers`, `xnodeMemberMetrics`, `xnodeOwnedSubscription`, `xnodeRoutingTemplates`.
+- `xnode_members.go`: Mounts native member routes, owner metrics and fenced
+  subscription metadata, and public bearer metadata/configuration delivery.
 
 
 - `xnode_operations.go`: Entry points: `xnodeQueueCommand`, `xnodeDeleteNode`, `xnodeDeleteGroup`, `xnodeDeleteEndpoint`.
@@ -402,4 +403,24 @@ failures from invalid Telegram authentication and preserves existing cookies.
 `onboarding_storage_test.go` verifies local agreement/continuation storage failures
 return retryable availability errors while actual state conflicts remain distinct.
 
-`admin_backup_authorization_test.go` verifies revoked backup-deletion authority maps to a forbidden response. `authentication_storage_test.go` and `onboarding_storage_test.go` preserve retryable local storage failures without corrupting authentication or onboarding state.
+`telegram_refund_proof_test.go` rejects missing, mismatched, or unretained Stars
+charge identifiers before any wallet reversal, including callback redelivery.
+`admin_error_privacy_test.go` verifies that administrator errors never disclose
+private storage or integration diagnostics and that known infrastructure failures
+retain server-side availability/error statuses.
+
+`xnode_subscription_owner.go` binds the native member metadata response to the
+original authenticated account generation and active/unblocked owner both before
+projection and before publication. `xnode_subscription_owner_test.go` verifies
+that stale requests cannot reveal revived bearer URLs and current requests remain
+usable after recovery.
+
+Administrator connection scan handlers propagate the authenticated actor to fresh
+admission and polling; revoked authority returns a forbidden response before IP
+publication. `emby_error_privacy_test.go` verifies that even historical stored
+provider diagnostics become stable account-state messages in member/admin views.
+
+Emby account configuration reads preserve missing/invalid settings as an
+incomplete setup but return a safe availability error for storage failures.
+`emby_configuration_recovery_test.go` verifies failure and recovery of both
+connection and price reads without publishing an incorrect disabled state.

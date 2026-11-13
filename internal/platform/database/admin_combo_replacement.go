@@ -48,6 +48,11 @@ func (s *Store) retryAttempt_ReplaceAdminCombo(ctx context.Context, input AdminC
 	if comboExists != 1 {
 		return model.OperationReceipt{}, ErrNotFound
 	}
+	// An omitted selection means no add-ons. JSON null is not a purchase
+	// override array and would violate the authoritative schema constraint.
+	if input.AddonSquadUUIDs == nil {
+		input.AddonSquadUUIDs = []string{}
+	}
 	addons, err := json.Marshal(input.AddonSquadUUIDs)
 	if err != nil {
 		return model.OperationReceipt{}, err

@@ -1,5 +1,10 @@
 # Frontend maintenance scripts
 
+`browser-pm-recovery.mjs` verifies ambiguous moderation retains its error and
+key, accepted flags refresh without losing receipt polling, a failed quiet read
+keeps the PM owner mounted, and terminal recovery releases the controls. Both
+desktop and mobile scenarios use the constructed PM fixture only.
+
 - `generate-response-schemas.mjs` resolves OpenAPI response references and generates structural read contracts without server-owned value restrictions. It verifies Zod can compile every generated schema.
 
 - `compact-contract.mjs` keeps the generated OpenAPI type artifact below the

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -38,12 +39,15 @@ func (s *Server) xnodeMemberMetrics(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, value)
 }
 func (s *Server) xnodeOwnedSubscription(w http.ResponseWriter, r *http.Request) {
-	value, err := s.deps.XNode.OwnedSubscription(r.Context(), currentUser(r).ID)
+	privateSubscriptionHeaders(w)
+	user := currentUser(r)
+	value, err := s.readAuthenticatedNativeSubscription(r.Context(), user, func() (xnode.SubscriptionMetadata, error) {
+		return s.deps.XNode.OwnedSubscription(r.Context(), user.ID)
+	})
 	if err != nil {
 		s.xnodeError(w, r, err)
 		return
 	}
-	privateSubscriptionHeaders(w)
 	writeJSON(w, http.StatusOK, value)
 }
 func privateSubscriptionHeaders(w http.ResponseWriter) {

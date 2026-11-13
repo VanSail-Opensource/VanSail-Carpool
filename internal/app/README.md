@@ -142,7 +142,7 @@ Turnstile uses an independent bounded provider queue in `provider_queues.go`, wi
 
 - `xnode_provider.go`: Entry points: `FindUserByUsername`, `FindUserByTelegramID`, `FindUserByID`, `CreateUser`.
 
-- `xnode_statistics.go`: Entry points: `Digest`, `Traffic`, `Nodes`.
+- `xnode_statistics.go` aggregates native fleet traffic for the active statistics provider; duplicate retired provider entry points have been removed.
 
 - `native_statistics.go`: Entry points: `nativeStatisticsProvider.Digest`,
   drives aggregate partitions. Statistics read only X-Node activity, and nodes
@@ -294,3 +294,9 @@ repeated activation, first provisioning and a retained purged identity. Existing
 period usage and another owner's state remain unchanged.
 
 `xnode_identity_generation_test.go` exercises real public native identity provisioning with an old captured user after revival, then verifies current-generation dormant credential preparation succeeds.
+
+`xnode_subscription_owner.go` binds both authenticated subscription loaders to the original panel account generation before and after native projection. `xnode_subscription_owner_test.go` covers stale authenticated snapshots before revival, purged/blocked owners, current-generation access, and a generation change immediately before publication.
+
+`emby_price_test.go` verifies that the setup-price adapter keeps missing settings
+and storage failures distinct from invalid pricing, while retaining free and
+exact integer-priced setup.

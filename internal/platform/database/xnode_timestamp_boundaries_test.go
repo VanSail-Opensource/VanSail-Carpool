@@ -24,7 +24,7 @@ func TestAccessRepairComparesExactPurchaseInstants(t *testing.T) {
 		{"exact expiry", whole.Add(-time.Hour), whole, whole, false},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			f, ctx := newPurchasePeriodRestoreFixture(t, "open"), context.Background()
+			f, ctx := newAccessRepairFixture(t, "open"), context.Background()
 			if _, err := f.store.DB().ExecContext(ctx, `UPDATE purchases SET valid_from=$1,valid_until=$2 WHERE id=$3`, stamp(test.from), stamp(test.until), f.purchase.ID); err != nil {
 				t.Fatal(err)
 			}
@@ -45,7 +45,7 @@ func TestAccessRepairComparesExactPurchaseInstants(t *testing.T) {
 }
 
 func TestAccessRepairQueuedContinuityKeepsFractionalExpiry(t *testing.T) {
-	f, ctx := newPurchasePeriodRestoreFixture(t, "open"), context.Background()
+	f, ctx := newAccessRepairFixture(t, "open"), context.Background()
 	queued, err := f.store.CreatePurchase(ctx, PurchaseInput{UserID: f.identity.UserID, ComboID: f.purchase.ComboID, IdempotencyKey: "repair-boundary"}, f.now.Add(time.Minute))
 	if err != nil || queued.Status != "queued" {
 		t.Fatal(queued, err)
@@ -120,7 +120,7 @@ func TestAccessRepairSchedulerKeepsExactBlockedOwnerBenefits(t *testing.T) {
 		{"exact expiry", whole.Add(-time.Hour), whole, 0},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			f, ctx := newPurchasePeriodRestoreFixture(t, "closing"), context.Background()
+			f, ctx := newAccessRepairFixture(t, "closing"), context.Background()
 			// Existing complete credentials permit paid-period recovery even if
 			// Telegram delivery is blocked; no new credentials are provisioned.
 			if _, err := f.store.db.ExecContext(ctx, `UPDATE users SET bot_blocked=1 WHERE id=$1`, f.identity.UserID); err != nil {

@@ -1,6 +1,7 @@
 package statistics
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -150,7 +151,7 @@ var ErrPartitionNotFound = errors.New("statistics partition is unavailable")
 
 func decodePartition[T any](payload []byte) (T, error) {
 	var result T
-	if len(payload) == 0 || json.Unmarshal(payload, &result) != nil {
+	if len(payload) == 0 || bytes.Equal(bytes.TrimSpace(payload), []byte("null")) || json.Unmarshal(payload, &result) != nil {
 		return result, fmt.Errorf("%w: invalid partition", ErrPartitionNotFound)
 	}
 	return result, nil

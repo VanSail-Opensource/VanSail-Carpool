@@ -615,7 +615,7 @@ administrator document and rejection of unrelated native-core errors.
 
 - `service_users.go`: Entry points: `AuthorizeService`.
 
-- `subscriptions.go`: Entry points: `BearerMetadata`, `OwnedSubscription`, `BearerSubscription`, `RoutingTemplates`.
+- `subscriptions.go`: Entry points: `BearerMetadata`, `OwnedSubscription`, `BearerSubscription`. The retired unmounted raw-outbound routing-template projection has been removed; member routing uses typed `OwnedRoutingPlan` metadata.
 
 - `validation_base.go`: Entry points: `ValidateConfigurationDocument`.
 

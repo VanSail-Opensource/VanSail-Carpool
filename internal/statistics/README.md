@@ -25,6 +25,9 @@ already published by another refresh. `partition_recovery_test.go` covers corrup
 cache repair, preserved database history through a failed recompute, and delayed
 initial reads racing a successful refresh.
 
+`null_partition_test.go` verifies that JSON null is unavailable cache evidence,
+preserves a healthy sibling partition, and permits authoritative recovery.
+
 `usage_projection_bounds_test.go` verifies that non-finite or unrepresentable
 derived percentages preserve the last-good remote partition. Representable
 overage remains visible; there is no new 100-percent policy cap.

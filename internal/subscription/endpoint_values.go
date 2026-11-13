@@ -86,6 +86,16 @@ func endpointMeaningful(value any) bool {
 }
 
 func endpointInheritedValue(p Proxy, spec tuningSpec) (any, bool) {
+	if spec.Key == "downloadFingerprint" {
+		// A partial or newly enabled download inherits the effective parent
+		// security settings. Inspect the same copy used by rendering so optional
+		// client omissions include that inherited value without changing source.
+		projected, err := p.endpointProjection()
+		if err != nil {
+			return nil, false
+		}
+		p = projected
+	}
 	path := endpointXrayPath(spec.Mappings["xray"], p, nil)
 	if path == "" || !endpointContextAvailable(spec, p, nil) {
 		return nil, false

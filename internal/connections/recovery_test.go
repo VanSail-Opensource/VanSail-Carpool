@@ -19,7 +19,10 @@ type connectionRecoveryRepository struct {
 func (r *connectionRecoveryRepository) ConnectionScanForUser(context.Context, string, string) (providerops.ConnectionScan, error) {
 	return r.scan, r.lookupErr
 }
-func (r *connectionRecoveryRepository) UserByID(context.Context, string) (model.User, error) {
+func (r *connectionRecoveryRepository) UserByID(_ context.Context, id string) (model.User, error) {
+	if id == scanTestAdministrator().ID {
+		return scanTestAdministrator(), nil
+	}
 	return r.user, r.ownerErr
 }
 
@@ -28,17 +31,17 @@ func TestConnectionPollPreservesStorageFailureForRetry(t *testing.T) {
 	cause := errors.New("temporary database outage")
 	repo := &connectionRecoveryRepository{lookupErr: cause}
 	service := NewService(repo, nil, nil)
-	if _, err := service.PollAdmin(context.Background(), "member", "scan"); !errors.Is(err, cause) || !errors.Is(err, ErrScanUnavailable) || errors.Is(err, ErrScanNotFound) {
+	if _, err := service.PollAdmin(context.Background(), scanTestAdministrator(), "member", "scan"); !errors.Is(err, cause) || !errors.Is(err, ErrScanUnavailable) || errors.Is(err, ErrScanNotFound) {
 		t.Fatal("storage failure misclassified as missing scan", err)
 	}
 	repo.lookupErr = ErrScanNotFound
-	if _, err := service.PollAdmin(context.Background(), "member", "scan"); !errors.Is(err, ErrScanNotFound) || errors.Is(err, ErrScanUnavailable) {
+	if _, err := service.PollAdmin(context.Background(), scanTestAdministrator(), "member", "scan"); !errors.Is(err, ErrScanNotFound) || errors.Is(err, ErrScanUnavailable) {
 		t.Fatal("missing scan lost its privacy boundary", err)
 	}
 	repo.lookupErr = nil
 	repo.scan = providerops.ConnectionScan{ID: "scan", UserID: "member", Status: providerops.StatusQueued,
 		RequestFingerprint: nativeScanFingerprint(), ExpiresAt: time.Now().Add(time.Minute)}
-	if scan, err := service.PollAdmin(context.Background(), "member", "scan"); err != nil || scan.ID != "scan" || scan.Failed {
+	if scan, err := service.PollAdmin(context.Background(), scanTestAdministrator(), "member", "scan"); err != nil || scan.ID != "scan" || scan.Failed {
 		t.Fatal("scan failed to recover after storage became available", scan, err)
 	}
 }

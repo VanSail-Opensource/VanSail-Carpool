@@ -13,7 +13,6 @@ import (
 )
 
 // nativeStatisticsProvider reads only panel accounting and native memory snapshots.
-// Commerce keeps its existing queued migration bridge provider.
 type nativeStatisticsProvider struct{ proxyProvider }
 
 func (a nativeStatisticsProvider) Digest(ctx context.Context, from, to time.Time) (stats.Digest, error) {

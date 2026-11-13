@@ -84,6 +84,11 @@ Public interfaces: `Template`, `DefaultTemplate`, `PreviewTemplate`, `RenderTemp
 
 `template_markers.go` bounds structural insertion depth and checks the single proxy marker. `template_references.go` rejects dangling rules and cyclic selectors. Generated output is bounded to 4,096 endpoints and 8 MiB; the renderer never drops unsupported endpoints silently. Explicit source exclusions are retained.
 
+`template_budget.go` accounts for every proxy/name insertion before allocating
+expanded arrays; all selectable Xray profiles share the same byte allowance.
+`template_budget_test.go` covers repeated escaped names, small previews that
+amplify for larger owner inventories and cumulative profile expansion.
+
 Clash and the distinct Stash template share structural YAML validation. Generated REALITY hosts always include `reality-opts.support-x25519mlkem768: true`, following https://stash.wiki/en/proxy-protocols/proxy-types. Stash uses its own mapper and SNI field. Member credentials are rendered on demand; previews use synthetic credentials.
 
 `empty_http.go` validates response-only templates: final status 200-599, omitted
@@ -168,3 +173,10 @@ and saved templates remain authoritative. Regression coverage lives in
 `template_names_test.go` and `internal/xnode/payg_subscription_test.go`.
 
 `member.go` defines owner-scoped host and subscription projections. `client_mapper.go` and `client_mapper_path.go` implement bounded ordered client mapping without retaining credentials; `client_mapper_test.go` covers copying, mutation isolation and rejected paths.
+
+`endpoint_fingerprint_test.go` verifies both TLS legs expose the current
+fingerprint catalog, pass pinned native validation and omit optional unsupported
+download fingerprints per client. Final endpoint TLS verification policy runs
+after legacy format mapping, including the independent download leg;
+`endpoint_tls_policy_test.go` also verifies mapped insecure settings cannot
+override that policy or mutate saved mapper documents.

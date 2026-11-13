@@ -11,6 +11,8 @@ import { ApiError } from '@/api/http'
 import type { OperationReceipt, PMConversation, PMDelivery } from '@/api/types'
 import { setLocale, t } from '@/i18n'
 import PMAdminAudit from './PMAdminAudit.vue'
+import PMRecoveryAudit from './PMRecoveryAudit.vue'
+import { adminOperationsApi, type AdminUserDetail } from '@/api/adminOperations'
 
 setExperience('browser')
 initializeBrowserTheme()
@@ -24,8 +26,9 @@ const date = new Date().toISOString()
 const make = (id: string, name: string): PMConversation => ({ id, userId: id, telegramId: '42', name, username: 'member_' + id, chatId: '-100123', topicId: '50', profileMessageId: '51', topicState: 'ready', profileState: 'ready', blocked: false, muted: false, createdAt: date, updatedAt: date })
 let conversations: PMConversation[] = [make('ada', 'Ada'), { ...make('mira', 'Mira'), muted: true }, { ...make('review', 'Member with a long Telegram display name'), topicId: null, profileMessageId: null, topicState: 'pending_review', profileState: 'missing' }]
 if (params.has('empty')) conversations = []
-const state = { changes: 0, repairs: 0, reads: 0, polls: 0, lastRepair: null as unknown, failure: params.has('error') }
+const state = { changes: 0, repairs: 0, reads: 0, polls: 0, lastRepair: null as unknown, failure: params.has('error'), recover: false, pending: params.has('pending'), keys: [] as string[] }
 const receipts = new Map<string, OperationReceipt>()
+const accepted = new Map<string, OperationReceipt>()
 async function loadConversation(): Promise<PMConversation | null> {
   state.reads++
   if (params.has('slow')) await new Promise(resolve => setTimeout(resolve, 10_000))
@@ -42,11 +45,17 @@ pmApi.deliveries = async () => {
   return { items: params.has('reviewempty') ? [] : deliveries }
 }
 function receipt(): OperationReceipt { const item: OperationReceipt = { id: 'pm-command-' + (state.changes + state.repairs), kind: 'telegram_pm_profile', status: 'queued', errorCode: null, createdAt: date, updatedAt: date, completedAt: null }; receipts.set(item.id, item); return item }
-pmApi.moderate = async (id, body) => {
+pmApi.moderate = async (id, body, key) => {
+  state.keys.push(key)
   if (params.has('moderationerror')) throw new ApiError(422, { code: 'INVALID_PM_UPDATE', message: '' })
-  state.changes++
-  conversations = conversations.map(item => item.id === id ? { ...item, ...body } : item)
-  return receipt()
+  let result = accepted.get(key)
+  if (!result) {
+    state.changes++
+    conversations = conversations.map(item => item.id === id ? { ...item, ...body } : item)
+    result = receipt(); accepted.set(key, result)
+  }
+  if (params.has('lost') && !state.recover) throw new ApiError(503, { code: 'PM_QUEUE_UNAVAILABLE', message: '' })
+  return result
 }
 pmApi.repair = async (id, body) => {
   state.repairs++; state.lastRepair = body
@@ -57,11 +66,12 @@ const loadOperation: OperationReceiptLoader = async (id) => {
   state.polls++
   if (params.has('pollerror')) throw new ApiError(503, { code: 'PM_QUEUE_UNAVAILABLE', message: '' })
   const item = receipts.get(id)!
-  const next = { ...item, status: params.has('pending') ? 'processing' as const : 'succeeded' as const, completedAt: params.has('pending') ? null : date }
+  const next = { ...item, status: state.pending ? 'processing' as const : 'succeeded' as const, completedAt: state.pending ? null : date }
   receipts.set(id, next); return next
 }
 Object.assign(window, { __pmAudit: state, __pmConversations: () => conversations, __pmLocale: setLocale })
-const app = createApp(PMAdminAudit, { loadConversation }).provide(operationReceiptLoaderKey, loadOperation)
+adminOperationsApi.getUser = async () => ({ entitlements: [], activeCombo: null, pmConversation: await loadConversation() }) as unknown as AdminUserDetail
+const app = (params.has('recovery') ? createApp(PMRecoveryAudit) : createApp(PMAdminAudit, { loadConversation })).provide(operationReceiptLoaderKey, loadOperation)
 app.config.globalProperties.$t = t
 app.use(createPinia())
 const router = createRouter({ history: createWebHistory(), routes: [{ path: '/fixtures/pm-admin-audit.html', component: PMAdminAudit }] })

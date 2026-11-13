@@ -2260,3 +2260,8 @@ offer before the per-response 64-item budget is applied.
 bounded responses and verifies same-response replays do not duplicate evidence.
 
 `pricing_command_progress.go` retains bounded global/model recalibration progress in the existing outbox payload. Every target checkpoint compares the exact current status, attempt, claim generation and previous payload; stale claims cannot advance progress. `pricing_command_progress_test.go` verifies continuation beyond 512 products, pending-compute recovery without prefix repetition, and lease fencing.
+
+`connection_scan_actor_test.go` checks fresh administrator role/lifecycle/generation
+admission, atomic scan/outbox/audit persistence, audit failure recovery and the
+continued execution of already accepted read-only diagnostic intent. HTTP/service
+polling independently rechecks current administrator authority before IP disclosure.

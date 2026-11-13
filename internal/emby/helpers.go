@@ -3,6 +3,7 @@ package emby
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"sort"
 	"strings"
 )
@@ -41,14 +42,16 @@ func zero(value []byte) {
 }
 
 func safeFailure(err error) string {
-	if err == nil {
-		return "provisioning failed"
+	switch {
+	case errors.Is(err, ErrAccountExists):
+		return "The requested Emby username is unavailable."
+	case errors.Is(err, ErrRemoteAccountMissing):
+		return "The linked Emby account could not be found."
+	case errors.Is(err, ErrInvalidSetup):
+		return "The Emby setup fields are invalid."
+	default:
+		return "Emby provisioning could not be completed."
 	}
-	value := err.Error()
-	if len(value) > 500 {
-		return value[:500]
-	}
-	return value
 }
 
 // redactedRemoteError keeps the original cause available for errors.Is/As and

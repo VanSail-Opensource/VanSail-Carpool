@@ -76,6 +76,11 @@ func (w *Worker) HandleProviderOperation(ctx context.Context, operation provider
 			if err != nil {
 				return err
 			}
+			if item.Status != providerops.StatusProcessing {
+				// A competing completion can win between the store's claim and
+				// read. Only the returned processing state permits provider work.
+				return nil
+			}
 		}
 		var result phaseResult
 		switch key {

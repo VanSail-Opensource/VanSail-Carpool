@@ -162,7 +162,7 @@ func endpointOptionReason(p Proxy, spec tuningSpec, format string, value any, va
 	if format == "clash" && spec.Key == "xhttpSessionIDTable" && !slices.Contains([]string{"", "uuid", "ALPHABET", "Alphabet", "BASE36", "Base62", "HEX", "alphabet", "base36", "hex", "number"}, fmt.Sprint(value)) {
 		return "value"
 	}
-	if spec.Key == "fingerprint" && !fingerprintSupported(format, fmt.Sprint(value)) {
+	if (spec.Key == "fingerprint" || spec.Key == "downloadFingerprint") && !fingerprintSupported(format, fmt.Sprint(value)) {
 		return "fingerprint"
 	}
 	if (format == "sing-box" || format == "clash") && spec.Key == "tcpFastOpen" {

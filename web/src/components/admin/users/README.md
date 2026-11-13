@@ -14,6 +14,7 @@
 - `AdminUserIPBlocks.vue` presents active member-created blocks and exposes only the administrator unblock action.
 - `AdminUserOverview.vue` presents identity, balance, synchronization, and the active combo.
 - `AdminUserPM.vue` moves PM controls, topic navigation, repair, delivery history, and read status into the selected profile.
+- `AdminUserPM.test.ts` preserves ambiguous moderation errors and replay keys, keeps queued receipt polling mounted, and permits explicit repair after a known pending-review result. Accepted moderation and terminal results request a quiet parent refresh, preserving the receipt owner while updating committed flags.
 - `AdminUserCouponActions.vue` grants or historically discards active purchase-discount wallet coupons.
 - `AdminUserSearchFilters.vue` supplies browser popover state, combo, and squad facets with AND/OR composition.
 - `AdminUserAccountContext.vue` presents successful affiliate history without duplicating member facts.
@@ -67,6 +68,11 @@ bounds output across nodes as well as per node.
 `AdminIPUnblockDialog.vue` runs administrator unblock with browser controls and durable receipts.
 
 Audit recovery regressions: `AdminBulkExtensionDialog.test.ts` rejects stale filter previews and preserves ambiguous bulk-command keys. `AdminUserCouponActions.test.ts` preserves grant retry identity. `useAdminUserProfile.test.ts` verifies exact-intent keys across HTTP failures and accepted attempts. Profile and hourly actions retain retry identity after ambiguous replies; action payloads and owner transitions fence stale updates.
+
+Quiet profile refreshes retain the last-good profile on read failure, keeping PM
+receipt polling mounted. The read error remains visible and prevents ordinary
+profile mutations until a successful refresh; `useAdminUserProfile.test.ts`
+covers this recovery path.
 
 `useAdminUserHourly.test.ts` verifies uncertain keys remain bound to the member,
 enrollment and policy version, and a previous member's late response cannot

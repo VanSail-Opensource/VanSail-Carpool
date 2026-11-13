@@ -60,7 +60,7 @@ func TestConcurrentConnectionScanWorkersClaimOneExternalStart(t *testing.T) {
 	store := newTestStore(t)
 	owner := createTestUser(t, store, 900_602)
 	service := connections.NewService(store, nil, nil)
-	scan, err := service.RequestAdmin(ctx, owner, "concurrent-native-scan")
+	scan, err := service.RequestAdmin(ctx, scanAdministrator(t, store), owner, "concurrent-native-scan")
 	if err != nil {
 		t.Fatal(err)
 	}

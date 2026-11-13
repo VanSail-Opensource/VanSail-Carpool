@@ -20,7 +20,8 @@ a bounded encrypted pending envelope for attribution; other copies use reference
   account facts, refresh/moderation controls, and the administrator browser profile link.
   The injected profile reader builds aggregates outside Telegram's queued request callback.
 - `worker.go` sequences durable topic/profile/relay/repair phases and revalidates
-  configuration and identity inside each queued provider callback.
+  configuration and identity inside each queued provider callback. A phase starts
+  only when the durable claim still returns a processing item.
 - `worker_interfaces.go` defines injected repositories and queued sender factories.
 - `worker_topic.go` claims creation atomically and persists the returned topic ID
   before publishing a profile card. A restarted ambiguous creation needs review.
@@ -31,6 +32,7 @@ a bounded encrypted pending envelope for attribution; other copies use reference
   Interrupted copies are never replayed automatically.
 - `worker_repair.go` probes explicitly supplied topic/card references; returned
   Telegram chat/thread identity must match before binding. Only unsent waiters resume.
+  Its changing verification timestamp and profile share the Telegram message limit.
 - `worker_errors.go` distinguishes preflight failures, definitive rejections and
   ambiguity. Only definitive missing/deleted-topic responses permit recreation.
   Telegram429 follows the existing bounded outbox retry policy. No second queue exists.
@@ -101,3 +103,6 @@ The real PM delivery dialog displayed the expired/invalid-content guidance in En
 canonical descriptions with matching HTTP/body status and consistent retry
 metadata. Ambiguous append-only responses retain review state and references;
 idempotent profile edits remain retryable without creating duplicate cards.
+
+`worker_boundaries_test.go` covers a competing item completion before provider
+work and repairs whose profile already reaches the Telegram message limit.

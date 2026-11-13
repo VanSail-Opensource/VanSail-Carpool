@@ -18,7 +18,7 @@ the package never calls persistence or providers directly.
   Telegram formatter while preserving the command package compatibility surface.
 - `command_test.go` covers suffix parsing, unknown-command exclusion, locale
   selection, PM admin command parsing, and bounded output.
-- `format_test.go` covers both locales, exact start/balance copy, check-in and
+- `format_test.go` covers both locales, exact start/balance copy, and localized command replies.
 - `traffic_test.go` covers byte parsing/formatting, clamping, bar allocation,
   displayed-node totals, empty distributions, and the 4096-character limit.
 
