@@ -16,5 +16,5 @@ async function reload(): Promise<void> {
 }
 onMounted(() => void reload())
 </script>
-<template><UApp :locale="uiLocale"><main class="pm-audit"><template v-if="error"><UAlert color="error" :description="error" /><UButton :label="t('common.retry')" @click="reload" /></template><AdminUserPM :conversation="conversation" @changed="reload" /></main></UApp></template>
+<template><UApp :locale="uiLocale"><main class="pm-audit"><template v-if="error"><UAlert color="error" :description="error" /><UButton :label="t('common.tryAgain')" @click="reload" /></template><AdminUserPM :conversation="conversation" @changed="reload" /></main></UApp></template>
 <style scoped>.pm-audit { max-width: 60rem; margin: auto; padding: 1.5rem; }</style>

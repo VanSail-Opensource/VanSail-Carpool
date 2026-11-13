@@ -49,9 +49,11 @@ until recovery is accepted.
 ## Offline restore
 
 1. Block authoritative ingress at the load balancer/proxy. Stop the application,
-   scheduler, outbox and X-Node master; verify their processes are stopped. Keep
-   agent journals durable and preserve provider callbacks using the reviewed
-   ingress mechanism. Never restore into a database used by active workers.
+   scheduler, outbox and X-Node master; verify their processes are stopped.
+   Preserve running agent processes and their state directories; avoid agent
+   restarts, upgrades or re-enrollment before reconciliation. Preserve provider
+   callbacks using the reviewed ingress mechanism. Never restore into a database
+   used by active workers.
 2. Preserve the failed database and its WAL. Select a backup with `info`, secure
    the verification evidence, and create a **new** PostgreSQL volume/deployment.
    Do not use `--delta` against the only surviving production volume.
@@ -66,9 +68,28 @@ until recovery is accepted.
    PITR, compare evidence captured at the selected point, then reconcile effects
    after it. Verify balances/ledger, sessions, encrypted settings, cursors,
    periods, usage and outbox state before starting application workers.
-5. Reconcile uncertain provider effects with their supported APIs and reconcile
-   unacknowledged agent journals. Re-establish backup archiving on the promoted
-   timeline and take a fresh full backup before normal traffic resumes.
+5. Reconcile uncertain provider effects with their supported APIs. Reconcile
+   surviving unacknowledged traffic under its original agent/boot/report identities
+   and the restored cursors, using the existing authenticated commit-before-ACK
+   path. Preserve and reconcile legacy durable traffic journals and the separate
+   durable command/byte-credit obligations. Re-establish backup archiving on the
+   promoted timeline and take a fresh full backup before normal traffic resumes.
+
+Current X-Node traffic reports are **volatile until committed by the master**:
+the current boot's bounded memory queue survives a connection loss, not an agent
+process restart. Queue overflow can also lose uncommitted samples during an
+extended outage. Preserving agent state files does not persist that queue.
+Pre-upgrade traffic journals and durable command/byte-credit records have their
+own recovery contracts; their durability does not make current raw traffic
+restart-safe. See the [pinned traffic protocol](../../reference/Upstream/X-Node/protocol.md#volatile-boot-traffic-streams).
+
+An ACK retires a traffic report on the agent. A database restored to an earlier
+point can therefore lack previously acknowledged reports that are no longer
+available for replay; preserve the failed database/WAL and reconciliation
+evidence. Retain surviving committed accounting and available gap/loss evidence.
+Do not invent missing bytes, advance a cursor for an uncommitted report, or rewrite
+settled financial facts to hide a gap. The pinned settlement policy uses surviving
+committed usage and can accept underbilling or larger refunds after traffic loss.
 
 Logical `.dump` exports are administrative snapshots produced by `pg_dump` and
 listed through the existing backup API. They exclude pg_stat_statements, which

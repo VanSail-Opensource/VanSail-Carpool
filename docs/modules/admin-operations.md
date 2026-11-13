@@ -31,7 +31,7 @@ Readiness checks required settings, enabled-provider completeness, and at least 
 ## Domain operations and audit retention
 
 - Combo records are live: changes affect active, queued, and historical purchases and enqueue deduplicated user synchronization. Referenced combos may be hidden but not hard-deleted.
-- Squad merchandising is a sparse override over the live X-Node list; default values remove the override. Node assignments are revalidated and re-fetched upstream and are never persisted locally.
+- Squad merchandising is a sparse override over the current native group inventory; default values remove the override. The X-Node domain owns durable group and node bindings. Merchandising reads revalidate that inventory instead of treating saved product metadata as authoritative node membership.
 - Balance adjustment requires a bounded nonzero signed amount and reason and appends one ledger entry plus audit event.
 - Telegram `/deduct <amount>` is accepted only from a configured administrator in the configured group as a reply to a known human sender. Amounts are positive human-major TXB values; the atomic debit rejects insufficient balance, uses a deterministic quoted-message reference for replay safety, and appends `telegram.balance_deduct` audit metadata for the sending administrator.
 - PM-topic `/refund`, `/addtxb <value>`, and `/deducttxb <value>` target only that topic's user. Refunds use the live verified remaining-traffic quote; balance adjustments use Telegram update references, immutable ledger entries, and administrator audit metadata.

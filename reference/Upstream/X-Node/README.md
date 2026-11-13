@@ -1,20 +1,25 @@
-# Pinned X-Node protocol
+# X-Node protocol reference and dependency pin
 
-Source: https://github.com/VanSail-Opensource/X-Node/tree/cea1ee1a5734c1085a9b65527daf18d0d18a74cf
-Signed agent release: [v2.0.25](https://github.com/VanSail-Opensource/X-Node/releases/tag/v2.0.25).
-The panel protocol, native validator, compute and release-trust packages use this
-exact verified source revision, represented by Go module pseudo-version
-`v1.0.2-0.20261109031250-cea1ee1a5734`.
+Current module source: https://github.com/VanSail-Opensource/X-Node/tree/41f04f945454282e3bfd6dde7e638bd29cfb9b0f
+The panel protocol, native validator, compute and release-trust packages use the
+Go module pseudo-version `v1.0.2-0.20261112141734-41f04f945454`, as selected by
+`go.mod`. Its cached module origin identifies that exact source commit, and
+`go mod verify` checks the downloaded module against `go.sum`.
 
-`protocol.md`, `hourly-account-limits.md` and `certificates.md` are copied from that revision.
-`compute-pool.md` documents the
+`protocol.md`, `hourly-account-limits.md`, `certificates.md` and `compute-pool.md`
+are copied from that revision. `compute-pool.md` documents the
 independently negotiated computation contract. Public Go types and validators
 remain authoritative in the pinned `pkg/protocol`, `pkg/xrayconfig`, `pkg/compute`
 and `pkg/releases` packages.
-The complete public schemas and documentation are included in the signed
-`x-node-api-docs.zip` release asset.
+Schema links inside the copied documents refer to the upstream `docs/schemas`
+tree; the complete schema bundle is not duplicated in this directory.
 
-## Verification evidence
+## Historical signed release verification
+
+The following retained evidence describes signed agent
+[v2.0.25](https://github.com/VanSail-Opensource/X-Node/releases/tag/v2.0.25), source
+`cea1ee1a5734c1085a9b65527daf18d0d18a74cf`. It does not establish signed release
+or deployment acceptance for the newer module pin above.
 
 - [Quality run 42556329869](https://github.com/VanSail-Opensource/X-Node/actions/runs/42556329869): all six hosted gates succeeded, including race, schema, memory, vulnerability, both architecture builds and Debian nftables-on/off VMs.
 - [Signed release run 42558147684](https://github.com/VanSail-Opensource/X-Node/actions/runs/42558147684): all three build, isolated signing and publication jobs succeeded.
@@ -51,7 +56,7 @@ Unknown fields retain upstream handling; referenced node-local files still need
 their existing preparation/validation environment.
 
 The panel also selects pgx v5.12.0, `golang.org/x/net` v0.62.0,
-`klauspost/compress` v1.20.3 and Brotli v1.2.8. Go remains 1.27.3.
+`klauspost/compress` v1.20.3 and Brotli v1.2.8. Go is declared as 1.27.4.
 Existing intentional pseudo-version selections, including `netipx` commit
 `3075585bcbeb7a9f042662e543b03efe900018be`, YAML, QUIC and uTLS, are preserved.
 Use explicit versions/commits rather than bulk `@latest`, which can select an
@@ -59,11 +64,11 @@ older tagged release over a reviewed pseudo-version. `go.mod` and `go.sum` are
 authoritative; `go mod tidy` may remove stale unused sums without changing a
 selected dependency. Hosted panel checks remain the integration acceptance gate.
 
-The agent is available by exact tag but is deliberately not Latest. The compatible
-panel must pass hosted validation, deploy and receive production acceptance before
-the operator promotes this release for automatic discovery. Deployment and
-production verification remain pending; updating the dependency adds no production
-mutation. See the [security finding matrix](../../../docs/security-findings.md).
+The historical release was verified by exact tag without promoting Latest.
+Any subsequent agent rollout requires separate signed release verification and
+compatible panel validation, deployment and production acceptance. Updating the
+dependency adds no production mutation. See the
+[security finding matrix](../../../docs/security-findings.md).
 
 ## Coordinated capabilities
 

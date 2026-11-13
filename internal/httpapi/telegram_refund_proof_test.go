@@ -27,7 +27,7 @@ func TestStarsRefundWebhookRequiresExactRetainedChargeBeforeReversal(t *testing.
 				TXBMinor: 1000, PayableAmount: "10", PayableCurrency: "XTR", RateSnapshot: "1", RateDirection: "txb_per_currency", ExpiresAt: now.Add(time.Hour)}
 			if _, _, err := store.BeginPaymentOrderOperation(ctx, order, providerops.CreateInput{
 				ActorUserID: user.ID, OwnerUserID: user.ID, Kind: billing.OperationCreateKind, IdempotencyKey: "proof-checkout",
-				RequestFingerprint: "proof-checkout", Items: []providerops.ItemInput{{Key: "payment", TargetType: "payment_order", TargetID: order.ID}},
+				RequestFingerprint: "proof-checkout-fingerprint", Items: []providerops.ItemInput{{Key: "payment", TargetType: "payment_order", TargetID: order.ID}},
 			}, now); err != nil {
 				t.Fatal(err)
 			}

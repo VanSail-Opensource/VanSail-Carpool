@@ -1,5 +1,11 @@
 # Compute and pricing browser validation
 
+Historical implementation and validation record. Version pins, schema numbers,
+UI behavior and pending checks below describe that work at its recorded
+revisions; they are not the current release status. Current dependencies are
+declared in `go.mod` and `web/package.json`, and current operations use the
+PostgreSQL deployment and recovery runbooks.
+
 Chrome DevTools MCP exercised the real Vue components with constructed owner/admin data on localhost. This is browser evidence, not a hosted backend or production-data regression. Fixtures make loading, missing history and failure states reproducible without production writes.
 
 ## Observed flows

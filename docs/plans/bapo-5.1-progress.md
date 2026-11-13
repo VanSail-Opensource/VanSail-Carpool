@@ -1,5 +1,11 @@
 # BAPO 5.1 implementation gates
 
+Historical implementation and validation record. Version pins, schema numbers,
+UI behavior and pending checks below describe that work at its recorded
+revisions; they are not the current release status. Current dependencies are
+declared in `go.mod` and `web/package.json`, and current operations use the
+PostgreSQL deployment and recovery runbooks.
+
 The attached BAPO 5.1 specification governs this work. Pricing is optional;
 existing financial transactions and native accounting remain authoritative.
 

@@ -2005,9 +2005,14 @@ the original zero-charge result from that audit and the namespaced purchase key,
 without changing old fingerprints or consulting mutable catalog fields. Fresh
 manual grants lock current administrator and active owner authority, retain the
 combo during insertion, and return the purchase snapshot read before commit.
+Account locks follow ID order, taking the owner's serialization lock before any
+weaker owner lock and retaining a shared lock for a distinct administrator.
 `admin_entitlement_admission_test.go` verifies rejected fresh actor/owner states,
 original replay after catalog/term changes, unchanged audit evidence and no
 duplicate work. Accepted retries precede current authority checks.
+`admin_entitlement_lock_order_test.go` holds both grants at controlled account
+contention and rejects lock-upgrade deadlocks for a shared owner, self-grants and
+reciprocal administrators; a blocked owner does not serialize unrelated grants.
 
 `admin_command_replay_race_test.go` covers concurrent manual grants and
 administrator hourly stops: all matching requests recover one original result,

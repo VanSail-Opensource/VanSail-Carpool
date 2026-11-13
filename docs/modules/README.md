@@ -3,8 +3,8 @@
 These documents describe the implemented module boundaries. They are maintenance contracts: each document states ownership, durable invariants, external interfaces, failure behavior, and the verification expected before release.
 
 | Module | Specification |
-| Native commerce, retirement and subscription template delivery | [native-commerce-delivery.md](native-commerce-delivery.md) |
 | --- | --- |
+| Native commerce, retirement and subscription template delivery | [native-commerce-delivery.md](native-commerce-delivery.md) |
 | Runtime, persistence, scheduler, and backups | [platform-runtime.md](platform-runtime.md) |
 | Telegram identity and onboarding | [accounts-onboarding.md](accounts-onboarding.md) |
 | Catalog, purchases, access terms, and rollover projection | [catalog-entitlements.md](catalog-entitlements.md) |
@@ -20,7 +20,6 @@ These documents describe the implemented module boundaries. They are maintenance
 | Retired detector upgrade | [detector-retirement.md](detector-retirement.md) |
 | Admin authorization and domain operations | [admin-operations.md](admin-operations.md) |
 | Vue Mini App and generated API client | [web-ui.md](web-ui.md) |
-| VanSail Carpool bug-fix adjustment contract | [tx-carpool-adjustments.md](tx-carpool-adjustments.md) |
 
 ## VanSail Carpool adjustment specification
 
@@ -61,7 +60,7 @@ These READMEs describe the direct files in each implementation package:
 | BEPusdt integration | [internal/integrations/bepusdt/README.md](../../internal/integrations/bepusdt/README.md) |
 | Emby integration | [internal/integrations/emby/README.md](../../internal/integrations/emby/README.md) |
 | EZPay integration | [internal/integrations/ezpay/README.md](../../internal/integrations/ezpay/README.md) |
-| X-Node integration | [internal/integrations/native/README.md](../../internal/integrations/native/README.md) |
+| X-Node control plane | [internal/xnode/README.md](../../internal/xnode/README.md) |
 | Telegram integration | [internal/integrations/telegram/README.md](../../internal/integrations/telegram/README.md) |
 | Platform boundary | [internal/platform/README.md](../../internal/platform/README.md) |
 | Backups and restore | [internal/platform/backup/README.md](../../internal/platform/backup/README.md) |

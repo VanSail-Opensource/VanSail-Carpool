@@ -15,7 +15,7 @@ const profile = useAdminUserProfile('ada')
     <main class="pm-recovery-audit">
       <div v-if="profile.error.value" data-test="pm-profile-error">
         <UAlert color="warning" :description="profile.error.value" />
-        <UButton data-test="pm-profile-retry" :label="t('common.retry')" @click="profile.load(true)" />
+        <UButton data-test="pm-profile-retry" :label="t('common.tryAgain')" @click="profile.load(true)" />
       </div>
       <USkeleton v-if="profile.loading.value" class="h-32" />
       <AdminUserPM v-else-if="profile.detail.value" :conversation="profile.detail.value.pmConversation" @changed="profile.load(true)" />

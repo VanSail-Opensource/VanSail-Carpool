@@ -69,13 +69,7 @@ func (s *Store) createAdminEntitlementAttempt(ctx context.Context, input AdminEn
 		}
 		return replay.Purchase, nil
 	}
-	if err := catalogAdminActorTx(ctx, tx, input.ActorUserID); err != nil {
-		return model.Purchase{}, err
-	}
-	if err := lockProviderOperationAccountsTx(ctx, tx, input.ActorUserID, input.UserID); err != nil {
-		return model.Purchase{}, err
-	}
-	if err := lockPurchaseOwnerTx(ctx, tx, input.UserID); err != nil {
+	if err := lockAdminEntitlementAccountsTx(ctx, tx, input.ActorUserID, input.UserID); err != nil {
 		return model.Purchase{}, err
 	}
 	// Recheck after owner serialization before mutable catalog/overlap admission.

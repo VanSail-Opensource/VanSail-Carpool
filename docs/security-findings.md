@@ -40,17 +40,17 @@ and [IP-block publication](https://github.com/VanSail-Opensource/X-Node/blob/32b
 contracts and their regression coverage. Existing panel finding evidence and
 scan identities below remain unchanged.
 
-The panel's public protocol/native-validator dependency now pins the subsequent
+An earlier public protocol/native-validator dependency pinned the subsequent
 signed [v2.0.22](https://github.com/VanSail-Opensource/X-Node/releases/tag/v2.0.22)
 revision `310770d6f84907ed5a8e2cc2313448967268c536`, which retains the reviewed
 security fixes and adds the coordinated hourly-enforcement contract. The v2.0.20
-links above preserve the original finding-resolution evidence. Current signed
-artifact and dependency verification is in the
+links above preserve the original finding-resolution evidence. The current
+module pin and separately retained signed-release evidence are recorded in the
 [upstream pin record](../reference/Upstream/X-Node/README.md).
-The agent release is public by exact tag and deliberately not Latest: the
-compatible panel must pass hosted checks, deploy and receive production
-acceptance before automatic agent rollout. Neither this dependency change nor
-the agent's hosted release establishes production remediation. No production
+That release was made public by exact tag without promoting Latest. Every
+subsequent agent rollout requires compatible panel checks, signed-release
+verification, deployment and production acceptance. Neither a dependency change
+nor an agent's hosted release establishes production remediation. No production
 mutation is part of this update.
 
 ## Scope isolation

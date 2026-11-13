@@ -38,6 +38,29 @@ func adminEntitlementTermSeconds(from, until time.Time) (int64, error) {
 	return seconds, nil
 }
 
+// Take each account's strongest required lock in ID order before shared
+// lifecycle validation. Taking owner SHARE first makes concurrent grants all
+// wait to upgrade each other's lock, including when the actor is the owner.
+// A distinct actor stays shared so grants to unrelated owners can proceed.
+func lockAdminEntitlementAccountsTx(ctx context.Context, tx *sql.Tx, actorID, ownerID string) error {
+	if actorID < ownerID {
+		if err := catalogAdminActorTx(ctx, tx, actorID); err != nil {
+			return err
+		}
+		if err := lockPurchaseOwnerTx(ctx, tx, ownerID); err != nil {
+			return err
+		}
+	} else {
+		if err := lockPurchaseOwnerTx(ctx, tx, ownerID); err != nil {
+			return err
+		}
+		if err := catalogAdminActorTx(ctx, tx, actorID); err != nil {
+			return err
+		}
+	}
+	return lockProviderOperationAccountsTx(ctx, tx, actorID, ownerID)
+}
+
 // lockPurchaseOwnerTx serializes grants with member checkout and other grants,
 // then requires a durable owner.
 func lockPurchaseOwnerTx(ctx context.Context, tx *sql.Tx, userID string) error {

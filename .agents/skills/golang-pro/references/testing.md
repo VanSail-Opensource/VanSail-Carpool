@@ -250,8 +250,10 @@ func FuzzAdd(f *testing.F) {
     f.Fuzz(func(t *testing.T, a, b int) {
         result := Add(a, b)
 
-        // Properties that should always hold
-        if result < a && b >= 0 {
+        // Monotonicity applies only when the positive addition fits in int.
+        // Fuzzing reaches overflow boundaries, where signed addition wraps.
+        maxInt := int(^uint(0) >> 1)
+        if b >= 0 && a <= maxInt-b && result < a {
             t.Errorf("Add(%d, %d) = %d; result should be >= a when b >= 0", a, b, result)
         }
     })

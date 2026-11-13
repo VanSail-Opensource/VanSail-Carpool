@@ -4,7 +4,7 @@
 
 Each integration package translates a documented external protocol into a small application-facing interface. Domain services own interfaces and business decisions; adapters own URLs, authentication, signing, transport timeouts, response decoding, and provider-specific errors. Every method that can block accepts `context.Context`. HTTP clients have explicit timeouts and bounded response bodies. Application adapters submit every X-Node and Emby call to a bounded, paced, context-owned FIFO queue before constructing or invoking the provider client; cancellation and shutdown release blocked callers.
 
-The implementation is split into focused transport, mapping, and lifecycle files without changing the public adapter interfaces. The reference contracts remain the source of truth for every method, path, query, body, and header; no browser code calls either provider directly.
+The implementation is split into focused transport, mapping, and lifecycle files without changing the public adapter interfaces. The maintained adapter contracts define the supported methods, paths, queries, bodies and headers; no browser code calls either provider directly. Bundled upstream material has its own version and provenance. Retired PHP examples and the imported Emby OpenAPI document are historical references, not executable integration code or permission to contact their sample servers.
 
 ## Telegram
 
@@ -14,7 +14,7 @@ The adapter exposes raw Telegram IDs as integers internally but API boundaries s
 
 ## X-Node
 
-The panel owns encrypted desired configurations, native principals and exact accounting. The authenticated master WebSocket is the sole proxy control plane. Public protocol, native validation and release-trust packages are pinned to the verified signed source documented under `reference/Upstream/X-Node`; there is no legacy REST control surface. `internal/xnode/README.md` documents compilation, command execution, traffic acknowledgment and capability negotiation.
+The panel owns encrypted desired configurations, native principals and exact accounting. The authenticated master WebSocket is the sole proxy control plane. Public protocol, native validation and release-trust packages use the source pinned in `go.mod`, documented under `reference/Upstream/X-Node`. Signed-release verification evidence is recorded separately for its specific release; a source pin alone does not verify a deployed binary. There is no legacy REST control surface. `internal/xnode/README.md` documents compilation, command execution, traffic acknowledgment and capability negotiation.
 
 Native commands use the existing durable receipts and per-node execution queue. Waiting for commands runs outside the outbound transport queue so traffic acknowledgments remain responsive. Replay retains the original operation identity, and uncertain external mutations require reconciliation before another attempt. Emby and other queued provider integrations continue through their existing executors.
 

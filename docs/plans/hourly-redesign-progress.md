@@ -1,5 +1,11 @@
 # Hourly commerce, renewal, and admin redesign
 
+Historical implementation and validation record. Version pins, schema numbers,
+UI behavior and pending checks below describe that work at its recorded
+revisions; they are not the current release status. Current dependencies are
+declared in `go.mod` and `web/package.json`, and current operations use the
+PostgreSQL deployment and recovery runbooks.
+
 This document tracks the multi-task delivery for Charge by hour. Hosted
 regressions are authored here; local automated suites remain prohibited.
 

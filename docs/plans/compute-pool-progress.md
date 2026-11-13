@@ -1,5 +1,11 @@
 # Compute pool and pricing refinement delivery
 
+Historical implementation and validation record. Version pins, schema numbers,
+UI behavior and pending checks below describe that work at its recorded
+revisions; they are not the current release status. Current dependencies are
+declared in `go.mod` and `web/package.json`, and current operations use the
+PostgreSQL deployment and recovery runbooks.
+
 ## Baseline and sequence
 
 The initial dirty pricing implementation is backed up under the local temporary folder `vansail-compute-baseline-20261026-195019`. Intended draft pricing work is included; unrelated Python caches remain excluded. Production inspection has been read-only. No local automated suites have run.
