@@ -18,6 +18,10 @@ Settings. This keeps dashboard actions separate from subscription settings.
 - `UsagePanel.test.ts` verifies stale upstream data disclosure.
 - `EntitlementSummary.test.ts` covers active, queued, and absent combos.
 
+Queued cancellation consent is tied to the reviewed purchase ID. A replacement
+closes the dialog and retires older completion/error callbacks; cancellation
+failures remain visible inside the confirmation dialog for an explicit retry.
+
 Dashboard controls distinguish copy, open, navigation, retry, confirmation, and destructive intents. Automatic renewal switches emit selection feedback only when their controlled value changes.
 
 Language and currency controls appear on Settings for members with access. New

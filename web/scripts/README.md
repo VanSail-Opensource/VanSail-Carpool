@@ -35,8 +35,14 @@ only in hosted CI; the repository's local automated-suite restriction applies.
 `browser-member-recovery.mjs` adds desktop/mobile checks for intro retry,
 agreement revision consent, delayed owner changes, community loading/errors and
 retired invite links using the real onboarding and community components.
+It also verifies that a different owner retires the prior payment sheet and that
+delayed combo/balance replies cannot restore the prior owner's navigation.
 
 `browser-operation-recovery.mjs` checks explicit receipt-outcome selection,
 unsupported workflow restrictions and retained drafts after evidence conflicts.
 It also verifies that a temporary Mini App session read failure retries the read
 without starting another Telegram exchange.
+
+`browser-purchase-recovery.mjs` verifies queued-purchase target replacement,
+pending cancellation isolation and visible dialog errors followed by explicit
+retry at desktop and mobile widths.

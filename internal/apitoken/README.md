@@ -1,7 +1,7 @@
 # Administrator API tokens
 
 `service.go` issues 256-bit opaque `vsc_` credentials, checks expiry and the
-owner's current role/administrator allowlist, and loads metadata for browser
+owner's current active/unblocked state, role and administrator allowlist, and loads metadata for browser
 administrators. `types.go` defines repository contracts and secret-free metadata.
 Only the creation response contains a secret; PostgreSQL retains a SHA-256 digest.
 
@@ -34,3 +34,9 @@ does not create cookies or browser/Mini App sessions. See [API usage](../../api/
 read-only queries, and mutation paths that must never inherit read access.
 
 `hourly_scopes_test.go` verifies hourly policy, pricing and operation-receipt scopes, and excludes API tokens from owner commerce.
+
+`eligibility_test.go` covers demoted, blocked, purging and unknown-status owners
+across authentication and management, including restoration without rewriting
+retained credentials. Credential creation and revocation also lock and recheck
+the current administrator in the database transaction, so a stale request snapshot
+cannot bypass a concurrent eligibility change.

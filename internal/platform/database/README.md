@@ -1274,6 +1274,7 @@ financial effect and cursor before any report can be acknowledged.
 - `xnode_traffic_batch_test.go` covers malformed/discarded/replayed reports, exact
   remainder carry, whole-write rollback and retry. `xnode_traffic_batch_finance_test.go`
   covers rolled-back charges, shared-wallet fleet contention and durable replay.
+- `xnode_traffic_item_rollback_test.go` verifies that a failed per-report history write keeps legacy/stream cursors replayable and rolls back native quota and PAYG charges.
 - `xnode_traffic_batch_benchmark_fixture_test.go` prepares private native data;
   `xnode_traffic_batch_benchmark_test.go` compares individual and combined writes
   for 32 nodes and 64 owners. Hosted CI publishes latency, allocations and CPU
@@ -1374,6 +1375,8 @@ announcement cleanup remains in the existing outbox queue.
 
 `xnode_named_service_cadence_test.go` checks that the named-service writer rejects
 new/changed cadence before mutation and preserves legacy quota usage.
+
+- `xnode_named_service_response_test.go` verifies that identity response validation is inside the named-service transaction and rolls back failed quota/material edits.
 `xnode_named_services.go` defaults new terms to `NO_RESET`, locks the authoritative
 current period for edits and never rewrites its cadence or reset evidence.
 
@@ -1788,3 +1791,5 @@ handoff expiry without recording activity for expired credentials.
 Administrator coupon definitions: `coupons_admin.go` rechecks the active, unblocked administrator and the existing `updated_at` revision under a row lock before saving. `coupon_writes.go` shares canonical writes with the raw fixture entry point, advances revisions despite repeated/backward clock ticks, and returns the exact pre-commit snapshot. Definition and redacted policy audit commit together. `coupons_admin_test.go` covers audit rollback, actor eligibility and private reward isolation; `coupons_admin_revision_test.go` covers stale/concurrent edits, deactivation retention and unchanged settled redemptions. No historical financial evidence is rewritten.
 
 Payment profile actor eligibility: `payment_profile_actor_test.go` verifies that saved-profile edits and deletion recheck active/unblocked administrator state inside the mutation transaction. Empty actors remain restricted to existing bootstrap/readiness system entry points; rejected human actors produce no changes or actor audit.
+
+Administrator API token mutations: `api_token_actor_test.go` keeps the authenticated request snapshot stale while demoting, purging or blocking its owner. Creation and revocation recheck the current actor under the shared transaction fence, map eligibility failures to API authentication refusal, and preserve credential/audit state on rejection. Revocation retains its single immutable audit after the credential is deleted.

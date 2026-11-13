@@ -100,10 +100,13 @@ func (s *Store) recordXNodeTrafficTx(ctx context.Context, tx *sql.Tx, nodeID, ag
 			return err
 		}
 	}
-	if err = storeTrafficCursorTx(ctx, tx, batch, nodeID, key, sequence, digest, discarded || sequence != previous+1 || report.DroppedSamples > 0 || report.DroppedHourlySamples > 0); err != nil {
+	if err = startUsageHistoryTx(ctx, tx); err != nil {
 		return err
 	}
-	if err = startUsageHistoryTx(ctx, tx); err != nil {
+	// Batch cursors live in Go until the final flush. Publish them only after
+	// every fallible per-report SQL statement; a savepoint rollback cannot
+	// undo an already advanced in-memory cursor.
+	if err = storeTrafficCursorTx(ctx, tx, batch, nodeID, key, sequence, digest, discarded || sequence != previous+1 || report.DroppedSamples > 0 || report.DroppedHourlySamples > 0); err != nil {
 		return err
 	}
 	if native != nil && !discarded {

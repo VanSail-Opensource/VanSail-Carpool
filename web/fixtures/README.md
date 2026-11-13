@@ -209,6 +209,10 @@ full-width community layout with `locked`, `joined`, `slow` and `error` states.
 `defer-membership` and `defer-invite` hold owner-bound replies; volatile
 `window.__communityAudit` controls clear the owner and release the reply, and
 record attempted external opens without navigating to Telegram.
+`access` mounts `CommunityAccessAudit.vue` and the real member shell. Combine with
+`defer-access` to hold combo/balance replies independently for each owner; the
+fixture records reads and exposes only synthetic owner/release controls. Hosted
+checks verify that prior-member access cannot return after replacement or logout.
 
 - `LuckyAudit.vue` mounts the member Activity page in Nuxt UI without authentication.
 - `lucky-audit.ts` supplies a local Activity overview and controllable draw response through `window.__audit`.
@@ -437,3 +441,11 @@ explicit outcome/reason selections without contacting any server.
 `browser-auth-audit.html?recovery&session-unavailable` returns a temporary session
 read failure and records reads separately from Telegram exchanges, so hosted
 checks can verify safe retries.
+
+`PurchaseRecoveryAudit.vue`, `purchase-recovery-audit.ts` and
+`purchase-recovery-audit.html` mount the actual queued purchase summary and
+confirmation dialog. `error` rejects cancellation until the synthetic fail flag
+is cleared; `defer` holds the reply while the queued purchase is replaced. Hosted
+checks verify target changes retire consent, old replies do not report success
+for a replacement purchase, and errors remain visible inside the open dialog.
+No wallet or provider mutation occurs.

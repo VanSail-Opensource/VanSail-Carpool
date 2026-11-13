@@ -136,8 +136,11 @@ func TestEmbyProvisioningTransitionsEraseSecretOnlyAfterSuccess(t *testing.T) {
 	if err := store.TouchEmbyAccount(ctx, account.ID, now.Add(7*time.Second)); err != nil {
 		t.Fatalf("TouchEmbyAccount() error = %v", err)
 	}
-	accounts, err := store.ListEmbyAccounts(ctx, 10)
-	if err != nil || len(accounts) != 1 || accounts[0].Retryable {
+	store.DB().SetMaxOpenConns(1)
+	listCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	accounts, err := store.ListEmbyAccounts(listCtx, 10)
+	if err != nil || len(accounts) != 1 || accounts[0].Retryable || len(accounts[0].Preferences.DisabledLibraryIDs) != 1 || accounts[0].Preferences.DisabledLibraryIDs[0] != "shows" {
 		t.Fatalf("ListEmbyAccounts() = (%+v, %v)", accounts, err)
 	}
 }

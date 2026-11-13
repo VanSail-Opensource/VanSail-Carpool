@@ -1,6 +1,39 @@
 import assert from 'node:assert/strict'
 
 export async function memberRecoveryScenarios(scenario, size) {
+  await scenario(size, 'checkout-owner', 'recovery-audit.html', async (page, capture) => {
+    await page.locator('[data-test="open-checkout"]').click()
+    await page.getByText('Waiting for payment', { exact: true }).waitFor()
+    await capture('previous-owner')
+    await page.evaluate(() => globalThis.__recoveryAudit.switchOwner())
+    await page.waitForFunction(() => globalThis.__recoveryAudit.snapshot().user === 'audit-owner-2')
+    await page.getByRole('dialog').waitFor({ state: 'hidden' })
+    assert.equal(await page.evaluate(() => globalThis.__recoveryAudit.snapshot().cancels), 0)
+  })
+  await scenario(size, 'community-access-owner', 'community-audit.html?access&defer-access', async (page, capture) => {
+    await page.waitForFunction(() => globalThis.__communityAudit.state.accessReads === 2)
+    assert.equal(await page.locator('[data-test="community-access-loading"]').innerText(), 'true')
+    await capture('loading')
+    await page.evaluate(() => globalThis.__communityAudit.switchOwner())
+    await page.waitForFunction(() => globalThis.__communityAudit.state.accessReads === 4)
+    await page.evaluate(() => globalThis.__communityAudit.releaseAccess('audit-user-2', false, '0'))
+    await page.waitForFunction(() => globalThis.document.querySelector('[data-test="community-access-loading"]')?.textContent === 'false')
+    await page.evaluate(() => globalThis.__communityAudit.releaseAccess('audit-user', true, '100'))
+    await page.waitForFunction(() => globalThis.__communityAudit.state.accessFinished === 4)
+    assert.equal(await page.locator('[data-test="community-access"]').innerText(), 'false')
+    assert.equal(await page.getByRole('link', { name: 'Settings', exact: true }).count(), 0)
+  })
+  await scenario(size, 'community-access-logout', 'community-audit.html?access', async (page, capture) => {
+    await page.waitForFunction(() => globalThis.document.querySelector('[data-test="community-access"]')?.textContent === 'true')
+    await capture('funded')
+    await page.evaluate(() => { globalThis.__communityAudit.state.deferAccess = true })
+    await page.locator('[data-test="refresh-access"]').click()
+    await page.waitForFunction(() => globalThis.__communityAudit.state.accessReads === 4)
+    await page.evaluate(() => { globalThis.__communityAudit.clearOwner(); globalThis.__communityAudit.releaseAccess('audit-user', true, '100') })
+    await page.waitForFunction(() => globalThis.__communityAudit.state.accessFinished === 4)
+    assert.equal(await page.locator('[data-test="community-access"]').innerText(), 'false')
+    assert.equal(await page.getByRole('link', { name: 'Settings', exact: true }).count(), 0)
+  })
   await scenario(size, 'onboarding-intro-retry', 'onboarding-audit.html?intro&advance-error', async (page, capture) => {
     await page.getByText('Something went wrong. Please try again.', { exact: true }).waitFor()
     assert.equal(await page.evaluate(() => globalThis.__onboardingAudit.calls.filter(call => call === 'continue').length), 1)

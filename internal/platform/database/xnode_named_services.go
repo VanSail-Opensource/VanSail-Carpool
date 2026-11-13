@@ -24,9 +24,7 @@ func (s *Store) retryAttempt_SaveXNodeNamedService(ctx context.Context, item xno
 	}
 	defer tx.Rollback()
 	if created {
-		query := `SELECT GREATEST(COALESCE(MAX(proxy_user_id),0),4503599627370495)+1 FROM xnode_identities`
-
-		query = `SELECT nextval('xnode_service_proxy_id_seq')`
+		query := `SELECT nextval('xnode_service_proxy_id_seq')`
 
 		if err = tx.QueryRowContext(ctx, query).Scan(&item.ProxyUserID); err != nil {
 			return item, err
@@ -83,8 +81,12 @@ func (s *Store) retryAttempt_SaveXNodeNamedService(ctx context.Context, item xno
 	if err != nil {
 		return item, err
 	}
-	if err = tx.Commit(); err != nil {
+	// Validate and return the exact snapshot covered by this commit. A later
+	// response read must not turn a committed edit into an apparent failure or
+	// return another administrator's replacement credentials.
+	item, err = scanXNodeIdentity(tx.QueryRowContext(ctx, xnodeIdentitySelect+` WHERE p.proxy_user_id=$1`, item.ProxyUserID))
+	if err != nil {
 		return item, err
 	}
-	return s.XNodeIdentity(ctx, item.ProxyUserID)
+	return item, tx.Commit()
 }

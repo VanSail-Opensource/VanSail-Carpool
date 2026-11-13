@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/apitoken"
@@ -16,6 +17,12 @@ func (s *Store) retryAttempt_CreateAdminAPIToken(ctx context.Context, item apito
 		return err
 	}
 	defer tx.Rollback()
+	if err := catalogAdminActorTx(ctx, tx, item.UserID); err != nil {
+		if errors.Is(err, ErrConflict) {
+			return apitoken.ErrUnauthorized
+		}
+		return err
+	}
 	var active int
 	if err = tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM admin_api_tokens WHERE user_id=$1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at>$2)`, item.UserID, stamp(item.CreatedAt)).Scan(&active); err != nil {
 		return err
@@ -55,6 +62,12 @@ func (s *Store) retryAttempt_RevokeAdminAPIToken(ctx context.Context, id, userID
 		return err
 	}
 	defer tx.Rollback()
+	if err := catalogAdminActorTx(ctx, tx, userID); err != nil {
+		if errors.Is(err, ErrConflict) {
+			return apitoken.ErrUnauthorized
+		}
+		return err
+	}
 	var exists bool
 	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM admin_api_tokens WHERE id=$1 AND user_id=$2) OR EXISTS(SELECT 1 FROM audit_events WHERE target_type='api_token' AND target_id=$3 AND actor_user_id=$4 AND action='api_token.revoked')`, id, userID, id, userID).Scan(&exists); err != nil {
 		return err

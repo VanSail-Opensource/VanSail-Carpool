@@ -69,9 +69,9 @@ onUnmounted(() => globalThis.removeEventListener(onboardingRequiredEvent, onOnbo
         <CaptchaGate v-else-if="sessionStore.session?.captcha?.required" :challenge="sessionStore.session.captcha" @verified="sessionStore.updateSession" />
         <template v-else>
           <RouterView v-if="immersive" v-slot="{ Component, route: currentRoute }">
-            <component :is="Component" :key="currentRoute.fullPath" />
+            <component :is="Component" :key="`${sessionStore.user?.id ?? ''}:${currentRoute.fullPath}`" />
           </RouterView>
-          <AppShell v-else>
+          <AppShell v-else :key="sessionStore.user?.id">
             <RouterView v-slot="{ Component, route: currentRoute }">
               <component :is="Component" :key="currentRoute.fullPath" />
             </RouterView>

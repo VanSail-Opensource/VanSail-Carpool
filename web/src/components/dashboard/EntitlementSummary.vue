@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
+import { computed, onScopeDispose, shallowRef, watch } from 'vue'
 
 import type { Purchase } from '@/api/types'
 import { api } from '@/api/client'
@@ -12,6 +12,7 @@ import { formatDate } from '@/utils/format'
 import { localizedError } from '@/i18n'
 import { notifyHaptic } from '@/utils/telegram'
 import { usePurchaseValidity } from '@/composables/usePurchaseValidity'
+import { createLatestRequest } from '@/utils/latestRequest'
 
 const props = defineProps<{
   active?: Purchase | null
@@ -26,25 +27,42 @@ const currentQueued = computed(() => [props.queued, props.active].find(item => i
 const queuedCancelOpen = shallowRef(false)
 const queuedCancelBusy = shallowRef(false)
 const queuedCancelError = shallowRef<string | null>(null)
+const cancellation = createLatestRequest()
+let cancellationTarget: string | null = null
+
+watch(() => currentQueued.value?.id, () => {
+  cancellation.invalidate()
+  cancellationTarget = null
+  queuedCancelOpen.value = false
+  queuedCancelBusy.value = false
+  queuedCancelError.value = null
+}, { flush: 'sync' })
+onScopeDispose(cancellation.dispose)
 
 function openQueuedCancellation(): void {
+  if (!currentQueued.value || queuedCancelBusy.value) return
+  cancellationTarget = currentQueued.value.id
   queuedCancelError.value = null
   queuedCancelOpen.value = true
 }
 async function cancelQueued(): Promise<void> {
-  if (!currentQueued.value || queuedCancelBusy.value) return
+  const target = cancellationTarget
+  if (!queuedCancelOpen.value || !target || currentQueued.value?.id !== target || queuedCancelBusy.value) return
+  const request = cancellation.begin()
   queuedCancelBusy.value = true
   queuedCancelError.value = null
   try {
-    await api.cancelQueuedPurchase(currentQueued.value.id)
+    await api.cancelQueuedPurchase(target)
+    if (!cancellation.isCurrent(request)) return
     queuedCancelOpen.value = false
     notifyHaptic('success')
     emit('queuedCancelled')
   } catch (caught) {
+    if (!cancellation.isCurrent(request)) return
     queuedCancelError.value = localizedError(caught, 'errors.purchaseCancelFailed')
     notifyHaptic('error')
   } finally {
-    queuedCancelBusy.value = false
+    if (cancellation.isCurrent(request)) queuedCancelBusy.value = false
   }
 }
 </script>
@@ -85,6 +103,7 @@ async function cancelQueued(): Promise<void> {
     :description="$t('home.cancelQueuedDescription')"
     :confirm-label="$t('home.cancelQueuedConfirm')"
     :busy="queuedCancelBusy"
+    :error="queuedCancelError"
     danger
     @confirm="cancelQueued"
   />

@@ -46,19 +46,28 @@ func (s *Store) ListEmbyAccounts(ctx context.Context, limit int) ([]domain.Accou
 		return nil, fmt.Errorf("list Emby accounts: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
-	accounts := make([]domain.Account, 0)
+	records := make([]domain.ProvisioningRecord, 0)
 	for rows.Next() {
 		record, scanErr := scanEmbyProvisioning(rows)
 		if scanErr != nil {
 			return nil, scanErr
 		}
-		scanErr = hydrateEmbyPreferences(ctx, s.db, &record)
-		if scanErr != nil {
-			return nil, scanErr
+		records = append(records, record)
+	}
+	if err = errors.Join(rows.Err(), rows.Close()); err != nil {
+		return nil, err
+	}
+	// Release the page's connection before issuing preference queries. Holding
+	// it while waiting for another connection deadlocks a one-connection pool
+	// and can exhaust a larger pool under concurrent administrator reads.
+	accounts := make([]domain.Account, 0, len(records))
+	for _, record := range records {
+		if err = hydrateEmbyPreferences(ctx, s.db, &record); err != nil {
+			return nil, err
 		}
 		accounts = append(accounts, record.Account)
 	}
-	return accounts, rows.Err()
+	return accounts, nil
 }
 
 // EmbyProvisioningByID returns one server-only durable provisioning record.
