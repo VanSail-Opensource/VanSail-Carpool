@@ -14,3 +14,6 @@
 The wordmark and handoff rules live in `../../styles/session-01.css`; the shared indeterminate track lives in `../../styles/loading.css`. Below 768px the prefix sits above the changing word; larger viewports use one baseline. `usePendingStatus` replaces the same status after five seconds without delaying readiness. Brand/status strings live under `auth.loading*` in both core locale files.
 
 `CaptchaGate.vue` renders the first-entry challenge before route content, with loading, expired, provider failure and retry states. Only the server verification response updates the session. `LanguageControl` remains accessible before solving.
+The App keys this gate by authenticated owner. Challenge replacement and unmount
+retire pending verification and provider callbacks; `CaptchaGate.test.ts` covers
+both boundaries without contacting a verification service.

@@ -425,7 +425,7 @@ Lucky-draw storage keeps configuration, ticket charges, reservations, and immuta
 
 Private draw coupons (`admin_visible=0`) can only be used through awarded wallet grants. Code lookup excludes them, and the shared grant lookup and wallet listing reject historical `source_type='code'` copies. Checkout and automatic renewal therefore cannot use copied grants; existing financial records remain intact. `activity_draw_coupon_security_test.go` covers these boundaries and normal public-code redemption.
 
-- `activity_draws.go` saves and audits mode-specific configuration; `activity_draws_part2.go` settles instant results atomically, binds replays to the same member and draw, and reserves `raffle:` keys for internal settlements.
+- `activity_draws.go` retains the raw fixture transaction, while `activity_draw_save.go` shares mode-specific configuration and exact pre-commit snapshots with the audited administrator adapter; `activity_draws_part2.go` settles instant results atomically, binds replays to the same member and draw, and reserves `raffle:` keys for internal settlements.
 - `activity_draw_replay_security_test.go` covers cross-draw conflicts, member isolation, reserved keys, and unchanged balances/randomness on replay.
 - `activity_draw_list.go` lists member-safe instant draws and admin definitions; `activity_draw_reservations.go` reconciles active raffle loss holds when reward ranges change.
 - `activity_reward_apply.go` applies resolved balance, coupon, purchase, traffic, and squad effects and queues provider synchronization.
@@ -521,6 +521,7 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `affiliate_settlement_test.go` covers first-payment uniqueness, floor rounding, pre-upgrade rates, exact-once TXB awards, and retention-preserved payment evidence.
 - `affiliate_referrals_test.go` covers missing, self, frozen, and authentication-locked inviters plus locale normalization.
 - `affiliate_config_test.go` covers immutable version increments and stale-write conflicts.
+- `admin_finance_eligibility_test.go` checks current active administrator locks for balance adjustments, deductions, cancellation, affiliate configuration and IP lookup settings, preserving member fixtures and exact replay receipts.
 - `notification_events.go` owns semantic event deduplication and atomic outbox
   release, including provider-completion timestamps; `notification_scans.go` owns 48-hour and reset-period eligibility.
 - `notification_new_events.go` and `notification_operation_events.go` snapshot scheduled charges, add-on activation, cancellations, renewal failures, and terminal member operation receipts with stable event keys.
@@ -529,6 +530,9 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `notification_receipts_test.go` covers activation and payment receipt snapshots.
 - `notification_admin_finance.go`, `notification_admin_cancel.go`, and
   `notification_admin_entitlements.go` snapshot detailed administrator changes.
+  Immediate balance/cancellation mutations and affiliate/IP settings recheck the
+  actor inside their transactions. Returned financial/configuration snapshots
+  are read before commit so a later edit cannot change an accepted response.
 - `payment_operations.go` atomically stores checkout/cancellation intents with provider-operation receipts.
 - `payment_operation_resolution.go` resolves checkout receipts from authoritative paid callbacks without another provider call.
 - `billing_callback_tombstones.go` keeps provider callback replays idempotent
@@ -618,7 +622,7 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `statistics.go` — catalog and activity administrator statistics.
 - `product_statistics.go` calculates range-free KPIs across live and compacted
   facts, immutable spending flows, and database/WAL size.
-- `product_statistics_catalog.go` calculates active combo and squad distributions with user-facing squad names when local merchandising data exists.
+- `product_statistics_catalog.go` calculates active combo and squad distributions from retained purchase snapshots, effective overrides and activity rewards.
 - `product_statistics_payments.go` combines live and compacted EZPay, BEPusdt, and Telegram Stars terminal-status facts.
 - `product_statistics_usage.go` selects one current non-admin member combo for live weighted usage projection.
 - `statistics_snapshots.go` persists independent last-good statistics partitions.
@@ -681,6 +685,7 @@ or adjusted to reconcile gaps left by earlier destructive releases.
 - `admin_bulk_workflows_test.go` covers inclusive-OR matching, active-user deduplication, and equal minute-precise queued-term shifts.
 - `admin_operation_projection_test.go` covers owned and bulk-target open-operation aggregation.
 - `product_statistics_test.go` verifies administrators are excluded from member population, spend, state, and active-catalog metrics.
+- `product_statistics_snapshot_test.go` verifies that catalog edits preserve stored purchase selections and that activity rewards appear in the same entitlement distributions; NULL snapshots keep their existing live-catalog meaning.
 - `admin_workflow_test_helpers_test.go` contains shared administrator workflow fixtures and purchase builders.
 - `ledger_page_test.go` — cursor pagination order and validation.
 - `squad_profiles_test.go` — typed profile round trips and legacy Markdown preservation.
@@ -1008,6 +1013,7 @@ Provider requests remain outside every transaction.
 - `account_purge_resume_retry_generated.go` wraps the transactional methods in `account_purge_resume.go`.
 - `account_purge_retry_generated.go` wraps the transactional methods in `account_purge.go`.
 - `account_rejoin_payg_retry_generated.go` wraps the transactional methods in `account_rejoin_payg.go`.
+- `activity_admin_retry_generated.go` wraps the transactional methods in `activity_admin.go`.
 - `activity_draws_part2_retry_generated.go` wraps the transactional methods in `activity_draws_part2.go`.
 - `activity_draws_retry_generated.go` wraps the transactional methods in `activity_draws.go`.
 - `activity_history_part2_retry_generated.go` wraps the transactional methods in `activity_history_part2.go`.
@@ -1123,6 +1129,7 @@ Provider requests remain outside every transaction.
 - `retention_payg_retry_generated.go` wraps the transactional methods in `retention_payg.go`.
 - `retention_retry_generated.go` wraps the transactional methods in `retention.go`.
 - `retired_detector_retry_generated.go` wraps the transactional methods in `retired_detector.go`.
+- `settings_activity_retry_generated.go` wraps the transactional methods in `settings_activity.go`.
 - `settings_emby_retry_generated.go` wraps the transactional methods in `settings_emby.go`.
 - `store_part2_retry_generated.go` wraps the transactional methods in `store_part2.go`.
 - `store_retry_generated.go` wraps the transactional methods in `store.go`.
@@ -1375,10 +1382,9 @@ announcement cleanup remains in the existing outbox queue.
 
 `xnode_named_service_cadence_test.go` checks that the named-service writer rejects
 new/changed cadence before mutation and preserves legacy quota usage.
-
-- `xnode_named_service_response_test.go` verifies that identity response validation is inside the named-service transaction and rolls back failed quota/material edits.
 `xnode_named_services.go` defaults new terms to `NO_RESET`, locks the authoritative
 current period for edits and never rewrites its cadence or reset evidence.
+`xnode_named_service_response_test.go` verifies that identity response validation is inside the named-service transaction and rolls back failed quota/material edits.
 
 `xnode_period_closure.go` atomically fences open admission with an incremented
 durable closure generation and returns the exact resulting row. Participant
@@ -1793,3 +1799,21 @@ Administrator coupon definitions: `coupons_admin.go` rechecks the active, unbloc
 Payment profile actor eligibility: `payment_profile_actor_test.go` verifies that saved-profile edits and deletion recheck active/unblocked administrator state inside the mutation transaction. Empty actors remain restricted to existing bootstrap/readiness system entry points; rejected human actors produce no changes or actor audit.
 
 Administrator API token mutations: `api_token_actor_test.go` keeps the authenticated request snapshot stale while demoting, purging or blocking its owner. Creation and revocation recheck the current actor under the shared transaction fence, map eligibility failures to API authentication refusal, and preserve credential/audit state on rejection. Revocation retains its single immutable audit after the credential is deleted.
+
+Activity administration: `activity_admin.go` and `activity_admin_retry_generated.go`
+lock the current active, unblocked administrator and commit game/draw changes or
+raffle publication with an actor-attributed audit. `activity_draw_save.go` retains
+prizes, revision history, reservation changes and delivery jobs in that same
+transaction; returned state is read before commit rather than afterward. New
+revision snapshots include the actual generated prize IDs and canonical names;
+previous snapshots and settled outcomes are unchanged. `destructive.go` uses the
+same current actor fence before the existing evidence-preserving deletion flow.
+`activity_admin_audit_test.go` covers mutation/revision/outbox rollback and exact
+audit/response snapshots; `activity_admin_actor_test.go` checks demoted, purging
+and blocked actors across game/draw creation, publication, deletion and settings.
+
+`settings_activity.go` writes the existing five activity settings as one validated
+bundle with `activity.settings.update` audit and an exact returned configuration.
+No new settings copy or table is introduced. `settings_activity_retry_generated.go`
+retries rolled-back transactions; `settings_activity_test.go` covers audit failure,
+range refusal, and readers observing whole bundles during concurrent writes.

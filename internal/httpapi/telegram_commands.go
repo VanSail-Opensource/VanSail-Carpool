@@ -67,7 +67,7 @@ func (s *Server) processTelegramGroupMessageUpdate(ctx context.Context, updateID
 		return
 	}
 	now := time.Now().UTC()
-	config, configErr := s.activityConfig(ctx)
+	config, configErr := s.deps.Settings.ActivityConfig(ctx)
 	localDate := telegramGroupMessageDate(config.Timezone, configErr, now)
 	if err := s.deps.Store.BufferGroupMessageFact(message.Chat.ID, message.MessageID, localDate, now); err != nil {
 		s.deps.Logger.Warn("buffer raw Telegram group message", "chat_id", message.Chat.ID, "message_id", message.MessageID, "error", err)
@@ -159,7 +159,7 @@ func (s *Server) processTelegramCommand(ctx context.Context, message *telegram.M
 			reply = botcommands.FormatBalance(copy, s.telegramDisplayFormatter(ctx, user)(money))
 		}
 	case botcommands.SignIn:
-		config, configErr := s.activityConfig(ctx)
+		config, configErr := s.deps.Settings.ActivityConfig(ctx)
 		if configErr == nil {
 			result, checkInErr := s.deps.Activity.CheckIn(ctx, user.ID, config)
 			if checkInErr == nil {

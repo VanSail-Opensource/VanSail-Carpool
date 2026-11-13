@@ -69,7 +69,7 @@ func (m *automaticLeaseManager) observe(observations []AutomaticLeaseObservation
 func (m *automaticLeaseManager) grantLocked(item *automaticLease) {
 	m.generation++
 	item.generation = m.generation
-	m.pendingBans[item.ip] = item.generation
+	m.queueBanReleaseLocked(item)
 	m.revision++
 }
 

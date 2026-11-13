@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -13,19 +14,9 @@ import (
 // SaveActivityGame creates or edits a current definition without resurrecting a
 // removed game. A short SQL transaction serializes edits with admission/removal.
 func (s *Store) SaveActivityGame(ctx context.Context, input activity.GameInput, now time.Time) (activity.Game, error) {
-	if err := input.Validate(); err != nil {
+	input, create, err := prepareActivityGame(input)
+	if err != nil {
 		return activity.Game{}, err
-	}
-	input.Name = strings.TrimSpace(input.Name)
-	input.Icon = strings.TrimSpace(input.Icon)
-	input.Description = strings.TrimSpace(input.Description)
-	create := input.ID == ""
-	if create {
-		id, err := ids.New()
-		if err != nil {
-			return activity.Game{}, err
-		}
-		input.ID = id
 	}
 	for retry := 0; ; retry++ {
 		game, err := s.saveActivityGameAttempt(ctx, input, create, now.UTC())
@@ -35,12 +26,42 @@ func (s *Store) SaveActivityGame(ctx context.Context, input activity.GameInput, 
 	}
 }
 
+func prepareActivityGame(input activity.GameInput) (activity.GameInput, bool, error) {
+	if err := input.Validate(); err != nil {
+		return activity.GameInput{}, false, err
+	}
+	input.Name = strings.TrimSpace(input.Name)
+	input.Icon = strings.TrimSpace(input.Icon)
+	input.Description = strings.TrimSpace(input.Description)
+	create := input.ID == ""
+	if create {
+		id, err := ids.New()
+		if err != nil {
+			return activity.GameInput{}, false, err
+		}
+		input.ID = id
+	}
+	return input, create, nil
+}
+
 func (s *Store) saveActivityGameAttempt(ctx context.Context, input activity.GameInput, create bool, now time.Time) (activity.Game, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return activity.Game{}, err
 	}
 	defer tx.Rollback()
+	game, err := saveActivityGameTx(ctx, tx, input, create, now)
+	if err != nil {
+		return activity.Game{}, err
+	}
+	if err = tx.Commit(); err != nil {
+		return activity.Game{}, err
+	}
+	return game, nil
+}
+
+func saveActivityGameTx(ctx context.Context, tx *sql.Tx, input activity.GameInput, create bool, now time.Time) (activity.Game, error) {
+	var err error
 	if create {
 		_, err = tx.ExecContext(ctx, `INSERT INTO activity_games(id,name,icon,description,enabled,win_chance_bps,minimum_stake_minor,maximum_stake_minor,return_multiplier_bps,created_at,updated_at)
  VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, input.ID, input.Name, input.Icon, input.Description, boolInt(input.Enabled), input.WinChanceBPS,
@@ -60,12 +81,5 @@ func (s *Store) saveActivityGameAttempt(ctx context.Context, input activity.Game
 	if err != nil {
 		return activity.Game{}, fmt.Errorf("save activity game: %w", err)
 	}
-	game, err := activityGameByID(ctx, tx, input.ID)
-	if err != nil {
-		return activity.Game{}, err
-	}
-	if err = tx.Commit(); err != nil {
-		return activity.Game{}, err
-	}
-	return game, nil
+	return activityGameByID(ctx, tx, input.ID)
 }

@@ -1,6 +1,19 @@
 import assert from 'node:assert/strict'
 
 export async function memberRecoveryScenarios(scenario, size) {
+  await scenario(size, 'captcha-owner', 'recovery-audit.html?captcha', async (page, capture) => {
+    await page.getByRole('button', { name: 'Complete constructed verification', exact: true }).click()
+    await page.waitForFunction(() => globalThis.__recoveryAudit.state.captchaReads === 1)
+    await capture('verifying')
+    await page.evaluate(() => globalThis.__recoveryAudit.switchOwner())
+    await page.waitForFunction(() => globalThis.__recoveryAudit.snapshot().user === 'audit-owner-2')
+    await page.getByRole('button', { name: 'Complete constructed verification', exact: true }).waitFor()
+    await page.evaluate(() => { globalThis.__recoveryAudit.releaseCaptcha(); globalThis.__recoveryAudit.expiredCaptcha() })
+    await page.waitForFunction(() => globalThis.__recoveryAudit.state.captchaFinished === 1)
+    assert.equal(await page.evaluate(() => globalThis.__recoveryAudit.snapshot().user), 'audit-owner-2')
+    assert.equal(await page.getByText('Your challenge expired. Please solve it again.', { exact: true }).count(), 0)
+    assert.equal(await page.getByRole('button', { name: 'Complete constructed verification', exact: true }).isVisible(), true)
+  })
   await scenario(size, 'checkout-owner', 'recovery-audit.html', async (page, capture) => {
     await page.locator('[data-test="open-checkout"]').click()
     await page.getByText('Waiting for payment', { exact: true }).waitFor()
@@ -24,6 +37,7 @@ export async function memberRecoveryScenarios(scenario, size) {
     assert.equal(await page.getByRole('link', { name: 'Settings', exact: true }).count(), 0)
   })
   await scenario(size, 'community-access-logout', 'community-audit.html?access', async (page, capture) => {
+    await page.waitForFunction(() => globalThis.__communityAudit.state.accessReads === 2 && globalThis.__communityAudit.state.accessFinished === 2)
     await page.waitForFunction(() => globalThis.document.querySelector('[data-test="community-access"]')?.textContent === 'true')
     await capture('funded')
     await page.evaluate(() => { globalThis.__communityAudit.state.deferAccess = true })

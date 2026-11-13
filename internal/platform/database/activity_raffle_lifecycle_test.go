@@ -19,6 +19,9 @@ func TestRafflePublishingFreezesTermsAndCleansUpLateMessage(t *testing.T) {
 	t.Parallel()
 	ctx, store, now := context.Background(), newTestStore(t), time.Now().UTC()
 	actor := createTestUser(t, store, 31811)
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET role='admin' WHERE id=$1`, actor.ID); err != nil {
+		t.Fatal(err)
+	}
 	draw, err := store.SaveLuckyDraw(ctx, auditRaffleInput("join", "join_draw"), now)
 	if err != nil {
 		t.Fatal(err)

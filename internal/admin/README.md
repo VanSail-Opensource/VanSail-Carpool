@@ -46,7 +46,7 @@ Audited administrative operations for catalog data, settings, balances, refunds,
 - `catalog_test_helpers_test.go` supplies atomic catalog mutation fixtures, including audit failure rollback semantics.
 - `settings_test.go` covers secret handling, safe listing, readiness, and validators.
 - `payment_profiles_test.go` covers provider profile validation, encryption, masking, and readiness behavior.
-- `zero_coverage_test.go` covers backup deletion, balance deductions, stable-ID payment-profile lookups and runtimes, legacy EZPay validation, and activity reward boundaries.
+- `zero_coverage_test.go` covers backup deletion, balance deductions, stable-ID payment-profile lookups and runtimes, legacy EZPay validation, and refusal of individual activity-setting writes.
 - `catalog_test.go` covers optional setting validators.
 - `user_profiles_test.go` covers aggregate selection, ordering, and synchronization projection.
 - `user_profiles_test_helpers_test.go` contains focused aggregate-profile repository doubles.
@@ -175,3 +175,13 @@ through `DisablePaymentProfileIfUnchanged`; a concurrent save or re-enable keeps
 its current configuration and discovery. The availability audit commits with the
 conditional disable. Historical callback account lookup remains independent of
 current rail availability.
+
+`settings_activity.go` reads the five activity settings from one `ListSettings`
+snapshot and returns defaults only for missing/blank values. Corrupt stored
+configuration has its own typed error; storage failures retain their cause.
+`SaveActivityConfig` validates and writes the complete existing bundle through
+`SaveActivitySettings`, which commits the current actor audit with all values.
+Generic `activity.*` writes cannot publish a partial policy or race cross-key
+validation in another service instance. `settings_activity_test.go` covers exact
+money, snapshot-only reads, invalid ranges/thresholds, transient failures and the
+required atomic adapter.

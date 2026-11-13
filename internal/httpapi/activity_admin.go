@@ -11,7 +11,7 @@ import (
 )
 
 func (s *Server) adminActivitySettings(w http.ResponseWriter, r *http.Request) {
-	config, err := s.activityConfig(r.Context())
+	config, err := s.deps.Settings.ActivityConfig(r.Context())
 	if err != nil {
 		s.communityFailure(w, r, err)
 		return
@@ -67,44 +67,11 @@ func (s *Server) adminUpdateActivitySettings(w http.ResponseWriter, r *http.Requ
 		s.writeError(w, r, http.StatusUnprocessableEntity, "INVALID_GROUP_MESSAGE_REWARD", "Group message reward must be a non-negative TXB amount.")
 		return
 	}
-	config, err := s.activityConfig(r.Context())
-	if err != nil {
-		s.communityFailure(w, r, err)
-		return
-	}
 	actorID := currentUser(r).ID
-	if err := s.deps.Admin.PutSetting(r.Context(), actorID, activityTimezoneSetting, request.Timezone); err != nil {
-		s.communityFailure(w, r, err)
-		return
-	}
-	if err := s.deps.Admin.PutSetting(r.Context(), actorID, groupMessageThresholdSetting, strconv.Itoa(request.GroupMessageThreshold)); err != nil {
-		s.communityFailure(w, r, err)
-		return
-	}
-	if dailyRewardMaxMinor < config.RewardMinMinor {
-		if err := s.deps.Admin.PutSetting(r.Context(), actorID, activityRewardMinSetting, request.DailyRewardMinTXB); err != nil {
-			s.communityFailure(w, r, err)
-			return
-		}
-		if err := s.deps.Admin.PutSetting(r.Context(), actorID, activityRewardMaxSetting, request.DailyRewardMaxTXB); err != nil {
-			s.communityFailure(w, r, err)
-			return
-		}
-	} else {
-		if err := s.deps.Admin.PutSetting(r.Context(), actorID, activityRewardMaxSetting, request.DailyRewardMaxTXB); err != nil {
-			s.communityFailure(w, r, err)
-			return
-		}
-		if err := s.deps.Admin.PutSetting(r.Context(), actorID, activityRewardMinSetting, request.DailyRewardMinTXB); err != nil {
-			s.communityFailure(w, r, err)
-			return
-		}
-	}
-	if err := s.deps.Admin.PutSetting(r.Context(), actorID, groupMessageRewardSetting, request.GroupMessageRewardTXB); err != nil {
-		s.communityFailure(w, r, err)
-		return
-	}
-	config, err = s.activityConfig(r.Context())
+	config, err := s.deps.Settings.SaveActivityConfig(r.Context(), actorID, activity.CheckInConfig{
+		Timezone: request.Timezone, RewardMinMinor: dailyRewardMinMinor, RewardMaxMinor: dailyRewardMaxMinor,
+		GroupMessageThreshold: request.GroupMessageThreshold, GroupMessageRewardMinor: groupMessageRewardMinor,
+	})
 	if err != nil {
 		s.communityFailure(w, r, err)
 		return
@@ -182,7 +149,7 @@ func (s *Server) adminSaveActivityGame(w http.ResponseWriter, r *http.Request, i
 		s.writeError(w, r, http.StatusUnprocessableEntity, "INVALID_STAKE_RANGE", "Stake limits must be positive decimal integer strings in TXB hundredths.")
 		return
 	}
-	game, err := s.deps.Activity.SaveGame(r.Context(), activity.GameInput{ID: id, Name: request.Name, Icon: request.Icon,
+	game, err := s.deps.Activity.SaveAdminGame(r.Context(), currentUser(r).ID, activity.GameInput{ID: id, Name: request.Name, Icon: request.Icon,
 		Description: request.Description, Enabled: request.Enabled, WinChanceBPS: request.WinChanceBPS, MinimumStakeMinor: minimum,
 		MaximumStakeMinor: maximum, ReturnMultiplierBPS: request.ReturnMultiplierBPS})
 	if err != nil {

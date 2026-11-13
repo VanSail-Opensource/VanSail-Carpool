@@ -56,6 +56,9 @@ func (s *Store) retryAttempt_SaveAffiliateConfig(ctx context.Context, actorID st
 		return affiliates.Config{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
+	if err := catalogAdminActorTx(ctx, tx, actorID); err != nil {
+		return affiliates.Config{}, err
+	}
 	current, err := affiliateConfig(ctx, tx)
 	if err != nil {
 		return affiliates.Config{}, err
@@ -97,10 +100,14 @@ func (s *Store) retryAttempt_SaveAffiliateConfig(ctx context.Context, actorID st
 	if err := insertAuditTx(ctx, tx, auditID, &actorID, "affiliate.config.update", "affiliate_config", configID, string(detail), now); err != nil {
 		return affiliates.Config{}, err
 	}
+	saved, err := affiliateConfig(ctx, tx)
+	if err != nil {
+		return affiliates.Config{}, err
+	}
 	if err := tx.Commit(); err != nil {
 		return affiliates.Config{}, err
 	}
-	return s.AffiliateConfig(ctx)
+	return saved, nil
 }
 
 func validateAffiliateCoupons(ctx context.Context, tx *sql.Tx, tiers []affiliates.Tier, now time.Time) error {

@@ -11,43 +11,50 @@ import (
 
 // PublishRaffle queues the group announcement; entries remain closed until its ID is saved.
 func (s *Store) retryAttempt_PublishRaffle(ctx context.Context, id string, groupID int64, now time.Time) error {
-	if groupID == 0 {
-		return activity.ErrInvalidInput
-	}
-
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
-	defer func() { _ = tx.Rollback() }()
-	draw, err := lockedLuckyDrawTx(ctx, tx, id, false)
-	if err != nil {
-		return err
-	}
-	draw.Prizes, err = luckyPrizes(ctx, tx, id)
-	if err != nil {
-		return err
-	}
-	if draw.Kind != "raffle" || draw.Status != "draft" {
-		return ErrConflict
-	}
-	if err = draw.LuckyDrawInput.Validate(); err != nil {
-		return err
-	}
-	if err = requireRaffleTriggersAvailableTx(ctx, tx, draw.LuckyDrawInput); err != nil {
-		return err
-	}
-	if _, err = tx.ExecContext(ctx, `UPDATE activity_lucky_draws SET status='publishing',group_chat_id=$1,updated_at=$2 WHERE id=$3 AND status='draft'`, groupID, stamp(now), id); err != nil {
-		if isUniqueConstraint(err) {
-			return ErrConflict
-		}
-		return err
-	}
-	payload, _ := json.Marshal(map[string]any{"drawId": id})
-	if err = insertOutboxTx(ctx, tx, "draw_telegram_publish", string(payload), now, now); err != nil {
+	defer tx.Rollback()
+	if _, err := publishRaffleTx(ctx, tx, id, groupID, now.UTC()); err != nil {
 		return err
 	}
 	return tx.Commit()
+}
+
+func publishRaffleTx(ctx context.Context, tx *sql.Tx, id string, groupID int64, now time.Time) (activity.LuckyDraw, error) {
+	if groupID == 0 {
+		return activity.LuckyDraw{}, activity.ErrInvalidInput
+	}
+	draw, err := lockedLuckyDrawTx(ctx, tx, id, false)
+	if err != nil {
+		return activity.LuckyDraw{}, err
+	}
+	draw.Prizes, err = luckyPrizes(ctx, tx, id)
+	if err != nil {
+		return activity.LuckyDraw{}, err
+	}
+	if draw.Kind != "raffle" || draw.Status != "draft" {
+		return activity.LuckyDraw{}, ErrConflict
+	}
+	if err = draw.LuckyDrawInput.Validate(); err != nil {
+		return activity.LuckyDraw{}, err
+	}
+	if err = requireRaffleTriggersAvailableTx(ctx, tx, draw.LuckyDrawInput); err != nil {
+		return activity.LuckyDraw{}, err
+	}
+	if _, err = tx.ExecContext(ctx, `UPDATE activity_lucky_draws SET status='publishing',group_chat_id=$1,updated_at=$2 WHERE id=$3 AND status='draft'`, groupID, stamp(now), id); err != nil {
+		if isUniqueConstraint(err) {
+			return activity.LuckyDraw{}, ErrConflict
+		}
+		return activity.LuckyDraw{}, err
+	}
+	payload, _ := json.Marshal(map[string]any{"drawId": id})
+	if err = insertOutboxTx(ctx, tx, "draw_telegram_publish", string(payload), now, now); err != nil {
+		return activity.LuckyDraw{}, err
+	}
+	draw.Status, draw.GroupChatID, draw.UpdatedAt = "publishing", groupID, now
+	return draw, nil
 }
 
 // ConfirmRafflePublished opens a publishing draft or schedules cleanup if the

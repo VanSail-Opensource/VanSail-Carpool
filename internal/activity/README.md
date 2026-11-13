@@ -12,6 +12,9 @@
 - `RANDOM_DISTRIBUTIONS.md` defines distribution semantics, quantization and the correction to minimum-heavy power-law rewards. Changes affect future unresolved rewards; saved outcomes and awarded coupons retain their values.
 - `raffles.go` defines group-entry receipts and settlement summaries; `service.go` exposes publication, entry, and settlement to HTTP and the durable worker.
 - `service.go` validates and coordinates member and administrator activity workflows.
+- `admin.go` exposes actor-bound game/draw saves and raffle publication through the required transactional administrator adapter. Raw service/store saves remain fixture compatibility paths; production admin handlers use `SaveAdminGame`, `SaveAdminDraw`, and `PublishAdminRaffle`.
+- `admin_test.go` covers actor/time propagation, canonical terms, caller-owned prize isolation, and refusal to fall back to unaudited writes.
+- `settings.go` validates the complete timezone/daily-range/message-reward bundle, including the shared 32-bit message threshold bound. The admin settings service reads one SQL snapshot and saves the bundle atomically.
 - `random.go` provides the cryptographically secure random source.
 - `activity_test.go` verifies validation, idempotency, randomness, and service behavior.
 

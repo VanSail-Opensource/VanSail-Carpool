@@ -18,7 +18,7 @@ func TestAdminEditCannotReopenRefundedFinancialHistory(t *testing.T) {
 			t.Parallel()
 			ctx, store := context.Background(), newTestStore(t)
 			now := time.Date(2026, 11, 13, 9, 0, 0, 0, time.UTC)
-			actor := createTestUser(t, store, 91801)
+			actor := createTestAdmin(t, store, 91801)
 			combo := saveTestCombo(t, store, "immutable-refund", 1_700, 30)
 			user, purchase := createAdminWorkflowPurchase(t, store, 91802, combo, now)
 			if lane == "queued_cancel" {

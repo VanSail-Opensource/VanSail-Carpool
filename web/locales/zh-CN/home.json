@@ -1,25 +1,6 @@
 {
   "home": {
     "currentTerm": "当前周期",
-    "noNodeUsage": "所选范围暂无节点流量数据。",
-    "trafficStart": "开始日期",
-    "trafficEnd": "结束日期",
-    "trafficApply": "显示流量",
-    "trafficRangeHint": "日期按 UTC 计算，最多可选择 31 天。",
-    "trafficRangeInvalid": "请选择有效且按时间顺序排列的日期。",
-    "trafficLoadHint": "选择日期后加载节点流量。",
-    "trafficPeriod": "{start} 至 {end}（UTC）",
-    "trafficTopNodes": "显示流量最高的最多 {count} 个节点。",
-    "trafficNode": "{name} · {country}",
-    "trafficBarLabel": "按节点显示流量分布",
-    "trafficOtherAria": "其他流量，{usage}，占流量 {percentage}%",
-    "trafficNodeUsage": "节点用量",
-    "trafficNodeShare": "占比",
-    "trafficOther": "其他流量",
-    "trafficOtherDescription": "未包含在显示节点中的流量。",
-    "trafficTotal": "总计",
-    "trafficChartNode": "{name}，流量总计 {value}",
-    "trafficChartDay": "{date}：{value}",
     "squadSeparator": " · ",
     "preferences": {
       "label": "语言与货币"
@@ -41,7 +22,6 @@
     "autoRenewalChargeDate": "扣款日期",
     "autoRenewalNextCycleDate": "下个周期结束日期",
     "autoRenewalUnavailable": "当前套餐暂时无法开启自动续费。",
-    "autoRenewalCatalogBlocked": "请先关闭自动续费，再选择新套餐。",
     "autoRenewalFailureTitle": "自动续费未完成",
     "autoRenewalFailureGeneric": "未扣除余额，当前套餐已到期。",
     "autoRenewalReason": {
@@ -76,6 +56,14 @@
       "WEEK": "每周",
       "MONTH": "每月",
       "MONTH_ROLLING": "滚动月度"
-    }
+    },
+    "renewalPricing": {
+      "calculating": "正在准备价格",
+      "prepared": "价格已准备好",
+      "deferred": "续费已暂停，等待服务恢复",
+      "stale": "价格已过期",
+      "unavailable": "价格暂不可用"
+    },
+    "renewalPricingLoadFailed": "暂时无法刷新续费价格，请重试。"
   }
 }

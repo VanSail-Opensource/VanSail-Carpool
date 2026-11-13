@@ -62,6 +62,8 @@ Object.assign(window, { __communityAuditLocale: setLocale, __communityAudit: {
 const app = createApp(CommunityAudit)
 app.config.globalProperties.$t = t
 app.use(pinia)
-app.use(createRouter({ history: createWebHistory(), routes: [{ path: '/fixtures/community-audit.html', component: CommunityAudit }] }))
+const router = createRouter({ history: createWebHistory(), routes: [{ path: '/fixtures/community-audit.html', component: CommunityAudit }] })
+app.use(router)
 app.use(ui)
+await router.isReady()
 app.mount('#app')

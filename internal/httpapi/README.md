@@ -25,7 +25,6 @@ to the X-Node service and uses existing sanitized error projections.
 `member_combo_controls.go` serves owner-scoped squad state and switch commands,
 plus earliest-queued eligibility and typed-confirmation activation. It uses
 onboarding, signed requests and the existing idempotent operation protections.
-- `activity_member_part2.go` continues the focused implementation from its original package module.
 - `database_admin_part2.go` continues the focused implementation from its original package module.
 - `handlers_part2.go` continues the focused implementation from its original package module.
 - `server_part2.go` continues the focused implementation from its original package module.
@@ -107,11 +106,12 @@ onboarding, signed requests and the existing idempotent operation protections.
 ## Community features
 
 - `community_membership.go` maps canonical Telegram membership checks and strict one-space invite eligibility to stable Community transport errors.
-- `community_shared.go` defines shared community settings and nullable JSON request fields.
+- `community_shared.go` defines the shared activity timezone default and nullable JSON request fields.
 - `community_helpers.go` contains required idempotency, decimal, collection, and error helpers.
 - `activity_types.go` maps Activity domain games, draws, rewards, and history to responses.
 - `activity_member.go` serves member Activity overview, check-in, bet, draw, and configuration behavior.
-- `activity_admin.go` serves Activity settings and game administration.
+- `activity_admin.go` serves Activity settings and game administration. All five reward settings save atomically through the dedicated settings service; member and Telegram activity reads use its single snapshot. Administrative game, draw and raffle writes carry the current actor into the transactional authorization/audit boundary.
+- `activity_settings_recovery_test.go` covers complete HTTP settings updates, audit-failure rollback, stale administrator rejection and explicit recovery without partial reward policy.
 - `activity_draw_admin.go` saves validated instant and raffle configurations, publishes drafts, checks live catalog prize references through queued integrations, and exposes current-cost forecasts.
 - `activity_types_test.go` checks member-safe prize previews and draw receipt identity mapping.
 - `coupons_member.go` serves wallet, soft-discard, and redemption behavior plus coupon response mapping.

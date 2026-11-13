@@ -94,7 +94,7 @@ func (s *Server) adminPublishLuckyDraw(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, r, http.StatusUnprocessableEntity, "GROUP_NOT_CONFIGURED", "Community group is not configured.")
 		return
 	}
-	if err := s.deps.Activity.PublishRaffle(r.Context(), chiURLParam(r, "id"), groupID); err != nil {
+	if err := s.deps.Activity.PublishAdminRaffle(r.Context(), currentUser(r).ID, chiURLParam(r, "id"), groupID); err != nil {
 		s.communityFailure(w, r, err)
 		return
 	}
@@ -139,7 +139,7 @@ func (s *Server) adminSaveLuckyDraw(w http.ResponseWriter, r *http.Request, id s
 	if !s.validateDrawCatalog(w, r, prizes) {
 		return
 	}
-	draw, err := s.deps.Activity.SaveDraw(r.Context(), activity.LuckyDrawInput{ID: id, Name: request.Name, Description: request.Description,
+	draw, err := s.deps.Activity.SaveAdminDraw(r.Context(), currentUser(r).ID, activity.LuckyDrawInput{ID: id, Name: request.Name, Description: request.Description,
 		Kind: request.Kind, Enabled: request.Enabled, FeeMinor: fee, ExpectedParticipation: request.ExpectedParticipation,
 		Threshold: request.Threshold, Keyword: request.Keyword, Command: request.Command, Prizes: prizes})
 	if err != nil {

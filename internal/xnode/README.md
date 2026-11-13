@@ -1104,6 +1104,11 @@ Access repair uses `access_repair.go` and `access_recovery_test.go` to reload cu
 
 `master_sync_workers_test.go` verifies bounded fleet execution. `master_controls.go` retains monotonic volatile control updates. `command_operation.go` owns receipt attempts, definite busy deferrals and terminal outcome persistence.
 
+`command_notifications.go` keeps queued acceptance evidence before a later error.
+An accepted command cannot become a definite busy rejection because its waiter
+has not yet consumed the acceptance. `command_notifications_test.go` exercises
+both outcomes through the production notification coalescer.
+
 `access_repair_fences_test.go` checks refund ownership, scheduler exclusion and stale-pointer rejection against the real store.
 
 `reporting_defaults_test.go` protects explicit saved intervals and historical omitted/zero intervals while new configurations target two seconds.
@@ -1210,6 +1215,12 @@ only leased addresses. Replayed firewall journals do not rewrite unchanged
 cursors. `automatic_lease_bans_test.go` covers zero steady release calls and late
 ban commits; `automatic_lease_socket_test.go` exercises authenticated batched
 synchronization, unchanged grants and firewall-enable acknowledgement fences.
+Ban-release requests have an immutable memory-only identity separate from the
+lease delivery generation. A completed SQL release acknowledges only its captured
+request; an event committed during that completion retains its newer release even
+when the lease itself has not renewed. `automatic_lease_bans_test.go` covers this
+ordering and verifies that the newer release finishes once without renewing the
+lease or repeating acknowledged work.
 
 Enrollment revocation removes peer authority before closing the socket; queued
 activity cannot create leases after token rotation. `master_revocation_test.go`

@@ -37,6 +37,8 @@ agreement revision consent, delayed owner changes, community loading/errors and
 retired invite links using the real onboarding and community components.
 It also verifies that a different owner retires the prior payment sheet and that
 delayed combo/balance replies cannot restore the prior owner's navigation.
+The constructed captcha scenario exercises the actual App owner boundary and
+rejects prior-widget session replies and callbacks.
 
 `browser-operation-recovery.mjs` checks explicit receipt-outcome selection,
 unsupported workflow restrictions and retained drafts after evidence conflicts.
@@ -46,3 +48,5 @@ without starting another Telegram exchange.
 `browser-purchase-recovery.mjs` verifies queued-purchase target replacement,
 pending cancellation isolation and visible dialog errors followed by explicit
 retry at desktop and mobile widths.
+It also checks renewal expiry, health deferral, stale reopen replies and pricing
+read recovery while preserving the server's coupon-adjusted net amount.

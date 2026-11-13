@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, shallowRef, useTemplateRef, watch } from 'vue'
+import { onMounted, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
 
 import { api } from '@/api/client'
 import type { Session } from '@/api/types'
@@ -20,24 +20,27 @@ let widgetId: string | null = null
 let disposed = false
 let generation = 0
 
-async function verify(token: string): Promise<void> {
-  if (busy.value || disposed) return
+const current = (version: number) => !disposed && version === generation
+
+async function verify(token: string, version: number): Promise<void> {
+  if (busy.value || !current(version)) return
   busy.value = true
   error.value = null
   try {
     const session = await api.verifyCaptcha(token)
     if (session.captcha?.required) throw new Error(t('captcha.failed'))
-    if (!disposed) emit('verified', session)
+    if (current(version)) emit('verified', session)
   } catch (caught) {
-    if (!disposed) {
+    if (current(version)) {
       error.value = localizedError(caught, 'captcha.failed')
       if (widgetId !== null) provider?.reset(widgetId)
     }
-  } finally { busy.value = false }
+  } finally { if (current(version)) busy.value = false }
 }
 
 async function render(): Promise<void> {
   const version = ++generation
+  busy.value = false
   loading.value = true
   error.value = null
   if (widgetId !== null) provider?.remove(widgetId)
@@ -45,21 +48,23 @@ async function render(): Promise<void> {
   try {
     if (!props.challenge.siteKey) throw new Error(t('captcha.unavailable'))
     provider = await loadTurnstile()
-    if (disposed || version !== generation || !container.value) return
+    if (!current(version) || !container.value) return
     widgetId = provider.render(container.value, {
       sitekey: props.challenge.siteKey, action: props.challenge.action, theme: 'dark', size: 'flexible',
       language: locale.value === 'zh-CN' ? 'zh-cn' : 'en',
-      callback: token => void verify(token),
-      'error-callback': () => { error.value = t('captcha.unavailable') },
-      'expired-callback': () => { error.value = t('captcha.expired'); if (widgetId !== null) provider?.reset(widgetId) },
+      callback: token => void verify(token, version),
+      'error-callback': () => { if (current(version) && !busy.value) error.value = t('captcha.unavailable') },
+      'expired-callback': () => { if (current(version) && !busy.value) { error.value = t('captcha.expired'); if (widgetId !== null) provider?.reset(widgetId) } },
     })
-  } catch { if (!disposed) error.value = t('captcha.unavailable') }
-  finally { if (!disposed && version === generation) loading.value = false }
+  } catch { if (current(version)) error.value = t('captcha.unavailable') }
+  finally { if (current(version)) loading.value = false }
 }
 
 onMounted(() => void render())
-watch(locale, () => { if (!busy.value) void render() })
-onUnmounted(() => { disposed = true; generation++; if (widgetId !== null) provider?.remove(widgetId) })
+watch([locale, () => props.challenge.siteKey, () => props.challenge.action], (next, previous) => {
+  if (!busy.value || next[1] !== previous[1] || next[2] !== previous[2]) void render()
+})
+onScopeDispose(() => { disposed = true; generation++; if (widgetId !== null) provider?.remove(widgetId) })
 </script>
 
 <template>

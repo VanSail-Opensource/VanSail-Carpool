@@ -449,3 +449,15 @@ is cleared; `defer` holds the reply while the queued purchase is replaced. Hoste
 checks verify target changes retire consent, old replies do not report success
 for a replacement purchase, and errors remain visible inside the open dialog.
 No wallet or provider mutation occurs.
+
+`recovery-audit.html?captcha` mounts the actual App first-entry gate with a local
+constructed provider and deferred verification. The hosted owner-replacement
+check retires the old widget and verifies that its late session reply and expiry
+callback cannot alter the new account. No external verification request occurs.
+
+`purchase-recovery-audit.html?renewal` uses `renewalPricingFixture.ts` to supply
+server-shaped gross/discount/net amounts and retained contract/quote evidence.
+Add `expires`, `deferred-health`, `defer-pricing` or `pricing-error` to verify
+timed expiry, paused settlement copy, reopened-dialog response isolation and
+explicit read recovery. The fixture records writes; these price-preview checks
+must not toggle renewal or create any debit.

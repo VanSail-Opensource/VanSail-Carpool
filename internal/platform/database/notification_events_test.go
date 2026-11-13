@@ -128,7 +128,7 @@ func TestNoResetTrafficNotificationIsLifetimeOnly(t *testing.T) {
 
 func TestImmediateAdminFinanceNotificationIsAtomic(t *testing.T) {
 	store := newTestStore(t)
-	admin := createTestUser(t, store, 88005)
+	admin := createTestAdmin(t, store, 88005)
 	user := createTestUser(t, store, 88006)
 	now := time.Date(2026, 8, 20, 0, 0, 0, 0, time.UTC)
 	entry, err := store.AdjustAdminBalance(context.Background(), admin.ID, user.ID, 125, "admin-adjust-1", "courtesy", now)

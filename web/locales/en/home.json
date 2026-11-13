@@ -1,25 +1,6 @@
 {
   "home": {
     "currentTerm": "Current term",
-    "noNodeUsage": "No per-node traffic is available for this range.",
-    "trafficStart": "Start date",
-    "trafficEnd": "End date",
-    "trafficApply": "Show traffic",
-    "trafficRangeHint": "UTC dates, up to 31 days.",
-    "trafficRangeInvalid": "Choose valid dates in chronological order.",
-    "trafficLoadHint": "Choose dates to load per-node traffic.",
-    "trafficPeriod": "{start} to {end} (UTC)",
-    "trafficTopNodes": "Up to {count} busiest nodes are shown.",
-    "trafficNode": "{name} · {country}",
-    "trafficBarLabel": "Traffic distribution by node",
-    "trafficOtherAria": "Other traffic, {usage}, {percentage}% of usage",
-    "trafficNodeUsage": "Node usage",
-    "trafficNodeShare": "Share",
-    "trafficOther": "Other traffic",
-    "trafficOtherDescription": "Traffic outside the displayed nodes.",
-    "trafficTotal": "Total",
-    "trafficChartNode": "{name}, {value} total traffic",
-    "trafficChartDay": "{date}: {value}",
     "squadSeparator": " · ",
     "preferences": {
       "label": "Language and currency"
@@ -41,7 +22,6 @@
     "autoRenewalChargeDate": "Charge date",
     "autoRenewalNextCycleDate": "Next-cycle end date",
     "autoRenewalUnavailable": "Automatic renewal cannot be enabled for this ride right now.",
-    "autoRenewalCatalogBlocked": "Turn off automatic renewal before choosing a new fixed-term plan.",
     "autoRenewalFailureTitle": "Automatic renewal did not complete",
     "autoRenewalFailureGeneric": "We did not charge your balance, and this ride has expired.",
     "autoRenewalReason": {
@@ -76,6 +56,14 @@
       "WEEK": "Weekly",
       "MONTH": "Monthly",
       "MONTH_ROLLING": "Rolling monthly"
-    }
+    },
+    "renewalPricing": {
+      "calculating": "Price is being prepared",
+      "prepared": "Price prepared",
+      "deferred": "Renewal is paused for service recovery",
+      "stale": "Price expired",
+      "unavailable": "Price unavailable"
+    },
+    "renewalPricingLoadFailed": "The renewal price could not be refreshed. Please try again."
   }
 }

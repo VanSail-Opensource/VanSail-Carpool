@@ -113,6 +113,9 @@ func (s *SettingsService) Put(ctx context.Context, actorID, key, value string) e
 	return s.put(ctx, actorID, key, value)
 }
 func (s *SettingsService) put(ctx context.Context, actorID, key, value string) error {
+	if strings.HasPrefix(key, "activity.") {
+		return errors.New("activity settings require the dedicated atomic interface")
+	}
 	if key == database.EmbyURLSetting || key == database.EmbyTokenSetting {
 		return errors.New("Emby connection settings require the dedicated atomic interface")
 	}
@@ -139,11 +142,6 @@ func (s *SettingsService) put(ctx context.Context, actorID, key, value string) e
 			return fmt.Errorf("%s: %w", key, err)
 		}
 	}
-	if key == "activity.daily_reward_min_txb" || key == "activity.daily_reward_max_txb" {
-		if err := s.validateActivityRewardRange(ctx, key, value); err != nil {
-			return err
-		}
-	}
 	if err := s.validateTurnstileSettings(ctx, key, value); err != nil {
 		return err
 	}
@@ -161,33 +159,6 @@ func (s *SettingsService) put(ctx context.Context, actorID, key, value string) e
 		}
 	}
 	return s.repository.PutAdminSetting(ctx, key, stored, definition.Secret, actorID, time.Now().UTC())
-}
-
-func (s *SettingsService) validateActivityRewardRange(ctx context.Context, key, value string) error {
-	proposed, err := billing.ParseTXBMajor(value)
-	if err != nil {
-		return fmt.Errorf("%s: invalid TXB amount", key)
-	}
-	otherKey := "activity.daily_reward_max_txb"
-	if key == otherKey {
-		otherKey = "activity.daily_reward_min_txb"
-	}
-	otherValue, err := s.Optional(ctx, otherKey)
-	if err != nil || strings.TrimSpace(otherValue) == "" {
-		return err
-	}
-	other, err := billing.ParseTXBMajor(otherValue)
-	if err != nil {
-		return fmt.Errorf("%s: stored reward boundary is invalid", otherKey)
-	}
-	minimum, maximum := proposed, other
-	if key == "activity.daily_reward_max_txb" {
-		minimum, maximum = other, proposed
-	}
-	if minimum > maximum {
-		return errors.New("daily reward minimum cannot exceed maximum")
-	}
-	return nil
 }
 
 // SafeList exposes only known keys and masks credentials as write-only.

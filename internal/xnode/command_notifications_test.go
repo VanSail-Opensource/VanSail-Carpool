@@ -28,12 +28,16 @@ func TestOnlyDefiniteWorkerBusyRejectionIsRetryable(t *testing.T) {
 	for _, accepted := range []bool{false, true} {
 		pending := make(chan wire.Message, 2)
 		if accepted {
-			pending <- wire.New("command.accepted", "receipt", 0, map[string]string{"command": "runtime.reload"})
+			offerCommandFrame(pending, wire.New("command.accepted", "receipt", 0, map[string]string{"command": "runtime.reload"}))
 		}
-		pending <- wire.New("error", "receipt", 0, map[string]string{"error": "utility workers are busy"})
+		offerCommandFrame(pending, wire.New("error", "receipt", 0, map[string]string{"error": "utility workers are busy"}))
 		_, err := waitCommand(context.Background(), &agentPeer{ctx: context.Background()}, pending, "receipt", "runtime.reload", nil)
 		if errors.Is(err, outbox.ErrBusy) == accepted {
 			t.Fatalf("execution certainty lost: %t %v", accepted, err)
+		}
+		var outcome *CommandError
+		if accepted && (!errors.As(err, &outcome) || outcome.Outcome != CommandUncertain) {
+			t.Fatal("queued acceptance was lost before command error", err)
 		}
 	}
 }

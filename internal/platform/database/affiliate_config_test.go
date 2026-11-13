@@ -11,7 +11,7 @@ import (
 
 func TestAffiliateConfigRejectsStaleVersion(t *testing.T) {
 	store := newTestStore(t)
-	actor := createTestUser(t, store, 1001)
+	actor := createTestAdmin(t, store, 1001)
 	input := affiliates.ConfigInput{ExpectedVersion: 1, Tiers: []affiliates.Tier{{Name: "Starter", Threshold: 0, Enabled: true, Reward: affiliates.Reward{Kind: "none"}}}}
 	first, err := store.SaveAffiliateConfig(context.Background(), actor.ID, input, time.Now().UTC())
 	if err != nil {

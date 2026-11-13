@@ -18,6 +18,9 @@ func (s *Store) retryAttempt_SaveIPLookupSettings(ctx context.Context, actor str
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
+	if err := catalogAdminActorTx(ctx, tx, actor); err != nil {
+		return err
+	}
 	now := time.Now().UTC()
 	for id, quota := range quotas {
 		if quota != nil && (*quota < 0 || *quota > 1000000) {

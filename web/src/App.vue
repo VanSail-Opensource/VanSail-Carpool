@@ -66,7 +66,7 @@ onUnmounted(() => globalThis.removeEventListener(onboardingRequiredEvent, onOnbo
           :code="sessionStore.errorCode ?? undefined"
           @retry="sessionStore.bootstrap(true)"
         />
-        <CaptchaGate v-else-if="sessionStore.session?.captcha?.required" :challenge="sessionStore.session.captcha" @verified="sessionStore.updateSession" />
+        <CaptchaGate v-else-if="sessionStore.session?.captcha?.required" :key="sessionStore.user?.id" :challenge="sessionStore.session.captcha" @verified="sessionStore.updateSession" />
         <template v-else>
           <RouterView v-if="immersive" v-slot="{ Component, route: currentRoute }">
             <component :is="Component" :key="`${sessionStore.user?.id ?? ''}:${currentRoute.fullPath}`" />

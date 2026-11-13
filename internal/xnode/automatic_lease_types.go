@@ -41,6 +41,8 @@ type automaticLease struct {
 	sourceCount, index          int
 	sourcesTruncated            bool
 }
+type automaticBanRelease struct{ grant AutomaticLeaseGrant }
+
 type automaticLeaseManager struct {
 	mu                                  sync.Mutex
 	ownerAssociations                   int
@@ -49,14 +51,14 @@ type automaticLeaseManager struct {
 	config                              AutomaticWhitelistConfig
 	leases                              map[netip.Addr]*automaticLease
 	expiry                              automaticLeaseHeap
-	pendingBans                         map[netip.Addr]uint64
+	pendingBans                         map[netip.Addr]*automaticBanRelease
 	generation, revision, snapshotAt    uint64
 	snapshot                            []AutomaticLeaseGrant
 	created, renewed, expired, rejected uint64
 }
 
 func newAutomaticLeaseManager(epoch string) *automaticLeaseManager {
-	return &automaticLeaseManager{epoch: epoch, config: *defaultAutomaticWhitelist(), leases: map[netip.Addr]*automaticLease{}, pendingBans: map[netip.Addr]uint64{}}
+	return &automaticLeaseManager{epoch: epoch, config: *defaultAutomaticWhitelist(), leases: map[netip.Addr]*automaticLease{}, pendingBans: map[netip.Addr]*automaticBanRelease{}}
 }
 
 func (m *automaticLeaseManager) configure(config AutomaticWhitelistConfig) {

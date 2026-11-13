@@ -121,3 +121,14 @@ The final count guard rejected an invented Unallocated-only positive count at
 1440px/English without a chart, while valid idle cost remained 100% at 390px/Chinese.
 
 Purchase changes close a refund dialog and invalidate pending quote/renewal/operation projections. An earlier read cannot undo a confirmed automatic-renewal update.
+
+`renewalPricing.ts` projects retained contract/quote evidence for the renewal
+preview, with expiry and cross-response gross-price consistency checks.
+`renewalPricing.test.ts` covers contract binding, legacy terms, superseded quotes,
+health deferral and the exact expiry boundary. The server's gross/discount/net
+response remains intact; a gross quote is never presented as the final debit.
+`AutoRenewalControl.vue` refreshes both reads on open/retry, retires earlier
+pricing requests on close or purchase change, and expires the visible preview.
+Prepared prices describe a future preview; current settlement admission remains
+server-owned. Retired per-node Home chart and checkout-block locale keys were
+removed after verifying no source references remain.

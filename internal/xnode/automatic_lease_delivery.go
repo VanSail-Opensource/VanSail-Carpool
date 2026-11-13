@@ -35,14 +35,13 @@ func (m *automaticLeaseManager) delivery(after uint64, now time.Time) (grants []
 	return grants, through, more
 }
 
-func (m *automaticLeaseManager) pendingBanReleases(now time.Time) []AutomaticLeaseGrant {
+func (m *automaticLeaseManager) pendingBanReleases(now time.Time) []*automaticBanRelease {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.expireLocked(now)
-	items := make([]AutomaticLeaseGrant, 0, min(automaticLeaseBatch, len(m.pendingBans)))
-	for ip, generation := range m.pendingBans {
-		item := m.leases[ip]
-		items = append(items, AutomaticLeaseGrant{IP: ip.String(), Generation: generation, Until: item.until})
+	items := make([]*automaticBanRelease, 0, min(automaticLeaseBatch, len(m.pendingBans)))
+	for _, item := range m.pendingBans {
+		items = append(items, item)
 		if len(items) == automaticLeaseBatch {
 			break
 		}
@@ -50,12 +49,12 @@ func (m *automaticLeaseManager) pendingBanReleases(now time.Time) []AutomaticLea
 	return items
 }
 
-func (m *automaticLeaseManager) acknowledgeBanReleases(items []AutomaticLeaseGrant) {
+func (m *automaticLeaseManager) acknowledgeBanReleases(items []*automaticBanRelease) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	for _, item := range items {
-		ip, err := netip.ParseAddr(item.IP)
-		if err == nil && m.pendingBans[ip] == item.Generation {
+		ip, err := netip.ParseAddr(item.grant.IP)
+		if err == nil && m.pendingBans[ip] == item {
 			delete(m.pendingBans, ip)
 		}
 	}

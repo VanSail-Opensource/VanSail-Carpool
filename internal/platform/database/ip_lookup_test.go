@@ -119,7 +119,7 @@ func TestIPLookupInfrastructureFailureRetainsImmutableCache(t *testing.T) {
 	c.LookupFeeTXB = "2.50"
 	c.RefreshFeeTXB = "3.50"
 	c.Providers[0].Enabled = true
-	if err := store.SaveIPLookupSettings(ctx, user, c, map[string]string{"abuseipdb": "different-secret"}, nil); err != nil {
+	if err := store.SaveIPLookupSettings(ctx, createTestAdmin(t, store, 96002).ID, c, map[string]string{"abuseipdb": "different-secret"}, nil); err != nil {
 		t.Fatal(err)
 	}
 	op := submitIP(t, service, user, "old-cache", false)

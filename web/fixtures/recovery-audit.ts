@@ -13,6 +13,7 @@ import { useDisplayCurrency } from '@/composables/useDisplayCurrency'
 import { useSessionStore } from '@/stores/session'
 import { setExperience } from '@/utils/experience'
 import { setLocale, t } from '@/i18n'
+import type { Turnstile } from '@/utils/turnstile'
 import RecoveryAudit from './RecoveryAudit.vue'
 
 // All operations below are constructed and have no backend/provider effects.
@@ -24,7 +25,7 @@ const preference = (currency: DisplayCurrencyPreference['currency']): DisplayCur
   currency, rates: { cnyTxbPerUnit: '10', usdTxbPerUnit: '70' },
 })
 const pendingCurrency: Array<(value: DisplayCurrencyPreference) => void> = []
-const state = { reads: 0, saves: 0, cancels: 0, orderReads: 0, recover: false }
+const state = { reads: 0, saves: 0, cancels: 0, orderReads: 0, captchaReads: 0, captchaFinished: 0, recover: false }
 displayCurrencyApi.get = async () => {
   state.reads++
   if (params.has('currency-slow')) return new Promise(resolve => { pendingCurrency.push(resolve) })
@@ -69,13 +70,41 @@ function owner(id: string, displayCurrency: DisplayCurrencyPreference['currency'
     id, telegramId: '42', firstName: 'Audit', lastName: '', telegramUsername: '', displayName: 'Audit',
     username: null, role: 'user', onboardingState: 'intro', groupJoined: false, channelJoined: false,
     policyAcceptedAt: null, agreementRevision: 0, recoveryReason: '', displayCurrency, createdAt: now, updatedAt: now,
-  } }
+  }, ...(params.has('captcha') ? { captcha: { required: true, siteKey: 'constructed-captcha-key', action: 'txc_first_entry' as const } } : {}) }
+}
+const captchaCallbacks: Parameters<Turnstile['render']>[1][] = []
+let releaseCaptcha: (() => void) | undefined
+if (params.has('captcha')) {
+  const hosts = new Map<string, HTMLElement>()
+  window.turnstile = {
+    render(host, options) {
+      captchaCallbacks.push(options)
+      const id = String(captchaCallbacks.length)
+      const button = document.createElement('button')
+      button.textContent = 'Complete constructed verification'
+      button.style.cssText = 'min-height:48px;padding:1rem'
+      button.onclick = () => options.callback('constructed-captcha-token')
+      host.append(button); hosts.set(id, host)
+      return id
+    },
+    remove: id => { hosts.get(id)?.replaceChildren(); hosts.delete(id) },
+    reset: () => undefined,
+  }
+  api.verifyCaptcha = async () => {
+    const id = session.user!.id
+    state.captchaReads++
+    await new Promise<void>(resolve => { releaseCaptcha = resolve })
+    state.captchaFinished++
+    return { ...owner(id, 'TXB'), captcha: { required: false, siteKey: '', action: 'txc_first_entry' } }
+  }
 }
 session.updateSession(owner('audit-owner-1', 'TXB'))
 Object.assign(window, { __recoveryAudit: {
   state,
   releaseCurrency: (value: DisplayCurrencyPreference['currency']) => pendingCurrency.shift()?.(preference(value)),
   switchOwner: () => session.updateSession(owner('audit-owner-2', 'USD')),
+  releaseCaptcha: () => releaseCaptcha?.(),
+  expiredCaptcha: () => captchaCallbacks[0]?.['expired-callback'](),
   pay: () => { order = { ...order, status: 'paid', paidAt: now } },
   snapshot: () => ({ currency: currency.currency.value, rates: currency.rates.value,
     loading: currency.loading.value, saving: currency.saving.value, user: session.user?.id ?? null, ...state }),

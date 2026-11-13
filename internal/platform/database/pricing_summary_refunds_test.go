@@ -14,7 +14,7 @@ func TestPricingNetRevenueIncludesEveryPurchaseRefundLane(t *testing.T) {
 			t.Parallel()
 			ctx, store := context.Background(), newTestStore(t)
 			now := time.Date(2026, 11, 13, 13, 0, 0, 0, time.UTC)
-			actor := createTestUser(t, store, 91901)
+			actor := createTestAdmin(t, store, 91901)
 			combo := saveTestCombo(t, store, "net-revenue", 1_700, 30)
 			user, purchase := createAdminWorkflowPurchase(t, store, 91902, combo, now)
 			grossReceipts := purchase.PriceTXBMinor

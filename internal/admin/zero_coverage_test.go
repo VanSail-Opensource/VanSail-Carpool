@@ -189,38 +189,16 @@ func TestLegacyEZPayTypeValidator(t *testing.T) {
 	}
 }
 
-func TestValidateActivityRewardRange(t *testing.T) {
+func TestSettingsRequireAtomicActivityBundle(t *testing.T) {
 	t.Parallel()
-
-	tests := []struct {
-		name    string
-		key     string
-		value   string
-		stored  map[string]string
-		getErr  error
-		wantErr bool
-	}{
-		{name: "invalid proposed value", key: "activity.daily_reward_min_txb", value: "bad", wantErr: true},
-		{name: "missing other boundary", key: "activity.daily_reward_min_txb", value: "1"},
-		{name: "repository failure", key: "activity.daily_reward_min_txb", value: "1", getErr: errors.New("settings unavailable"), wantErr: true},
-		{name: "invalid stored boundary", key: "activity.daily_reward_min_txb", value: "1", stored: map[string]string{"activity.daily_reward_max_txb": "bad"}, wantErr: true},
-		{name: "minimum exceeds maximum", key: "activity.daily_reward_min_txb", value: "2", stored: map[string]string{"activity.daily_reward_max_txb": "1"}, wantErr: true},
-		{name: "maximum below minimum", key: "activity.daily_reward_max_txb", value: "1", stored: map[string]string{"activity.daily_reward_min_txb": "2"}, wantErr: true},
-		{name: "valid minimum", key: "activity.daily_reward_min_txb", value: "1", stored: map[string]string{"activity.daily_reward_max_txb": "2"}},
-		{name: "valid maximum", key: "activity.daily_reward_max_txb", value: "2", stored: map[string]string{"activity.daily_reward_min_txb": "1"}},
+	repository := newAdminSettingsRepository()
+	service := NewSettingsService(repository, testVault(t))
+	for _, key := range []string{"activity.timezone", "activity.daily_reward_min_txb", "activity.daily_reward_max_txb", "activity.group_message_threshold", "activity.group_message_reward_txb"} {
+		if err := service.Put(context.Background(), "admin", key, "1"); err == nil {
+			t.Fatalf("individual activity key %s bypassed the atomic bundle", key)
+		}
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			repository := newAdminSettingsRepository()
-			repository.getErr = test.getErr
-			for key, value := range test.stored {
-				repository.settings[key] = database.Setting{Key: key, Value: value}
-			}
-			service := NewSettingsService(repository, testVault(t))
-			err := service.validateActivityRewardRange(context.Background(), test.key, test.value)
-			if (err != nil) != test.wantErr {
-				t.Fatalf("validateActivityRewardRange() error = %v, want error %t", err, test.wantErr)
-			}
-		})
+	if repository.putCalls != 0 || repository.auditCalls != 0 {
+		t.Fatal("rejected partial bundle changed settings")
 	}
 }
