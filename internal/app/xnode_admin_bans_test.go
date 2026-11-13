@@ -14,6 +14,10 @@ import (
 func TestNativeAdminBanPreservesOwnerPeriodAndRejectsStaleRelease(t *testing.T) {
 	f := newNativePurchaseFixture(t)
 	ctx := context.Background()
+	actor, _, err := f.store.UpsertTelegramUser(ctx, model.TelegramProfile{ID: f.user.TelegramID + 2}, true)
+	if err != nil {
+		t.Fatal(err)
+	}
 	other, _, err := f.store.UpsertTelegramUser(ctx, model.TelegramProfile{ID: f.user.TelegramID + 1}, false)
 	if err != nil {
 		t.Fatal(err)
@@ -34,7 +38,7 @@ func TestNativeAdminBanPreservesOwnerPeriodAndRejectsStaleRelease(t *testing.T) 
 		t.Fatal(err)
 	}
 	workflow := admin.NewUserWorkflows(f.store, f.provider)
-	ban, err := workflow.TemporaryBan(ctx, f.user.ID, f.user.ID, "ban-first", "investigation", 10)
+	ban, err := workflow.TemporaryBan(ctx, actor.ID, f.user.ID, "ban-first", "investigation", 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,7 +47,7 @@ func TestNativeAdminBanPreservesOwnerPeriodAndRejectsStaleRelease(t *testing.T) 
 	if err != nil || !identity.AccessDisabled {
 		t.Fatalf("native owner was not restricted: %+v, %v", identity, err)
 	}
-	unban, err := workflow.TemporaryUnban(ctx, f.user.ID, f.user.ID, "unban-first", "investigation complete")
+	unban, err := workflow.TemporaryUnban(ctx, actor.ID, f.user.ID, "unban-first", "investigation complete")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +57,7 @@ func TestNativeAdminBanPreservesOwnerPeriodAndRejectsStaleRelease(t *testing.T) 
 	if err != nil || periodErr != nil || identity.AccessDisabled || identity.CurrentPeriodID != periodID || period.Status != "open" || period.UsedBytes != 7 {
 		t.Fatalf("restoration reset accounting: %+v %+v %v %v", identity, period, err, periodErr)
 	}
-	second, err := workflow.TemporaryBan(ctx, f.user.ID, f.user.ID, "ban-second", "another investigation", 10)
+	second, err := workflow.TemporaryBan(ctx, actor.ID, f.user.ID, "ban-second", "another investigation", 10)
 	if err != nil {
 		t.Fatal(err)
 	}
