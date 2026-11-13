@@ -23,7 +23,7 @@ function document(tag: string): XNodeCustomization {
 }
 function routing() {
   return mount(XNodeServiceRouting, { props: {
-    item: owner('one'), nodes: [{ id: 'node', name: 'Node', enabled: true, multiplier: 1, configId: 'config' }],
+    item: owner('one'), nodes: [{ id: 'node', name: 'Node', enabled: true, configId: 'config' }],
     groups: [{ id: 'group', name: 'Group', enabled: true, bindings: [{ nodeId: 'node', inboundTag: 'in' }] }],
   }, global: { stubs } })
 }

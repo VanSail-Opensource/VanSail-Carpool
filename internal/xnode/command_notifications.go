@@ -2,7 +2,7 @@ package xnode
 
 import wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 
-// Called under peer.mu by the single control consumer. Redundant acceptance
+// Called under peer.mu by the receipt consumer. Redundant acceptance
 // frames cannot occupy the terminal result's slot; an existing result wins.
 // Preserve acceptance before an error so uncertain execution cannot become a
 // definite rejection merely because the waiter has not consumed acceptance yet.

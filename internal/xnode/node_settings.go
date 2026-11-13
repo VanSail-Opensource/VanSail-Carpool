@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+
+	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
 
 // errNodeSettingsNotObject rejects a stored document that is valid JSON but not
@@ -19,15 +21,28 @@ var errNodeSettingsNotObject = errors.New("stored node settings are not a JSON o
 // wrong-typed known fields are rejected. The SaveNode request type and its
 // validation stay strict so new writes cannot persist unsupported fields.
 func decodeNodeSettings(raw []byte) (NodeSettings, error) {
+	if len(raw) > wire.MaxFrameBytes {
+		return NodeSettings{}, ErrInvalid
+	}
 	document := bytes.TrimSpace(raw)
 	if len(document) == 0 || document[0] != '{' {
 		return NodeSettings{}, errNodeSettingsNotObject
 	}
-	var settings NodeSettings
-	if err := json.Unmarshal(document, &settings); err != nil {
+	var stored historicalNodeSettings
+	if err := json.Unmarshal(document, &stored); err != nil {
 		return NodeSettings{}, err
 	}
-	return settings, nil
+	return stored.current()
+}
+
+// Persist current explicit native defaults separately from the public settings
+// shape. The next ordinary save removes retired keys; reads never rewrite state.
+func (s *Service) sealNodeSettings(node string, settings NodeSettings) (string, error) {
+	stored := struct {
+		NodeSettings
+		NativeDNSFallbackServers []string `json:"nativeDnsFallbackServers,omitempty"`
+	}{settings, settings.dnsFallbackServers}
+	return s.seal("xnode.node."+node, stored)
 }
 
 func (s *Service) openNodeSettings(node Node) (NodeSettings, error) {

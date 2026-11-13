@@ -130,23 +130,6 @@
     "none": "No audit events",
     "noneHint": "Fixed-term purchases appear here when accepted or granted."
   },
-  "adminEntitlements": {
-    "title": "Entitlements",
-    "copy": "Review current and historical access, including the owning account.",
-    "filter": "Filter entitlements",
-    "all": "All statuses",
-    "activating": "Activating",
-    "expired": "Expired",
-    "cancelled": "Cancelled",
-    "failed": "Failed",
-    "loadMore": "Load more entitlements",
-    "summary": "User {user} / {from} to {to}",
-    "none": "No entitlements in this view",
-    "noneHint": "Fixed-term purchases appear here when accepted or granted.",
-    "cancelTitle": "Cancel this entitlement?",
-    "cancelDescription": "The charged TXB amount will be credited back. Active access will be revoked through a synchronization job.",
-    "cancelEntitlement": "Cancel entitlement"
-  },
   "adminSection": {
     "loadingContent": "Loading content.",
     "unavailable": "This section is unavailable.",

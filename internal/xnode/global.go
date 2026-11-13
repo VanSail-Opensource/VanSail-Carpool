@@ -11,11 +11,16 @@ import (
 
 func DefaultGlobal() GlobalConfig {
 	hours := 24
-	return GlobalConfig{AutomaticWhitelist: defaultAutomaticWhitelist(), FirewallDetection: DefaultFirewallDetection(), GeodataIntervalHours: &hours, SourceGeoIP: SourceGeoIPConfig{Selectors: []string{"geoip:cn"}}, BlockedDomains: []string{}, Providers: map[string]wire.Provider{}, Telemetry: wire.TelemetryPolicy{IncludeActiveIPs: true, SampleSeconds: 1, ReportSeconds: 2}, Torrent: wire.TorrentPolicy{BanSeconds: 600}}
+	return GlobalConfig{AutomaticWhitelist: defaultAutomaticWhitelist(), FirewallDetection: DefaultFirewallDetection(), GeodataIntervalHours: &hours, SourceGeoIP: SourceGeoIPConfig{Selectors: []string{"geoip:cn"}}, BlockedDomains: []string{}, Providers: map[string]wire.Provider{}, Telemetry: wire.TelemetryPolicy{SampleSeconds: 1, ReportSeconds: 2}, Torrent: wire.TorrentPolicy{BanSeconds: 600}}
 }
 
+// DecodeGlobal reads saved global settings after the Settings facade decrypts
+// them. Live writes decode the current typed GlobalConfig strictly at the API.
 func DecodeGlobal(raw string) (GlobalConfig, error) {
 	config := DefaultGlobal()
+	if len(raw) > wire.MaxFrameBytes {
+		return config, ErrInvalid
+	}
 	if strings.TrimSpace(raw) == "" {
 		return config, nil
 	}
@@ -29,6 +34,24 @@ func DecodeGlobal(raw string) (GlobalConfig, error) {
 	}
 	delete(document, "firewallUnbanPrice")
 	delete(document, "firewallExemptionHours")
+	if rawTelemetry := document["telemetry"]; len(rawTelemetry) > 0 {
+		var telemetry map[string]json.RawMessage
+		if json.Unmarshal(rawTelemetry, &telemetry) != nil {
+			return config, ErrInvalid
+		}
+		if retired, exists := telemetry["include_active_ips"]; exists {
+			var ignored bool
+			if json.Unmarshal(retired, &ignored) != nil {
+				return config, ErrInvalid
+			}
+			delete(telemetry, "include_active_ips")
+			canonical, err := json.Marshal(telemetry)
+			if err != nil {
+				return config, err
+			}
+			document["telemetry"] = canonical
+		}
+	}
 	clean, err := json.Marshal(document)
 	if err != nil {
 		return config, err
@@ -39,7 +62,6 @@ func DecodeGlobal(raw string) (GlobalConfig, error) {
 	if config.Telemetry.ReportSeconds == 0 {
 		config.Telemetry.ReportSeconds = 5
 	}
-	config.Telemetry.IncludeActiveIPs = true
 	if config.AutomaticWhitelist == nil {
 		config.AutomaticWhitelist = defaultAutomaticWhitelist()
 	}

@@ -2,9 +2,10 @@
 import { computed, onScopeDispose, reactive, shallowRef, toRaw, watch } from 'vue'
 import { xnodeApi, type XNodeConfiguration, type XNodeSnippet } from '@/api/xnode'
 import { useI18n } from '@/i18n'
-import { cloneForEditing } from '@/utils/browserCompatibility'
+import { cloneForEditing, createUuid } from '@/utils/browserCompatibility'
 import XNodeJsonEditor from '@/components/common/JsonDocumentField.vue'
 import { shadowsocksConfiguration } from './configurationPresets'
+import { saveConfigurationWithRecovery, saveSnippetWithRecovery } from './catalogCreation'
 
 const props = defineProps<{ configurations: XNodeConfiguration[]; snippets: XNodeSnippet[]; busy: boolean; saveError?: string | null; perform: (action: () => Promise<unknown>) => Promise<boolean> }>()
 const { t } = useI18n()
@@ -21,19 +22,23 @@ const validationNonce = shallowRef(0)
 const submitting = shallowRef(false)
 const blocked = computed(() => props.busy || submitting.value || removingId.value !== null)
 let active = true
+let creationId = ''
+const recovery = new globalThis.AbortController()
 let validationGeneration = 0
-onScopeDispose(() => { active = false; validationGeneration++ })
+onScopeDispose(() => { active = false; validationGeneration++; recovery.abort() })
 const snippetOptions = computed(() => props.snippets.map(item => ({ label: item.name, value: item.id })))
 const kinds = computed(() => ['outbound', 'routing'].map(value => ({ value, label: t(`xnode.snippetKinds.${value}`) })))
 function addShadowsocks() { if (blocked.value) return; editConfiguration(); document.value = shadowsocksConfiguration() }
 function editConfiguration(item?: XNodeConfiguration): void {
   if (!active || blocked.value) return
+  creationId = ''
   mode.value = 'configuration'; Object.assign(draft, { id: item?.id ?? '', name: item?.name ?? '', revision: item?.revision ?? 0, snippetIds: [...(item?.snippetIds ?? [])] })
   document.value = cloneForEditing(toRaw(item?.document ?? { inbounds: [], outbounds: [{ tag: 'direct', protocol: 'freedom' }, { UserOutbound: {} }], routing: { rules: [{ UserRouting: {} }] } }))
   editing.value = true; valid.value = true
 }
 function editSnippet(item?: XNodeSnippet): void {
   if (!active || blocked.value) return
+  creationId = ''
   mode.value = 'snippet'; Object.assign(draft, { id: item?.id ?? '', name: item?.name ?? '', revision: item?.revision ?? 0, kind: item?.kind ?? 'outbound' })
   document.value = cloneForEditing(toRaw(item?.document ?? [])); editing.value = true; valid.value = true
 }
@@ -55,9 +60,13 @@ async function save(): Promise<void> {
   const common = { id: draft.id, name: draft.name, revision: draft.revision }
   const configuration = { ...common, snippetIds: [...draft.snippetIds], document: value as Record<string, unknown> }
   const snippet = { ...common, kind: draft.kind, document: value as Record<string, unknown>[] }
-  const result = mode.value === 'configuration'
-    ? () => xnodeApi.saveConfiguration(configuration)
-    : () => xnodeApi.saveSnippet(snippet)
+  const selectedMode = mode.value
+  const result = () => {
+    const id = common.id || (creationId ||= createUuid())
+    return selectedMode === 'configuration'
+      ? saveConfigurationWithRecovery({ ...configuration, id }, recovery.signal)
+      : saveSnippetWithRecovery({ ...snippet, id }, recovery.signal)
+  }
   submitting.value = true
   try { if (await props.perform(result) && active) editing.value = false }
   finally { if (active) submitting.value = false }

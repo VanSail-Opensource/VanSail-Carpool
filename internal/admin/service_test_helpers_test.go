@@ -114,9 +114,6 @@ func (r *adminCatalogRepository) CourtesyCreditPayment(_ context.Context, actorI
 func (r *adminCatalogRepository) ListRefunds(context.Context, int) ([]model.Refund, error) {
 	return nil, nil
 }
-func (r *adminCatalogRepository) ListAllPurchases(context.Context, int) ([]model.Purchase, error) {
-	return nil, nil
-}
 func (r *adminCatalogRepository) CancelAdminPurchase(_ context.Context, actorID, id, reason string, _ time.Time) (model.Purchase, error) {
 	r.cancelActor, r.cancelledID, r.cancelReason = actorID, id, reason
 	if r.cancelErr != nil {

@@ -35,6 +35,7 @@ let polls = 0
 let submitCount = 0
 let quoteCount = 0
 let savedBody: IPLookupAdminSettings | null = null
+const adminAudit = { recovered: false, settingsReads: 0 }
 let lastQuote: IPLookupQuote | null = null
 let refreshedLive: Awaited<ReturnType<typeof liveCounters.refresh>> | null = null
 let refreshedOnce = false
@@ -104,7 +105,11 @@ async function pause() {
 }
 ipLookupApi.progress = async () => null
 ipLookupApi.state = async () => { await pause(); return structuredClone(state) }
-ipLookupApi.settings = async () => { await pause(); return structuredClone(settings) }
+ipLookupApi.settings = async () => {
+  adminAudit.settingsReads++
+  if (params.has('admin-load-error') && !adminAudit.recovered) throw new ApiError(503, { code: 'IP_LOOKUP_FAILED', message: '' })
+  await pause(); return structuredClone(settings)
+}
 ipLookupApi.saveSettings = async value => {
   savedBody = JSON.parse(JSON.stringify(value)) as IPLookupAdminSettings
   if (mode === 'save-error' || (value.enabled && (value.lookupFeeTxb === '' || value.refreshFeeTxb === '' || Object.values(value.comboQuotas).some(q => q === null)))) throw new ApiError(422, { code: 'IP_LOOKUP_CONFIGURATION_REQUIRED', message: 'Constructed missing configuration' })
@@ -148,5 +153,5 @@ const router = createRouter({ history: createWebHistory(), routes: [{ path: '/:p
 app.use(router); app.use(ui)
 setLocale(params.has('zh') ? 'zh-CN' : 'en')
 document.title = t('ipLookup.title')
-;(window as unknown as { __ipAudit: object }).__ipAudit = { state, settings, feedback, seedLive: liveCounters.seed, counters: () => ({ submitCount, quoteCount, polls, savedBody, live: liveCounters.counters() }), setCached: (value: boolean) => { cached = value } }
+;(window as unknown as { __ipAudit: object }).__ipAudit = { state, settings, admin: adminAudit, feedback, seedLive: liveCounters.seed, counters: () => ({ submitCount, quoteCount, polls, savedBody, live: liveCounters.counters() }), setCached: (value: boolean) => { cached = value } }
 void router.isReady().then(() => app.mount('#app'))

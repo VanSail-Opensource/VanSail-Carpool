@@ -18,7 +18,7 @@ function editor(settings: NonNullable<XNodeSettings['dns']>) {
 
 describe('native Xray DNS editing', () => {
   it('shows native configuration guidance and only the redirect control', () => {
-    const wrapper = editor({ mode: 'smartdns', upstreams: ['1.1.1.1'], redirect: false })
+    const wrapper = editor({ redirect: false })
     expect(wrapper.findAll('[role="switch"]')).toHaveLength(1)
     expect(wrapper.text()).toContain('nodeForms.nativeXrayDnsHint')
     expect(wrapper.find('select').exists()).toBe(false)
@@ -27,17 +27,17 @@ describe('native Xray DNS editing', () => {
     wrapper.unmount()
   })
 
-  it('preserves original legacy migration evidence when toggling redirect', async () => {
-    const settings = { mode: 'smartdns', upstreams: ['1.1.1.1', 'https://dns.example/dns-query'], redirect: false }
+  it('emits only the editable redirect field without mutating the loaded policy', async () => {
+    const settings = { redirect: false }
     const wrapper = editor(settings)
     await wrapper.get('[role="switch"]').trigger('click')
     expect(wrapper.emitted('update:modelValue')?.[0]?.[0]).toEqual({ ...settings, redirect: true })
-    expect(settings).toEqual({ mode: 'smartdns', upstreams: ['1.1.1.1', 'https://dns.example/dns-query'], redirect: false })
+    expect(settings).toEqual({ redirect: false })
     wrapper.unmount()
   })
 
-  it('does not invent resolver settings for defaults or overwrite a loaded Xray policy', async () => {
-    for (const settings of [{}, { mode: 'xray', redirect: true, upstreams: ['9.9.9.9'] }]) {
+  it('does not invent resolver settings for defaults or a loaded redirect policy', async () => {
+    for (const settings of [{}, { redirect: true }]) {
       const wrapper = editor(settings)
       await wrapper.get('[role="switch"]').trigger('click')
       expect(wrapper.emitted('update:modelValue')?.[0]?.[0]).toEqual({ ...settings, redirect: !settings.redirect })

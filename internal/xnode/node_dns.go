@@ -2,32 +2,22 @@ package xnode
 
 import "encoding/json"
 
-// Legacy state is interpreted once at the settings boundary. The compatibility
-// marker remains node-owned; shared native configurations are never rewritten.
-func normalizeNodeDNS(settings *NodeSettings) {
-	if settings.DNS.Mode == "smartdns" && settings.DNS.Redirect {
-		settings.LegacyDNSLoopback = true
-	}
-	settings.DNS.Mode = "xray"
-}
-
-// Older clients do not know the marker. An unrelated node save must not erase
-// its previously configured upstream; explicit native DNS still takes priority.
+// Node-scoped native defaults belong to stored state. Public edits cannot erase
+// them, and explicit native DNS always takes priority over a retained default.
 func (s *Service) preserveNodeDNS(previous Node, settings *NodeSettings) error {
-	if settings.LegacyDNSLoopback || previous.SettingsCipher == "" {
+	if previous.SettingsCipher == "" {
 		return nil
 	}
 	old, err := s.openNodeSettings(previous)
 	if err != nil {
 		return err
 	}
-	normalizeNodeDNS(&old)
-	settings.LegacyDNSLoopback = old.LegacyDNSLoopback
+	settings.dnsFallbackServers = append([]string(nil), old.dnsFallbackServers...)
 	return nil
 }
 
 func applyNodeDNS(native map[string]any, settings NodeSettings) {
-	if !settings.DNS.Redirect || !settings.LegacyDNSLoopback {
+	if !settings.DNS.Redirect || len(settings.dnsFallbackServers) == 0 {
 		return
 	}
 	resolver, ok := native["dns"].(map[string]any)
@@ -43,7 +33,11 @@ func applyNodeDNS(native map[string]any, settings NodeSettings) {
 			return
 		}
 	}
-	resolver["servers"] = []any{"127.0.0.1"}
+	servers := make([]any, len(settings.dnsFallbackServers))
+	for index, server := range settings.dnsFallbackServers {
+		servers[index] = server
+	}
+	resolver["servers"] = servers
 	native["dns"] = resolver
 }
 

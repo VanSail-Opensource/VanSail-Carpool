@@ -24,8 +24,7 @@ type Node struct {
 	Name             string     `json:"name"`
 	CountryCode      string     `json:"countryCode"`
 	ProviderName     string     `json:"providerName"`
-	MultiplierFP     int64      `json:"-"`          // Historical storage scale; new writes use MultiplierScale.
-	Multiplier       float64    `json:"multiplier"` // Deprecated compatibility property, always 1 on the wire.
+	MultiplierFP     int64      `json:"-"` // Historical storage scale; new writes use MultiplierScale.
 	Enabled          bool       `json:"enabled"`
 	ConfigID         string     `json:"configId"`
 	SettingsCipher   string     `json:"-"`
@@ -82,9 +81,9 @@ type GlobalConfig struct {
 }
 
 type NodeSettings struct {
-	LegacyDNSLoopback   bool                       `json:"legacyDnsLoopback,omitempty"`
 	DDNSBindings        map[string]DDNSHostBinding `json:"ddnsBindings,omitempty"`
 	ddnsActor           string
+	dnsFallbackServers  []string                    // private node-scoped native defaults, never a request/response field
 	DDNS                []wire.DDNSJob              `json:"ddns"`
 	Certificates        map[string]wire.Certificate `json:"certificates"`
 	InboundCertificates map[string]string           `json:"inboundCertificates"`

@@ -55,11 +55,8 @@
     "dns": "DNS",
     "firewall": "防火墙",
     "dnsRedirect": "重定向本地 DNS",
-    "dnsUpstreams": "DoT 上游",
     "probeProtection": "探测防护",
     "firewallPolicy": "防火墙策略",
-    "xrayDns": "Xray DNS",
-    "smartDns": "SmartDNS",
     "jobId": "任务 ID",
     "dnsProvider": "DNS 服务商 ID",
     "zone": "DNS 区域",
@@ -154,7 +151,10 @@
       "gc_pause_nanos": "GC 暂停（纳秒）",
       "errors": "不可用采集器"
     },
-    "scopedDnsHint": "仅重定向 Xray 用户的 DNS。请在 Xray 配置中设置 DNS 服务器，可使用本地或公共解析器；解析器服务由外部管理。"
+    "scopedDnsHint": "仅重定向 Xray 用户的 DNS。请在 Xray 配置中设置 DNS 服务器，可使用本地或公共解析器；解析器服务由外部管理。",
+    "statusUnavailable": "状态暂不可用",
+    "notReady": "运行时尚未就绪",
+    "metricsLoadFailed": "实时状态暂不可用，仍可配置节点或执行恢复操作；此前显示的观测结果已非最新。"
   },
   "namedServices": {
     "description": "独立原生身份，无需 Telegram 账号。",

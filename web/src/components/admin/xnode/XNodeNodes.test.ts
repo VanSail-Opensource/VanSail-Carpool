@@ -11,7 +11,7 @@ vi.mock('@/i18n', () => ({ useI18n: () => ({ t: (key: string) => key }), localiz
 import XNodeNodes from './XNodeNodes.vue'
 
 const stubs = {
-  Modal: defineComponent({ props: { open: Boolean, close: Boolean, dismissible: Boolean }, setup: (props, { slots }) => () => props.open ? h('div', slots.body?.()) : null }),
+  Modal: defineComponent({ props: { open: Boolean, close: Boolean, dismissible: Boolean, title: { type: String, default: '' } }, setup: (props, { slots }) => () => props.open ? h('div', slots.body?.()) : null }),
   FormField: { props: { label: { type: String, default: '' } }, template: '<label :data-label="label"><slot /></label>' },
   Input: defineComponent({ props: { modelValue: { type: String, default: '' } }, emits: ['update:modelValue'], setup: (props, { emit }) => () => h('input', { value: props.modelValue, onInput: (event: Event) => emit('update:modelValue', (event.target as HTMLInputElement).value) }) }),
   Button: defineComponent({ props: { label: { type: String, default: '' }, type: { type: String, default: 'button' }, disabled: Boolean }, setup: props => () => h('button', { type: props.type, disabled: props.disabled }, props.label) }),
@@ -19,7 +19,7 @@ const stubs = {
   XNodePricingCostSettings: { template: '<span />' }, XNodeRemovalDialog: { template: '<span />' }, XNodeCommands: { template: '<span />' },
   Select: { template: '<span />' }, Switch: { template: '<span />' }, Badge: { template: '<span><slot /></span>' }, Alert: { template: '<span />' }, Progress: { template: '<span />' },
 }
-const node: XNode = { id: 'node', name: 'Amsterdam', enabled: true, configId: 'config', countryCode: 'NL', providerName: '', multiplier: 1 }
+const node: XNode = { id: 'node', name: 'Amsterdam', enabled: true, configId: 'config', countryCode: 'NL', providerName: '' }
 const configuration: XNodeConfiguration = { id: 'config', name: 'Xray', revision: 1, snippetIds: [], document: { inbounds: [] } }
 function editor(nodes: XNode[], perform: (action: () => Promise<unknown>) => Promise<boolean> = async action => { await action(); return true }) {
   return mount(XNodeNodes, { props: { nodes, configurations: [configuration], endpoints: [], metrics: null, busy: false, perform }, global: { stubs } })
@@ -30,7 +30,7 @@ beforeEach(() => {
   api.saveNode.mockResolvedValue(node)
 })
 
-describe('retired node traffic multiplier controls', () => {
+describe('native node editor', () => {
   it('locks the node editor and captures its submitted name before a deferred mutation runner', async () => {
     let run!: () => Promise<unknown>
     let finish!: (value: boolean) => void
@@ -52,16 +52,13 @@ describe('retired node traffic multiplier controls', () => {
     wrapper.unmount()
   })
 
-  it.each([undefined, null, 0, 2.5, 'obsolete', {}, [2]])('omits obsolete multiplier %j from display and node writes', async multiplier => {
-    const legacy = { ...node, multiplier } as unknown as XNode
-    const wrapper = editor([legacy])
-    expect(wrapper.text()).not.toContain('×')
+  it('submits editable node fields without echoing server-managed state', async () => {
+    const value = { ...node, agentId: 'agent', desiredRevision: 9, acceptedRevision: 8, appliedRevision: 8 }
+    const wrapper = editor([value])
     await wrapper.get('[aria-label="common.edit"]').trigger('click'); await flushPromises()
-    expect(wrapper.find('[data-label="xnode.multiplier"]').exists()).toBe(false)
     await wrapper.get('form').trigger('submit'); await flushPromises()
-    expect(api.saveNode).toHaveBeenCalledTimes(1)
+    expect(api.saveNode.mock.calls[0]?.[0]).toEqual(node)
     expect(api.saveNode.mock.calls[0]?.[0]).not.toHaveProperty('multiplier')
-    expect(legacy.multiplier).toBe(multiplier)
     wrapper.unmount()
   })
 
@@ -72,6 +69,44 @@ describe('retired node traffic multiplier controls', () => {
     await wrapper.get('form').trigger('submit'); await flushPromises()
     expect(api.saveNode.mock.calls[0]?.[0]).toMatchObject({ name: 'Singapore', configId: 'config' })
     expect(api.saveNode.mock.calls[0]?.[0]).not.toHaveProperty('multiplier')
+    wrapper.unmount()
+  })
+
+  it('reuses the creation identity after a lost response and gives the next editor a new identity', async () => {
+    const stored = new Map<string, XNode>()
+    let loseResponse = true
+    api.node.mockRejectedValue(new Error('Creation must not read a saved node'))
+    api.saveNode.mockImplementation(async (value: XNode) => {
+      stored.set(value.id, value)
+      if (loseResponse) { loseResponse = false; throw new Error('Response lost after commit') }
+      return value
+    })
+    const wrapper = editor([], async action => {
+      try { await action(); return true } catch { return false }
+    })
+    const add = () => wrapper.findAll('button').find(button => button.text() === 'xnode.addNode')!
+    await add().trigger('click')
+    await wrapper.get('[data-label="common.name"] input').setValue('Singapore')
+    await wrapper.get('form').trigger('submit'); await flushPromises()
+    const first = api.saveNode.mock.calls[0]![0] as XNode
+    expect(first.id).toMatch(/^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i)
+    expect(Object.keys(first).sort()).toEqual(['configId', 'countryCode', 'enabled', 'id', 'name', 'providerName'])
+    expect(stored.size).toBe(1)
+    expect(wrapper.find('form').exists()).toBe(true)
+    expect(wrapper.findAllComponents(stubs.Modal)[0]!.props('title')).toBe('xnode.addNode')
+    expect(wrapper.findComponent(stubs.XNodePricingCostSettings).exists()).toBe(false)
+    await wrapper.get('form').trigger('submit'); await flushPromises()
+    expect(api.saveNode.mock.calls[1]![0]).toEqual(first)
+    expect(stored.size).toBe(1)
+    expect(wrapper.find('form').exists()).toBe(false)
+
+    await add().trigger('click')
+    await wrapper.get('[data-label="common.name"] input').setValue('Second node')
+    await wrapper.get('form').trigger('submit'); await flushPromises()
+    const next = api.saveNode.mock.calls[2]![0] as XNode
+    expect(next.id).not.toBe(first.id)
+    expect(stored.size).toBe(2)
+    expect(api.node).not.toHaveBeenCalled()
     wrapper.unmount()
   })
 

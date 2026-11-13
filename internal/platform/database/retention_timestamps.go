@@ -39,3 +39,19 @@ func expiredTimestampIDsTx(ctx context.Context, tx *sql.Tx, query string, cutoff
 func retentionCandidateUpperBound(cutoff time.Time) string {
 	return stamp(cutoff.UTC().Truncate(time.Second).Add(time.Second))
 }
+
+const retentionStatementBatchSize = 512
+
+// Bound wire arguments and round trips while preserving the caller's exact
+// timestamp selection and encompassing recovery transaction.
+func pruneTimestampIDsTx(ctx context.Context, tx *sql.Tx, query string, ids []string) (int64, error) {
+	var removed int64
+	for start := 0; start < len(ids); start += retentionStatementBatchSize {
+		count, err := deleteCount(ctx, tx, query, ids[start:min(start+retentionStatementBatchSize, len(ids))])
+		if err != nil {
+			return 0, err
+		}
+		removed += count
+	}
+	return removed, nil
+}

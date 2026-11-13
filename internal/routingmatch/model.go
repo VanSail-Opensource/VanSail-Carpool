@@ -47,6 +47,8 @@ type compiled struct {
 	ports   []interval
 }
 
+var protocolPattern = regexp.MustCompile(`^[a-z][a-z0-9-]{0,31}$`)
+
 func compile(m Match, resolve Resolver, budget *int) (compiled, error) {
 	c := compiled{match: m}
 	if len(m.Domains) > 4096 || len(m.IPs) > 4096 || len(m.Networks) > 2 || len(m.Protocols) > 16 {
@@ -97,7 +99,7 @@ func compile(m Match, resolve Resolver, budget *int) (compiled, error) {
 		}
 	}
 	for _, p := range m.Protocols {
-		if !regexp.MustCompile(`^[a-z][a-z0-9-]{0,31}$`).MatchString(p) {
+		if !protocolPattern.MatchString(p) {
 			return c, fmt.Errorf("invalid protocol matcher")
 		}
 	}

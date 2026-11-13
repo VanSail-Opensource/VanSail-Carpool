@@ -7,8 +7,6 @@ import (
 
 // ClaimPMTopic serializes creation independently of how many outbox drains run.
 func (s *Store) ClaimPMTopic(ctx context.Context, id, operationID string, now time.Time) (bool, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
 	result, err := s.db.ExecContext(ctx, `UPDATE telegram_pm_conversations SET topic_state='creating',topic_operation_id=$1,updated_at=$2
 		WHERE id=$3 AND topic_state='new' AND topic_id IS NULL`, operationID, stamp(now), id)
 	if err != nil {
@@ -22,8 +20,6 @@ func (s *Store) SavePMTopic(ctx context.Context, id, operationID string, topicID
 	if topicID <= 1 {
 		return ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
 	result, err := s.db.ExecContext(ctx, `UPDATE telegram_pm_conversations SET topic_id=$1,topic_state='ready',updated_at=$2
 		WHERE id=$3 AND topic_state='creating' AND topic_operation_id=$4`, topicID, stamp(now), id, operationID)
 	if err != nil {
@@ -41,8 +37,6 @@ func (s *Store) ReleasePMTopic(ctx context.Context, id, operationID string, unce
 	if uncertain {
 		state = "pending_review"
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
 	_, err := s.db.ExecContext(ctx, `UPDATE telegram_pm_conversations SET topic_state=$1,updated_at=$2 WHERE id=$3 AND topic_state='creating' AND topic_operation_id=$4`, state, stamp(now), id, operationID)
 	return err
 }
@@ -51,8 +45,6 @@ func (s *Store) SavePMProfile(ctx context.Context, id string, topicID, messageID
 	if messageID <= 0 {
 		return ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
 	result, err := s.db.ExecContext(ctx, `UPDATE telegram_pm_conversations SET profile_message_id=$1,profile_state='ready',updated_at=$2 WHERE id=$3 AND topic_id=$4 AND topic_state='ready'`, messageID, stamp(now), id, topicID)
 	if err != nil {
 		return err
@@ -65,8 +57,6 @@ func (s *Store) SavePMProfile(ctx context.Context, id string, topicID, messageID
 }
 
 func (s *Store) ClearPMProfile(ctx context.Context, id string, messageID int64) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
 	_, err := s.db.ExecContext(ctx, `UPDATE telegram_pm_conversations SET profile_message_id=NULL,profile_state='missing' WHERE id=$1 AND profile_message_id=$2`, id, messageID)
 	return err
 }
@@ -80,8 +70,6 @@ func (s *Store) PMProfileUncertain(ctx context.Context, id, operationID string) 
 }
 
 func (s *Store) MarkPMProfileUncertain(ctx context.Context, id string) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
 	_, err := s.db.ExecContext(ctx, `UPDATE telegram_pm_conversations SET profile_state='pending_review' WHERE id=$1 AND profile_message_id IS NULL`, id)
 	return err
 }

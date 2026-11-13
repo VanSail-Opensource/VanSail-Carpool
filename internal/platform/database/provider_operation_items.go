@@ -10,8 +10,10 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
-const providerOperationItemSelect = `SELECT operation_id,item_key,target_type,target_id,status,provider_reference,
-	error_code,result_json,attempt_started_at,completed_at,created_at,updated_at FROM provider_operation_items`
+const providerOperationItemColumns = `operation_id,item_key,target_type,target_id,status,provider_reference,
+	error_code,result_json,attempt_started_at,completed_at,created_at,updated_at`
+
+const providerOperationItemSelect = `SELECT ` + providerOperationItemColumns + ` FROM provider_operation_items`
 
 // ProviderOperationItems returns the bounded targets required by a worker.
 func (s *Store) ProviderOperationItems(ctx context.Context, operationID string) ([]providerops.Item, error) {
@@ -32,27 +34,18 @@ func (s *Store) ProviderOperationItems(ctx context.Context, operationID string) 
 	return items, rows.Err()
 }
 
-// ListProviderOperationItems is a descriptive compatibility alias.
-func (s *Store) ListProviderOperationItems(ctx context.Context, operationID string) ([]providerops.Item, error) {
-	return s.ProviderOperationItems(ctx, operationID)
-}
-
 // BeginProviderOperationItemAttempt records intent before mutating one target.
 func (s *Store) BeginProviderOperationItemAttempt(ctx context.Context, operationID, itemKey string, now time.Time) (providerops.Item, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
-	result, err := s.db.ExecContext(ctx, `UPDATE provider_operation_items SET status='processing',attempt_started_at=$1,
-		updated_at=$2 WHERE operation_id=$3 AND item_key=$4 AND status='queued'`, stamp(now), stamp(now), operationID, itemKey)
+	item, err := scanProviderOperationItem(s.db.QueryRowContext(ctx, `UPDATE provider_operation_items SET status='processing',attempt_started_at=$1,
+		updated_at=$2 WHERE operation_id=$3 AND item_key=$4 AND status='queued' RETURNING `+providerOperationItemColumns,
+		stamp(now), stamp(now), operationID, itemKey))
+	if errors.Is(err, ErrNotFound) {
+		return providerops.Item{}, ErrConflict
+	}
 	if err != nil {
 		return providerops.Item{}, fmt.Errorf("begin provider operation item: %w", err)
 	}
-	if affected, rowsErr := result.RowsAffected(); rowsErr != nil {
-		return providerops.Item{}, rowsErr
-	} else if affected != 1 {
-		return providerops.Item{}, ErrConflict
-	}
-	return scanProviderOperationItem(s.db.QueryRowContext(ctx, providerOperationItemSelect+
-		` WHERE operation_id=$1 AND item_key=$2`, operationID, itemKey))
+	return item, nil
 }
 
 // CompleteProviderOperationItem stores one sanitized item result.
@@ -65,22 +58,17 @@ func (s *Store) CompleteProviderOperationItem(ctx context.Context, operationID, 
 	if err != nil {
 		return providerops.Item{}, err
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
-	result, err := s.db.ExecContext(ctx, `UPDATE provider_operation_items SET status=$1,provider_reference=$2,error_code=$3,
+	item, err := scanProviderOperationItem(s.db.QueryRowContext(ctx, `UPDATE provider_operation_items SET status=$1,provider_reference=$2,error_code=$3,
 		result_json=$4,completed_at=$5,updated_at=$6 WHERE operation_id=$7 AND item_key=$8 AND status='processing'
-		AND attempt_started_at IS NOT NULL`, completion.Status, completion.ProviderReference, operationCode(completion.ErrorCode),
-		resultJSON, stamp(now), stamp(now), operationID, itemKey)
+		AND attempt_started_at IS NOT NULL RETURNING `+providerOperationItemColumns,
+		completion.Status, completion.ProviderReference, operationCode(completion.ErrorCode), resultJSON, stamp(now), stamp(now), operationID, itemKey))
+	if errors.Is(err, ErrNotFound) {
+		return providerops.Item{}, ErrConflict
+	}
 	if err != nil {
 		return providerops.Item{}, fmt.Errorf("complete provider operation item: %w", err)
 	}
-	if affected, rowsErr := result.RowsAffected(); rowsErr != nil {
-		return providerops.Item{}, rowsErr
-	} else if affected != 1 {
-		return providerops.Item{}, ErrConflict
-	}
-	return scanProviderOperationItem(s.db.QueryRowContext(ctx, providerOperationItemSelect+
-		` WHERE operation_id=$1 AND item_key=$2`, operationID, itemKey))
+	return item, nil
 }
 
 func scanProviderOperationItem(row rowScanner) (providerops.Item, error) {

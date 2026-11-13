@@ -35,6 +35,13 @@ func (s *Service) sealCommandIntent(actor, key string, node Node, request Comman
 
 func (s *Service) operationArguments(ctx context.Context, nodeID string, operation providerops.Operation, intent queuedNodeCommand) (map[string]any, error) {
 	request := intent.CommandRequest
+	// Only unattempted work can be rejected from current settings. A retry must
+	// still retrieve the original command receipt before drawing conclusions.
+	if request.Name == "ddns.run" && operation.Attempts == 0 {
+		if err := s.validateStoredDDNSJob(ctx, nodeID, request.JobID); err != nil {
+			return nil, err
+		}
+	}
 	if request.Name != wire.CertificateRunCommand {
 		return s.commandArguments(ctx, nodeID, request)
 	}

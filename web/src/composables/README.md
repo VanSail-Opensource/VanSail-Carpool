@@ -113,3 +113,14 @@ and coupon views cannot publish a previous owner's result or start new writes.
 a create reply, terminal-order lookup and delayed paid notification. It retains
 unresolved original request keys for reopening; `usePaymentOrder.test.ts` covers
 these close/reopen races without resubmitting a new attempt.
+
+
+`useOperationReceipt.ts`, `usePaymentTarget.ts` and `usePaymentReturn.ts` pause
+scheduled status reads while the document is hidden, retain the original accepted
+operation/order, and resume one read when visible. Pending checkout reads back
+off from two seconds to thirty seconds on outages; a successful read restores
+normal cadence. Receipt polling retains its existing five-failure stop and
+bounded backoff. Terminal, stopped and disposed tracking never restarts from a
+visibility event. `usePollingVisibility.test.ts` and `usePaymentReturn.test.ts`
+exercise these lifecycles in hosted CI; no provider operation is replayed by a
+status read.

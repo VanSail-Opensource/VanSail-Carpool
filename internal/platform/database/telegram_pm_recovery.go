@@ -8,8 +8,6 @@ import (
 
 // RequeuePMItem is used only after a proven non-delivery (preflight or Telegram429).
 func (s *Store) RequeuePMItem(ctx context.Context, operationID, key string, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
 	_, err := s.db.ExecContext(ctx, `UPDATE provider_operation_items SET status='queued',attempt_started_at=NULL,error_code='',updated_at=$1
 		WHERE operation_id=$2 AND item_key=$3 AND status='processing' AND operation_id IN
 		(SELECT id FROM provider_operations WHERE kind ILIKE 'telegram_pm_%' AND status='processing')`, stamp(now), operationID, key)

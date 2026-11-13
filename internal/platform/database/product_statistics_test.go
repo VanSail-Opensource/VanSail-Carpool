@@ -116,9 +116,12 @@ func TestProductStatisticsCountDeduplicatedRawGroupMessages(t *testing.T) {
 	store := newTestStore(t)
 	now := time.Date(2026, 8, 18, 14, 0, 0, 0, time.UTC)
 	for _, messageID := range []int64{1, 1, 2} {
-		if err := store.RecordGroupMessageFact(ctx, -100, messageID, "2026-08-18", now); err != nil {
+		if err := store.BufferGroupMessageFact(-100, messageID, "2026-08-18", now); err != nil {
 			t.Fatal(err)
 		}
+	}
+	if err := store.FlushGroupMessageFacts(ctx); err != nil {
+		t.Fatal(err)
 	}
 	if _, err := store.DB().ExecContext(ctx, `INSERT INTO activity_daily_rollups(local_date,group_message_count,updated_at)
 		VALUES('2026-08-17',3,$1)`, stamp(now)); err != nil {

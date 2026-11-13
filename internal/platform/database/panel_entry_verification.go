@@ -34,8 +34,6 @@ func (s *Store) PanelEntryQualified(ctx context.Context, telegramID int64) (bool
 
 // VerifyPanelEntry updates an existing authenticated entry; it cannot recreate an onboarded row.
 func (s *Store) VerifyPanelEntry(ctx context.Context, telegramID int64) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
 	_, err := s.db.ExecContext(ctx, `UPDATE panel_entry_verification SET checked=1 WHERE telegram_id=$1
 		AND EXISTS(SELECT 1 FROM users WHERE telegram_id=$2 AND policy_accepted_at IS NULL AND accepted_agreement_revision=0)`, telegramID, telegramID)
 	return err

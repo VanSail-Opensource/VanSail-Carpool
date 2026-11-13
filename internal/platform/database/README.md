@@ -1202,7 +1202,6 @@ Provider requests remain outside every transaction.
 - `purchase_sync_retry_generated.go` wraps the transactional methods in `purchase_sync.go`.
 - `retention_compaction_retry_generated.go` wraps the transactional methods in `retention_compaction.go`.
 - `retention_payg_retry_generated.go` wraps the transactional methods in `retention_payg.go`.
-- `retention_retry_generated.go` wraps the transactional methods in `retention.go`.
 - `retired_detector_retry_generated.go` wraps the transactional methods in `retired_detector.go`.
 - `settings_activity_retry_generated.go` wraps the transactional methods in `settings_activity.go`.
 - `settings_emby_retry_generated.go` wraps the transactional methods in `settings_emby.go`.
@@ -2270,3 +2269,36 @@ bounded responses and verifies same-response replays do not duplicate evidence.
 admission, atomic scan/outbox/audit persistence, audit failure recovery and the
 continued execution of already accepted read-only diagnostic intent. HTTP/service
 polling independently rechecks current administrator authority before IP disclosure.
+
+
+## Independent writes and bounded data transfers
+
+PostgreSQL row locks, revision predicates and unique constraints serialize the
+owned records. The obsolete process-wide `Store.writeMu` has been removed; a
+blocked member/node write cannot hold unrelated lease heartbeats, provider
+receipts or browser revocation behind a Go mutex. Dedicated locks protect only
+the in-memory DIY cursor, PM cipher reference and buffered group-fact flush.
+Provider-item admission/completion and membership/currency updates return their
+exact statement result with `RETURNING`, avoiding a second snapshot and query.
+`write_isolation_test.go` covers independent progress under a held database row
+lock and one winner under concurrent item admission/completion.
+
+Group-message ingestion keeps its 4096-fact memory bound and writes at most 512
+facts per SQL statement, in stable deduplication-key order within one transaction.
+A failed later batch rolls back all writes and retains the snapshot; concurrently
+admitted facts remain for the next flush. `activity_group_batch_test.go` checks
+rollback/recovery, three statements for 1025 facts and concurrent admission.
+Completed-job, authentication-token and review cleanup uses bounded 512-ID delete
+arguments after existing exact timestamp parsing. Node-event cleanup uses the
+same batches without a per-ID temporary-table population. Retention authorities,
+financial receipts and outer transaction boundaries remain unchanged.
+`retention_batch_test.go` checks statement counts and the live final nanosecond.
+
+Member purchase history and administrative purchase pages hydrate owned squads
+through shared 256-purchase set queries. The authoritative ownership CTE still
+preserves full/split/empty snapshots, paid fallback and activity rewards.
+`purchase_squad_batch_test.go` checks deduplication, empty snapshots, public page
+behavior and two queries for 257 purchases. Unused `ListAllPurchases`,
+`PruneTransientRecords`, direct `RecordGroupMessageFact` and the descriptive
+`ListProviderOperationItems` alias have been removed; production callers use the
+existing page, backup-gated cleanup, buffered ingestion and canonical item APIs.

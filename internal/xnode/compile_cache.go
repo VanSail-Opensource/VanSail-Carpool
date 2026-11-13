@@ -32,9 +32,10 @@ type compileFailure struct {
 func (m *Master) cachedConfiguration(ctx context.Context, peer *agentPeer, _ bool) (wire.Config, error) {
 	repo, supported := m.service.repo.(compileVersionRepository)
 	if !supported {
-		config, subjects, err := m.service.compileWithFirstSync(ctx, peer.nodeID)
+		config, subjects, diagnostic, err := m.service.compileWithFirstSync(ctx, peer.nodeID)
 		if err == nil {
 			peer.compiled = &compiledState{config: config, firstSync: subjects}
+			m.publishDDNSDiagnostic(peer, diagnostic)
 		}
 		return config, err
 	}
@@ -60,7 +61,7 @@ func (m *Master) cachedConfiguration(ctx context.Context, peer *agentPeer, _ boo
 	if sameFailure && now.Before(failed.at) {
 		return wire.Config{}, failed.err
 	}
-	config, subjects, err := m.service.compileWithFirstSync(ctx, peer.nodeID)
+	config, subjects, diagnostic, err := m.service.compileWithFirstSync(ctx, peer.nodeID)
 	if err != nil {
 		if m.compileMayBackoff() {
 			delay := time.Second
@@ -95,6 +96,7 @@ func (m *Master) cachedConfiguration(ctx context.Context, peer *agentPeer, _ boo
 	if after != version || m.service.localCompileRevision.Load() != localVersion || !next.IsZero() && !m.service.now().Before(next) {
 		return wire.Config{}, ErrConflict
 	}
+	m.publishDDNSDiagnostic(peer, diagnostic)
 	fingerprint := compiledFingerprint(config)
 	if saved := peer.compiled; saved != nil && saved.fingerprint == fingerprint {
 		// A coarse database epoch changed, but this node's effective dependencies

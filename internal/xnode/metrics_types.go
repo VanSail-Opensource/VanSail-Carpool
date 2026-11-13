@@ -62,6 +62,8 @@ type MetricsSummary struct {
 	FetchedAt              time.Time     `json:"fetchedAt"`
 }
 type liveSnapshot struct {
+	ddnsWarningAt            time.Time
+	ddnsWarning              json.RawMessage
 	certificateProgress      *CertificateCommandProgress
 	activityReports          bool
 	activitySampleReceivedAt time.Time

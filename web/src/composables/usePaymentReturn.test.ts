@@ -1,4 +1,5 @@
 import { effectScope, shallowRef } from 'vue'
+import { flushPromises } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { FeaturePaymentOrder } from '@/api/features'
@@ -22,6 +23,7 @@ describe('payment return confirmation', () => {
   afterEach(() => {
     vi.useRealTimers()
     vi.clearAllMocks()
+    vi.restoreAllMocks()
   })
 
   it('keeps the signed browser receipt projection alongside its status', async () => {
@@ -125,4 +127,31 @@ describe('payment return confirmation', () => {
     expect(getPaymentOrder).not.toHaveBeenCalled()
     scope.stop()
   })
+  it('pauses hidden status reads and backs off outages without losing the retained receipt', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    vi.spyOn(document, 'hidden', 'get').mockReturnValue(true)
+    getPaymentOrder.mockResolvedValue(pendingOrder)
+    const scope = effectScope()
+    const payment = scope.run(() => usePaymentReturn(shallowRef('payment-1')))!
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(getPaymentOrder).toHaveBeenCalledTimes(1)
+    expect(payment.state.value).toBe('pending')
+    vi.spyOn(document, 'hidden', 'get').mockReturnValue(false)
+    getPaymentOrder.mockRejectedValue(new Error('unavailable'))
+    document.dispatchEvent(new Event('visibilitychange'))
+    await flushPromises()
+    expect(getPaymentOrder).toHaveBeenCalledTimes(2)
+    expect(payment.details.value?.id).toBe('payment-1')
+    await vi.advanceTimersByTimeAsync(3999)
+    expect(getPaymentOrder).toHaveBeenCalledTimes(2)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(getPaymentOrder).toHaveBeenCalledTimes(3)
+    payment.stopPolling()
+    document.dispatchEvent(new Event('visibilitychange'))
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(getPaymentOrder).toHaveBeenCalledTimes(3)
+    scope.stop()
+  })
+
 })

@@ -63,7 +63,7 @@ func TestDDNSBindingsKeepDiscoveryAndHostOwnershipSeparate(t *testing.T) {
 	repo := &ddnsBindingTestRepository{nodes: map[string]Node{}, bindings: map[string]DDNSHostBinding{}, role: "admin"}
 	s := NewService(repo, cacheTestSettings{}, vault, nil, nil)
 	ctx := context.Background()
-	node := Node{ID: "node", Name: "Node", ConfigID: "config", Enabled: true, Multiplier: 1}
+	node := Node{ID: "node", Name: "Node", ConfigID: "config", Enabled: true}
 	settings := NodeSettings{DDNS: []wire.DDNSJob{{ID: "wan", Provider: wire.BuiltinDDNSProvider, Generation: "caller-value", IPv4: "auto", IPv6: "auto", Interface: "eth0"}}, DDNSBindings: map[string]DDNSHostBinding{"wan": {IPv4HostIDs: []string{"host-v4"}, IPv6HostIDs: []string{"host-v6"}, ConfiguredBy: "forged"}}}
 	saved, err := s.SaveNodeAs(ctx, node, settings, "admin")
 	if err != nil {

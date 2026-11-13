@@ -107,7 +107,7 @@ func controlFixture(t *testing.T, paid bool) fixture {
 	if err != nil {
 		t.Fatal(err)
 	}
-	node, err := service.SaveNode(ctx, xnode.Node{Name: "Hosted fixture", Enabled: true, Multiplier: 1, ConfigID: config.ID}, xnode.NodeSettings{})
+	node, err := service.SaveNode(ctx, xnode.Node{Name: "Hosted fixture", Enabled: true, ConfigID: config.ID}, xnode.NodeSettings{})
 	if err != nil {
 		t.Fatal(err)
 	}

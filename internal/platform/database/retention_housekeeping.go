@@ -24,13 +24,11 @@ func pruneHousekeepingTx(ctx context.Context, tx *sql.Tx, cutoff7Days, cutoff24H
 	if err != nil {
 		return err
 	}
-	for _, id := range reviews {
-		count, err := deleteCount(ctx, tx, `DELETE FROM database_admin_reviews WHERE id=$1`, id)
-		if err != nil {
-			return err
-		}
-		counts["database_admin_reviews"] += count
+	count, err := pruneTimestampIDsTx(ctx, tx, `DELETE FROM database_admin_reviews WHERE id=ANY($1)`, reviews)
+	if err != nil {
+		return err
 	}
+	counts["database_admin_reviews"] += count
 	if counts["panel_entry_verification"], err = deleteCount(ctx, tx, `DELETE FROM panel_entry_verification WHERE NOT EXISTS(SELECT 1 FROM users WHERE users.telegram_id=panel_entry_verification.telegram_id)
  OR EXISTS(SELECT 1 FROM users WHERE users.telegram_id=panel_entry_verification.telegram_id AND (policy_accepted_at IS NOT NULL OR accepted_agreement_revision>0))`); err != nil {
 		return fmt.Errorf("prune redundant panel entry verification: %w", err)

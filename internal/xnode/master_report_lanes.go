@@ -39,6 +39,7 @@ type peerReceivers struct {
 	peer      *agentPeer
 	compute   *inboundLane
 	control   *inboundLane
+	results   *inboundLane
 	traffic   *inboundLane
 	logs      *inboundLane
 	hourly    *hourlyInboundLane
@@ -49,7 +50,7 @@ type peerReceivers struct {
 
 func (m *Master) startPeerReceivers(peer *agentPeer) *peerReceivers {
 	ctx, cancel := context.WithCancel(peer.ctx)
-	r := &peerReceivers{master: m, peer: peer, compute: newInboundLane(24), control: newInboundLane(64), traffic: newInboundLane(8), logs: newInboundLane(8), telemetry: make(chan wire.Message, 1), cancel: cancel}
+	r := &peerReceivers{master: m, peer: peer, compute: newInboundLane(24), control: newInboundLane(64), results: newInboundLane(64), traffic: newInboundLane(8), logs: newInboundLane(8), telemetry: make(chan wire.Message, 1), cancel: cancel}
 	if peer.hourlySession != "" {
 		r.hourly = newHourlyInboundLane()
 		r.startHourly(ctx)
@@ -85,6 +86,7 @@ func (m *Master) startPeerReceivers(peer *agentPeer) *peerReceivers {
 	}
 	start(r.compute.frames, r.compute)
 	start(r.control.frames, r.control)
+	start(r.results.frames, r.results)
 	start(r.traffic.frames, r.traffic)
 	start(r.logs.frames, r.logs)
 	start(r.telemetry, nil)
@@ -112,6 +114,23 @@ func (r *peerReceivers) offer(message wire.Message) error {
 		return r.offerHourly(message)
 	}
 	switch message.Type {
+	case "command.accepted", "command.result", "command.progress", "error":
+		// Receipt correlation is memory-only. Slow state/firewall database
+		// acknowledgments must not turn an executed command into a timeout.
+		lane := r.results
+		if message.Type == "error" {
+			r.peer.mu.Lock()
+			command := r.peer.pending[message.ID] != nil
+			r.peer.mu.Unlock()
+			if !command {
+				// Generic errors also reject state revisions. Keep those ordered
+				// with state.applied so an older slow ACK cannot erase a rejection.
+				lane = r.control
+			}
+		}
+		if lane.offer(message) {
+			return nil
+		}
 	case "compute.claim", "compute.heartbeat", "compute.result", "compute.cancel":
 		if len(message.Data) > 96<<10 {
 			return ErrInvalid

@@ -23,7 +23,6 @@ type CatalogRepository interface {
 	ListPaymentOrders(context.Context, string, int) ([]model.PaymentOrder, error)
 	PaymentOrderByID(context.Context, string) (model.PaymentOrder, error)
 	ListRefunds(context.Context, int) ([]model.Refund, error)
-	ListAllPurchases(context.Context, int) ([]model.Purchase, error)
 	CancelAdminPurchase(context.Context, string, string, string, time.Time) (model.Purchase, error)
 	ListBackupRuns(context.Context, int) ([]model.BackupRun, error)
 	ListOutboxJobs(context.Context, int) ([]model.OutboxJob, error)

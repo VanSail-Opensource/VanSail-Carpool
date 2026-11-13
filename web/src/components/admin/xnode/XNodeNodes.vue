@@ -7,7 +7,8 @@ import XNodePricingCostSettings from './XNodePricingCostSettings.vue'
 import XNodeRemovalDialog from './XNodeRemovalDialog.vue'
 import XNodeCommands from './XNodeCommands.vue'
 import { createLatestRequest } from '@/utils/latestRequest'
-import { cloneForEditing } from '@/utils/browserCompatibility'
+import { cloneForEditing, createUuid } from '@/utils/browserCompatibility'
+import { nodeStatus } from './nodeStatus'
 
 const props = defineProps<{ nodes: XNode[]; endpoints: XNodeEndpoint[]; configurations: XNodeConfiguration[]; metrics: XNodeMetrics | null; busy: boolean; saveError?: string | null; perform: (action: () => Promise<unknown>) => Promise<boolean> }>()
 const emit = defineEmits<{ refresh: [] }>()
@@ -24,20 +25,23 @@ const enrollmentLatest = createLatestRequest()
 const enrollingId = shallowRef('')
 const enrollmentNode = shallowRef('')
 let controller: InstanceType<typeof globalThis.AbortController> | undefined
-watch(editing, open => { if (!open) { controller?.abort(); latest.invalidate(); loaded.value = false } })
+watch(editing, open => { if (!open) { controller?.abort(); latest.invalidate() } })
 onScopeDispose(() => { active = false; controller?.abort(); latest.dispose(); enrollmentLatest.dispose(); enrollment.value = null })
 const settingsValid = shallowRef(true)
 const error = shallowRef<string | null>(null)
 const enrollment = shallowRef<XNodeEnrollment | null>(null)
 const commanding = shallowRef<XNode | null>(null)
 const draft = reactive<Partial<XNodeWrite>>({})
+let creationId = ''
 const settings = ref<XNodeSettings>({ ddns: [], certificates: {}, inboundCertificates: {}, dns: {}, firewall: { enabled: false, protect: false } })
 const certificateBaseline = shallowRef(''), loadedConfiguration = shallowRef(''), nodeRevision = shallowRef(0)
 const savedCertificateIds = shallowRef<string[]>([])
 const certificatesSaved = computed(() => certificateBaseline.value === JSON.stringify([settings.value.certificates ?? {}, settings.value.inboundCertificates ?? {}]) && draft.configId === loadedConfiguration.value)
 const configurations = computed(() => props.configurations.map(value => ({ label: value.name, value: value.id })))
 const ddnsHosts = computed(() => props.endpoints.filter(host => host.nodeId === draft.id))
-const status = (id: string) => props.metrics?.nodes.find(value => value.nodeId === id)
+const metricsByNode = computed(() => new Map(props.metrics?.nodes.map(value => [value.nodeId, value])))
+const status = (id: string) => metricsByNode.value.get(id)
+const rows = computed(() => props.nodes.map(node => ({ node, status: node.removingAt ? { label: 'nodeRemoval.pending', color: 'warning' as const } : nodeStatus(status(node.id)) })))
 const inbounds = computed(() => {
   const document = props.configurations.find(item => item.id === draft.configId)?.document
   if (!Array.isArray(document?.inbounds)) return []
@@ -46,15 +50,16 @@ const inbounds = computed(() => {
 function closeEnrollment(value: boolean): void { if (!value) enrollment.value = null }
 async function edit(node?: XNode): Promise<void> {
   if (!active || blocked.value) return
+  try { creationId = node ? '' : createUuid() }
+  catch (caught) { error.value = localizedError(caught, 'xnode.saveFailed'); return }
   enrollmentLatest.invalidate(); enrollingId.value = ''
   controller?.abort()
   controller = new globalThis.AbortController()
   const ticket = latest.begin()
   loading.value = false; loaded.value = !node
-  for (const key of Object.keys(draft)) delete draft[key as keyof XNode]
+  for (const key of Object.keys(draft)) delete draft[key as keyof XNodeWrite]
   settingsValid.value = true
-  Object.assign(draft, { id: '', name: '', enabled: true, countryCode: '', providerName: '', configId: props.configurations[0]?.id ?? '' }, node ?? {})
-  delete draft.multiplier
+  Object.assign(draft, { id: node?.id ?? '', name: node?.name ?? '', enabled: node?.enabled ?? true, countryCode: node?.countryCode ?? '', providerName: node?.providerName ?? '', configId: node?.configId ?? props.configurations[0]?.id ?? '' })
   settings.value = { ddns: [], certificates: {}, inboundCertificates: {}, dns: {}, firewall: { enabled: false, protect: false } }
   certificateBaseline.value = ''; loadedConfiguration.value = ''; nodeRevision.value = 0; savedCertificateIds.value = []
   enrollment.value = null; error.value = null; editing.value = true
@@ -67,6 +72,9 @@ async function edit(node?: XNode): Promise<void> {
 async function save(): Promise<void> {
   if (!active || loading.value || !loaded.value || blocked.value || !settingsValid.value) return
   const node = cloneForEditing(toRaw(draft))
+  // A lost creation response must retry the same upsert. Keep draft.id empty
+  // until editing a saved node so creation never enables existing-node actions.
+  node.id ||= creationId
   const configuration = cloneForEditing(toRaw(settings.value))
   submitting.value = true
   try { if (await props.perform(() => xnodeApi.saveNode(node, configuration)) && active) editing.value = false }
@@ -93,10 +101,10 @@ async function enroll(node: XNode): Promise<void> {
     <UAlert v-if="!configurations.length" color="neutral" variant="soft" :title="t('xnode.configurationFirst')" />
     <UAlert v-if="error" color="warning" variant="soft" :title="error" />
     <p v-if="!nodes.length" class="text-muted">{{ t('xnode.noNodes') }}</p>
-    <div v-for="node in nodes" :key="node.id" class="xnode-row">
-      <div><strong>{{ node.name }}</strong><div v-if="node.countryCode" class="text-xs text-muted">{{ node.countryCode }}</div></div>
-      <UBadge :color="node.removingAt ? 'warning' : status(node.id)?.connected && status(node.id)?.ready && !status(node.id)?.stale ? 'success' : 'neutral'" variant="subtle">{{ t(node.removingAt ? 'nodeRemoval.pending' : status(node.id)?.connected && status(node.id)?.ready && !status(node.id)?.stale ? 'xnode.online' : 'xnode.offline') }}</UBadge>
-      <div class="flex gap-2"><UButton variant="ghost" color="neutral" icon="i-ph-terminal-window" :disabled="blocked || !!node.removingAt" :aria-label="t('nodeAdmin.command')" @click="commanding = node" /><UButton variant="ghost" color="neutral" icon="i-ph-pencil-simple-bold" :disabled="blocked || !!node.removingAt" :aria-label="t('common.edit')" @click="edit(node)" /><UButton variant="ghost" color="neutral" icon="i-ph-key-bold" :loading="enrollingId === node.id" :disabled="!!node.removingAt || !!enrollingId || blocked" :aria-label="t('xnode.enroll')" @click="enroll(node)" /><UButton variant="ghost" color="error" icon="i-ph-trash" :disabled="blocked || !!node.removingAt" :aria-label="t('nodeRemoval.remove')" @click="removing = node" /></div>
+    <div v-for="{ node, status: state } in rows" :key="node.id" class="xnode-row">
+      <div class="xnode-identity"><strong>{{ node.name }}</strong><div v-if="node.countryCode" class="text-xs text-muted">{{ node.countryCode }}</div></div>
+      <UBadge class="xnode-status" :color="state.color" variant="subtle">{{ t(state.label) }}</UBadge>
+      <div class="xnode-actions"><UButton variant="ghost" color="neutral" icon="i-ph-terminal-window" :disabled="blocked || !!node.removingAt" :aria-label="t('nodeAdmin.command')" @click="commanding = node" /><UButton variant="ghost" color="neutral" icon="i-ph-pencil-simple-bold" :disabled="blocked || !!node.removingAt" :aria-label="t('common.edit')" @click="edit(node)" /><UButton variant="ghost" color="neutral" icon="i-ph-key-bold" :loading="enrollingId === node.id" :disabled="!!node.removingAt || !!enrollingId || blocked" :aria-label="t('xnode.enroll')" @click="enroll(node)" /><UButton variant="ghost" color="error" icon="i-ph-trash" :disabled="blocked || !!node.removingAt" :aria-label="t('nodeRemoval.remove')" @click="removing = node" /></div>
     </div>
     <XNodeRemovalDialog :node="removing" @close="removing = null" @removed="emit('refresh')" />
     <UModal :open="editing" :dismissible="!blocked" :close="!blocked" :title="t(draft.id ? 'xnode.editNode' : 'xnode.addNode')" :ui="{ content: 'max-w-4xl' }" @update:open="!blocked && (editing = $event)">
@@ -132,6 +140,9 @@ async function enroll(node: XNode): Promise<void> {
 <style scoped>
 .xnode-list, .xnode-form { display: grid; gap: 16px; }
 .xnode-row { display: grid; grid-template-columns: minmax(0,1fr) auto auto; gap: 12px; align-items: center; padding-block: 12px; border-bottom: 1px solid var(--line); }
+.xnode-identity { min-width: 0; overflow-wrap: anywhere; }
+.xnode-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.xnode-status { max-width: 100%; white-space: normal; }
 .xnode-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
-@media (max-width: 600px) { .xnode-fields { grid-template-columns: minmax(0,1fr); } }
+@media (max-width: 600px) { .xnode-fields { grid-template-columns: minmax(0,1fr); } .xnode-row { grid-template-columns: minmax(0,1fr) auto; } .xnode-actions { grid-column: 1 / -1; justify-content: flex-end; } }
 </style>

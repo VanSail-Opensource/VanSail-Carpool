@@ -39,7 +39,7 @@ func TestDDNSChangesRequireCurrentAuthenticatedConfiguration(t *testing.T) {
 	}
 	repo := &ddnsChangeTestRepository{ddnsBindingTestRepository: ddnsBindingTestRepository{nodes: map[string]Node{}, bindings: map[string]DDNSHostBinding{}, role: "admin"}}
 	s := NewService(repo, cacheTestSettings{}, vault, nil, nil)
-	node := Node{ID: "node", AgentID: "agent", Name: "Node", ConfigID: "config", Multiplier: 1}
+	node := Node{ID: "node", AgentID: "agent", Name: "Node", ConfigID: "config"}
 	settings := NodeSettings{DDNS: []wire.DDNSJob{{ID: "wan", Provider: wire.BuiltinDDNSProvider, IPv4: "auto", Interface: "eth0"}}, DDNSBindings: map[string]DDNSHostBinding{"wan": {IPv4HostIDs: []string{"host-v4"}}}}
 	if _, err = s.SaveNodeAs(ctx, node, settings, "admin"); err != nil {
 		t.Fatal(err)

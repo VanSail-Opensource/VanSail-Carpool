@@ -32,8 +32,6 @@ func (s *Store) xnodeCustomizations(ctx context.Context, clause string, args ...
 	return out, rows.Err()
 }
 func (s *Store) SaveXNodeCustomization(ctx context.Context, item xnode.Customization) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
 	if item.ProxyUserID == 0 {
 		identity, err := s.XNodeIdentityByUser(ctx, item.UserID)
 		if err != nil {

@@ -75,8 +75,6 @@ func (s *Store) RenewBrowserSession(ctx context.Context, hash []byte, now, expir
 
 // DeleteBrowserSession revokes one browser device without affecting any other session.
 func (s *Store) DeleteBrowserSession(ctx context.Context, hash []byte) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
 	_, err := s.db.ExecContext(ctx, `DELETE FROM sessions WHERE token_hash=$1 AND scope='browser'`, hash)
 	return err
 }

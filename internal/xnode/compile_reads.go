@@ -22,6 +22,7 @@ type compileReads struct {
 	configurations   map[string]Configuration
 	snippets         map[string]Snippet
 	ddnsBindings     map[string]map[string]DDNSHostBinding
+	ddnsDiagnostic   ddnsCompileDiagnostic
 	nodeByID         map[string]Node
 	users            map[string]model.User
 	byID             map[int64]Identity

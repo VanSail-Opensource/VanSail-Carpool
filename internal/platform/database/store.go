@@ -36,17 +36,19 @@ type Store struct {
 	pricingExportSlot    chan struct{}
 	pricingComputeSlot   chan struct{}
 	pricingHealth        *pricing.HealthRegistry
+	diyCleanupMu         sync.Mutex
 	diyCleanupCursor     string
 	firewallDetectionMu  sync.Mutex
 	firewallWindows      map[string]firewallDetectionWindow
 	firewallSweepMu      sync.Mutex
 	firewallSweepCursor  string // protected by firewallSweepMu; bounded operational pruning
 	firewallRetentionAt  time.Time
+	pmContentMu          sync.RWMutex
 	pmContentCipher      pmContentCipher
 	db                   *sql.DB
 	logger               *slog.Logger
-	writeMu              sync.Mutex
 	randomMu             sync.Mutex
+	groupFactsFlushMu    sync.Mutex
 	groupFactsMu         sync.Mutex
 	groupFacts           map[groupMessageFactKey]groupMessageFact
 }
@@ -172,13 +174,10 @@ func (s *Store) UserBySession(ctx context.Context, tokenHash []byte, now time.Ti
 // changing onboarding. Community access is independent from account setup.
 
 func (s *Store) UpdateMembership(ctx context.Context, userID string, groupJoined, channelJoined bool) (model.User, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
-
-	_, err := s.db.ExecContext(ctx, `UPDATE users SET group_joined=$1,channel_joined=$2,updated_at=$3 WHERE id=$4`,
-		boolInt(groupJoined), boolInt(channelJoined), stamp(time.Now().UTC()), userID)
+	user, err := scanUser(s.db.QueryRowContext(ctx, `UPDATE users SET group_joined=$1,channel_joined=$2,updated_at=$3 WHERE id=$4 RETURNING `+userColumns,
+		boolInt(groupJoined), boolInt(channelJoined), stamp(time.Now().UTC()), userID))
 	if err != nil {
 		return model.User{}, fmt.Errorf("update membership: %w", err)
 	}
-	return s.UserByID(ctx, userID)
+	return user, nil
 }

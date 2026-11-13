@@ -18,9 +18,23 @@ DELETE API protects every node reference, including historical nodes; shared
 snippets remain intact. `configurationDeletionFixture.ts` provides constructed
 success, last-item empty, conflict, failure/retry and slow-action browser states.
 
+New configurations/snippets retain one creation ID while their expected revision
+stays 0. `catalogCreation.ts` reconciles ambiguous replies and conflicts through
+one fresh collection read, matching that ID, exact name/document and ordered
+snippet references or snippet kind. A changed saved definition remains a
+conflict; existing edits never bypass optimistic revisions. Name uniqueness
+already prevents identical-name duplicates; stable IDs also prevent a renamed
+uncertain retry from targeting another resource. Hosted helper/editor/browser
+cases exercise unavailable recovery reads, changed drafts and matching recovery.
+
 `XNodeAccessGroups.vue` retains access-group/resource ownership and composes
-`XNodeEndpointForm.vue` for endpoint drafts. The form derives metadata and the
-expanded inbound list through read-only `/endpoints/preview`, resets the inbound
+`XNodeEndpointForm.vue` for endpoint drafts.
+Group and endpoint creation editors retain a private ID across failed retries,
+without changing their new-resource display or endpoint preview input. Each new
+editor starts another identity; existing edits keep their saved ID. Hosted
+coverage models a committed write followed by response loss and a renamed retry.
+The endpoint form derives metadata and the expanded inbound list through
+read-only `/endpoints/preview`, resets the inbound
 after a node change, and preserves saved tags through slow/failed discovery.
 `useEndpointPreview.ts` debounces and cancels requests, rejects late responses,
 and gates Save against the exact current submitted draft. `endpointForm.ts`
@@ -60,14 +74,18 @@ clear consoles, contained layouts and no mock-flow fetch/XHR requests. The plain
 payload and localized retry fixes passed; earlier HMR/focus warnings were artifacts
 of inspection, absent from the final pointer flow.
 
-Node traffic multipliers are retired. `XNodeNodes.vue` has no multiplier input
-or list badge and strips any obsolete loaded value from its editable draft.
-`XNodeNodes.test.ts` covers missing, null and arbitrary legacy values, preserved
-source objects and multiplier-free create/update requests in hosted frontend CI.
+Node traffic multipliers are retired from node reads, writes and the editor.
+`XNodeNodes.vue` constructs only the six editable node fields; it never echoes
+server-managed agent bindings, revisions or timestamps. `XNodeNodes.test.ts`
+checks this request boundary and immutable save drafts in hosted frontend CI.
+Each creation editor retains one generated ID for same-ID PUT upserts after a
+lost response. The visible draft stays in creation mode, so pricing/runtime
+actions and node-detail reads are unavailable until editing a saved node.
+Hosted coverage verifies response-loss retries and a fresh ID for the next editor.
 `nodeFormOptions.ts` retains only inbound selection and object coercion helpers;
 the retired multiplier validator and its obsolete tests have been removed.
 Chrome DevTools checked this flow at 1440px/light/English and 390px/dark/Chinese
-with an obsolete 1.25 fixture value. Lists/forms omitted it and successful saves
+with an obsolete 1.25 fixture value before the API field itself was retired. Lists/forms omitted it and successful saves
 omitted the property. Failed saves retained drafts and localized errors. Loading,
 empty and read-error retry states passed; two/one-column layouts had no body
 overflow, console warnings/errors or real mocked-flow network requests.
@@ -125,18 +143,12 @@ automated suites are required or run for these changes.
 
 Chrome DevTools checked certificate forms and lifecycle controls using constructed data at 1440 px/light and 390 px/dark, in English and Chinese. Checks covered configured DNS providers, file/content modes, native FileReader imports, bound-profile removal, expiry, capability gating, queued and pending-review states, definitive-failure retry with a new key, original-key recovery after an ambiguous submission, and recovery errors/retry. Dialogs remained contained; console and mock network inspections were clear. File-picker automation could not access workspace files, so browser-generated synthetic PEM envelopes exercised import plumbing; hosted Go coverage validates real key pairs. Live ACME/provider issuance was not performed in these browser checks.
 
-Chrome DevTools checked the retired DNS controls at 1440 px and 390 px, in
-English/light and Chinese/dark. Only interception and native-configuration
-guidance render; toggling interception retains legacy opaque fields for server
-migration. Save refusal keeps the editor/draft; console inspection was clear.
-
-`XNodeDNSSettings.vue` exposes the native DNS redirect switch only. Resolver
-servers belong to the assigned Xray configuration; the separate mode/upstream
-editors are retired. Redirect updates preserve the original settings document,
-including legacy fields needed by the backend's configuration-aware migration.
-`XNodeDNSSettings.test.ts` covers this preservation, default behavior and the
-absence of retired controls in hosted frontend CI. The X-Node browser fixture's
-`legacy-dns` parameter supplies a retained SmartDNS document for visual review.
+`XNodeDNSSettings.vue` exposes only the native DNS redirect switch and emits a
+fresh redirect-only policy. Resolver servers belong to the assigned Xray
+configuration. The API rejects retired `mode`, `upstreams` and public
+`legacyDnsLoopback` fields. Existing persisted fallback is migrated privately by
+the backend, without exposing it to editors. `XNodeDNSSettings.test.ts` covers the
+current policy, defaults and immutable edits in hosted CI.
 
 Firewall port editing uses `firewallPorts.ts` to read legacy singleton lists and
 native intervals, validate 1..65535 bounds, and merge overlaps/adjacency without
@@ -167,17 +179,24 @@ Built-in DDNS uses `XNodeDDNSHosts.vue` for separate IPv4/IPv6 multi-host refere
 limited to the edited node's existing endpoints. Each endpoint can be assigned to
 only one family/job. External-provider bindings remain single-host. The job editor
 keeps these references outside discovery settings, hides public-DNS fields for
-Built-in and preserves bindings across job renames. `ddnsForm.ts` reuses Zod and
-native URL validation to gate saves on unique hosts and enabled discovery sources.
+Built-in and preserves bindings across job renames. `ddnsForm.ts` validates unique jobs and endpoint ownership.
+`ddnsValidation.ts` validates native address families/unicast sources, auto
+discovery, HTTPS lookup syntax, interface names, exact DNS zone ownership and
+whole-second interval/TTL bounds. DNS owner labels support IDNA, service labels,
+leading wildcards and one trailing dot. TTL is bounded at 2147483647 seconds
+before native duration conversion. Field errors and the collapsed-section warning
+explain why Save is unavailable.
 Provider discovery remains cancellable and Built-in is available during failures.
 Copy is localized in the node-forms locale files; reduced motion uses native controls.
 
 `XNodeDDNSSettings.vue` edits the pinned agent's DDNS fields, including optional
-HTTPS IP lookup URLs and nonnegative TTL (new jobs default to 300 seconds).
+HTTPS IP lookup URLs and bounded TTL (new jobs default to 300 seconds).
 `XNodeDDNSJob.vue` owns one job's localized fields and removal action.
 `useDDNSDiscovery.ts` loads saved provider IDs without secrets. `XNodeDDNSZone.vue`
-owns cancellable zone loading/retry and searchable name selection; saved values
-survive unsupported providers and failed discovery. Results remain memory-only.
+owns cancellable zone loading/retry and searchable name selection. A text field
+allows new or retained zones when discovery is unsupported, empty or unavailable.
+Results remain memory-only. `ddnsValidation.test.ts` covers the native domain and
+source boundaries; the hosted browser audit covers manual zones and TTL errors.
 
 `XNodeFirewall.vue` shows shared detection evidence, authoritative deadlines and
 remaining node expiry confirmations. `XNodeFirewallRules.vue` edits report-only
@@ -186,8 +205,15 @@ paid exact-IP exemption price and hours; both must be positive to enable purchas
 
 `XNodeWorkspace.vue` composes the independent browser console's nodes, global
 policy, configurations/snippets, access groups/endpoints and live metrics.
-`useXNodeWorkspace.ts` owns parallel initial reads, saves and visible-page metric
-polling. `XNodeNodes.vue` edits one assigned profile and node utilities and exposes
+`workspaceTabs.ts` declares the inventory each tab consumes.
+`useXNodeWorkspace.ts` loads only that inventory, isolates optional live metrics,
+and runs nonoverlapping metric polls only on visible Nodes/Metrics tabs. Success
+uses a five-second interval; failures back off to a sixty-second maximum. Tab
+changes and session clearing abort/retire obsolete replies. Previous observations
+are marked stale until refreshed. Confirmed writes remain successful when only
+the follow-up read fails, while required inventory failure blocks new edits.
+`XNodeWorkspace.vue` persists its selected tab in `xnodeTab` and keys the loading
+boundary per tab so a previous page cannot mark the next page ready. `XNodeNodes.vue` edits one assigned profile and node utilities and exposes
 write-only enrollment tokens. `XNodeOperationalSettings.vue` composes DNS/firewall
 with `XNodeDDNSSettings.vue` and `XNodeCertificateSettings.vue`.
 `XNodePricingCostSettings.vue` loads the edited node's existing cost and capacity
@@ -232,7 +258,12 @@ control member server routing; subscription client documents stay independent.
 
 `XNodeMetrics.vue` keeps CPU/memory chart buffers only while the metric view is mounted; `XNodeMetricDetails.vue` uses localized metric tables. Status labels are localized in `locales/en/xnode.json` and `locales/zh-CN/xnode.json`.
 
-`useXNodeWorkspace.test.ts` verifies cancellation and late-response rejection, plus write blocking after failed reads. Workspace refreshes cancel earlier reads and metric polls; disposed observations are cleared.
+`useXNodeWorkspace.test.ts` covers dependency scoping, telemetry failure/latency
+isolation, backoff, visibility, session cleanup, cancellation, stale-response
+rejection and write blocking after failed required reads. `nodeStatus.ts` shares
+missing, stale, offline, not-ready, unsynchronized and online distinctions across
+list/metrics rows. Node rows index metrics once and wrap long identities; mobile
+actions occupy their own row. `nodeStatus.test.ts` covers those evidence states.
 
 `XNodeSubscriptionRules.vue` edits ordered exact-template rules and previews selection through the Go endpoint. `subscriptionTemplatePresets.ts` supplies independent Xray, sing-box, Clash and Stash presets and shared format ordering. Assignment controls are removed; retained assignment references remain in policy writes and deletion guards. Reads/previews abort stale requests and disable mutation after failed loads.
 
@@ -293,8 +324,9 @@ Access groups show a localized delete action only with known zero members and se
 
 Global telemetry has no active-IP opt-out. The sampling interval describes the
 mandatory IP/activity/rate sample; the independent report interval remains
-editable. `useXNodeGlobalSettings.ts` normalizes older loaded opt-outs before
-submission, while the backend normalizes both legacy documents and writes.
+editable. The ignored `include_active_ips` field is removed from public types,
+new writes and editor normalization. The backend privately reads historical
+encrypted settings without restoring a writable opt-out.
 Loading and failed reads cannot enable saving; failed writes preserve the draft.
 
 `XNodeAutomaticLeases.vue` composes the private, paginated automatic lease view.

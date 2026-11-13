@@ -20,14 +20,15 @@ type FirstSyncSubject struct {
 	OwnerCredentialHash [32]byte `json:"-"`
 }
 
-func (s *Service) compileWithFirstSync(ctx context.Context, node string) (wire.Config, map[int64]FirstSyncSubject, error) {
+func (s *Service) compileWithFirstSync(ctx context.Context, node string) (wire.Config, map[int64]FirstSyncSubject, ddnsCompileDiagnostic, error) {
 	candidate := s.withCompileReads(node)
 	config, err := candidate.Compile(ctx, node)
 	if err != nil {
-		return config, nil, err
+		return config, nil, ddnsCompileDiagnostic{}, err
 	}
-	subjects, err := compiledFirstSyncSubjects(config, candidate.repo.(*compileReads))
-	return config, subjects, err
+	reads := candidate.repo.(*compileReads)
+	subjects, err := compiledFirstSyncSubjects(config, reads)
+	return config, subjects, reads.ddnsDiagnostic, err
 }
 
 // Every lookup is from the same per-compilation read set used for native

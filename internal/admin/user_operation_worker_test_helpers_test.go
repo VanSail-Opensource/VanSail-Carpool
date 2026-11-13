@@ -37,7 +37,7 @@ func (r *userOperationRepositoryStub) CompleteProviderOperation(_ context.Contex
 	return r.operation, nil
 }
 
-func (r *userOperationRepositoryStub) ListProviderOperationItems(context.Context, string) ([]providerops.Item, error) {
+func (r *userOperationRepositoryStub) ProviderOperationItems(context.Context, string) ([]providerops.Item, error) {
 	return append([]providerops.Item(nil), r.items...), nil
 }
 

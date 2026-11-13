@@ -31,8 +31,6 @@ func (s *Store) HeartbeatIPLookup(ctx context.Context, id, owner string, now tim
 	if owner == "" {
 		return ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
 	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_reports SET heartbeat_at=$1,lease_expires_at=$2 WHERE status='processing' AND lease_owner=$3 AND `+purchaseTimestampOrderSQL("lease_expires_at")+`>$5 AND id=(SELECT report_id FROM ip_lookup_checks WHERE operation_id=$4)`, stamp(now), stamp(now.Add(time.Minute)), owner, id, purchaseTimestampOrder(now))
 	if err != nil {
 		return err
@@ -58,8 +56,6 @@ func (s *Store) ClaimIPLookupLease(ctx context.Context, id, owner string, now ti
 	if owner == "" {
 		return false, ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
 	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_reports SET lease_owner=$1,lease_expires_at=$2,heartbeat_at=$3
 		WHERE status='processing' AND id=(SELECT report_id FROM ip_lookup_checks WHERE operation_id=$4)
 		AND id=(SELECT r.id FROM ip_lookup_reports r WHERE r.status='processing' AND EXISTS(SELECT 1 FROM ip_lookup_checks c WHERE c.report_id=r.id) ORDER BY `+purchaseTimestampOrderSQL("r.created_at")+`,r.record_order LIMIT 1)

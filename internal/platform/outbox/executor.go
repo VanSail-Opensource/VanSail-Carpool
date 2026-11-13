@@ -71,6 +71,9 @@ func (e *executor) drain(ctx context.Context, limit int, claim func(context.Cont
 	if len(computeOnly) > 0 && computeOnly[0] {
 		slots = e.compute
 	}
+	claimCtx, cancel := context.WithCancel(ctx)
+	stop := context.AfterFunc(e.ctx, cancel)
+	defer func() { stop(); cancel() }()
 	for range limit {
 		e.mu.Lock()
 		if e.stopping || e.ctx.Err() != nil {
@@ -83,16 +86,18 @@ func (e *executor) drain(ctx context.Context, limit int, claim func(context.Cont
 			e.mu.Unlock()
 			return nil
 		}
-		// Serialize reservation with shutdown; claiming is a short PostgreSQL operation.
-		job, err := claim(ctx, e.worker.now().UTC())
+		// Join the reservation before releasing the lifecycle lock. A database
+		// claim can wait for a connection or a row; it must not block the other
+		// admission lanes or prevent Shutdown from cancelling that wait.
+		e.active.Add(1)
+		e.mu.Unlock()
+		job, err := claim(claimCtx, e.worker.now().UTC())
 		if err != nil || job == nil {
 			<-slots
-			e.mu.Unlock()
+			e.active.Done()
 			return err
 		}
-		e.active.Add(1)
 		go func() { defer e.active.Done(); defer func() { <-slots }(); e.execute(*job) }()
-		e.mu.Unlock()
 	}
 	return nil
 }
@@ -134,6 +139,9 @@ func (e *executor) execute(job model.OutboxJob) {
 }
 
 func (e *executor) attempt(ctx context.Context, job model.OutboxJob) (err error) {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	defer func() {
 		if recover() != nil {
 			err = errors.New("outbox handler panicked")

@@ -21,6 +21,34 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks())
 
 describe('IP lookup administrator settings lifetime', () => {
+  it('does not write empty defaults after settings failed to load', async () => {
+    vi.mocked(ipLookupApi.settings).mockRejectedValueOnce(new Error('unavailable'))
+    const save = vi.spyOn(ipLookupApi, 'saveSettings').mockResolvedValue(configuration())
+    const { state, wrapper } = render()
+    await flushPromises()
+    expect(state.loaded.value).toBe(false)
+    await state.save()
+    expect(save).not.toHaveBeenCalled()
+    await state.load()
+    expect(state.loaded.value).toBe(true)
+    await state.save()
+    expect(save).toHaveBeenCalledOnce()
+    wrapper.unmount()
+  })
+  it('retains readable settings but prevents writes after a failed refresh', async () => {
+    const save = vi.spyOn(ipLookupApi, 'saveSettings').mockResolvedValue(configuration())
+    const { state, wrapper } = render()
+    await flushPromises()
+    expect(state.loaded.value).toBe(true)
+    vi.mocked(ipLookupApi.settings).mockRejectedValueOnce(new Error('unavailable'))
+    await state.load()
+    expect(state.settings.lookupFeeTxb).toBe('1.00')
+    expect(state.loaded.value).toBe(false)
+    await state.save()
+    expect(save).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
   it('sends an isolated reviewed snapshot and blocks concurrent reads and writes', async () => {
     let finish!: (value: IPLookupAdminSettings) => void
     const save = vi.spyOn(ipLookupApi, 'saveSettings').mockReturnValue(new Promise(resolve => { finish = resolve }))

@@ -7,7 +7,7 @@ import XNodeDDNSJob from './XNodeDDNSJob.vue'
 
 function editor() {
   const model = ref<XNodeSettings>({
-    ddns: ['first', 'second'].map(id => ({ id, provider: 'provider', zone: 'example.com', name: id, ipv4: 'auto', interface: 'eth0' })),
+    ddns: ['first', 'second'].map(id => ({ id, provider: 'provider', zone: 'example.com', name: `${id}.example.com`, ipv4: 'auto', interface: 'eth0' })),
     ddnsBindings: { first: { ipv4HostIds: ['first-host'] } },
   })
   const wrapper = mount(defineComponent({ setup: () => () => h(XNodeDDNSSettings, {

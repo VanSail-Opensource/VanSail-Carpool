@@ -55,11 +55,8 @@
     "dns": "DNS",
     "firewall": "Firewall",
     "dnsRedirect": "Redirect local DNS",
-    "dnsUpstreams": "DoT upstreams",
     "probeProtection": "Probe protection",
     "firewallPolicy": "Firewall policy",
-    "xrayDns": "Xray DNS",
-    "smartDns": "SmartDNS",
     "jobId": "Job ID",
     "dnsProvider": "DNS provider ID",
     "zone": "DNS zone",
@@ -154,7 +151,10 @@
       "gc_pause_nanos": "GC pause (nanoseconds)",
       "errors": "Unavailable collectors"
     },
-    "scopedDnsHint": "Intercept user DNS inside Xray. Set DNS servers in the Xray configuration; local and public resolvers are supported and remain externally managed."
+    "scopedDnsHint": "Intercept user DNS inside Xray. Set DNS servers in the Xray configuration; local and public resolvers are supported and remain externally managed.",
+    "statusUnavailable": "Status unavailable",
+    "notReady": "Runtime not ready",
+    "metricsLoadFailed": "Live status is unavailable. Configuration and recovery actions remain available; any previous observations are not current."
   },
   "namedServices": {
     "description": "Native identities without Telegram accounts.",

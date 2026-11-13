@@ -36,7 +36,7 @@ forms preserve their drafts so an administrator can correct or retry the action.
 - `AdminCatalogPanel.vue` manages combos and squads.
 - `AdminCouponsPanel.vue` manages coupon definitions.
 - `AdminDatabasePanel.vue` browses protected database tables.
-- `AdminEntitlementsPanel.vue` is a legacy inventory retained only by the validity audit fixture; production entitlement management lives in user profiles.
+- Entitlement management lives in user profiles; the retired standalone inventory and its cancellation client have been removed.
 - `AdminOnboardingPanel.vue` loads, saves, and publishes visual onboarding drafts.
 - `onboarding/` contains bilingual content indexes with focused editors and text previews.
 - `AdminPaymentProfiles.vue` lists and edits masked provider accounts, keeps BEPUSDT channels discovery-owned, deletes profiles through a protected confirmation, and contributes remaining drafts to the parent settings save.

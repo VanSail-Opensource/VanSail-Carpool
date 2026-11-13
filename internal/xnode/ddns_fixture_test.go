@@ -44,7 +44,7 @@ func ddnsRoutingFixture(t *testing.T) (fixture, xnode.Node, xnode.Endpoint, xnod
 	if _, err = f.service.SaveConfiguration(ctx, profile); err != nil {
 		t.Fatal(err)
 	}
-	peer, err := f.service.SaveNode(ctx, xnode.Node{Name: "DDNS peer", Enabled: true, Multiplier: 1, ConfigID: profile.ID}, xnode.NodeSettings{})
+	peer, err := f.service.SaveNode(ctx, xnode.Node{Name: "DDNS peer", Enabled: true, ConfigID: profile.ID}, xnode.NodeSettings{})
 	if err != nil {
 		t.Fatal(err)
 	}

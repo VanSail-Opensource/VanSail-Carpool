@@ -23,14 +23,12 @@ import type { FeaturePaymentMethod, FeaturePaymentOrder, FeaturePaymentReturnSta
 import { request, type QueryValue } from './http'
 import { purchaseAddonsApi } from './purchaseAddons'
 import { communityApi } from './community'
-import { createUuid } from '@/utils/browserCompatibility'
 
 export { ApiError } from './http'
 
 type TelegramAuthRequest = components['schemas']['TelegramAuthRequest']
 type PurchaseRequest = components['schemas']['PurchaseRequest']
 type BalanceAdjustmentRequest = components['schemas']['BalanceAdjustmentRequest']
-type ReasonRequest = components['schemas']['ReasonRequest']
 type RefundRequest = components['schemas']['RefundRequest']
 type AutoRenewalUpdate = components['schemas']['AutoRenewalUpdate']
 type GeneratedSquadProductWrite = components['schemas']['SquadProductWrite']
@@ -62,17 +60,6 @@ function paymentProfileWriteBody(profile: AdminPaymentProfileWrite): AdminPaymen
   }
 }
 
-const legacyJobRetryKeys = new Map<string, string>()
-
-async function retryAdminJob(jobId: string, idempotencyKey?: string): Promise<OperationReceipt> {
-  const key = idempotencyKey ?? legacyJobRetryKeys.get(jobId) ?? createUuid()
-  if (!idempotencyKey) legacyJobRetryKeys.set(jobId, key)
-  const receipt = await request<OperationReceipt>(`/api/v1/admin/jobs/${encodeURIComponent(jobId)}/retry`, {
-    method: 'POST', headers: { 'Idempotency-Key': key },
-  })
-  if (!idempotencyKey) legacyJobRetryKeys.delete(jobId)
-  return receipt
-}
 
 export const api = {
   ...purchaseAddonsApi,
@@ -161,11 +148,9 @@ export const api = {
   createAdminPaymentProfile: (body: AdminPaymentProfileWrite) => request<AdminPaymentProfile>('/api/v1/admin/payment-profiles', { method: 'POST', body: paymentProfileWriteBody(body) }),
   updateAdminPaymentProfile: (id: string, body: AdminPaymentProfileWrite) => request<AdminPaymentProfile>(`/api/v1/admin/payment-profiles/${encodeURIComponent(id)}`, { method: 'PUT', body: paymentProfileWriteBody(body) }),
   deleteAdminPaymentProfile: (id: string) => request<void>(`/api/v1/admin/payment-profiles/${encodeURIComponent(id)}`, { method: 'DELETE' }),
-  cancelAdminEntitlement: (entitlementId: string, reason: string) => request<Purchase>(`/api/v1/admin/entitlements/${encodeURIComponent(entitlementId)}/cancel`, {
-    method: 'POST',
-    body: { reason } satisfies ReasonRequest,
+  retryAdminJob: (jobId: string, idempotencyKey: string) => request<OperationReceipt>(`/api/v1/admin/jobs/${encodeURIComponent(jobId)}/retry`, {
+    method: 'POST', headers: { 'Idempotency-Key': idempotencyKey },
   }),
-  retryAdminJob,
   deleteAdminJob: (jobId: string) => request<void>(`/api/v1/admin/jobs/${encodeURIComponent(jobId)}`, { method: 'DELETE' }),
   runAdminMaintenance: (idempotencyKey: string) => request<OperationReceipt>('/api/v1/admin/maintenance', {
     method: 'POST', headers: { 'Idempotency-Key': idempotencyKey },

@@ -76,8 +76,6 @@ func (s *Store) DrawDelivery(ctx context.Context, key string) (int64, bool, erro
 	return messageID, err == nil, err
 }
 func (s *Store) RecordDrawDelivery(ctx context.Context, key string, chatID, messageID int64, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
 	_, err := s.db.ExecContext(ctx, `INSERT   INTO activity_draw_delivery(delivery_key,chat_id,message_id,created_at) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING `,
 		key, chatID, messageID, stamp(now))
 	return err

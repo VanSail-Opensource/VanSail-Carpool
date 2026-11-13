@@ -16,8 +16,8 @@ type pmContentCipher interface {
 
 // ConfigurePMContentVault installs the application vault before any PM workers start.
 func (s *Store) ConfigurePMContentVault(vault pmContentCipher) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	s.pmContentMu.Lock()
+	defer s.pmContentMu.Unlock()
 	s.pmContentCipher = vault
 }
 
@@ -25,10 +25,14 @@ func (s *Store) savePMContentTx(ctx context.Context, tx *sql.Tx, operation strin
 	if len(input.Content) == 0 {
 		return nil
 	}
-	if input.Inbound || len(input.Content) > 128*1024 || !json.Valid(input.Content) || s.pmContentCipher == nil {
+	if input.Inbound || len(input.Content) > 128*1024 || !json.Valid(input.Content) {
 		return model.ErrPMContentInvalid
 	}
-	encrypted, err := s.pmContentCipher.Encrypt("telegram_pm:"+operation, string(input.Content))
+	vault := s.pmVault()
+	if vault == nil {
+		return model.ErrPMContentInvalid
+	}
+	encrypted, err := vault.Encrypt("telegram_pm:"+operation, string(input.Content))
 	if err != nil {
 		return model.ErrPMContentInvalid
 	}
@@ -50,9 +54,7 @@ func (s *Store) PMRelayContent(ctx context.Context, operation string, now time.T
 	if expires <= now.Unix() || encrypted == "" {
 		return nil, true, model.ErrPMContentExpired
 	}
-	s.writeMu.Lock()
-	vault := s.pmContentCipher
-	s.writeMu.Unlock()
+	vault := s.pmVault()
 	if vault == nil {
 		return nil, true, model.ErrPMContentInvalid
 	}
@@ -61,4 +63,10 @@ func (s *Store) PMRelayContent(ctx context.Context, operation string, now time.T
 		return nil, true, model.ErrPMContentInvalid
 	}
 	return json.RawMessage(plain), true, nil
+}
+
+func (s *Store) pmVault() pmContentCipher {
+	s.pmContentMu.RLock()
+	defer s.pmContentMu.RUnlock()
+	return s.pmContentCipher
 }

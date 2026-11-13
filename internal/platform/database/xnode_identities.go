@@ -58,9 +58,6 @@ func (s *Store) XNodeIdentityBySubscription(ctx context.Context, hash []byte) (x
 	return scanXNodeIdentity(s.db.QueryRowContext(ctx, xnodeIdentitySelect+` WHERE p.subscription_hash=$1`, hash))
 }
 func (s *Store) retryAttempt_SaveXNodeIdentity(ctx context.Context, item xnode.Identity) (xnode.Identity, error) {
-	s.writeMu.Lock()
-	// Keep existing process serialization as well as the lifecycle row lock.
-	defer s.writeMu.Unlock()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return item, err

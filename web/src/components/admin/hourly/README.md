@@ -25,3 +25,9 @@ standalone console. The responsive forms share native Nuxt UI input and keyboard
 behavior, with no Telegram SDK, host buttons or haptic calls. The dev-only
 `../../../../fixtures/hourly-audit.html?admin` fixture exercises both themes,
 locales, loading, empty, error and configuration-conflict states without spending.
+
+Required reads and writes are exclusive: retained policy/offer forms stay locked
+during refresh and after failed required reads. Refresh cannot race a pending
+save, and disposal retires delayed replies. `HourlyAdminPage.test.ts` covers
+failed refresh recovery, blocked retained-content writes and exact reviewed
+version admission. These regressions run in hosted CI.

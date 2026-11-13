@@ -61,11 +61,8 @@ func (s *Store) listAdminPurchasesPageAt(ctx context.Context, cursor, search, st
 	if err := rows.Err(); err != nil {
 		return nil, nil, err
 	}
-	for index := range items {
-		items[index].SquadUUIDs, err = s.purchaseSquads(ctx, items[index].ID)
-		if err != nil {
-			return nil, nil, err
-		}
+	if err := hydratePurchaseSquads(ctx, s.db, items); err != nil {
+		return nil, nil, err
 	}
 	if len(items) <= limit {
 		return items, nil, nil

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { Purchase, SquadProduct, SquadProductWrite } from './types'
+import type { SquadProduct, SquadProductWrite } from './types'
 import { api, type AdminPaymentProfile } from './client'
 
 const fetchMock = vi.fn()
@@ -26,25 +26,6 @@ const squad: SquadProduct = {
   accessibleNodes: [],
   createdAt: '2026-08-07T00:00:00Z',
   updatedAt: '2026-08-07T00:00:00Z',
-}
-
-const entitlement: Purchase = {
-  id: 'purchase-1',
-  comboId: 'combo-1',
-  comboName: 'Everyday',
-  price: { currency: 'TXB', minor: '1200', display: '12.00 TXB' },
-  grossPrice: { currency: 'TXB', minor: '1200', display: '12.00 TXB' },
-  couponDiscount: { currency: 'TXB', minor: '0', display: '0.00 TXB' },
-  couponGrantId: null,
-  validFrom: '2026-08-07T00:00:00Z',
-  validUntil: '2026-09-06T00:00:00Z',
-  status: 'cancelled',
-  autoRenewEnabled: false,
-  trafficLimitBytes: '107374182400',
-  resetStrategy: 'MONTH_ROLLING',
-  squadUuids: [],
-  createdAt: '2026-08-07T00:00:00Z',
-  updatedAt: '2026-08-07T00:01:00Z',
 }
 
 describe('admin API mutations', () => {
@@ -116,24 +97,14 @@ describe('admin API mutations', () => {
     })
   })
 
-  it('binds an entitlement cancellation reason to the selected record', async () => {
-    fetchMock.mockResolvedValue(jsonResponse(entitlement))
-
-    await api.cancelAdminEntitlement('purchase/1', 'Duplicate account request')
-
-    const [url, options] = fetchMock.mock.calls[0] as [string, RequestInit]
-    expect(url).toBe('/api/v1/admin/entitlements/purchase%2F1/cancel')
-    expect(options.method).toBe('POST')
-    expect(JSON.parse(String(options.body))).toEqual({ reason: 'Duplicate account request' })
-  })
-
   it('retries a failed job without sending an invented payload', async () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 204 }))
 
-    await api.retryAdminJob('job/1')
+    await api.retryAdminJob('job/1', 'reviewed-job-retry')
 
     const [url, options] = fetchMock.mock.calls[0] as [string, RequestInit]
     expect(url).toBe('/api/v1/admin/jobs/job%2F1/retry')
+    expect(new Headers(options.headers).get('Idempotency-Key')).toBe('reviewed-job-retry')
     expect(options.method).toBe('POST')
     expect(options.body).toBeUndefined()
   })
