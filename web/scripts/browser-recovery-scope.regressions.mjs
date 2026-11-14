@@ -13,6 +13,7 @@ test('focused PRs select related suites without unrelated administrator recovery
   assert.deepEqual(selectBrowserRecovery(['web/src/components/activity/BetGamesPanel.vue']).scopes, ['activity', 'member-design'])
   assert.deepEqual(selectBrowserRecovery(['web/src/components/subscription/HostLinkRow.vue']).scopes, ['member', 'member-design'])
   assert.deepEqual(selectBrowserRecovery(['web/src/components/hourly/HourlyAllowanceGraph.vue']).scopes, ['hourly', 'settings', 'member-design'])
+  assert.deepEqual(selectBrowserRecovery(['web/src/components/hourly/hourlyAllowance.ts']).scopes, ['hourly', 'settings', 'member-design'])
   assert.deepEqual(selectBrowserRecovery(['web/src/components/catalog/BillingDemo.vue']).scopes, ['demonstrations'])
   assert.deepEqual(selectBrowserRecovery(['web/fixtures/member-utility-data.ts']).scopes, ['member-design'])
 })

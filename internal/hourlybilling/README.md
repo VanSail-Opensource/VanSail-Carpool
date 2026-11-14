@@ -99,7 +99,12 @@ allowance rows. The compatibility `accountingPending` flag retains its all-day
 meaning, including ordinary open credits. The optional `usage.accounting`
 breakdown comes from the shared read-only `HourlyCreditAccounting` repository
 query used by both member and administrator projections: current-day open bytes,
-current-day recovery-unknown bytes, and other-day unknown/unsealed obligations.
+current-day recovery-unknown bytes split into free and funded-extra pools, and
+other-day unknown/unsealed obligations. The two current recovery fields sum to
+`recoveryUnknownBytes`. Usable remaining credit excludes its own pool's recovery
+unknown bytes, while ordinary open grants remain part of the unused allowance.
+Confirmed consumption still comes only from admitted counters; neither unknown
+bytes nor reduced-rate traffic is relabeled as full-speed credit consumption.
 All byte aggregates are exact decimal strings, including totals above int64.
 Historical holds stay against their original UTC day and do not consume today's
 allowance. The display read never releases credit or changes lifecycle queries.

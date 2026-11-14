@@ -58,7 +58,7 @@ HourlyAccountUsage: {
         "type": "object",
         "additionalProperties": false,
         "description": "Read-only reservation breakdown for this account generation. Current fields belong to dayUTC; historical fields include every other UTC day. Historical holds do not reduce dayUTC's allowance. No amount is released by this projection.",
-        "required": ["openReservedBytes", "recoveryUnknownBytes", "historicalRecoveryUnknownBytes", "historicalUnsealedReservedBytes", "historicalUnsealedCount"],
+        "required": ["openReservedBytes", "recoveryUnknownBytes", "freeRecoveryUnknownBytes", "extraRecoveryUnknownBytes", "historicalRecoveryUnknownBytes", "historicalUnsealedReservedBytes", "historicalUnsealedCount"],
         "properties": {
           "openReservedBytes": {
             "type": "string", "pattern": "^[0-9]+$",
@@ -67,6 +67,14 @@ HourlyAccountUsage: {
           "recoveryUnknownBytes": {
             "type": "string", "pattern": "^[0-9]+$",
             "description": "Bytes still unknown after a final recovery proof on dayUTC. They remain reserved; automatic reconciliation is not promised."
+          },
+          "freeRecoveryUnknownBytes": {
+            "type": "string", "pattern": "^[0-9]+$",
+            "description": "The free-allowance portion of recoveryUnknownBytes on dayUTC. Exclude it from usable remaining allowance without counting it as confirmed consumption or subtracting ordinary open credits."
+          },
+          "extraRecoveryUnknownBytes": {
+            "type": "string", "pattern": "^[0-9]+$",
+            "description": "The funded-extra portion of recoveryUnknownBytes on dayUTC. Exclude it from usable remaining extra credit without counting it as confirmed consumption or subtracting ordinary open credits."
           },
           "historicalRecoveryUnknownBytes": {
             "type": "string", "pattern": "^[0-9]+$",

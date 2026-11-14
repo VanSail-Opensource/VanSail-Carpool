@@ -6,6 +6,34 @@ const mutations = page => page.evaluate(() => globalThis.__hourlyAudit.calls.fil
 
 export async function hourlyRecoveryScenarios(scenario, size) {
   await hourlyPreferenceScenarios(scenario, size)
+  await scenario(size, 'hourly-recovery-exhausted', 'hourly-audit.html?active&recovery-exhausted&extra', async (page, capture) => {
+    const meter = page.locator('[data-hourly-throttle]')
+    await meter.waitFor()
+    const toggle = meter.getByRole('switch', { name: 'Buy extra full-speed traffic automatically', exact: true })
+    assert.equal(await toggle.getAttribute('aria-checked'), 'true')
+    assert.equal(await page.getByRole('progressbar').count(), 0)
+    assert.equal(await page.getByText('109.81 MiB', { exact: true }).count(), 0)
+    assert.equal(await page.locator('[data-hourly-boost]').count(), 0)
+    assert.deepEqual(await page.evaluate(() => {
+      const usage = globalThis.__hourlyAudit.fixture.view.usage
+      return [usage.freeUsedBytes, usage.accounting.freeRecoveryUnknownBytes, usage.accounting.openReservedBytes]
+    }), ['2032331516', '115152132', '0'])
+    await capture('recovery-has-no-usable-credit')
+    await toggle.click()
+    await page.waitForFunction(() => globalThis.document.querySelector('[data-hourly-throttle] [role="switch"]')?.getAttribute('aria-checked') === 'false')
+    assert.equal(await meter.isVisible(), true)
+    assert.equal(await page.getByRole('dialog').count(), 0)
+    const writes = await mutations(page)
+    assert.equal(writes.length, 1)
+    assert.deepEqual(writes[0].body, { enabled: false, policyVersion: 'fixture-policy-1' })
+  })
+  await scenario(size, 'hourly-open-credit-usable', 'hourly-audit.html?active&open-credit', async (page, capture) => {
+    await page.getByRole('progressbar', { name: 'Full-speed traffic usage', exact: true }).waitFor()
+    assert.equal(await page.locator('[data-hourly-throttle]').count(), 0)
+    await page.locator('.hourly-allowance__legend').getByText('109.81 MiB', { exact: true }).waitFor()
+    assert.deepEqual(await mutations(page), [])
+    await capture('open-allocation-still-usable')
+  })
   await scenario(size, 'hourly-clean-summary', 'hourly-audit.html?active&current-unknown&historical-unknown&historical-unsealed', async (page, capture) => {
     await page.locator('.hourly-summary').waitFor()
     assert.equal(await page.locator('[data-hourly-accounting]').count(), 0)

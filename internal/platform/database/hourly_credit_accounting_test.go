@@ -24,7 +24,7 @@ func TestHourlyCreditAccountingSeparatesOpenRecoveryAndHistoricalEvidence(t *tes
 		{name: "normal open", reserve: true, admitted: 100, pending: true,
 			want: model.HourlyAccountingStatus{OpenReservedBytes: "900"}},
 		{name: "current recovery unknown", reserve: true, recovery: true, admitted: 100, pending: true,
-			want: model.HourlyAccountingStatus{RecoveryUnknownBytes: "900"}},
+			want: model.HourlyAccountingStatus{RecoveryUnknownBytes: "900", FreeRecoveryUnknownBytes: "900"}},
 		{name: "historical recovery unknown", reserve: true, recovery: true, historical: true, admitted: 100, pending: true,
 			want: model.HourlyAccountingStatus{HistoricalRecoveryUnknownBytes: "900"}},
 		{name: "historical unsealed", reserve: true, historical: true, admitted: 100, pending: true,
@@ -122,7 +122,9 @@ func TestHourlyCreditAccountingRequiresExactOwnerAndGeneration(t *testing.T) {
 }
 
 func zeroHourlyAccountingBytes(value model.HourlyAccountingStatus) model.HourlyAccountingStatus {
-	for _, field := range []*string{&value.OpenReservedBytes, &value.RecoveryUnknownBytes, &value.HistoricalRecoveryUnknownBytes, &value.HistoricalUnsealedReservedBytes} {
+	for _, field := range []*string{&value.OpenReservedBytes, &value.RecoveryUnknownBytes,
+		&value.FreeRecoveryUnknownBytes, &value.ExtraRecoveryUnknownBytes,
+		&value.HistoricalRecoveryUnknownBytes, &value.HistoricalUnsealedReservedBytes} {
 		if *field == "" {
 			*field = "0"
 		}
@@ -161,12 +163,17 @@ func TestHourlyCreditAccountingPreservesAggregateAboveInt64(t *testing.T) {
 	}
 	check(request.DayUTC, model.HourlyAccountingStatus{OpenReservedBytes: total})
 	check(nextDay, model.HourlyAccountingStatus{HistoricalUnsealedReservedBytes: total, HistoricalUnsealedCount: 2})
-	for _, record := range []model.HourlyCreditReservation{free, extra} {
+	for i, record := range []model.HourlyCreditReservation{free, extra} {
 		proof := hourlyProofFixture(t, record, 0, 0, 0, record.ByteCeiling, true)
 		if _, err := s.ApplyHourlyCreditProof(ctx, record.NodeID, record.AgentID, proof); err != nil {
 			t.Fatal(err)
 		}
+		if i == 0 {
+			check(request.DayUTC, model.HourlyAccountingStatus{OpenReservedBytes: "1000",
+				RecoveryUnknownBytes: "9223372036854775807", FreeRecoveryUnknownBytes: "9223372036854775807"})
+		}
 	}
-	check(request.DayUTC, model.HourlyAccountingStatus{RecoveryUnknownBytes: total})
+	check(request.DayUTC, model.HourlyAccountingStatus{RecoveryUnknownBytes: total,
+		FreeRecoveryUnknownBytes: "9223372036854775807", ExtraRecoveryUnknownBytes: "1000"})
 	check(nextDay, model.HourlyAccountingStatus{HistoricalRecoveryUnknownBytes: total})
 }

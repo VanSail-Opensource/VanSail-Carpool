@@ -22,6 +22,10 @@ func (s *Store) HourlyCreditAccounting(ctx context.Context, owner string, genera
 		COALESCE(SUM(unknown_bytes)
 			FILTER (WHERE day_utc=$3::date AND final_recovery),0)::text,
 		COALESCE(SUM(unknown_bytes)
+			FILTER (WHERE day_utc=$3::date AND final_recovery AND kind='free'),0)::text,
+		COALESCE(SUM(unknown_bytes)
+			FILTER (WHERE day_utc=$3::date AND final_recovery AND kind='extra'),0)::text,
+		COALESCE(SUM(unknown_bytes)
 			FILTER (WHERE day_utc<>$3::date AND final_recovery),0)::text,
 		COALESCE(SUM(byte_ceiling-admitted_upload_bytes-admitted_download_bytes-unused_bytes)
 			FILTER (WHERE day_utc<>$3::date AND final_proof_digest=''),0)::text,
@@ -30,6 +34,7 @@ func (s *Store) HourlyCreditAccounting(ctx context.Context, owner string, genera
 		WHERE owner_id=$1 AND account_generation=$2
 		AND (final_proof_digest='' OR final_recovery AND unknown_bytes>0)`, owner, generation, day).
 		Scan(&pending, &status.OpenReservedBytes, &status.RecoveryUnknownBytes,
+			&status.FreeRecoveryUnknownBytes, &status.ExtraRecoveryUnknownBytes,
 			&status.HistoricalRecoveryUnknownBytes, &status.HistoricalUnsealedReservedBytes,
 			&status.HistoricalUnsealedCount)
 	return status, pending, err
