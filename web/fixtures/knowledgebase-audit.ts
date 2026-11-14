@@ -22,7 +22,7 @@ window.fetch = async (input, init) => {
   const request = new Request(input, init)
   const target = new URL(request.url)
   if (target.origin !== location.origin || target.pathname.startsWith('/api/')) {
-    state.unexpected.push(`${request.method} ${target.pathname}`)
+    state.unexpected.push(`${request.method} ${target.href}`)
     throw new Error('Unexpected Knowledgebase fixture API request')
   }
   return nativeFetch(input, init)

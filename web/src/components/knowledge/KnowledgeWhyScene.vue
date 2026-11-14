@@ -56,7 +56,7 @@ const records = [['i-ph-user-circle-bold', 'account'], ['i-ph-receipt-bold', 'in
       <div v-else class="why-film__ticket">
         <span class="why-film__ticket-title"><UIcon name="i-ph-chats-circle-bold" />{{ t('knowledge.labels.bot') }}<small>{{ '#TX-1024' }}</small></span>
         <div v-for="(field, index) in report" :key="field[1]" class="why-film__ticket-field"><UIcon :name="field[0]" /><span>{{ t(`knowledge.labels.${field[1]}`) }}</span><i :style="{ transform: `scaleX(${completion(index)})` }" /><UIcon name="i-ph-check-bold" :style="{ opacity: completion(index) }" /></div>
-        <span class="why-film__ticket-send" :style="{ opacity: .35 + .65 * between(p, .65, .9) }"><UIcon name="i-ph-paper-plane-tilt-bold" />{{ t('knowledge.labels.noSecrets') }}</span>
+        <span class="why-film__ticket-note" :style="{ opacity: .35 + .65 * between(p, .65, .9) }"><UIcon name="i-ph-lock-key-bold" />{{ t('knowledge.labels.noSecrets') }}</span>
       </div>
     </div>
     <DemoFlow :nodes="nodes" :phase="p" :active="Math.min(2, Math.floor(progress * 3))" :reduced-motion="reducedMotion" />
@@ -113,6 +113,6 @@ const records = [['i-ph-user-circle-bold', 'account'], ['i-ph-receipt-bold', 'in
 .why-film__ticket-field { display: flex; gap: .45rem; align-items: center; min-height: 1.6rem; color: var(--text-muted); font-size: .65rem; }
 .why-film__ticket-field .iconify { color: var(--accent); }
 .why-film__ticket-field i { flex: 1; height: 3px; border-radius: 2px; background: var(--accent-line); transform-origin: left; }
-.why-film__ticket-send { display: flex; align-items: center; justify-content: center; gap: .4rem; min-height: 2rem; border-radius: .7rem; background: var(--accent-soft); color: var(--accent); font-size: .6rem; }
+.why-film__ticket-note { display: flex; align-items: center; justify-content: center; gap: .4rem; min-height: 2rem; color: var(--text-faint); font-size: .6rem; }
 @media (max-width: 380px) { .why-film__plans { gap: .45rem; } .why-film__plan { padding: .55rem; font-size: .63rem; } .why-film__plan strong { font-size: 1rem; } .why-film__transient { font-size: .6rem; gap: .3rem; } .why-film__transient > div { gap: .15rem; } }
 </style>

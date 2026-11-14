@@ -56,5 +56,5 @@ const progress = computed(() => props.step === 4 ? between(props.phase, .3, 1) *
 .routing-scene__save > i { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--accent); transform-origin: left; }
 .routing-scene__refresh { display: flex; align-items: center; justify-content: center; gap: .4rem; min-height: 1.6rem; color: var(--text-faint); font-size: .65rem; }
 .routing-scene__refresh.is-current { color: var(--accent); }
-@media (max-width: 380px) { .routing-scene { padding: .65rem; } .routing-scene__fields { gap: .25rem; } .routing-scene__fields > span { gap: .2rem; padding-inline: .35rem; } .routing-scene__fields > span > .iconify:last-child { display: none; } }
+@media (max-width: 420px) { .routing-scene { padding: .65rem; } .routing-scene__fields { gap: .25rem; } .routing-scene__fields > span { gap: .2rem; padding-inline: .35rem; } .routing-scene__fields > span > .iconify:last-child { display: none; } }
 </style>

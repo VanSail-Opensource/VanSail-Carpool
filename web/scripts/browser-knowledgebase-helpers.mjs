@@ -36,31 +36,47 @@ export async function inspectDesktopKnowledgeLabel(page, size) {
   assert.equal(await label.evaluate(element => element.scrollWidth <= element.clientWidth + 1), true, 'desktop Knowledgebase label is truncated')
 }
 
+function transportView({ value, settledOnly = false }) {
+  const root = globalThis.document.querySelector('.demo-transport__seek')
+  const track = root?.querySelector('[data-slot="track"]')?.getBoundingClientRect()
+  const thumb = root?.querySelector('[data-slot="thumb"][role="slider"]')
+  const range = root?.querySelector('[data-slot="range"]')?.getBoundingClientRect()
+  if (!track || !thumb || !range) return null
+  const bounds = thumb.getBoundingClientRect()
+  const selected = selector => [...globalThis.document.querySelectorAll(`.demo-transport__chapters ${selector}`)].map(element => element.getAttribute('data-demo-step'))
+  const expectedCenter = track.left + bounds.width / 2 + value / 1000 * (track.width - bounds.width)
+  const view = {
+    current: selected('[data-demo-step].is-current'), accessible: selected('[data-demo-step][aria-current="step"]'),
+    value: thumb.getAttribute('aria-valuenow'), trackLeft: track.left, trackWidth: track.width,
+    thumbCenter: bounds.left + bounds.width / 2, thumbWidth: bounds.width, rangeWidth: range.width,
+    thumbDelta: bounds.left + bounds.width / 2 - expectedCenter,
+    rangeDelta: range.width - value / 1000 * track.width,
+  }
+  const aligned = view.value === String(value) && view.trackWidth > view.thumbWidth && view.thumbWidth > 0
+    && Math.abs(view.thumbDelta) <= 3 && Math.abs(view.rangeDelta) <= 3
+  return settledOnly && !aligned ? null : view
+}
+
 export async function inspectTransport(page, step, fraction) {
-  await frames(page)
-  const view = await page.evaluate(() => {
-    const root = globalThis.document.querySelector('.demo-transport__seek')
-    const track = root?.querySelector('[data-slot="track"]')?.getBoundingClientRect()
-    const thumb = root?.querySelector('[data-slot="thumb"][role="slider"]')
-    const range = root?.querySelector('[data-slot="range"]')?.getBoundingClientRect()
-    if (!track || !thumb || !range) return null
-    const bounds = thumb.getBoundingClientRect()
-    const selected = selector => [...globalThis.document.querySelectorAll(`.demo-transport__chapters ${selector}`)].map(element => element.getAttribute('data-demo-step'))
-    return {
-      current: selected('[data-demo-step].is-current'), accessible: selected('[data-demo-step][aria-current="step"]'),
-      value: thumb.getAttribute('aria-valuenow'), trackLeft: track.left, trackWidth: track.width,
-      thumbCenter: bounds.left + bounds.width / 2, thumbWidth: bounds.width, rangeWidth: range.width,
-    }
-  })
+  const value = Math.round(fraction * 1000)
+  // Reka measures the thumb with ResizeObserver; wait for its rendered position,
+  // not a fixed number of frames, while keeping the same strict geometry bounds.
+  let view
+  try {
+    const ready = await page.waitForFunction(transportView, { value, settledOnly: true }, { polling: 'raf', timeout: 2000 })
+    view = await ready.jsonValue()
+    await ready.dispose()
+  } catch (error) {
+    const actual = await page.evaluate(transportView, { value })
+    throw new Error(`demo transport did not settle at chapter ${step}, value ${value}: ${JSON.stringify(actual)}`, { cause: error })
+  }
   assert.ok(view, 'demo transport is missing its Nuxt UI slider slots')
   assert.deepEqual(view.current, [String(step)], 'visual chapter selection is stale or duplicated')
   assert.deepEqual(view.accessible, view.current, 'visual and accessible chapter selection disagree')
-  const value = Math.round(fraction * 1000)
   assert.equal(view.value, String(value), 'slider value does not match the selected chapter')
   assert.ok(view.trackWidth > view.thumbWidth && view.thumbWidth > 0, 'slider geometry is empty')
-  const expectedCenter = view.trackLeft + view.thumbWidth / 2 + value / 1000 * (view.trackWidth - view.thumbWidth)
-  assert.ok(Math.abs(view.thumbCenter - expectedCenter) <= 3, 'slider thumb is stale')
-  assert.ok(Math.abs(view.rangeWidth - value / 1000 * view.trackWidth) <= 3, 'slider range does not match the selected chapter')
+  assert.ok(Math.abs(view.thumbDelta) <= 3, `slider thumb is stale: ${JSON.stringify(view)}`)
+  assert.ok(Math.abs(view.rangeDelta) <= 3, `slider range does not match the selected chapter: ${JSON.stringify(view)}`)
 }
 
 export async function open(page, id) {
@@ -109,6 +125,7 @@ export async function inspectVisibleChapter(page, locale) {
     .filter(element => element.scrollWidth > element.clientWidth + 1)
     .map(element => ({ class: element.className, visible: element.clientWidth, content: element.scrollWidth })))
   assert.deepEqual(clipped, [], 'mock interface clips content inside a rounded surface')
+  assert.deepEqual(await page.evaluate(() => globalThis.__knowledgebaseAudit.unexpected), [], 'tutorial attempted an unbundled asset or account request')
   return await player(page).innerText()
 }
 

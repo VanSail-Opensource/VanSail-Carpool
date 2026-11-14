@@ -44,7 +44,7 @@ const connected = computed(() => props.step === 11 || (props.step === 10 && done
       <template v-else-if="step === 8">
         <div class="subscription-label"><UIcon name="i-ph-lock-key-bold" />{{ t('knowledge.labels.privateLink') }}</div>
         <div class="subscription-input"><UIcon name="i-ph-link-bold" /><code>{{ `https://…/${'•'.repeat(Math.ceil(progress * 8))}` }}</code><UIcon :name="done ? 'i-ph-check-circle-fill' : 'i-ph-clipboard-text-bold'" /></div>
-        <div class="subscription-save" :class="{ 'is-ready': done }"><UIcon :name="done ? 'i-ph-check-bold' : 'i-ph-floppy-disk-bold'" />{{ t(`knowledge.labels.${done ? 'refresh' : 'save'}`) }}<i :style="{ transform: `scaleX(${progress})` }" /></div>
+        <div class="subscription-save" :class="{ 'is-ready': done }"><UIcon :name="done ? 'i-ph-check-bold' : 'i-ph-floppy-disk-bold'" />{{ t(`knowledge.labels.${done ? 'saved' : 'save'}`) }}<i :style="{ transform: `scaleX(${progress})` }" /></div>
         <span class="subscription-note">{{ t('knowledge.labels.keepPrivate') }}</span>
       </template>
       <template v-else>

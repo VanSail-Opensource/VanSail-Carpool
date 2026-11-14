@@ -14,7 +14,7 @@ const checks = ['device', 'account', 'behavior']
 const progress = computed(() => ease(between(p.value, .1, .82)))
 const flow = computed(() => [
   { icon: 'i-ph-users-three-bold', label: t(`knowledge.labels.${props.step < 2 ? 'crowd' : 'members'}`) },
-  { icon: props.step < 2 ? 'i-ph-router-bold' : 'i-ph-hard-drives-bold', label: props.step < 2 ? 'CGNAT' : t('knowledge.labels.dedicatedIp') },
+  { icon: 'i-ph-hard-drives-bold', label: props.step < 2 ? 'CGNAT' : t('knowledge.labels.dedicatedIp') },
   { icon: 'i-ph-browser-bold', label: t('knowledge.labels.service') },
 ])
 </script>
