@@ -4,6 +4,7 @@ import { xnodeApi, type NamedService, type XNode, type XNodeGroup } from '@/api/
 import type { XNodeCustomization } from '@/api/xnode'
 import JsonDocumentField from '@/components/common/JsonDocumentField.vue'
 import { localizedError, useI18n } from '@/i18n'
+import LoadingPlaceholder from '@/components/common/LoadingPlaceholder.vue'
 import { cloneForEditing } from '@/utils/browserCompatibility'
 import { createLatestRequest } from '@/utils/latestRequest'
 
@@ -86,7 +87,7 @@ onScopeDispose(() => { reads.dispose(); writes.dispose() })
       <div class="grid gap-4">
         <UFormField :label="t('xnode.node')"><USelect v-model="node" :items="choices" :disabled="busy" class="w-full" /></UFormField>
         <UAlert v-if="error" color="warning" :title="error" />
-        <UProgress v-if="loading" />
+        <LoadingPlaceholder v-if="loading" variant="form" :rows="2" />
         <template v-if="current && !loading">
           <JsonDocumentField v-model="outbounds" :label="t('memberNodes.outbounds')" :disabled="busy" :rows="8" @valid="outValid = $event" />
           <UButton :label="t('memberNodes.saveOutbounds')" :disabled="busy || !outValid" :loading="busy" @click="save('outbounds')" />

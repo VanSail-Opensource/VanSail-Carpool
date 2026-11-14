@@ -3,6 +3,7 @@ import type { TableColumn } from '@nuxt/ui'
 import { computed } from 'vue'
 import type { FirewallFilter, FirewallRecord } from '@/api/firewall'
 import { useI18n } from '@/i18n'
+import LoadingPlaceholder from '@/components/common/LoadingPlaceholder.vue'
 import XNodeFirewallGrant from './XNodeFirewallGrant.vue'
 import { useFirewallSearch } from './useFirewallSearch'
 import OperationStatusNotice from '@/components/common/OperationStatusNotice.vue'
@@ -38,7 +39,7 @@ const counts = computed(() => {
     </div>
     <OperationStatusNotice :receipt="state.release.receipt.value" :error="state.release.error.value" :checking="state.release.checking.value" @refresh="state.release.refresh" />
     <p v-if="state.release.busy.value" role="status" class="text-sm text-muted">{{ t('firewall.releasePending') }}</p>
-    <UProgress v-if="loading" />
+    <LoadingPlaceholder v-if="loading" :variant="items.length ? 'compact' : 'list'" />
     <UAlert v-if="error" color="warning" :title="error" />
     <UButton v-if="error" class="justify-self-start" variant="ghost" :label="t('common.tryAgain')" @click="load" />
     <p v-else-if="!loading && !items.length" class="text-muted">{{ t('firewall.empty') }}</p>

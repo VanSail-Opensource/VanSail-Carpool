@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LoadingPlaceholder from '@/components/common/LoadingPlaceholder.vue'
 import { computed } from 'vue'
 import { t } from '@/i18n'
 import ConnectionLeaseForm from './ConnectionLeaseForm.vue'
@@ -26,7 +27,7 @@ const data = computed(() => state.data.value)
           <h2><UIcon name="i-ph-list-bullets" aria-hidden="true" />{{ t('connections.addresses') }}</h2>
           <UInput v-model="state.search.value" icon="i-ph-magnifying-glass" class="connections-page__search" type="search" :aria-label="t('connections.search')" :placeholder="t('connections.search')" />
         </div>
-        <UProgress v-if="state.loading.value" class="connections-page__progress" :aria-label="t('common.loading')" size="xs" />
+        <LoadingPlaceholder v-if="state.loading.value" variant="compact" class="p-4" />
         <UAlert v-if="data.status === 'stale' || data.status === 'unavailable'" class="connections-page__notice" color="warning" icon="i-ph-cloud-warning" :title="t(`connections.status.${data.status}`)" />
         <p v-if="data.incomplete" role="status" class="connections-page__incomplete"><UIcon name="i-ph-info" aria-hidden="true" />{{ t('connections.incomplete') }}</p>
         <ConnectionObservationList v-if="data.items.length" :items="data.items" :leases="data.settings.enabled" />
@@ -53,7 +54,6 @@ const data = computed(() => state.data.value)
 .connections-page__toolbar h2 { display: flex; align-items: center; gap: .45rem; margin: 0; font-size: .9rem; font-weight: 600; }
 .connections-page__toolbar h2 > span { color: var(--text-muted); }
 .connections-page__search { min-width: 0; width: 100%; }
-.connections-page__progress { position: absolute; inset: 0 0 auto; }
 .connections-page__notice { margin: .75rem; width: auto; }
 .connections-page__incomplete { display: flex; align-items: start; gap: .4rem; margin: .85rem 1rem; font-size: .75rem; color: var(--text-muted); }
 .connections-page__incomplete > span { flex: 0 0 auto; margin-top: .1rem; }

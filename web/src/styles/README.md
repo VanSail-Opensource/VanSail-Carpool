@@ -16,7 +16,7 @@
 - `member-fonts.css` loads the self-hosted Space Grotesk variable face for the member experience, preserves Chinese/system fallbacks, and fences its stack from browser-only fixture imports.
 - `member-surfaces.css` unifies member heading sizes, numerical alignment, card edge lighting, keyboard focus feedback, navigation geometry and utility-page spacing. Filled controls have explicit inverse colors for readable contrast before host theme initialization. Cards use a single 650ms edge sweep on hover, focus or selection, with static touch/keyboard borders; decorative overlays never intercept input. Card travel is limited to selectable surfaces on fine pointers. Reduced motion removes travel and sweeps, and forced colors removes decoration.
 - `fonts.css` declares self-hosted variable Geist and Noto Sans SC with nonblocking swap. Both experience roots import font resources independently of their theme rules; technical monospace roles retain their own stack.
-- `loading.css` provides the shared 192px indeterminate track using each root's accent tokens, with a static reduced-motion state.
+- `loading.css` positions the shared 192px startup placeholder group. Nuxt UI `USkeleton` supplies its theme-aware shapes and pulse, disabled for reduced motion; the adjacent localized status owns announcements.
 - `dashboard-01.css` styles dashboard summaries and account details.
 - `dashboard-02.css` styles dashboard lists, actions, and secondary states.
 - `home-01.css` styles the wrapping balance/action row, paired Home language/currency controls, 44px Home actions, narrow-phone subscription layout, Nuxt UI usage-progress detail, and traffic surfaces.

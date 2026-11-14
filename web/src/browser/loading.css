@@ -25,7 +25,6 @@ html[data-experience="browser"] .browser-entry__identity {
 .browser-entry__status p { margin: 0; overflow-wrap: anywhere; }
 .browser-entry__status p + p { margin-block-start: 8px; }
 .browser-entry__failure { color: var(--text); font-weight: 500; }
-.browser-entry .loading-track { margin-block-start: 16px; }
 .browser-entry__actions { margin-block-start: 24px; }
 .browser-entry :is(button, [role="combobox"], a) { min-block-size: 44px; min-inline-size: 44px; }
 .browser-entry--animate .browser-entry__identity { animation: browser-identity-enter 500ms cubic-bezier(.23, 1, .32, 1) both; }

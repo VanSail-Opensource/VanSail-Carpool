@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
 import { useI18n } from '@/i18n'
+import LoadingPlaceholder from '@/components/common/LoadingPlaceholder.vue'
 import { useXNodeGlobalSettings } from './useXNodeGlobalSettings'
 
 const emit = defineEmits<{ saved: [] }>()
@@ -19,7 +20,7 @@ async function submit() {
 <template>
   <section class="grid gap-4">
     <p class="text-sm text-muted">{{ t('automaticLeases.settingsHint') }}</p>
-    <UProgress v-if="loading" />
+    <LoadingPlaceholder v-if="loading" :variant="draft ? 'compact' : 'form'" :rows="2" />
     <UAlert v-if="error" color="warning" :title="error" />
     <UButton v-if="!loading && !canSave && !busy" class="justify-self-start" variant="ghost" :label="t('common.tryAgain')" @click="load" />
     <form v-if="draft?.automaticWhitelist" class="grid gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end" @submit.prevent="submit">

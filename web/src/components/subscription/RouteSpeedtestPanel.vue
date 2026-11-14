@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LoadingPlaceholder from '@/components/common/LoadingPlaceholder.vue'
 import { computed, shallowRef } from 'vue'
 import type { RouteSpeedtestWrite, RoutingView } from '@/api/xnodeMember'
 import { useI18n } from '@/i18n'
@@ -28,7 +29,7 @@ const median = (values: number[]) => [...values].sort((a, b) => a - b)[Math.floo
       <template #body>
         <div class="grid gap-4 min-w-0">
           <p v-if="state.result.value || state.command.busy.value" class="text-sm text-muted" role="status">{{ state.result.value ? t('routeSpeedtest.progress', { completed, total: state.result.value.pairs.length }) : t('routeSpeedtest.status.queued') }}</p>
-          <UProgress v-if="state.command.busy.value" />
+          <LoadingPlaceholder v-if="state.command.busy.value" variant="compact" />
           <UAlert v-if="state.command.error.value" color="warning" :title="state.command.error.value" />
           <UButton v-if="state.command.error.value && state.command.receipt.value" class="justify-self-start" variant="ghost" :label="t('common.tryAgain')" :loading="state.command.checking.value" @click="state.command.refresh" />
           <div v-for="(pair, index) in state.result.value?.pairs ?? []" :key="index" class="grid gap-1 border-b border-default py-2 text-sm">

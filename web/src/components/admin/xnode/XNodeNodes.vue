@@ -2,6 +2,7 @@
 import { computed, onScopeDispose, reactive, ref, shallowRef, toRaw, watch } from 'vue'
 import { xnodeApi, type XNode, type XNodeWrite, type XNodeConfiguration, type XNodeSettings, type XNodeMetrics, type XNodeEnrollment, type XNodeEndpoint } from '@/api/xnode'
 import { localizedError, useI18n } from '@/i18n'
+import LoadingPlaceholder from '@/components/common/LoadingPlaceholder.vue'
 import XNodeOperationalSettings from './XNodeOperationalSettings.vue'
 import XNodePricingCostSettings from './XNodePricingCostSettings.vue'
 import XNodeRemovalDialog from './XNodeRemovalDialog.vue'
@@ -109,7 +110,7 @@ async function enroll(node: XNode): Promise<void> {
     <XNodeRemovalDialog :node="removing" @close="removing = null" @removed="emit('refresh')" />
     <UModal :open="editing" :dismissible="!blocked" :close="!blocked" :title="t(draft.id ? 'xnode.editNode' : 'xnode.addNode')" :ui="{ content: 'max-w-4xl' }" @update:open="!blocked && (editing = $event)">
       <template #body>
-        <UProgress v-if="loading" />
+        <LoadingPlaceholder v-if="loading" variant="form" :rows="6" />
         <div v-else-if="!loaded" class="grid gap-3"><UAlert color="warning" :title="error ?? t('xnode.loadFailed')" /><UButton class="justify-self-start" variant="outline" color="neutral" :label="t('common.tryAgain')" @click="retryLoad" /></div>
         <template v-else>
           <form class="xnode-form" @submit.prevent="save">

@@ -194,6 +194,7 @@ declare module 'vue' {
     LineChart: typeof import('./src/components/charts/LineChart.vue')['default']
     LivePrice: typeof import('./src/components/common/LivePrice.vue')['default']
     LiveSourceNote: typeof import('./src/components/ip-lookup/LiveSourceNote.vue')['default']
+    LoadingPlaceholder: typeof import('./src/components/common/LoadingPlaceholder.vue')['default']
     LoadingScreen: typeof import('./src/components/session/LoadingScreen.vue')['default']
     LuckyDrawPanel: typeof import('./src/components/activity/LuckyDrawPanel.vue')['default']
     MaintenanceTrigger: typeof import('./src/components/admin/backups/MaintenanceTrigger.vue')['default']

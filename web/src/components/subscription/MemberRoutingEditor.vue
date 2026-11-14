@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LoadingPlaceholder from '@/components/common/LoadingPlaceholder.vue'
 import { computed } from 'vue'
 import { useI18n } from '@/i18n'
 import OperationStatusNotice from '@/components/common/OperationStatusNotice.vue'
@@ -24,7 +25,7 @@ const deploying = computed(() => state.locked.value && (!state.command.receipt.v
     <p v-if="!external" class="text-sm text-muted">{{ t('managedRouting.description') }}</p>
     <UAlert v-if="state.error.value" color="warning" :title="state.error.value" />
     <OperationStatusNotice v-if="state.command.error.value || state.command.receipt.value && !operationIsActive(state.command.receipt.value.status)" :receipt="state.command.receipt.value" :error="state.command.error.value" :checking="state.command.checking.value" @refresh="state.command.refresh" />
-    <UProgress v-if="state.loading.value" />
+    <LoadingPlaceholder v-if="state.loading.value" :variant="state.current.value ? 'compact' : 'form'" />
     <UButton :data-haptic="external ? 'action' : undefined" v-if="state.error.value" variant="outline" :label="t('common.tryAgain')" @click="state.load" />
     <template v-else-if="state.current.value">
       <UAlert v-if="state.current.value.plan.reason" color="warning" :title="t('managedRouting.disabled')" />
