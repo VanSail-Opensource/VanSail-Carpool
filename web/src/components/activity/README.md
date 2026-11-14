@@ -10,6 +10,9 @@ selection and pending feedback remain short and haptic-aware.
   avoiding a second padded card. Check-in receipts omit the duplicate success
   icon and tighten body/footer spacing while retaining 44px actions.
 - `DailyCheckInCard.vue`, `GroupMessageRewardPanel.vue`, `BetGamesPanel.vue`, and `LuckyDrawPanel.vue` implement member activities with selection, confirmation, and authoritative outcome haptics; `GroupMessageRewardPanel.vue` presents message count, reward amount, progress, and claimed/available state in one card.
+- `BetGamesPanel.vue` sizes its stake, return disclosure, and confirmation layout
+  from the card's available width. Half-width desktop cards keep a full-width
+  confirmation action; only roomy cards place all three controls in one row.
 - Member lucky-draw listing and playback remain instant-only; `ActivityResultContent.vue` presents resolved random reward content returned by the server.
 - `ActivityResultDialog.vue` hosts check-in and bet receipts; `ActivityResultContent.vue` renders shared authoritative reward and balance details, including the selected lucky-draw prize.
 - `draw/README.md` specifies the seven result-only presentation modes, focused draw modal, local artwork, and retry/reduced-motion behavior.

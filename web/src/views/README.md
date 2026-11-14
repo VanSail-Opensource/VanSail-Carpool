@@ -24,3 +24,7 @@
 - `AdminPricingView.vue`: Thin browser-only route entry composing the modular pricing workspace.
 
 `AdminUserView.test.ts` verifies that changing the member route replaces the profile editor and its dialogs, keeping pending drafts scoped to one owner.
+
+## Member visual consistency
+
+Every member route uses the shared graphite/cyan tokens and member font stack. Home retains its balance-first hierarchy; Explore owns its billing-mode selector and tutorials; Subscription, Connections, Activity, Community, Emby, Affiliate Centre, IP Lookup, Settings and DIY share restrained heading geometry. Onboarding, session entry and payment returns inherit the same base controls and status colours. Long data values wrap within shrinkable tracks. Community and IP Lookup leave the main landmark to AppShell; Settings and the one-use admin-access entrance reserve the shell navigation clearance on phones. Hosted PR-specific `member-design` scenarios capture real page components with synthetic data at desktop/mobile sizes.

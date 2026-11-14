@@ -92,6 +92,6 @@ window.fetch = async (input, init) => {
   })
   return response({ items: [] })
 }
-const app = createApp(HourlyAudit, { admin, catalog: params.has('catalog') })
+const app = createApp(HourlyAudit, { admin, catalog: params.has('catalog'), settings: params.has('settings') })
 app.config.globalProperties.$t = t
 app.use(createPinia()).use(createRouter({ history: createMemoryHistory(), routes: [{ path: '/:pathMatch(.*)*', component: HourlyAudit }] })).use(ui).mount('#app')

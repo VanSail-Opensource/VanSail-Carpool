@@ -1,0 +1,15 @@
+/* Member-only typography. Source: google/fonts/ofl/spacegrotesk.
+   Self-hosted variable font; license: public/fonts/SpaceGrotesk-OFL.txt. */
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("/fonts/SpaceGrotesk-variable.woff") format("woff");
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+/* Keep member fixtures and teleported dialogs on the member stack even when
+   browser-only fixture modules are also bundled by Vite. */
+html:not([data-experience="browser"]) {
+  --font-sans: "Space Grotesk", "Geist", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+}

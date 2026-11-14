@@ -35,7 +35,7 @@ function toggle(id: string): void {
           aria-hidden="true"
         />
         <span class="feature-icon feature-icon--small"><UIcon name="i-ph-film-slate" /></span>
-        <span>{{ library.name }}</span>
+        <span class="emby-library__name">{{ library.name }}</span>
         <UCheckbox
           :model-value="props.selectedIds.includes(library.id)"
           :disabled="disabled"
@@ -53,5 +53,6 @@ function toggle(id: string): void {
 .emby-library-picker legend { margin-bottom: 0.4rem; color: var(--text-muted); font-size: 0.78rem; font-weight: 700; }
 .emby-library { position: relative; min-height: 54px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0.65rem; padding: 0.5rem; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--surface-raised); font-size: 0.8rem; font-weight: 700; isolation: isolate; }
 .emby-library > :not(.emby-library__selected-indicator) { position: relative; z-index: 1; }
+.emby-library__name { min-width: 0; overflow-wrap: anywhere; }
 .emby-library__selected-indicator { position: absolute; inset: 0; z-index: 0; border: 1px solid var(--accent); border-radius: inherit; background: var(--accent-soft); pointer-events: none; }
 </style>

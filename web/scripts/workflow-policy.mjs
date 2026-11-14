@@ -43,6 +43,15 @@ export function auditWorkflow(name, workflow) {
         failures.push(`${scope}: checkout must not persist credentials`)
       }
     }
+    if (name === 'ci.yml' && id === 'frontend-browser') {
+      if (job.if !== "github.event_name == 'pull_request' && needs.changes.outputs.browser_required == 'true'") {
+        failures.push(`${scope}: browser recovery must run only for pull requests with selected scopes`)
+      }
+      const runner = job.steps?.find(step => step.run === 'npm run test:browser')
+      if (runner?.env?.BROWSER_AUDIT_SCOPES !== '${{ needs.changes.outputs.browser_scopes }}') {
+        failures.push(`${scope}: browser recovery must consume the current pull request scope`)
+      }
+    }
     if (name === 'container.yml' && writes[scope]) {
       const needs = Array.isArray(job.needs) ? job.needs : [job.needs]
       if (!needs.includes('quality') || (job.if !== undefined && job.if !== 'success()')) {

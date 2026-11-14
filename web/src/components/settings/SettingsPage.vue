@@ -10,6 +10,7 @@ import SettingsSwitchRow from './SettingsSwitchRow.vue'
 import GroupMemberTagEditor from './GroupMemberTagEditor.vue'
 import SettingsComboControls from './SettingsComboControls.vue'
 import SettingsPAYGControls from './SettingsPAYGControls.vue'
+import SettingsHourlyControls from './SettingsHourlyControls.vue'
 import SettingsNavigationRow from './SettingsNavigationRow.vue'
 import { useSettings } from './useSettings'
 
@@ -33,6 +34,7 @@ onMounted(() => void preferences.refresh())
       <h2>{{ $t('settings.subscription') }}</h2>
       <SettingsComboControls />
       <SettingsPAYGControls />
+      <SettingsHourlyControls />
     </section>
     <section class="settings-section">
       <h2>{{ $t('settings.display') }}</h2>
@@ -53,7 +55,7 @@ onMounted(() => void preferences.refresh())
 </template>
 
 <style>
-.settings-page { width: min(100%, 44rem); margin-inline: auto; padding: 1rem 1.15rem 3rem; }
+.settings-page { width: min(100%, 44rem); margin-inline: auto; padding: 1rem 1.15rem var(--mobile-nav-clearance, 3rem); }
 .settings-section { padding-block: 1.25rem; }
 .settings-section + .settings-section { border-top: 1px solid var(--line); }
 .settings-section h2 { margin: 0 0 0.75rem; color: var(--text-muted); font-size: 0.875rem; font-weight: 600; }

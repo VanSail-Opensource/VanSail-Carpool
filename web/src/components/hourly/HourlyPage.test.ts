@@ -40,7 +40,8 @@ describe('hourly consent and access controls', () => {
     snapshot.value = { ...current, usage: { ...current.usage!, freeReservedBytes: '8192', accounting: { ...current.usage!.accounting!, recoveryUnknownBytes: '8192' } } }
     await flushPromises()
     expect(wrapper.findComponent(HourlySummary).exists()).toBe(true)
-    expect(wrapper.get('[data-hourly-accounting-kind="recovery"]').text()).toContain('8 KiB')
+    expect(wrapper.find('[data-hourly-accounting]').exists()).toBe(false)
+    expect(state.value.value?.usage?.accounting?.recoveryUnknownBytes).toBe('8192')
     expect(wrapper.find('[data-hourly-accounting-kind="historical-recovery"]').exists()).toBe(false)
     expect(wrapper.find('[data-hourly-accounting-kind="historical-unsealed"]').exists()).toBe(false)
     expect(state.activate).not.toHaveBeenCalled()
@@ -110,7 +111,8 @@ describe('hourly consent and access controls', () => {
   it('shows the native approved price even when the member prefers another currency', async () => {
     setDisplayCurrency({ currency: 'USD', rates: { usdTxbPerUnit: '10', cnyTxbPerUnit: '2' } })
     const wrapper = setup('active')
-    expect(wrapper.text()).toContain('1.25 TXB / GB')
+    expect(wrapper.text()).not.toContain('Your approved price ceiling')
+    expect(wrapper.find('u-switch-stub').exists()).toBe(false)
     wrapper.findComponent(HourlySummary).vm.$emit('extra', true)
     await flushPromises()
     expect(wrapper.get('[data-confirm]').text()).toContain('1.25 TXB')

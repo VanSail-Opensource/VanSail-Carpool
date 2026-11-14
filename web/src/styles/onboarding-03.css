@@ -10,7 +10,7 @@
   padding: 1.1rem;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-panel);
-  background: #111411;
+  background: var(--surface);
   animation: sheet-in 240ms var(--ease-out);
 }
 

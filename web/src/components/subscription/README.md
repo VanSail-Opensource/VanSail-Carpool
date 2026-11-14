@@ -37,6 +37,10 @@ Vue Router so Telegram keeps the launch URL. `HomeSubscriptionEntrance.test.ts`
 covers navigation without a document link. `SubscriptionPage.vue` composes the
 owner-only link, format diagnostics and accessible host links. `HostLinkRow.vue`
 provides name editing, clipboard feedback and on-demand QR codes.
+At narrow panel widths, copy and QR controls move below the host identity so
+long names retain useful reading width; panels at least 28rem wide keep a
+single row. Names wrap at words before breaking long tokens, while actions
+retain 44px targets and the same DOM/focus order.
 Custom-route and split-XHTTP indicators are inline immediately after country
 flags, with localized keyboard-accessible tooltips. Desktop subscription actions
 reuse the sidebar entrances; mobile retains Connections and Revoke in the link

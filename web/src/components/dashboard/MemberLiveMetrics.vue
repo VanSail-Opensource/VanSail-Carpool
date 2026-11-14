@@ -47,11 +47,11 @@ const connectionCounts = computed(() => ({ active: value.value?.connections ?? 0
 </script>
 
 <template>
-  <section class="section-block" aria-live="polite">
+  <section class="section-block member-live-metrics" aria-live="polite">
     <div class="section-heading"><h2>{{ t('memberNodes.live') }}</h2><UButton variant="ghost" color="neutral" icon="i-ph-arrow-clockwise" :loading="loading" :aria-label="t('common.refresh')" @click="refresh()" /></div>
     <p v-if="loading && !value" class="text-muted">{{ t('common.loading') }}</p>
     <template v-if="value && activity !== 'unavailable'">
-      <dl class="grid grid-cols-3 gap-3 text-sm">
+      <dl class="member-live-metrics__values text-sm">
         <div :title="t('memberNodes.connectionsHint')"><dt class="text-muted">{{ t('xnode.connections') }}</dt><dd class="tabular-nums" :aria-label="t('memberNodes.connectionsLabel', connectionCounts)">{{ t('memberNodes.connectionCounts', connectionCounts) }}</dd></div>
         <div><dt class="text-muted">{{ t('xnode.upload') }}</dt><dd>{{ rate(value.uploadBytesPerSecond) }}</dd></div>
         <div><dt class="text-muted">{{ t('xnode.download') }}</dt><dd>{{ rate(value.downloadBytesPerSecond) }}</dd></div>
@@ -63,3 +63,16 @@ const connectionCounts = computed(() => ({ active: value.value?.connections ?? 0
     <p v-if="error" role="status" class="text-sm text-muted">{{ error }}</p>
   </section>
 </template>
+
+<style scoped>
+.member-live-metrics { container: member-live / inline-size; }
+.member-live-metrics__values { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin: 0; }
+.member-live-metrics__values > div { min-width: 0; }
+.member-live-metrics__values :is(dt, dd) { overflow-wrap: anywhere; }
+.member-live-metrics__values dd { margin: 0; }
+.member-live-metrics__values > div:first-child { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .25rem .75rem; }
+@container member-live (min-width: 20rem) {
+  .member-live-metrics__values { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .member-live-metrics__values > div:first-child { grid-column: auto; display: block; }
+}
+</style>

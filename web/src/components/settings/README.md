@@ -48,3 +48,14 @@ failed or pending eligibility refresh blocks changes until a current read
 succeeds. Early activation requires matching current/queued purchase IDs and
 fresh typed confirmation when the target, eligibility or period changes.
 `useComboControls.test.ts` and `EarlyActivationDialog.test.ts` cover those guards.
+
+`SettingsHourlyControls.vue` keeps automatic hourly extra-traffic purchasing
+reachable under Subscription, whether free allowance remains or is exhausted.
+It uses `useHourly` for current account/price data and the shared `useHourlyExtra`
+consent controller, which also serves the contextual speed-limit switch in
+Explore. The switch shows only the confirmed server value; enabling requires
+the existing decimal-GB price/UTC-expiry confirmation, and failed or stale
+requests cannot silently enable it. Changed rates expose a review action here;
+turning off remains possible if new purchases become unavailable. Legacy-blocked
+accounts do not receive these hourly controls. EN/ZH copy reuses the hourly
+locale contract. `SettingsHourlyControls.test.ts` covers these boundaries.

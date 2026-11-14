@@ -1,0 +1,20 @@
+{
+  "family": "Space Grotesk",
+  "version": "Version 2.000",
+  "weightRange": [
+    300.0,
+    700.0
+  ],
+  "source": "https://github.com/google/fonts/blob/29b4ec6df2522a8aee279414b78a07910b065874/ofl/spacegrotesk/SpaceGrotesk%5Bwght%5D.ttf",
+  "sourceRevision": "29b4ec6df2522a8aee279414b78a07910b065874",
+  "sourceSha256": "acad6de1fc93436f5c0f1f4137751ef04f1aea3063e7036535970ffcfbd79f72",
+  "localFile": "SpaceGrotesk-variable.woff",
+  "localSha256": "6eb846b5a69f78facb25f70f629259a31f92b7c4f1dab54bf84ce635ec261642",
+  "conversion": "Lossless WOFF container conversion with fontTools; outlines, naming and weight axes unchanged.",
+  "license": "SIL Open Font License 1.1",
+  "licenseFile": "SpaceGrotesk-OFL.txt",
+  "licenseSha256": "18a4de52385f6b988782639d5d0cc1326e5a8c2de9a7f01d7b20d9aedcc60943",
+  "consumers": [
+    "member interface"
+  ]
+}

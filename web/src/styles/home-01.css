@@ -29,7 +29,7 @@
   align-items: center;
   gap: 1rem;
   padding: 1.15rem;
-  border: 1px solid #355242;
+  border: 1px solid var(--accent-line);
   border-radius: var(--radius-panel);
   color: var(--accent-ink);
   background: var(--accent);
@@ -46,7 +46,7 @@
 }
 
 .home-balance__copy p {
-  color: #34513e;
+  color: var(--accent-ink);
   font-size: 0.78rem;
   font-weight: 700;
 }
@@ -85,7 +85,7 @@
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--radius-control);
-  background: #0e110f;
+  background: var(--canvas-soft);
 }
 
 .home-subscription__value code {

@@ -6,6 +6,9 @@ theme integration. Public URLs begin with `/fonts/`.
 
 | File | Family and available variants | Provenance |
 | --- | --- | --- |
+| `SpaceGrotesk-variable.woff` | Space Grotesk 2.000, upright variable weight 300–700; 63,324 bytes | Google Fonts at commit `29b4ec6df2522a8aee279414b78a07910b065874`, lossless WOFF container conversion |
+| `SpaceGrotesk-OFL.txt` | Complete upstream SIL OFL 1.1 notice | Same pinned family; line endings normalized |
+| `SpaceGrotesk-license.json` | Source revision, source/local hashes, weight range and conversion record | Member interface only |
 | `Geist-latin.woff2` | Geist 1.800, upright variable weight 100–900 | Reused existing project asset; official family: `vercel/geist-font` |
 | `NotoSansSC-variable.ttf` | Noto Sans SC 2.004, upright variable weight 100–900 | Unmodified Google Fonts file at commit `a85815a42757630ce188fdad368c2dfc444d4773` |
 | `Geist-license.json` | Complete SIL OFL 1.1 notice and font metadata | Preserves the original `../landing/Geist-OFL.txt` text |
@@ -43,3 +46,7 @@ When replacing a font, retain its applicable license, update the file hashes and
 source revision, and recheck family names, weight axes, and locale coverage. The
 approved loading design uses live typography; reference photographs and icons
 do not require new asset files for these two sections.
+
+## Member typography refinement
+
+Space Grotesk is the member UI primary face; Geist and Noto Sans SC remain fallbacks. `member-fonts.css` loads the variable file with `font-display: swap`, so authentication and navigation never wait for font readiness. The font source was compared byte-for-byte against the pinned upstream file before conversion. The OFL notice and SHA-256 provenance are retained. The independent browser theme continues to declare its own stack.

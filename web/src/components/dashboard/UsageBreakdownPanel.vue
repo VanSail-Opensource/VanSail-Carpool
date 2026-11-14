@@ -13,8 +13,8 @@ const stale = computed(() => !!value.value && Date.now() - new Date(value.value.
 </script>
 
 <template>
-  <section class="section-block grid gap-3 min-w-0" :aria-busy="loading || refreshing" data-usage-panel>
-    <header class="usage-breakdown-heading"><h2>{{ t('usageBreakdown.title') }}</h2><UsageBreakdownMeasure v-model="metric" /><UButton class="usage-breakdown-heading__refresh" variant="ghost" color="neutral" icon="i-ph-arrow-clockwise" :aria-label="t('common.refresh')" :loading="refreshing" data-haptic="refresh" @click="refresh()" /></header>
+  <section class="section-block usage-breakdown-panel grid gap-3 min-w-0" :aria-busy="loading || refreshing" data-usage-panel>
+    <header class="usage-breakdown-heading"><h2>{{ t('usageBreakdown.title') }}</h2><UsageBreakdownMeasure v-model="metric" class="usage-breakdown-heading__measure" /><UButton class="usage-breakdown-heading__refresh" variant="ghost" color="neutral" icon="i-ph-arrow-clockwise" :aria-label="t('common.refresh')" :loading="refreshing" data-haptic="refresh" @click="refresh()" /></header>
     <div v-if="loading" role="status" aria-live="polite"><span class="sr-only">{{ t('common.loading') }}</span><UProgress aria-hidden="true" /></div>
     <UAlert v-if="error" color="warning" :title="value ? t('usageBreakdown.stale') : error" :description="value ? error : undefined" />
     <UAlert v-else-if="stale" color="warning" :title="t('usageBreakdown.stale')" />
@@ -23,12 +23,12 @@ const stale = computed(() => !!value.value && Date.now() - new Date(value.value.
 </template>
 
 <style scoped>
-.usage-breakdown-heading { display: flex; align-items: center; gap: .5rem; min-width: 0; }
-.usage-breakdown-heading h2 { margin: 0; margin-right: auto; min-width: 0; font-size: .95rem; line-height: 1.25; }
-.usage-breakdown-heading__refresh { flex: 0 0 auto; }
-@media (max-width: 399px) {
-  .usage-breakdown-heading { flex-wrap: wrap; gap: .25rem; }
-  .usage-breakdown-heading h2 { flex: 1 1 min-content; font-size: .85rem; }
-  .usage-breakdown-heading__refresh { margin-left: auto; }
+.usage-breakdown-panel { container: usage-breakdown / inline-size; }
+.usage-breakdown-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'title title' 'measure refresh'; align-items: center; gap: .5rem; min-width: 0; }
+.usage-breakdown-heading h2 { grid-area: title; margin: 0; min-width: 0; font-size: .95rem; line-height: 1.25; overflow-wrap: normal; }
+.usage-breakdown-heading__measure { grid-area: measure; justify-self: start; }
+.usage-breakdown-heading__refresh { grid-area: refresh; }
+@container usage-breakdown (min-width: 24rem) {
+  .usage-breakdown-heading { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: 'title measure refresh'; }
 }
 </style>

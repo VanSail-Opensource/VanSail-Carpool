@@ -54,12 +54,12 @@
 }
 
 .balance-hero .eyebrow {
-  color: #2d523b;
+  color: var(--accent-ink);
 }
 
 .balance-hero__label {
   margin: 0 0 0.2rem;
-  color: #34513e;
+  color: var(--accent-ink);
   font-size: 0.78rem;
   font-weight: 700;
 }

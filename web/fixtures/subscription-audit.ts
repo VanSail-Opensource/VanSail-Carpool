@@ -21,6 +21,7 @@ import SubscriptionAudit from './SubscriptionAudit.vue'
 import { installAroundTxFixture } from './around-tx-data'
 
 const params = new URLSearchParams(location.search)
+setLocale(params.has('zh') ? 'zh-CN' : 'en')
 const compatibility: DIYCompatibility[] = params.has('compatibility') ? [
   { format: 'xray', key: 'fingerprint', state: 'endpoint-incompatible', appliedHosts: 1, incompatibleHosts: 1, reasons: ['tls'] },
   { format: 'sing-box', key: 'xhttpMode', state: 'unsupported', appliedHosts: 0, incompatibleHosts: 2, reasons: ['format'] },

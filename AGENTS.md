@@ -398,6 +398,15 @@ Use constructed/mock-compatible data when necessary. Check at least:
 
 Do not claim validation succeeded unless it was actually performed.
 
+### 10.4 Hosted browser recovery scope
+
+The `Frontend browser recovery` CI job runs only on pull requests. Its selected
+suites come from the current PR's exact changed-file plan, independently of the
+container publication baseline. Add the relevant ownership rule/registry entry
+when adding browser scenarios; shared or unmapped frontend inputs retain full
+coverage. Review the PR job summary and its scope artifact. Do not restore a
+universal default run or run this suite locally.
+
 ---
 
 ## 11. Code audit checklist

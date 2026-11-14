@@ -47,7 +47,6 @@
     "templateDetails": "模板详情",
     "templateDetailsHint": "不同匹配类别之间为且，同一类别中的条目之间为或。",
     "viewTemplate": "查看模板：{name}",
-    "treeHint": "选择节点编辑路由，选择模板查看匹配设置。",
     "routeState": {
       "active": "已应用",
       "draft": "尚未保存",
@@ -68,7 +67,6 @@
     "viewResults": "查看结果",
     "start": "测试路由",
     "metered": "计入流量额度。每对节点最多下载 32 MiB、上传 8 MiB，限时 60 秒。",
-    "requirements": "请先保存并追踪已生效的路由，节点须已同步。",
     "progress": "已完成：{completed}/{total} 对节点",
     "failed": "无法启动路由测速，路由草稿已保留。",
     "uncertain": "已保留完成的结果。消耗流量的命令不会自动重复。",

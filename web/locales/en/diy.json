@@ -136,12 +136,7 @@
       "open": "See routing",
       "title": "Routing in motion",
       "description": "An illustrative walkthrough of ordered host routing. It does not change settings, deploy routes or send network traffic.",
-      "steps": "Routing walkthrough steps",
       "example": "Demo only",
-      "play": "Play demo",
-      "pause": "Pause demo",
-      "replay": "Replay demo",
-      "next": "Next step",
       "destination": "Example destination match",
       "match": "Match",
       "noMatch": "No match",
@@ -155,7 +150,8 @@
       "captions": {
         "choose": "Entry → template → exit",
         "check": "Accessible hosts. No loops.",
-        "save": "Save → queue → applied"
+        "save": "Save → queue → applied",
+        "route": "Match → exit · otherwise → default"
       },
       "nodes": {
         "entry": "Entry",

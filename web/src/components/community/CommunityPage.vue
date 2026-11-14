@@ -8,7 +8,7 @@ const { membership, loading, refreshing, joining, error, load, join } = useCommu
 </script>
 
 <template>
-  <main class="page page--community">
+  <div class="page page--community">
     <header class="page-header community-page__header">
       <div class="community-page__header-copy">
         <p class="eyebrow">{{ $t('dashboard.aroundTx') }}</p>
@@ -57,11 +57,11 @@ const { membership, loading, refreshing, joining, error, load, join } = useCommu
         </section>
       </div>
     </template>
-  </main>
+  </div>
 </template>
 
 <style scoped>
-.page--community { display: grid; gap: 1rem; padding-bottom: max(1rem, var(--tg-content-safe-area-inset-bottom, env(safe-area-inset-bottom))); }
+.page--community { display: grid; gap: 1rem; }
 .community-page__header { display: grid; gap: 0.9rem; margin-bottom: 0.15rem; }
 .community-page__header-copy { min-width: 0; }
 .community-page__header p:last-child, .community-page__loading p { margin: 0.35rem 0 0; color: var(--text-muted); }

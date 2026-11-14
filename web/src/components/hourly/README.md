@@ -43,7 +43,9 @@ sub-basis-point remainder:
   left" (`extraFunded - extraUsed - extraReserved`, never reserved bytes as used)
   once the free allowance is exhausted, otherwise the remaining capacity. The
   two rows are mutually exclusive. Caption and accessible `aria-valuetext` use
-  `hourly.fullSpeedAllowance` and `hourly.allowanceUsedOf`.
+  `hourly.fullSpeedAllowance` and `hourly.allowanceUsedOf`. Legend pairs stack
+  into full-width rows on narrow screens so labels and exact values stay
+  separated; wider containers retain the compact two-column layout.
 - Turning automatic extra purchases on (false → true) while the previous state
   had exhausted both free and purchased budgets keeps the reduced-speed card mounted and flies a one-off
   decorative green rocket through it for ~1.2s (`data-hourly-boost` is on this
@@ -53,34 +55,47 @@ sub-basis-point remainder:
 - Extra purchases disabled and both observed budgets exhausted
   (`freeUsedBytes >= freeAllowanceBytes` and `extraUsedBytes >= extraFundedBytes`,
   including a zero budget with zero use): the caption is omitted and `HourlyThrottleMeter.vue` replaces the whole
-  bar area with a depressed cool-gray card: a sagging/flattening waveform, a slow
-  dim breathing pulse and a slow dashed drift, the exact rate, and one short
-  advice line (`hourly.throttledAdvice`; a purchase-unavailable
-  variant when the extra price is 0). The label identifies the configured reduced
-  rate and observed budget, rather than claiming a live measured connection speed. Reduced motion freezes the sad waveform
-  while keeping the same information.
+  bar area with a compact speed-limit component. It shows the exact configured
+  rate, slow packet flow, and the automatic-purchase switch with its native TXB
+  price in the same component. The controlled switch stays off while consent is
+  open or a write fails; only a confirmed change accelerates the flow and starts
+  the existing one-off boost transition. A zero extra price replaces the switch
+  with the unavailable notice. Reduced motion removes packet travel and freezes
+  the same state. The label describes the configured limit, not measured speed.
 - Otherwise the ordinary free-allowance bar renders.
 
 All byte math stays in `BigInt`.
 
 ## Accounting status
 
-`HourlyAccountingStatus.vue` is a read-only presentation component shared by
-`HourlySummary.vue` and the browser administrator's user-hourly view. It receives
-read-only `usage` and an optional `showHistorical` prop (default false), emits no
-actions and imports no Telegram behavior. The member view shows ordinary current
-reserved credit and today's recovery-unknown amount. Other-day unknown/unsealed
-records do not produce a member notice or, alone, make its summary appear.
-The administrator explicitly opts into historical amounts and proof counts for
-inspection. All underlying facts, API fields and the legacy `accountingPending`
-boolean remain unchanged; the boolean is a compatibility display fallback only
-when an older response omits the breakdown. Current unknown amounts stay visible
-without promising automatic reconciliation.
-`HourlyAccountingStatus.test.ts` covers all categories, retained uncertainty
-across refresh, exact large integers, empty state and older response fallback in
-English and Simplified Chinese. Hosted `browser-hourly-recovery.mjs` captures
-normal and current-unknown states, and verifies historical-only records stay out
-of the member display at desktop/mobile sizes without changing their evidence.
+The member summary does not render reserved-credit, unconfirmed-usage or approved
+price-ceiling prose. All underlying accounting fields and balances remain intact;
+only the member presentation is quieter. Historical-only evidence still cannot
+make the summary appear. `HourlyAccountingStatus.vue` remains the browser-admin
+presentation, where current/historical holds are available for inspection.
+Its category, large-integer, locale and legacy fallback regressions stay intact.
+Hosted hourly browser recovery checks that the notices are absent while the
+constructed accounting evidence is unchanged.
+
+## Automatic extra-traffic preference
+
+`SettingsHourlyControls.vue` in `../settings` is the permanent home of the
+preference, including when allowance is exhausted, so members can always turn it
+off or review a changed rate. `HourlySummary.vue` forwards the allowance graph's
+`extra` event; it has no standalone preference row. `HourlyThrottleMeter.vue`
+emits the same event from its inline switch only when both recorded free and
+purchased capacity are exhausted and automatic purchases are off. Retained
+purchased credit stays usable and prevents a premature reduced-speed state.
+
+`useHourlyExtra.ts` shares consent behavior between Settings and Explore. It
+uses the existing `useHourly` live-data barrier and mutation API, retains the
+reviewed policy version, closes obsolete consent after a changed policy or
+failed live confirmation, and preserves the displayed server preference after
+a failed save. Opening or cancelling the dialog never writes. A member may
+turn off existing automatic purchases even when the current extra price is zero.
+Price rises expose the existing review action in Settings, without a price-ceiling
+tag. Financial authorization and midnight expiry still appear in the existing
+confirmation dialog; there are no new API fields or persistence.
 
 ## Fixed-term blocking (outcome 8)
 
@@ -104,14 +119,14 @@ price treatment and status slot while adding paid-through time, activation
 eligibility, funding suspension and cooldown details. Enable/disable is a compact
 44px icon control sitting at the right of the paid-through/eligibility line
 rather than a footer row; enable is green, disable is red, the active `Enabled`
-badge is omitted, and a blocked enable (cooldown, insufficient balance or other
+and other enrollment badges are omitted, and a blocked enable (cooldown, insufficient balance or other
 ineligibility) is grey with a prohibit icon.
 
 When `reasonCode === "capacity"` (shared hourly/fixed-term seat stock is full)
 the card shows the localized refusal reason. If the member already has an
 active or preparing enrollment for that squad, `capacityContinuity` makes clear
 that the next paid hour continues and only new activations are refused. A
-`funding_suspended` enrollment keeps its localized status badge and adds the
+`funding_suspended` enrollment keeps the
 `fundingSuspendedTitle`/`fundingSuspendedBody` notice in `HourlySummary.vue`,
 telling the member to top up and re-enable the squad.
 
@@ -136,7 +151,7 @@ documented in `../catalog/README.md`; it does not bypass activation eligibility,
 policy-version checks, required confirmations or durable operation receipts.
 
 `HourlyPage.test.ts` supplies hosted consent, disable and legacy-admission
-regressions. Approved extra rates and consent copy retain the exact native TXB
+regressions. Extra rates and consent copy retain the exact native TXB
 amount even when the account prefers another display currency. `useHourly.test.ts`
 covers a late activation response after disposal: it must not restart receipt
 tracking or data refresh. Copy belongs to `../../../locales/*/hourly.json`; all API methods and
@@ -151,6 +166,7 @@ their meaning (`admin`, `light`, `zh`, `slow`, `error`, `empty`, `paused`,
 `price-rise`, `no-extra`, `pending`, `conflict`, `queue`, `failed`, `first`,
 `catalog`, `legacy`). New switches:
 
+- `settings`: show the permanent hourly preference control in isolation.
 - `out-of-allowance`: free allowance exhausted, with existing purchased credit.
 - `allowance-zero`: zero free allowance with recorded use and retained extra.
 - `credit-exhausted`: both free and purchased budgets exhausted → reduced-rate meter.
@@ -186,3 +202,11 @@ dialog and asks the member to review current terms. `HourlyPage.test.ts` covers
 those replacement races; server revision and policy checks still authorize writes.
 `HourlyAllowanceGraph.test.ts` covers usable purchased/reserved credit with
 automatic purchases disabled and zero free budget before any observed traffic.
+
+`SettingsHourlyControls.test.ts` covers persistent discoverability, failed writes,
+changed-policy consent, unavailable purchases and legacy blocking. The browser
+preference scenarios live in `browser-hourly-preferences.mjs` and are included by
+`browser-hourly-recovery.mjs`; they cover Settings and inline controls at the
+selected desktop/mobile sizes without mutating a production account.
+
+`HourlyAccountingStatus.test.ts` preserves the administrator accounting-status projection and tests unknown/stale reservation detail independently of the concise member summary.

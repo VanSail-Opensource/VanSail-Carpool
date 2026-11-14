@@ -86,7 +86,7 @@ const rewardLabel = computed(() => {
 .result-balance { margin-top: 0.55rem; }
 .result-balance span, .result-reward span { color: var(--text-muted); font-size: 0.74rem; }
 .result-balance strong, .result-reward strong { font-size: 1rem; text-align: right; }
-.result-reward { margin-top: 0.55rem; border-color: #304138; color: var(--accent); background: var(--accent-soft); }
+.result-reward { margin-top: 0.55rem; border-color: var(--accent-line); color: var(--accent); background: var(--accent-soft); }
 .result-prize { margin-top: 0.2rem; }
 .result-body--draw .result-reward { border-color: var(--line); background: var(--surface-raised); color: var(--text); }
 .result-body--check-in .result-balance { margin-top: 0; }

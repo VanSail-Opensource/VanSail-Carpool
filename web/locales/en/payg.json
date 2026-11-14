@@ -39,9 +39,6 @@
       "openFor": "See how {mode} works",
       "example": "Illustration · example prices",
       "steps": "Demonstration steps",
-      "position": "{step} / {total}",
-      "previous": "Previous step",
-      "next": "Next step",
       "play": "Play demonstration",
       "pause": "Pause demonstration",
       "replay": "Replay demonstration",
@@ -51,7 +48,7 @@
       "debit": "−{value} TXB",
       "creditWindow": "72 h from latest block",
       "trafficRate": "1 TXB / GiB",
-      "hourlyRate": "1 squad · 1 TXB / hour",
+      "hourlyRate": "1 TXB / hour",
       "utc": "UTC",
       "dailyPool": "Daily allowance",
       "extraBlock": "+1 GB",
@@ -60,7 +57,7 @@
       "cooldown": "Cooldown · no refund",
       "reset": "Allowance resets · extras expire",
       "traffic": {
-        "connect": "Connect automatically",
+        "connect": "Connect · no upfront charge",
         "connectDetail": "Example starting balance: 10 TXB. Eligible squads are available automatically while traffic billing is enabled and the account is funded. Connecting alone does not buy a block.",
         "firstBlock": "100 MiB → first block",
         "firstBlockDetail": "When this node reaches 100 MiB of traffic in the rolling 72-hour window, a 1 GiB block is purchased. At this example rate of 1 TXB per GiB, the wallet becomes 9 TXB and 924 MiB remains after covering that usage.",
@@ -76,19 +73,26 @@
       "hourly": {
         "enable": "Enable · prorated first hour",
         "enableDetail": "One illustrative squad costs 1 TXB per hour and the wallet starts at 10 TXB. Activation at 12:30 UTC pays 0.50 TXB for the remaining half-hour. The required activation balance is an eligibility check, not an upfront charge or reservation.",
-        "renew": "Pay the next hour",
+        "renew": "Hourly renewal · even when idle",
         "renewDetail": "The next whole UTC hour costs 1 TXB in this example and may be funded shortly before its boundary to keep access continuous. Enabled squads renew independently, including while idle. If the next hour cannot be funded, access stops at its paid boundary.",
         "pool": "One shared daily allowance",
         "poolDetail": "Hourly squads share the account-wide daily full-speed allowance. Traffic within that allowance does not add a traffic charge; each enabled squad still has its own hourly charge.",
-        "throttle": "Allowance used → reduced speed",
-        "extra": "Opt in → buy 1 GB",
+        "throttle": "Still connected · reduced speed",
+        "extra": "Opt in → +1 GB",
         "extraDetail": "With automatic extra purchases explicitly enabled, continuing traffic can purchase a 1 decimal GB block at the approved price. This example deducts 0.20 TXB and restores full-speed credit. If a block cannot be funded, reduced speed applies.",
-        "disable": "Disable → stop + cooldown",
+        "disable": "Stop now · no refund",
         "disableDetail": "Voluntary disable stops this squad immediately. The already-paid hour is not refunded and the configured cooldown must pass before enabling it again. Unused purchased traffic remains available to other hourly squads until midnight UTC.",
         "midnight": "00:00 UTC → reset",
         "midnightDetail": "At midnight UTC, the daily allowance resets and unused purchased extra traffic expires. This does not re-enable a disabled squad or refund expired credit.",
         "throttleDetail": "After the shared free allowance and any purchased full-speed credit are exhausted, the configured reduced speed applies. Hourly access charges continue while the squad remains enabled."
-      }
+      },
+      "seek": "Seek demonstration",
+      "node": "Node A",
+      "squad": "Squad A",
+      "autoBuy": "Auto-buy 1 GB",
+      "idleRenewal": "Renews even when idle",
+      "creditKept": "Credit kept · no new charge",
+      "hoursUnit": " h"
     }
   }
 }

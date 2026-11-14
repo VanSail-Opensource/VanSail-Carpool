@@ -96,8 +96,10 @@ async function copyLink(): Promise<void> {
         </UTooltip>
       </span>
       <UButton class="host-link__name" :disabled="saving" color="neutral" variant="link" :aria-label="t('hostNames.edit', { name: host.name })" @click="editName">{{ host.name || host.uuid }}</UButton>
-      <UButton color="neutral" variant="ghost" :icon="copied ? 'i-ph-check-bold' : 'i-ph-copy'" :disabled="!host.link" :aria-label="t(copied ? 'common.copied' : 'subscription.copyHost', { name: host.name })" data-haptic="copy" @click="copyLink" />
-      <UButton color="neutral" variant="ghost" icon="i-ph-qr-code" :disabled="!host.link" :aria-label="t('subscription.qrHost', { name: host.name })" data-haptic="open" @click="open = true" />
+      <div class="host-link__actions">
+        <UButton color="neutral" variant="ghost" :icon="copied ? 'i-ph-check-bold' : 'i-ph-copy'" :disabled="!host.link" :aria-label="t(copied ? 'common.copied' : 'subscription.copyHost', { name: host.name })" data-haptic="copy" @click="copyLink" />
+        <UButton color="neutral" variant="ghost" icon="i-ph-qr-code" :disabled="!host.link" :aria-label="t('subscription.qrHost', { name: host.name })" data-haptic="open" @click="open = true" />
+      </div>
     </div>
     <UModal :open="editOpen" :close="!saving" @update:open="!saving && (editOpen = $event)" :title="t('hostNames.title')" :description="t('hostNames.hint', { placeholder: '{price}' })" :dismissible="!saving">
       <template #body>
@@ -124,17 +126,22 @@ async function copyLink(): Promise<void> {
 </template>
 
 <style scoped>
-.host-link { display: grid; gap: 0.4rem; padding: 0.65rem 0; border-bottom: 1px solid var(--line); }
+.host-link { container: host-link / inline-size; display: grid; gap: 0.4rem; padding: 0.65rem 0; border-bottom: 1px solid var(--line); }
 .host-link--custom { border-inline-start: 2px solid var(--accent); padding-inline-start: .5rem; }
 .host-link__editor { display: grid; gap: 1rem; }
-.host-link__badges { display: inline-flex; align-items: center; gap: .2rem; flex: 0 0 auto; }
+.host-link__badges { grid-column: 2; grid-row: 1; display: inline-flex; align-items: center; gap: .2rem; }
 .host-link__badge { display: inline-flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.75rem; border-radius: .4rem; color: var(--accent); background: var(--accent-soft); }
 .host-link__badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .host-link:last-child { border-bottom: 0; }
-.host-link__row { display: flex; align-items: center; gap: 0.35rem; min-width: 0; }
-.host-link__flags { display: flex; flex-wrap: wrap; gap: 0.15rem; max-width: 80px; flex-shrink: 0; }
-.host-link__name { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 0.85rem; font-weight: 600; }
+.host-link__row { display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: center; gap: 0.35rem; min-width: 0; }
+.host-link__flags { grid-column: 1; grid-row: 1; display: flex; flex-wrap: wrap; gap: 0.15rem; max-width: 80px; }
+.host-link__name { grid-column: 3; grid-row: 1; justify-content: flex-start; min-width: 0; padding-inline: 0; text-align: left; white-space: normal; overflow-wrap: anywhere; font-size: 0.85rem; font-weight: 600; }
+.host-link__actions { grid-column: 1 / -1; justify-self: end; display: flex; gap: .35rem; }
 .host-link__row :deep(button) { min-width: 44px; min-height: 44px; flex-shrink: 0; }
+@container host-link (min-width: 28rem) {
+  .host-link__row { grid-template-columns: auto auto minmax(0, 1fr) auto; }
+  .host-link__actions { grid-column: 4; grid-row: 1; }
+}
 .host-link small { color: var(--text-muted); font-size: 0.75rem; }
 .host-link__qr { display: grid; place-items: center; min-height: 280px; }
 .host-link__qr img { max-width: 100%; height: auto; background: white; border-radius: 6px; }

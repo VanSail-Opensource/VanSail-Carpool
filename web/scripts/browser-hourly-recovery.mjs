@@ -1,42 +1,22 @@
 import assert from 'node:assert/strict'
+import { hourlyPreferenceScenarios } from './browser-hourly-preferences.mjs'
 
 const conflict = 'The policy, price or account state changed. Refresh, review the current terms and try again.'
 const mutations = page => page.evaluate(() => globalThis.__hourlyAudit.calls.filter(call => call.method !== 'GET'))
 
 export async function hourlyRecoveryScenarios(scenario, size) {
-  await scenario(size, 'hourly-accounting-open', 'hourly-audit.html?active', async (page, capture) => {
-    const open = page.locator('[data-hourly-accounting-kind="open"]')
-    await open.waitFor()
-    assert.equal(await open.textContent(), 'Today, 40 KiB is reserved for open traffic credits.')
-    assert.equal(await page.locator('[data-hourly-accounting-kind]').count(), 1)
-    assert.equal(await page.getByText(/still being reconciled/).count(), 0)
-    assert.deepEqual(await mutations(page), [])
-    await capture('normal-reservation')
-  })
-  await scenario(size, 'hourly-accounting-unknown', 'hourly-audit.html?active&current-unknown&historical-unknown&historical-unsealed', async (page, capture) => {
-    const current = page.locator('[data-hourly-accounting-kind="recovery"]')
-    const historical = page.locator('[data-hourly-accounting-kind="historical-recovery"]')
-    const unsealed = page.locator('[data-hourly-accounting-kind="historical-unsealed"]')
-    await current.waitFor()
-    assert.match(await current.textContent(), /128 KiB remains reserved and unavailable/)
-    assert.equal(await historical.count(), 0)
-    assert.equal(await unsealed.count(), 0)
-    assert.equal(await page.locator('[data-hourly-accounting-kind]').count(), 2)
-    await capture('current-day-only')
-    await page.evaluate(() => {
+  await hourlyPreferenceScenarios(scenario, size)
+  await scenario(size, 'hourly-clean-summary', 'hourly-audit.html?active&current-unknown&historical-unknown&historical-unsealed', async (page, capture) => {
+    await page.locator('.hourly-summary').waitFor()
+    assert.equal(await page.locator('[data-hourly-accounting]').count(), 0)
+    assert.equal(await page.getByRole('switch', { name: 'Buy extra full-speed traffic automatically', exact: true }).count(), 0)
+    assert.equal(await page.getByText(/approved price ceiling|reserved for open traffic|fully confirmed/).count(), 0)
+    assert.deepEqual(await page.evaluate(() => {
       const usage = globalThis.__hourlyAudit.fixture.view.usage
-      usage.accounting.openReservedBytes = '0'
-      usage.freeReservedBytes = usage.accounting.recoveryUnknownBytes
-      usage.extraReservedBytes = '0'
-      globalThis.dispatchEvent(new globalThis.Event('focus'))
-    })
-    await page.locator('[data-hourly-accounting-kind="open"]').waitFor({ state: 'hidden' })
-    assert.equal(await page.locator('[data-hourly-accounting-kind]').count(), 1)
-    assert.match(await current.textContent(), /128 KiB remains reserved and unavailable/)
-    assert.equal(await historical.count(), 0)
-    assert.equal(await unsealed.count(), 0)
+      return [usage.accounting.openReservedBytes, usage.accounting.recoveryUnknownBytes, usage.accounting.historicalRecoveryUnknownBytes]
+    }), ['40960', '131072', '262144'])
     assert.deepEqual(await mutations(page), [])
-    await capture('current-unknown-retained')
+    await capture('quiet-summary')
   })
   await scenario(size, 'hourly-accounting-history-ignored-zh', 'hourly-audit.html?first&historical-unknown&historical-unsealed&zh', async (page, capture) => {
     await page.getByText('Tokyo Direct', { exact: true }).first().waitFor()
@@ -49,7 +29,7 @@ export async function hourlyRecoveryScenarios(scenario, size) {
     assert.deepEqual(await mutations(page), [])
     await capture('historical-only-ignored')
   })
-  await scenario(size, 'hourly-price-consent', 'hourly-audit.html?active', async (page, capture) => {
+  await scenario(size, 'hourly-price-consent', 'hourly-audit.html?settings&active', async (page, capture) => {
     const toggle = page.getByRole('switch', { name: 'Buy extra full-speed traffic automatically', exact: true })
     await toggle.click()
     await page.getByRole('dialog').getByText(/automatically debit 1.25 TXB/).waitFor()

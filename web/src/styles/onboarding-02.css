@@ -44,7 +44,7 @@
 
 input::placeholder,
 textarea::placeholder {
-  color: #737b75;
+  color: var(--text-faint);
 }
 
 .field-hint,
@@ -64,15 +64,15 @@ textarea::placeholder {
   align-items: flex-start;
   gap: 0.8rem;
   padding: 1rem;
-  border: 1px solid #52442d;
+  border: 1px solid color-mix(in srgb, var(--warning) 32%, var(--line));
   border-radius: var(--radius-panel);
   color: var(--warning);
   background: var(--warning-soft);
 }
 
-.agreement-callout--accent { color: var(--accent); border-color: #304138; background: var(--accent-soft); }
-.agreement-callout--success { color: var(--success); border-color: #28543c; background: var(--success-soft); }
-.agreement-callout--danger { color: var(--danger); border-color: #5b3030; background: var(--danger-soft); }
+.agreement-callout--accent { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
+.agreement-callout--success { color: var(--success); border-color: color-mix(in srgb, var(--success) 32%, var(--line)); background: var(--success-soft); }
+.agreement-callout--danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 32%, var(--line)); background: var(--danger-soft); }
 .agreement-callout--neutral { color: var(--text-muted); border-color: var(--line); background: var(--surface); }
 
 .agreement-callout p {

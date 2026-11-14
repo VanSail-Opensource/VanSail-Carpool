@@ -12,17 +12,26 @@ and coupon components below remain in those supported flows.
   for mounting and optional preloading. After mount, one idle callback warms
   both page chunks; it skips hidden documents, Data Saver and 2G connections,
   and cancels pending scheduling on disposal. Demo code warms on trigger hover
-  or keyboard focus and is mounted only when requested.
+  or keyboard focus and is mounted only when requested. The mode selector and
+  demonstration trigger share one row; on mobile the trigger uses one icon with
+  a 44px tap area and localized accessible name beside the billing mode labels.
 - `CatalogChunkState.vue` provides localized loading and chunk-recovery UI
   while keeping the mode controls available.
 - `BillingDemo.vue` opens from the current mode's icon-led demonstration button.
-  It composes `TrafficBillingScene.vue` or `HourlyBillingScene.vue` using the
-  synthetic snapshots in `billingDemo.ts`. The shared
-  `useIllustrationPlayback` owns play/pause/replay, manual steps, visibility
-  suspension and timer disposal. Reduced motion uses manual steps with static
-  diagrams. Nuxt UI's modal owns focus, dismissal and accessible naming; each
-  step supplies a localized screen-reader explanation alongside its short
-  visual caption. Demo state never enters account caches or calls a write API.
+  It composes `TrafficBillingScene.vue` or `HourlyBillingScene.vue` as a persistent
+  simulated interface, driven by a continuous animation-frame clock. The pure
+  synthetic presentation functions in `billingDemo.ts` interpolate usage while
+  keeping wallet debits discrete at their purchase boundaries. The shared
+  `useIllustrationPlayback` owns seek, pause/resume, replay, chapter selection,
+  visibility suspension and frame disposal. `DemoTransport.vue` provides a Nuxt UI
+  keyboard-accessible seek bar and icon chapters; `DemoPointer.vue` follows the
+  simulated controls with a desktop cursor or mobile touch ripple. Reduced motion
+  displays completed manual chapter states without scheduling an animation loop.
+  Nuxt UI's modal owns focus, dismissal and accessible naming; each chapter has a
+  localized screen-reader explanation alongside its short visual caption. The
+  continuous counters never become live announcements. Demo state never enters
+  account caches or calls a write API. `billingDemo.test.ts` protects the example
+  purchase, reconnection, consent, non-refund and midnight boundaries in hosted CI.
   Example prices remain explicitly illustrative, and all copy lives in
   `locales/*/payg.json` under `payg.demo`.
 - `PAYGPage.vue` polls owner-scoped availability and the authoritative 72-hour

@@ -27,9 +27,10 @@ Categories use the actual Nuxt UI `UTabs` component with icon-bearing pill
 triggers in one scrollable row. `useScrollableTabs.ts`
 keeps the selected tab visible using horizontal-only scrolling, exposes overflow
 cues, observes label/viewport changes and disposes its listeners with the view.
-Hidden category panels stay mounted, preserving drafts. The Save bar follows
-document flow below 900px and is sticky only on desktop; reduced motion disables
-smooth category scrolling and panel animations.
+Hidden category panels stay mounted, preserving drafts. The heading uses the
+shared member scale. The Save bar follows document flow at every width so it
+cannot cover the last route or Add route action; reduced motion disables smooth
+category scrolling and panel animations.
 
 The page uses member theme assets and no administrator resources. Client
 refresh, not route deployment, activates connection tuning. Routing remains on
@@ -82,12 +83,21 @@ their status without squeezing either into a narrow column.
 Mini App tabs and selection controls use selection haptics. Buttons use existing intent feedback; Save reports success/error through the existing Telegram notification helper. Scoped CSS clarifies presses and panel/status changes only when reduced motion is not requested. Browser admin roots do not import this page or initialize these controls.
 
 `RoutingDemoButton.vue` lazily loads `RoutingDemo.vue` on demand.
-`RoutingDemoScene.vue` illustrates ordered entry/template/exit selection, access
-and loop checks, queued deployment, and first-match/default routing. The four
-steps and match switch are local presentation state; the demo does not call APIs
-or modify the draft. Shared `useIllustrationPlayback.ts` handles pause, replay,
-manual stepping, hidden-page suspension and reduced motion. Full explanations
-remain available to assistive technology while the visible scene favors icons.
+`RoutingDemoScene.vue` keeps a simulated editor and route graph on screen while
+the pointer chooses entry/template/exit fields, validation checks complete,
+Save enters a queue, and the graph becomes active only after acknowledgement.
+The final chapter animates both matching and default paths without replacing the
+scene. The real scenario tabs let viewers inspect either branch and pause the
+film. These chapters and selectors are local presentation state; the demo does
+not call APIs or modify the draft. Shared `useIllustrationPlayback.ts` handles a
+continuous seekable clock, exact pause/resume, replay, manual chapter snapshots,
+hidden-page suspension and reduced motion. `DemoTransport` and `DemoPointer`
+share playback and cursor/touch behavior with Explore. Full explanations remain
+available to assistive technology while the visible scene favors icons.
+
+Routing no longer repeats the select-node instructions above the graph or the
+save/trace prerequisites beneath speed testing. Existing accessible graph naming,
+control labels, prerequisite gating and the metered-test notice remain intact.
 
 `useDIY.ts` can restore a typed, account-scoped in-memory rendering snapshot up to
 60 seconds old before its live read. It merges untouched sections from the first

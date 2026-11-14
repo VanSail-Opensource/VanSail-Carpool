@@ -33,6 +33,11 @@ The IP Lookup entrance in `ComingSoonLinks.vue` remains available to members wit
 
 `MemberLiveMetrics.vue` polls owner-scoped, memory-only metrics every five seconds while visible, with incomplete coverage and localized limitation reasons.
 
+Its metric grid responds to the panel's available width: narrow panels give
+Connections a full row above Upload and Download, and panels at least 20rem
+wide place all three side by side. Labels and exact counts can wrap without
+crossing into neighboring metrics; older WebViews retain the narrow layout.
+
 Its Connections value is traffic-active / total open client flows. The localized
 accessible label and native tooltip explain the counts and the unchanged
 traffic-active limit. Total counts are decimal strings; missing totals from older
@@ -71,7 +76,10 @@ show them. No local automated suites were run; hosted regressions provide
 execution coverage.
 
 `UsageBreakdownPanel.vue` places the traffic/cost control immediately beside its
-title through `UsageBreakdownMeasure.vue`, sharing the metric with the chart.
+title when its panel is at least 24rem wide through
+`UsageBreakdownMeasure.vue`, sharing the metric with the chart. Narrower panels
+give the title a full row above the measure and refresh controls, preserving
+readable words and the same focus order at 320px.
 Standalone charts retain their own control. Legend entries are sorted by exact
 descending shares for the selected measure, with stable identity tie-breaking
 and unchanged colors across reordering.

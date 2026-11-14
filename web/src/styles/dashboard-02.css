@@ -74,7 +74,7 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-control);
   color: var(--text-faint);
-  background: #0e110f;
+  background: var(--canvas-soft);
   font-family: var(--font-mono);
   font-size: 0.75rem;
   letter-spacing: 0.08em;

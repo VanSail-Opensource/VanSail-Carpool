@@ -47,7 +47,6 @@
     "templateDetails": "Template details",
     "templateDetailsHint": "Match categories combine with AND; entries in each category combine with OR.",
     "viewTemplate": "View template: {name}",
-    "treeHint": "Select a node to edit routes, or a template to view its match settings.",
     "routeState": {
       "active": "Applied",
       "draft": "Unsaved changes",
@@ -68,7 +67,6 @@
     "viewResults": "View results",
     "start": "Test route",
     "metered": "Uses your traffic quota. Each pair: up to 32 MiB down, 8 MiB up, 60 seconds.",
-    "requirements": "Save and trace an active route before testing. Nodes must be synchronized.",
     "progress": "Pairs complete: {completed}/{total}",
     "failed": "The route test could not start. Your route draft is retained.",
     "uncertain": "Completed pairs are retained. Traffic-consuming commands will not repeat automatically.",
