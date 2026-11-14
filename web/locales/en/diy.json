@@ -142,16 +142,21 @@
       "noMatch": "No match",
       "firstMatch": "First match wins",
       "labels": {
-        "choose": "Choose",
-        "check": "Check",
-        "save": "Apply",
-        "route": "Route"
+        "entry": "Entry", "template": "Template",
+        "exit": "Exit",
+        "check": "Check", "save": "Save",
+        "confirm": "Confirm", "route": "Route",
+        "refresh": "Refresh"
       },
       "captions": {
-        "choose": "Entry → template → exit",
-        "check": "Accessible hosts. No loops.",
-        "save": "Save → queue → applied",
-        "route": "Match → exit · otherwise → default"
+        "entry": "Start with an entry",
+        "template": "Choose what to match",
+        "exit": "Choose where to leave",
+        "check": "Check before applying",
+        "save": "Saved → queued",
+        "confirm": "Wait for the nodes",
+        "route": "First match wins",
+        "refresh": "Refresh the client"
       },
       "nodes": {
         "entry": "Entry",
@@ -165,19 +170,28 @@
         "applied": "Applied",
         "you": "You",
         "default": "Default",
-        "destination": "Internet"
+        "destination": "Internet",
+        "refresh": "Refresh subscription", "refreshed": "Subscription updated"
       },
       "descriptions": {
-        "choose": "Choose an accessible entry host, an administrator-provided destination template, and a different accessible exit node. Rules are ordered at each node.",
-        "check": "The server checks endpoint access, template references, and routing loops before accepting the configuration.",
-        "save": "Save the configuration. Routing is queued for deployment and becomes applied only after the nodes confirm it.",
-        "route": "At each node the first matching rule forwards the connection to its selected exit. If no custom rule matches, the node uses its default routing. This example shows one rule; no real traffic is sent. Refresh the client subscription after relevant DIY changes."
+        "entry": "Choose a host your account can access.",
+        "template": "Use an administrator-provided destination template.",
+        "exit": "Select a different accessible exit node.",
+        "check": "The server validates access, references and loops.",
+        "save": "Saving schedules deployment; it is not applied yet.",
+        "confirm": "Applied means the nodes confirmed the configuration.",
+        "route": "No matching custom rule means the node uses default routing.",
+        "refresh": "Update the subscription after relevant DIY changes."
       },
       "points": {
-        "choose": { "first": "Accessible entry", "second": "Admin template", "third": "Different exit" },
-        "check": { "first": "Access checked", "second": "Valid template", "third": "No routing loops" },
-        "save": { "first": "Save configuration", "second": "Queued for deployment", "third": "Node-confirmed applied" },
-        "route": { "first": "First matching rule", "second": "Otherwise default", "third": "Refresh subscription" }
+        "entry": { "first": "Accessible host", "second": "Connection starts here", "third": "Your client connects" },
+        "template": { "first": "Admin template", "second": "Destination rules", "third": "Ordered at each node" },
+        "exit": { "first": "Different node", "second": "Accessible exit", "third": "One selected path" },
+        "check": { "first": "Access checked", "second": "Template checked", "third": "No routing loops" },
+        "save": { "first": "Draft saved", "second": "Queued for nodes", "third": "Keep checking status" },
+        "confirm": { "first": "Nodes acknowledge", "second": "Deployment confirmed", "third": "Then routing applies" },
+        "route": { "first": "Rules in order", "second": "Matched → chosen exit", "third": "Otherwise → default" },
+        "refresh": { "first": "Save server settings", "second": "Refresh subscription", "third": "Reconnect if needed" }
       }
     }
   }

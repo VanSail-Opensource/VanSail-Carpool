@@ -19,17 +19,17 @@ and coupon components below remain in those supported flows.
   while keeping the mode controls available.
 - `BillingDemo.vue` opens from the current mode's icon-led demonstration button.
   It composes `TrafficBillingScene.vue` or `HourlyBillingScene.vue` as a persistent
-  simulated interface with a shared procedural Three.js stage, driven by the
-  player's continuous animation-frame clock. Each chapter lasts 3.2 seconds. The pure
+  mock interface with animated, semantic two-dimensional usage graphs, driven by the
+  player's continuous animation-frame clock. Nine traffic and ten hourly chapters each last 3.2 seconds. The pure
   synthetic presentation functions in `billingDemo.ts` interpolate usage while
   keeping wallet debits discrete at their purchase boundaries. The shared
   `useIllustrationPlayback` owns seek, pause/resume, replay, chapter selection,
   visibility suspension and frame disposal. `DemoTransport.vue` provides a Nuxt UI
-  keyboard-accessible seek bar and icon chapters; `DemoPointer.vue` follows the
-  simulated controls with a desktop cursor or mobile touch ripple. Reduced motion
+  keyboard-accessible seek bar and icon chapters. The films show changing values
+  and controls directly, without mandatory click cues. Reduced motion
   displays completed manual chapter states without scheduling an animation loop.
   Nuxt UI's modal owns focus, dismissal and accessible naming; each chapter has a
-  visible localized explanation and three icon points alongside its short caption. The
+  short localized caption, three compact icon points and one brief detail. The
   continuous counters never become live announcements. Demo state never enters
   account caches or calls a write API. `billingDemo.test.ts` protects the example
   purchase, reconnection, consent, non-refund and midnight boundaries in hosted CI.
@@ -74,13 +74,15 @@ icon rows, and the activity/action area stays at the bottom of each card. This
 keeps row order consistent with keyboard and reading order. The 140ms mode
 entrance is interruptible and disabled by reduced-motion preferences.
 
+`TrafficUsageGraph.vue` draws upload/download totals and consumed/prepaid segments for two binary-GB blocks. `HourlyDemoAllowanceGraph.vue` connects squad icons to one shared pool and a speed meter. Both take synthetic values and the shared clock; neither schedules timers, reads accounts or sends requests.
+
 The traffic demonstration follows native block accounting: 100 MiB of usage in
 the rolling 72-hour window triggers the first binary 1 GiB block, additional
 usage buys whole blocks, a reconnect retains unexpired credit, and unused
-credit expires 72 hours after the latest purchase without an idle debit.
+credit expires 72 hours after the latest purchase without an idle debit. Funding, per-node credit and Usage Breakdown are separate short chapters.
 The hourly demonstration covers prorated first-hour activation, whole-hour
 renewal, shared daily allowance, reduced speed, consented decimal-GB extras,
-voluntary disable/cooldown and the UTC-day reset. These visuals explain the
+voluntary disable/cooldown and the UTC-day reset. Eligibility, explicit consent and confirmed funding are separate steps; opting out preserves purchased credit. These visuals explain the
 server rules; they never calculate a member quote or authorize access.
 
 Hidden PAYG squads are omitted from Explore/subscription output while server

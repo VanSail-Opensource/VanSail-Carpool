@@ -83,19 +83,19 @@ their status without squeezing either into a narrow column.
 Mini App tabs and selection controls use selection haptics. Buttons use existing intent feedback; Save reports success/error through the existing Telegram notification helper. Scoped CSS clarifies presses and panel/status changes only when reduced motion is not requested. Browser admin roots do not import this page or initialize these controls.
 
 `RoutingDemoButton.vue` lazily loads `RoutingDemo.vue` on demand.
-`RoutingDemoScene.vue` keeps a simulated editor and route graph on screen while
-the pointer chooses entry/template/exit fields, validation checks complete,
-Save enters a queue, and the graph becomes active only after acknowledgement.
-The final chapter animates both matching and default paths without replacing the
-scene. The real scenario tabs let viewers inspect either branch and pause the
-film. These chapters and selectors are local presentation state; the demo does
-not call APIs or modify the draft. Shared `useIllustrationPlayback.ts` handles a
-continuous seekable clock, exact pause/resume, replay, manual chapter snapshots,
-hidden-page suspension and reduced motion. `DemoTransport` and `DemoPointer`
-share playback and cursor/touch behavior with Explore. The shared Three.js stage
-shows the selected path, with readable fallback symbols without WebGL. Each
-chapter lasts 3.2 seconds and keeps its explanation and three icon points visible.
-Pointers are anchored to their target fields and Save control on both layouts.
+`RoutingDemoScene.vue` keeps a mock editor on screen for eight 3.2-second beats:
+entry, destination template, exit, validation, saved/queued, node confirmation,
+first-match routing, and subscription refresh. Save does not imply deployment:
+the graph becomes active only after the synthetic node acknowledgement.
+`RoutingFlowGraph.vue` draws a two-dimensional icon flow with one selected
+exit/default branch and clock-driven packets; it needs no renderer or WebGL.
+The real scenario tabs let viewers inspect either branch and pause the film.
+These chapters and selectors are local presentation state; the demo does not
+call APIs or modify the draft. Shared `useIllustrationPlayback.ts` owns the
+seekable clock, exact pause/resume, replay, completed manual chapter snapshots,
+hidden-page suspension and reduced motion. `DemoPlayer` and `DemoTransport`
+share playback behavior with Explore. Each chapter keeps a short caption,
+three compact icon points and a brief detail visible; no click cue is required.
 
 Routing no longer repeats the select-node instructions above the graph or the
 save/trace prerequisites beneath speed testing. Existing accessible graph naming,

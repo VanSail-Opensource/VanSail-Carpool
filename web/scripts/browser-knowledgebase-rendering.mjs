@@ -1,97 +1,94 @@
 import assert from 'node:assert/strict'
-import { topics, chapterCounts, card, calls, frames, settle, open, close, inspectVisibleChapter } from './browser-knowledgebase-helpers.mjs'
+import { topics, chapterCounts, card, player, visual, calls, frames, settle, open, close, inspectVisibleChapter, inspectPaymentAmounts } from './browser-knowledgebase-helpers.mjs'
 
 export async function knowledgebaseRenderingScenarios(scenario, size) {
-  await scenario({ ...size, reducedMotion: 'no-preference' }, 'knowledgebase-three-pause-seek', 'knowledgebase-audit.html', async (page, capture) => {
+  await scenario({ ...size, reducedMotion: 'no-preference' }, 'knowledgebase-interface-pause-seek', 'knowledgebase-audit.html', async (page, capture) => {
     await settle(page)
     const before = await calls(page)
     const trigger = await open(page, 'networks')
+    const moving = await visual(page).getAttribute('data-demo-motion')
+    await page.waitForFunction(previous => globalThis.document.querySelector('.knowledge-scene')?.getAttribute('data-demo-motion') !== previous, moving)
     await page.getByRole('button', { name: 'Pause demonstration', exact: true }).click()
     await page.locator('[data-demo-step="3"]').click()
     await frames(page)
-    const stage = page.locator('.demo-three-scene')
-    const canvas = stage.locator('canvas.demo-three-scene__canvas')
-    const pose = await stage.getAttribute('data-three-frame')
-    assert.ok(pose, '3D scene has no deterministic frame signature')
-    const first = await canvas.screenshot()
+    const pose = await visual(page).innerHTML()
+    const first = await visual(page).screenshot()
     await frames(page)
-    assert.equal(await stage.getAttribute('data-three-frame'), pose, 'paused Three.js state continued advancing')
-    assert.deepEqual(await canvas.screenshot(), first, 'paused Three.js canvas continued animating')
+    assert.equal(await visual(page).innerHTML(), pose, 'paused interface state continued advancing')
+    assert.deepEqual(await visual(page).screenshot(), first, 'paused interface still animates')
     await page.locator('[data-demo-step="5"]').click()
     await frames(page)
-    assert.notEqual(await stage.getAttribute('data-three-frame'), pose, 'seeking did not redraw the 3D scene')
-    assert.notDeepEqual(await canvas.screenshot(), first, 'different chapters rendered the same 3D scene')
-    await capture('paused-three-scene')
+    assert.notEqual(await visual(page).innerHTML(), pose, 'seeking did not update the visual state')
+    assert.notDeepEqual(await visual(page).screenshot(), first, 'different chapters rendered the same interface')
+    await page.locator('[data-demo-step="3"]').click()
+    await frames(page)
+    assert.equal(await visual(page).innerHTML(), pose, 'rewinding did not reproduce the same visual state')
+    await capture('paused-network-flow')
     await close(page, trigger)
-    assert.deepEqual(await calls(page), before, '3D rendering called a member API')
+    assert.deepEqual(await calls(page), before, 'interface rendering called a member API')
   })
-  await scenario(size, 'knowledgebase-webgl-unavailable', 'knowledgebase-audit.html', async (page, capture) => {
+  await scenario(size, 'knowledgebase-gpu-independent', 'knowledgebase-audit.html', async (page, capture) => {
     await settle(page)
     const before = await calls(page)
-    // Simulate a device/browser that cannot provide WebGL while preserving 2D APIs.
     await page.evaluate(() => {
+      globalThis.__tutorialWebGLRequests = 0
       const original = globalThis.HTMLCanvasElement.prototype.getContext
       globalThis.HTMLCanvasElement.prototype.getContext = function (type, ...args) {
-        return type.startsWith('webgl') || type === 'experimental-webgl' ? null : Reflect.apply(original, this, [type, ...args])
+        if (type.startsWith('webgl') || type === 'experimental-webgl') { globalThis.__tutorialWebGLRequests++; return null }
+        return Reflect.apply(original, this, [type, ...args])
       }
     })
     for (const id of topics) {
-      const trigger = await open(page, id, 'fallback')
-      assert.equal(await page.locator('.demo-three-scene__fallback').isVisible(), true, `${id}: no meaningful fallback illustration`)
+      const trigger = await open(page, id)
       await page.locator(`[data-demo-step="${chapterCounts[id] - 1}"]`).click()
       await inspectVisibleChapter(page, 'en')
-      if (id === 'subscription') await capture('subscription-fallback')
+      assert.ok(await visual(page).locator('.iconify').count(), `${id}: visual scene has no icons`)
       await close(page, trigger)
     }
-    assert.deepEqual(await calls(page), before, 'fallback rendering called a member API')
+    assert.equal(await page.evaluate(() => globalThis.__tutorialWebGLRequests), 0, 'tutorials still attempt to create a WebGL renderer')
+    const resources = await page.evaluate(() => globalThis.performance.getEntriesByType('resource').map(entry => entry.name))
+    assert.deepEqual(resources.filter(url => /(?:demoThree|DemoThree|\/three[./])/u.test(url)), [], 'tutorials still request Three.js resources')
+    assert.deepEqual(await calls(page), before, 'GPU-independent rendering called a member API')
+    await capture('all-guides-without-gpu')
   })
-  await scenario(size, 'knowledgebase-webgl-context-loss', 'knowledgebase-audit.html', async (page, capture) => {
+  await scenario(size, 'knowledgebase-payment-fee-modes', 'knowledgebase-audit.html', async (page, capture) => {
     await settle(page)
-    const trigger = await open(page, 'subscription')
-    const canvas = page.locator('canvas.demo-three-scene__canvas')
-    assert.equal(await canvas.evaluate(element => {
-      const extension = element.getContext('webgl2')?.getExtension('WEBGL_lose_context')
-      if (!extension) return false
-      globalThis.__restoreTutorialContext = () => extension.restoreContext()
-      extension.loseContext()
-      return true
-    }), true, 'browser cannot exercise actual WebGL context loss')
-    await page.locator('.demo-three-scene[data-three-status="fallback"]').waitFor()
-    assert.equal(await page.locator('.demo-three-scene__fallback').isVisible(), true)
-    await page.locator('[data-demo-step="4"]').click()
-    await inspectVisibleChapter(page, 'en')
-    await capture('context-lost-readable')
-    await page.evaluate(() => globalThis.__restoreTutorialContext())
-    await page.locator('.demo-three-scene[data-three-status="ready"]').waitFor()
-    assert.equal(await canvas.evaluate(element => element.getContext('webgl2')?.isContextLost()), false)
-    await capture('context-restored')
+    const before = await calls(page)
+    const trigger = await open(page, 'payment')
+    for (const [step, mode] of [[4, 'deducted'], [3, 'separate'], [6, 'wallet']]) {
+      await page.locator(`[data-demo-step="${step}"]`).click()
+      await inspectPaymentAmounts(page, mode)
+      await capture(`payment-${mode}`)
+    }
     await close(page, trigger)
+    assert.deepEqual(await calls(page), before, 'payment illustration performed an account action')
   })
-  await scenario(size, 'knowledgebase-close-during-three-load', 'knowledgebase-audit.html', async (page, capture) => {
+  await scenario(size, 'knowledgebase-superseded-player-load', 'knowledgebase-audit.html', async (page, capture) => {
     await settle(page)
+    const before = await calls(page)
     let release
     const gate = new Promise(resolve => { release = resolve })
-    await page.route('**/src/components/common/demoThreeRenderer.ts*', async route => {
-      await gate
-      await route.continue()
-    })
+    await page.route('**/src/components/knowledge/KnowledgePlayer.vue*', async route => { await gate; await route.continue() })
     try {
-      const requested = page.waitForRequest(request => request.url().includes('/src/components/common/demoThreeRenderer.ts'))
-      const trigger = card(page, 'subscription').getByRole('button')
-      await trigger.click()
+      const requested = page.waitForRequest(request => request.url().includes('/src/components/knowledge/KnowledgePlayer.vue'))
+      const pending = card(page, 'subscription').getByRole('button')
+      await pending.click()
       await requested
-      await page.locator('.demo-three-scene[data-three-status="loading"]').waitFor()
-      assert.equal(await page.locator('.demo-three-scene__fallback').isVisible(), true)
-      await capture('loading-fallback')
-      await close(page, trigger)
-      const loaded = page.waitForResponse(response => response.url().includes('/src/components/common/demoThreeRenderer.ts'))
+      assert.equal(await pending.getAttribute('aria-busy'), 'true', 'delayed guide did not announce loading')
+      assert.equal(await player(page).count(), 0, 'incomplete guide opened an empty player')
+      const trigger = await open(page, 'traffic')
+      const loaded = page.waitForResponse(response => response.url().includes('/src/components/knowledge/KnowledgePlayer.vue'))
       release()
       await loaded
       await frames(page)
-      assert.equal(await page.locator('.demo-three-scene').count(), 0, 'late import mounted a closed tutorial')
+      assert.equal(await page.getByRole('dialog').count(), 1, 'late import opened a second dialog')
+      assert.equal(await player(page).getAttribute('data-billing-mode'), 'traffic', 'late import replaced the newly selected guide')
+      await capture('newer-guide-retained')
+      await close(page, trigger)
       const reopened = await open(page, 'subscription')
       await close(page, reopened)
     } finally { release() }
+    assert.deepEqual(await calls(page), before, 'lazy guide loading called a member API')
   })
   if (size.name !== 'mobile') return
   for (const locale of ['en', 'zh']) {
@@ -104,7 +101,11 @@ export async function knowledgebaseRenderingScenarios(scenario, size) {
         for (let index = 0; index < chapterCounts[id]; index++) {
           await chapters.nth(index).click()
           await inspectVisibleChapter(page, locale)
-          if (id === 'payment' && [2, 4].includes(index)) await capture(`payment-${index === 2 ? 'wallet-gas' : 'exchange-fee'}-narrow`)
+          if (id === 'payment' && [3, 4, 6].includes(index)) {
+            const mode = index === 3 ? 'separate' : index === 4 ? 'deducted' : 'wallet'
+            await inspectPaymentAmounts(page, mode)
+            await capture(`payment-${mode}-narrow`)
+          }
         }
         assert.equal(await page.getByRole('dialog').evaluate(element => element.getBoundingClientRect().width <= globalThis.innerWidth), true, 'dialog exceeds the narrow viewport')
         await capture(`${id}-narrow`)

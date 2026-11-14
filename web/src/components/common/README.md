@@ -52,13 +52,15 @@ Explore and DIY lessons. It owns focus restoration and native Back behavior.
 Its short caption, three icon points and full chapter explanation are visible
 inside the film, with no separate disclosure. Chapter intervals remain reactive
 when a different tutorial is selected. `DemoStage.vue` provides the accessible
-diagram wrapper, keeping decorative 3D content separate from localized text.
+diagram wrapper, keeping decorative graphics separate from localized accessible text.
 
-`DemoThreeScene.vue` owns lazy canvas creation, resize handling, WebGL fallback,
-context restoration and teardown. `demoThreeModel.ts` supplies nine persistent
-stories and meaningful fallback symbols. `demoThreeObjects.ts` and
-`demoThreePrimitives.ts` build the procedural lit solids; `demoThreeRenderer.ts`
-loads Three.js and renders only when the shared step/phase or size changes.
-There is no second clock, remote texture/model, or account action. Pixel density
-is capped at 1.5; all geometry, materials and the context are released on close.
-`demoThreeModel.test.ts` checks one-exit routing and billing-aware packet flow.
+`DemoWindow.vue` gives mock interfaces a shared rounded application frame,
+localized title, optional status and footer. It owns no state or effects.
+`DemoFlow.vue` renders icon nodes and SVG connections whose trace and packet
+position derive only from the parent's phase. A blocked path has a visible stop
+state; reduced motion shows the completed path without moving packets. Both
+primitives are native HTML/SVG and need no canvas or GPU context.
+
+All tutorial renderers use local illustrative values. No account reads, writes,
+clipboard actions, automatic external requests, separate clocks or CSS loops
+belong in these components. Three.js and its rendering helpers are removed.

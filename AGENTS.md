@@ -243,14 +243,14 @@ All Knowledgebase, Explore billing, and DIY routing guides share
 clock, transport, focus restoration, native Back ownership, and reduced-motion
 chapters; do not add independent timers or autoplay loops. Scenes take `step`,
 `phase`, and `reducedMotion` inputs and remain deterministic when paused or scrubbed.
-Use `DemoStage`, `DemoThreeScene`, `DemoPointer`, and
-`illustrationTimeline` for diagram and click/tap motion. Three.js loads only in
-an opened player; its renderer draws from the shared clock, caps pixel density,
-disposes GPU resources, and retains a meaningful fallback without WebGL. Prefer a persistent
-scene that changes continuously over slide replacement, with icons and one short
-caption. Keep every chapter's localized detail and icon points visible inside
-the film, without a separate explanation disclosure, and provide meaningful static chapter
-poses for reduced motion. Demonstrations must never make real requests or mutate
+Use `DemoStage`, `DemoWindow`, `DemoFlow`, and `illustrationTimeline` for
+clear mocked interfaces, SVG data graphs, and icon flows. Use `DemoPointer` only
+when a click or tap materially clarifies an action. Do not add Three.js, WebGL,
+independent CSS loops, or a second clock. Prefer persistent interfaces with
+animated values, graph traces, checks and packet paths. Split complex subjects
+into short, single-purpose beats; keep captions, icon points and essential detail
+brief and visible inside the film without a separate disclosure. Reduced motion
+must show complete, meaningful static chapter poses. Demonstrations must never make real requests or mutate
 account state. Keep lesson sources and provider claims reviewable; never promise
 that IP reputation or third-party acceptance is guaranteed. See
 `web/src/components/knowledge/README.md` to add a lesson.

@@ -16,7 +16,7 @@
     "more": "All tutorials",
     "topics": {
       "subscription": {
-        "title": "Get connected in six steps",
+        "title": "Your first connection",
         "subtitle": "From your first top-up to your first connection",
         "points": {"first": "Add balance, choose how to pay", "second": "Get a client and import your link", "third": "Pick a node and connect"}
       },
@@ -28,7 +28,7 @@
       "payment": {
         "title": "Get your payment right",
         "subtitle": "Stablecoins, fees, and the exact amount",
-        "points": {"first": "Match token and network", "second": "Check the amount received", "third": "Reserve the network fee"}
+        "points": {"first": "Match token and network", "second": "Check the amount received", "third": "Account for deducted fees"}
       },
       "sharing": {
         "title": "Sharing, with boundaries",
@@ -62,6 +62,26 @@
       }
     },
     "labels": {
+      "game": "Game", "commerce": "E-commerce", "malware": "Malware",
+      "credentialAttacks": "Credential attacks", "connectionFlood": "Connection flooding", "time": "Time",
+      "client": "Client", "usage": "Usage", "perHour": "Per hour",
+      "perGiB": "Per GiB", "transient": "Transient",
+      "displayedAmount": "Order amount", "transferAmount": "You enter",
+      "feeDeducted": "Fee deducted", "feeSeparate": "Fee paid separately",
+      "checkPreview": "Check received amount", "provider": "Provider",
+      "deadline": "Before expiry", "pending": "Pending",
+      "confirmed": "Confirmed", "credited": "Credited",
+      "keepPrivate": "Keep private", "availableNodes": "Available nodes",
+      "compatible": "Compatible", "official": "Official download",
+      "status": "Connection status", "latency": "Latency",
+      "congestion": "Congestion", "compare": "Compare",
+      "shared": "Shared", "limit": "Member limit",
+      "rules": "Use rules", "serviceDecision": "Service decides",
+      "noSecrets": "No passwords or seed phrases", "issue": "Issue",
+      "diagnose": "Check", "recover": "Recover",
+      "records": "Billing records", "account": "Account",
+      "connection": "Connection", "first": "First",
+      "next": "Next",
       "addBalance": "Add balance",
       "billingChoice": "Choose your billing",
       "or": "or",
@@ -93,7 +113,7 @@
       "bot": "Message bot",
       "txid": "Transaction ID",
       "example": "Example only",
-      "gasSeparate": "Gas is separate",
+      "gasSeparate": "Fee paid separately",
       "crowd": "Many users",
       "publicIp": "One public IP",
       "dedicatedIp": "Node IP",
@@ -158,6 +178,7 @@
       "solana": "Solana · transaction fees",
       "aptos": "Aptos · gas and storage fees",
       "circle": "Circle · transfer and withdrawal fees",
+      "bybit": "Bybit · withdrawal fee settings",
       "kraken": "Kraken · choosing the correct network",
       "cgnat": "Cloudflare · one IP, many users",
       "ietf": "IETF · issues with address sharing",

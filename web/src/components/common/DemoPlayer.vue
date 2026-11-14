@@ -52,13 +52,13 @@ function replay(): void { emit('replay'); playback.replay() }
 
 <style scoped>
 .demo-player { display: grid; gap: .75rem; min-width: 0; }
-.demo-player__film { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: .9rem; background: var(--surface-soft, var(--surface)); }
-.demo-player__story { display: grid; gap: .65rem; padding: .9rem 1rem 1rem; border-top: 1px solid var(--line); }
+.demo-player__film { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 1.35rem; background: var(--surface-soft, var(--surface)); }
+.demo-player__story { display: grid; gap: .6rem; padding: .85rem 1rem; border-top: 1px solid var(--line); }
 .demo-player__caption { display: flex; align-items: center; gap: .5rem; margin: 0; min-height: 2rem; color: var(--text); font-size: .95rem; font-weight: 650; line-height: 1.4; letter-spacing: -.02em; }
 .demo-player__caption .iconify { flex: none; color: var(--accent); font-size: 1.2rem; }
-.demo-player__points { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .55rem; padding: 0; margin: 0; list-style: none; }
-.demo-player__points li { display: flex; align-items: start; gap: .35rem; min-width: 0; color: var(--text-muted); font-size: .72rem; line-height: 1.45; }
+.demo-player__points { display: flex; flex-wrap: wrap; gap: .4rem .65rem; padding: 0; margin: 0; list-style: none; }
+.demo-player__points li { display: flex; align-items: start; gap: .3rem; min-width: 0; max-width: 100%; padding: .25rem .4rem; border-radius: .65rem; background: var(--surface-raised, var(--surface)); color: var(--text-muted); font-size: .68rem; line-height: 1.4; }
 .demo-player__points .iconify { flex: none; margin-top: .1rem; color: var(--accent); font-size: 1rem; }
-.demo-player__detail { min-height: 3em; margin: 0; color: var(--text-muted); font-size: .76rem; line-height: 1.6; overflow-wrap: anywhere; }
-@media (max-width: 420px) { .demo-player__story { padding: .75rem; gap: .6rem; } .demo-player__points { grid-template-columns: 1fr; gap: .35rem; } .demo-player__caption { font-size: .88rem; } }
+.demo-player__detail { margin: 0; color: var(--text-muted); font-size: .73rem; line-height: 1.5; overflow-wrap: anywhere; }
+@media (max-width: 420px) { .demo-player__story { padding: .75rem; gap: .5rem; } .demo-player__points { gap: .3rem; } .demo-player__caption { font-size: .88rem; } .demo-player__points li { font-size: .63rem; } }
 </style>
