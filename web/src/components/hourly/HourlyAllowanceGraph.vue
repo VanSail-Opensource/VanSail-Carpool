@@ -181,7 +181,7 @@ onScopeDispose(() => globalThis.clearTimeout(boostTimer))
 .hourly-allowance__wave path { fill: none; stroke: var(--hourly-extra); stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .hourly-allowance--reduced .hourly-allowance__wave { animation: none; }
 @keyframes hourly-allowance-wave { from { transform: translateX(-50%); } to { transform: translateX(0); } }
-.hourly-allowance__legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr)); gap: 0.2rem 0.9rem; margin: 0; }
+.hourly-allowance__legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); gap: 0.2rem 0.9rem; margin: 0; }
 .hourly-allowance__legend div { display: flex; align-items: baseline; gap: 0.4rem; min-width: 0; font-size: 0.72rem; color: var(--text-muted); }
 .hourly-allowance__legend dt { display: inline-flex; align-items: center; gap: 0.3rem; min-width: 0; }
 .hourly-allowance__legend dd { margin: 0 0 0 auto; color: var(--text); font-family: var(--font-mono); font-weight: 600; white-space: nowrap; }

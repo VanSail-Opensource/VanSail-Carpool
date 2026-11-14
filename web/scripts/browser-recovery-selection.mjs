@@ -4,6 +4,10 @@ import { allBrowserScopes, memberBrowserScopes, adminBrowserScopes, browserRecov
 // scopes, so a new module cannot silently lose browser coverage.
 const rules = [
   [/^web\/scripts\/browser-hourly-preferences\.mjs$/, ['hourly']],
+  [/^web\/scripts\/browser-member-design-checks\.mjs$/, ['member-design']],
+  [/^web\/src\/components\/activity\/BetGamesPanel\.vue$/, ['activity', 'member-design']],
+  [/^web\/src\/components\/subscription\/HostLinkRow\.vue$/, ['member', 'member-design']],
+  [/^web\/src\/components\/hourly\/HourlyAllowanceGraph\.vue$/, ['hourly', 'settings', 'member-design']],
   [/^web\/src\/components\/common\/(?:Demo|illustrationTimeline)/, ['demonstrations']],
   [/^web\/src\/components\/catalog\/(?:BillingDemo|HourlyBillingScene|TrafficBillingScene|billingDemo)/, ['demonstrations']],
   [/^web\/src\/components\/diy\/RoutingDemo/, ['demonstrations']],

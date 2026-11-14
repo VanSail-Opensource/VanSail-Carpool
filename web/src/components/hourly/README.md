@@ -43,7 +43,9 @@ sub-basis-point remainder:
   left" (`extraFunded - extraUsed - extraReserved`, never reserved bytes as used)
   once the free allowance is exhausted, otherwise the remaining capacity. The
   two rows are mutually exclusive. Caption and accessible `aria-valuetext` use
-  `hourly.fullSpeedAllowance` and `hourly.allowanceUsedOf`.
+  `hourly.fullSpeedAllowance` and `hourly.allowanceUsedOf`. Legend pairs stack
+  into full-width rows on narrow screens so labels and exact values stay
+  separated; wider containers retain the compact two-column layout.
 - Turning automatic extra purchases on (false → true) while the previous state
   had exhausted both free and purchased budgets keeps the reduced-speed card mounted and flies a one-off
   decorative green rocket through it for ~1.2s (`data-hourly-boost` is on this

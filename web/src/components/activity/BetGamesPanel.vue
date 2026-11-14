@@ -111,25 +111,35 @@ function selectGame(id: string): void {
         <UIcon name="i-ph-trend-up" />
         <span><strong>{{ $t('activity.totalReturn', { multiplier: (selected.returnMultiplierBps / 10000).toFixed(2) }) }}</strong><small>{{ $t('activity.lossReturn', { amount: displayMinor('0') }) }}</small></span>
       </div>
-      <UButton :disabled="!canBet || busy" :loading="busy" :label="busy ? $t('activity.resolving') : $t('activity.confirmBet')" data-haptic="confirm" @click="submit" />
+      <UButton class="bet-form__submit" :disabled="!canBet || busy" :loading="busy" :label="busy ? $t('activity.resolving') : $t('activity.confirmBet')" data-haptic="confirm" @click="submit" />
     </div>
     <div v-else class="empty-inline"><div><h3>{{ $t('activity.noBetGames') }}</h3><p>{{ $t('activity.publishGames') }}</p></div></div>
   </section>
 </template>
 
 <style scoped>
+.bet-panel { container: activity-bet / inline-size; }
 .bet-grid { display: grid; gap: 0.55rem; }
 .bet-option { min-height: 68px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0.7rem; padding: 0.7rem; border: 1px solid var(--line); border-radius: var(--radius-control); color: var(--text); background: var(--surface-raised); text-align: left; cursor: pointer; }
-.bet-option--selected { border-color: #557763; background: var(--accent-soft); }
+.bet-option--selected { border-color: var(--accent-line); background: var(--accent-soft); }
 .bet-option__icon { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; color: var(--accent); background: var(--accent-soft); }
 .bet-option strong, .bet-option small { display: block; }
 .bet-option strong { font-size: 0.82rem; }
 .bet-option small { margin-top: 0.2rem; color: var(--text-faint); font-size: 0.68rem; }
 .bet-option__odds { color: var(--accent); font-family: var(--font-mono); font-size: 0.72rem; }
 .bet-form { display: grid; gap: 0.8rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.bet-form > * { min-width: 0; }
+.bet-form__submit { justify-content: center; }
 .bet-disclosure { min-height: 52px; display: flex; align-items: center; gap: 0.65rem; padding: 0.65rem; border-radius: var(--radius-control); color: var(--accent); background: var(--accent-soft); }
 .bet-disclosure strong, .bet-disclosure small { display: block; }
 .bet-disclosure strong { font-size: 0.76rem; }
 .bet-disclosure small { margin-top: 0.2rem; color: var(--text-muted); font-size: 0.65rem; }
-@media (min-width: 720px) { .bet-form { grid-template-columns: minmax(220px, 1fr) minmax(180px, 0.8fr) auto; align-items: end; } }
+@container activity-bet (min-width: 26rem) {
+  .bet-form { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; }
+  .bet-form__submit { grid-column: 1 / -1; }
+}
+@container activity-bet (min-width: 36rem) {
+  .bet-form { grid-template-columns: minmax(13rem, 1fr) minmax(11rem, .8fr) max-content; }
+  .bet-form__submit { grid-column: auto; }
+}
 </style>

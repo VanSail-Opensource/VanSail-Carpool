@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { inspectBetLabel, inspectHostName, inspectAllowanceLegend, settleCardEntry } from './browser-member-design-checks.mjs'
 
 // Each case mounts real member components with isolated, constructed data.
 const pages = [
@@ -86,6 +87,8 @@ export async function memberDesignScenarios(scenario, size) {
   for (const [name, path, selector] of pages) {
     await scenario(size, `design-${name}`, path, async (page, capture) => {
       await settled(page, selector)
+      if (name === 'activity') await inspectBetLabel(page)
+      if (name === 'subscription') await inspectHostName(page)
       if (name === 'explore-hourly') {
         await page.getByRole('button', { name: 'Charge by hour', exact: true }).click()
         await settled(page, '.hourly-page__squads')
@@ -117,17 +120,18 @@ export async function memberDesignScenarios(scenario, size) {
       await settled(page, '.hourly-squad')
     }
     const card = page.locator('.squad-pricing-card').first()
+    await settleCardEntry(page)
     if (size.name === 'desktop') await card.hover()
     else await card.locator('.hourly-squad__toggle').focus()
     // Hold finite decoration at its midpoint only for the visual evidence.
     await card.evaluate(element => {
       for (const animation of element.getAnimations({ subtree: true })) {
         const end = animation.effect?.getComputedTiming().endTime
-        if (animation instanceof globalThis.CSSAnimation && Number.isFinite(end) && end > 0) { animation.pause(); animation.currentTime = end / 2 }
+        if (animation instanceof globalThis.CSSAnimation && animation.animationName === 'member-card-sweep' && Number.isFinite(end) && end > 0) { animation.pause(); animation.currentTime = end / 2 }
       }
     })
     await capture(size.name === 'desktop' ? 'hover' : 'focus')
-    await card.evaluate(element => { for (const animation of element.getAnimations({ subtree: true })) if (animation instanceof globalThis.CSSAnimation && animation.playState === 'paused') animation.play() })
+    await card.evaluate(element => { for (const animation of element.getAnimations({ subtree: true })) if (animation instanceof globalThis.CSSAnimation && animation.animationName === 'member-card-sweep' && animation.playState === 'paused') animation.play() })
     assert.deepEqual(await page.evaluate(() => globalThis.__hourlyAudit.calls.filter(call => call.method !== 'GET')), [])
   })
   await scenario(size, 'design-loading', 'member-connections-audit.html?slow', async (page, capture) => {
@@ -157,6 +161,7 @@ export async function memberDesignScenarios(scenario, size) {
       await settled(page, selector)
       assert.match(await page.locator('html').getAttribute('lang'), /^en/)
       if (name === 'explore-hourly') { await page.getByRole('button', { name: 'Charge by hour', exact: true }).click(); await settled(page, '.hourly-page__squads') }
+      if (name === 'explore-hourly') await inspectAllowanceLegend(page)
       if (name.startsWith('explore-')) await inspectCatalogHeader(page)
     })
   }
@@ -165,9 +170,11 @@ export async function memberDesignScenarios(scenario, size) {
     await scenario(narrow, `design-${name}`, `${path}${path.includes('?') ? '&' : '?'}zh`, async (page, capture) => {
       await settled(page, selector)
       assert.match(await page.locator('html').getAttribute('lang'), /^zh/, `${name}: Chinese fixture locale was not applied`)
+      if (name === 'subscription') await inspectHostName(page)
       if (name === 'explore-hourly') {
         await page.locator('.catalog-experience__modes button').nth(1).click()
         await settled(page, '.hourly-page__squads')
+        await inspectAllowanceLegend(page)
       }
       if (name.startsWith('explore-')) await inspectCatalogHeader(page)
       if (name === 'diy') {

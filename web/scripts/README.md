@@ -107,6 +107,8 @@ zero starting allowance.
 Its `browser-hourly-preferences.mjs` scenarios cover inline auto-buy consent and
 the confirmed boost transition, switching off from Settings while exhausted,
 failed saves retaining the confirmed value, and zero/unavailable allowances.
+Failed-save screenshots wait for the current consent title's finite presence
+animation to settle, preserving the visible error and retained switch evidence.
 
 `browser-demonstrations.mjs` validates the continuous traffic/hourly/routing
 walkthroughs using the real fixture components, desktop cursor/mobile touch
@@ -121,14 +123,22 @@ all DIY categories, public subscription and payment results in desktop/mobile
 Chromium. Narrow 320px Chinese captures check the densest member layouts and
 assert the document locale; Home and both Explore modes also retain narrow
 English captures. The catalog demonstration keeps a 44px target on the mode
-selector row. Normal-motion hover/focus captures hold finite card decoration
-midway for visual review, then resume it; existing page captures use reduced motion.
+selector row. Normal-motion hover/focus captures settle entry transitions, hold
+only the decorative card sweep midway for visual review, then resume it;
+existing page captures use reduced motion.
 It checks loaded content, connection filtering, loading/empty/error states,
 document overflow, enabled DIY Save contrast, unobstructed desktop Add route,
 and the shared console/network guards. Missing destination
 fixtures use `member-utility-audit.html` with only constructed data. This scope
 is selected by member theme/layout changes, including the member-only font;
 it does not become a mandatory universal suite for unrelated PRs.
+
+`browser-member-design-checks.mjs` supports those existing captures with rendered
+text checks: the bet confirmation label fits without clipping, long host names
+retain room for a 12-character sample in their actual font, and allowance legend
+labels remain separated from values. It also settles finite card-entry CSS before
+capturing hover/focus decoration. Changes to the three guarded components select
+the design scope alongside their functional recovery suites.
 
 `browser-ip-recovery.mjs` checks partial BGP geometry, same-prefix route-page and
 selection recovery, and retirement of paid live snapshots on account changes.

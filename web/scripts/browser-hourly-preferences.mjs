@@ -46,6 +46,11 @@ export async function hourlyPreferenceScenarios(scenario, size) {
     assert.equal(await page.locator('[data-settings-hourly] [role="switch"]').getAttribute('aria-checked'), 'false')
     assert.equal(await page.evaluate(() => globalThis.__hourlyAudit.fixture.view.extraPreference.extraEnabled), false)
     assert.equal((await writes(page)).length, 1)
+    await page.evaluate(() => new Promise(resolve => globalThis.requestAnimationFrame(() => globalThis.requestAnimationFrame(resolve))))
+    await page.waitForFunction(() => {
+      const dialog = globalThis.document.querySelector('[role="dialog"]'), title = dialog?.querySelector('.dialog-title')
+      return title && Number(globalThis.getComputedStyle(title).opacity) >= .999 && dialog.getAnimations({ subtree: true }).every(animation => !Number.isFinite(animation.effect?.getComputedTiming().endTime) || animation.playState === 'finished')
+    })
     await capture('saved-preference-retained')
   })
   await scenario(size, 'hourly-zero-unavailable', 'hourly-audit.html?active&allowance-zero-unused&no-extra', async (page, capture) => {
