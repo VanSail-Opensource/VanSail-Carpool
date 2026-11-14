@@ -9,6 +9,10 @@
 - `AdminOperationResolutionDialog.vue` requests audited parent-receipt repair from retained completed item evidence. It requires an explicit outcome and never defaults to success. `operationResolution.ts` limits the entrance to entitlement edits, credited-refund synchronization, combo replacement, bulk extension and historical outage synchronization; the server validates actual evidence. Unsupported domain workflows show reconciliation guidance. `operationResolution.test.ts` checks both permitted kinds and denied payment/member/native/Emby/restriction kinds.
 - `AdminUserEntitlements.vue` presents the fixed-term plan workspace: a primary manual-grant action plus labelled per-row edit-terms and refund actions, readable status/validity/price facts, and Motion transitions that honor reduced motion.
 - `AdminUserHourly.vue` presents the administrator hourly projection (policy, wallet, daily usage, enrollments) with a confirmed disable action.
+  It reuses `../../hourly/HourlyAccountingStatus.vue` with `showHistorical=true`
+  to inspect current-day and historical accounting. The member defaults to
+  current-day amounts only. This shared read-only component has no member
+  controls or Telegram dependency; its display preference changes no evidence.
 - `useAdminUserHourly.ts` owns the hourly projection load with abort/generation guards, the quoted policy version and idempotent disable queuing.
 - `AdminUserHistory.vue` presents tabbed Emby, payment, refund, and durable-operation tables, with refund and courtesy-credit actions only for that profile's eligible payment records.
 - `AdminUserIPBlocks.vue` presents active member-created blocks and exposes only the administrator unblock action.

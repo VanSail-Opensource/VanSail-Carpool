@@ -56,9 +56,18 @@ export function hourlyFixture(params: URLSearchParams): { view: HourlyAccountVie
   // the graph still shows purchased capacity when automatic purchases are off.
   const extraFunded = first || zeroUnused ? '0' : '2000000000'
   const extraUsed = first || zeroUnused ? '0' : params.has('credit-exhausted') ? extraFunded : '1000000000'
+  const freeReserved = first || exhausted || zeroUnused ? '0' : '8192'
+  const extraReserved = first || exhausted || zeroUnused ? '0' : '32768'
+  const accounting = {
+    openReservedBytes: (BigInt(freeReserved) + BigInt(extraReserved)).toString(),
+    recoveryUnknownBytes: params.has('pending') || params.has('current-unknown') ? '131072' : '0',
+    historicalRecoveryUnknownBytes: params.has('historical-unknown') ? '262144' : '0',
+    historicalUnsealedReservedBytes: params.has('historical-unsealed') ? '524288' : '0',
+    historicalUnsealedCount: params.has('historical-unsealed') ? '2' : '0',
+  }
   const view: HourlyAccountView = {
     policy, balance: hourlyMoney('100000'), legacyBlocked: params.has('legacy'), extraPreference: { extraEnabled, acceptedExtraPriceTXBMinor: params.has('price-rise') ? '100' : '125', updatedAt: now },
-    usage: { dayUTC: now.slice(0, 10), freeAllowanceBytes: first ? '10000000000' : freeAllowance, freeUsedBytes: freeUsed, freeReservedBytes: first || exhausted || zeroUnused ? '0' : '8192', extraFundedBytes: extraFunded, extraUsedBytes: extraUsed, extraReservedBytes: first || exhausted || zeroUnused ? '0' : '32768', extraExpiresAt: midnight, reducedRateBytesPerSecond: '1250000', accountingPending: params.has('pending') },
+    usage: { dayUTC: now.slice(0, 10), freeAllowanceBytes: first ? '10000000000' : freeAllowance, freeUsedBytes: freeUsed, freeReservedBytes: (BigInt(freeReserved) + BigInt(accounting.recoveryUnknownBytes)).toString(), extraFundedBytes: extraFunded, extraUsedBytes: extraUsed, extraReservedBytes: extraReserved, extraExpiresAt: midnight, reducedRateBytesPerSecond: '1250000', accountingPending: Object.values(accounting).some(value => BigInt(value) > 0n), accounting },
     squads: squads.map((squad, index) => ({ squad, offer: offers[index]!, enrollment: !first && index === 0 && (params.has('active') || params.has('suspended') || params.has('capacity-preparing')) ? enrollment(squad.groupId) : null, ready: !params.has('incompatible') && !capacity, reasonCode: params.has('incompatible') ? 'agent_incompatible' : capacity ? 'capacity' : '', cooldownUntil: null, requiredBalance: hourlyMoney(String((index + 1) * 5 * effectiveHours(index))) })),
   }
   if (params.has('cooldown') && view.squads[0]) {

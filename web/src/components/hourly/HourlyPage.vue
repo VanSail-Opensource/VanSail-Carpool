@@ -30,7 +30,11 @@ const hasHourlyHistory = computed(() => {
   if (!snapshot) return false
   if (snapshot.squads.some(item => item.enrollment)) return true
   const usage = snapshot.usage
-  return usage?.accountingPending === true || positive(usage?.freeUsedBytes) || positive(usage?.extraFundedBytes) || positive(usage?.extraUsedBytes)
+  const accounting = usage?.accounting
+  const currentAccounting = accounting
+    ? positive(accounting.openReservedBytes) || positive(accounting.recoveryUnknownBytes)
+    : usage?.accountingPending === true
+  return currentAccounting || positive(usage?.freeUsedBytes) || positive(usage?.extraFundedBytes) || positive(usage?.extraUsedBytes)
 })
 function positive(value: string | undefined): boolean {
   try {

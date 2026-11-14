@@ -95,7 +95,14 @@ metadata, cooldowns, readiness and committed shared-day usage. It computes
 `requiredBalance` from each offer's `requiredHours` (zero inherits
 `policy.activationHours`), keeping the eligibility contract per squad. Hourly
 visibility is independent of grandfathered catalog visibility. GETs never create
-allowance rows; unresolved reservations remain visible as pending accounting.
+allowance rows. The compatibility `accountingPending` flag retains its all-day
+meaning, including ordinary open credits. The optional `usage.accounting`
+breakdown comes from the shared read-only `HourlyCreditAccounting` repository
+query used by both member and administrator projections: current-day open bytes,
+current-day recovery-unknown bytes, and other-day unknown/unsealed obligations.
+All byte aggregates are exact decimal strings, including totals above int64.
+Historical holds stay against their original UTC day and do not consume today's
+allowance. The display read never releases credit or changes lifecycle queries.
 Public views exclude owner generations, native principal/period references and
 credentials.
 `preferences.go` records price-capped opt-in and preserves immediate opt-out even

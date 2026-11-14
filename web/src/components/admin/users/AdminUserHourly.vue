@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'motion-v'
 import type { AdminHourlySquad } from '@/api/adminOperations'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
+import HourlyAccountingStatus from '@/components/hourly/HourlyAccountingStatus.vue'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { useI18n } from '@/i18n'
 import { formatBytes, formatDateTime, formatMoney } from '@/utils/format'
@@ -71,6 +72,7 @@ async function confirmDisable(): Promise<void> {
         <div><dt>{{ t('hourly.dailyAllowance') }}</dt><dd>{{ usage ? t('hourly.admin.user.usageFacts', { used: formatBytes(usage.freeUsedBytes), total: formatBytes(usage.freeAllowanceBytes) }) : t('common.notAvailable') }}</dd></div>
         <div><dt>{{ t('hourly.admin.user.extraPreference') }}</dt><dd>{{ t(view.extraPreference.extraEnabled ? 'hourly.admin.user.extraEnabled' : 'hourly.admin.user.extraDisabled') }}</dd></div>
       </dl>
+      <HourlyAccountingStatus :usage="usage" :show-historical="true" />
       <AnimatePresence mode="wait" :initial="false">
         <motion.div :key="tableKey" :initial="reducedMotion ? { opacity: 0 } : { opacity: 0, y: 4 }" :animate="{ opacity: 1, y: 0 }" :exit="{ opacity: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }">
           <UTable class="admin-table" :data="squads" :columns="columns" tabindex="0" role="region" :aria-label="t('hourly.admin.user.title')">

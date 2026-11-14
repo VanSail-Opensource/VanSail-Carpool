@@ -55,6 +55,25 @@ sub-basis-point remainder:
 
 All byte math stays in `BigInt`.
 
+## Accounting status
+
+`HourlyAccountingStatus.vue` is a read-only presentation component shared by
+`HourlySummary.vue` and the browser administrator's user-hourly view. It receives
+read-only `usage` and an optional `showHistorical` prop (default false), emits no
+actions and imports no Telegram behavior. The member view shows ordinary current
+reserved credit and today's recovery-unknown amount. Other-day unknown/unsealed
+records do not produce a member notice or, alone, make its summary appear.
+The administrator explicitly opts into historical amounts and proof counts for
+inspection. All underlying facts, API fields and the legacy `accountingPending`
+boolean remain unchanged; the boolean is a compatibility display fallback only
+when an older response omits the breakdown. Current unknown amounts stay visible
+without promising automatic reconciliation.
+`HourlyAccountingStatus.test.ts` covers all categories, retained uncertainty
+across refresh, exact large integers, empty state and older response fallback in
+English and Simplified Chinese. Hosted `browser-hourly-recovery.mjs` captures
+normal and current-unknown states, and verifies historical-only records stay out
+of the member display at desktop/mobile sizes without changing their evidence.
+
 ## Fixed-term blocking (outcome 8)
 
 When the server reports `data.legacyBlocked` (active, activating or paid queued
@@ -133,6 +152,12 @@ their meaning (`admin`, `light`, `zh`, `slow`, `error`, `empty`, `paused`,
   squad to exercise next-hour continuity copy.
 - `reduced-motion`: overrides `matchMedia` before mount so Motion Vue reports the
   reduced-motion branch.
+- `current-unknown` (also `pending`): current-day recovery-unknown held credit.
+- `historical-unknown`: retained unknown credit from other UTC days, omitted from
+  member notices.
+- `historical-unsealed`: retained other-day unsealed proofs and held bytes.
+  Combine with `first` to verify that historical-only evidence does not make the
+  member summary appear.
 
 Use `extra` together with `out-of-allowance` to inspect the purchased-usage bar
 with `extraEnabled` true, and `zh`/`light` for locale and theme parity. The

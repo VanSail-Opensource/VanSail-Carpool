@@ -67,7 +67,8 @@ type adminHourlyProjectionRepository struct {
 	preference  model.HourlyExtraPreference
 	credit      model.HourlyCreditDay
 	creditErr   error
-	outstanding []model.HourlyCreditReservation
+	accounting  model.HourlyAccountingStatus
+	pending     bool
 	enrollments []database.AdminHourlyEnrollment
 }
 
@@ -87,8 +88,8 @@ func (r *adminHourlyProjectionRepository) HourlyCreditDay(context.Context, strin
 	return r.credit, r.creditErr
 }
 
-func (r *adminHourlyProjectionRepository) OutstandingHourlyCredits(context.Context, string, int64, string, int) ([]model.HourlyCreditReservation, error) {
-	return r.outstanding, nil
+func (r *adminHourlyProjectionRepository) HourlyCreditAccounting(context.Context, string, int64, string) (model.HourlyAccountingStatus, bool, error) {
+	return r.accounting, r.pending, nil
 }
 
 func (r *adminHourlyProjectionRepository) ListAdminHourlyEnrollments(context.Context, string, int64) ([]database.AdminHourlyEnrollment, error) {
@@ -107,7 +108,9 @@ func TestAdminHourlyProjectsPolicyWalletUsageAndSafeEnrollments(t *testing.T) {
 		preference:                 model.HourlyExtraPreference{OwnerID: "user-1", AccountGeneration: 3, ExtraEnabled: true, AcceptedExtraPriceTXBMinor: &price},
 		credit: model.HourlyCreditDay{FreeAllowanceBytes: 1_000, FreeAdmittedBytes: 400, FreeReservedBytes: 50,
 			ExtraFundedBytes: 500, ExtraAdmittedBytes: 100, ExtraReservedBytes: 20},
-		outstanding: []model.HourlyCreditReservation{{}},
+		accounting: model.HourlyAccountingStatus{OpenReservedBytes: "30", RecoveryUnknownBytes: "40",
+			HistoricalRecoveryUnknownBytes: "60", HistoricalUnsealedReservedBytes: "80", HistoricalUnsealedCount: 1},
+		pending: true,
 		enrollments: []database.AdminHourlyEnrollment{{EnrollmentID: "enrollment-a", GroupID: "group-a", Name: "Group A",
 			HourlyPriceTXBMinor: 125, OfferEnabled: true, Status: "active", ActivatedAt: &activated,
 			PaidThrough: &paidThrough, CreatedAt: now.Add(-2 * time.Hour)}},
@@ -131,7 +134,8 @@ func TestAdminHourlyProjectsPolicyWalletUsageAndSafeEnrollments(t *testing.T) {
 	}
 	if view.Usage == nil || view.Usage.DayUTC != "2026-09-02" || view.Usage.FreeUsedBytes != 400 ||
 		view.Usage.FreeReservedBytes != 50 || view.Usage.ExtraUsedBytes != 100 ||
-		view.Usage.ExtraFundedBytes != 500 || !view.Usage.AccountingPending {
+		view.Usage.ExtraFundedBytes != 500 || !view.Usage.AccountingPending ||
+		view.Usage.Accounting == nil || *view.Usage.Accounting != repository.accounting {
 		t.Fatalf("usage = %+v", view.Usage)
 	}
 	if len(view.Squads) != 1 {
