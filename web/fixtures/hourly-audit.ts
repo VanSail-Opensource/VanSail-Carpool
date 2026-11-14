@@ -13,6 +13,14 @@ import '@/styles/main.css'
 import '@/browser/styles.css'
 
 const params = new URLSearchParams(location.search)
+if (params.has('reduced') || params.has('reduced-motion')) {
+  const nativeMatchMedia = window.matchMedia.bind(window)
+  window.matchMedia = query => {
+    const media = nativeMatchMedia(query)
+    if (query === '(prefers-reduced-motion: reduce)' && !media.matches) Object.defineProperty(media, 'matches', { value: true })
+    return media
+  }
+}
 const admin = params.has('admin')
 setExperience(admin ? 'browser' : 'miniapp')
 initializeBrowserTheme(); setBrowserTheme(params.has('light') ? 'light' : 'dark')
@@ -72,7 +80,16 @@ window.fetch = async (input, init) => {
     }
     return response(receipt('succeeded'))
   }
-  if (url.pathname === '/api/v1/payg') return response({ balance: hourlyMoney('100000'), squads: [], trafficBytes: '0', spent: hourlyMoney('0'), asOf: new Date().toISOString() })
+  if (url.pathname === '/api/v1/payg') return response({
+    balance: hourlyMoney('100000'), asOf: new Date().toISOString(), windowStart: new Date(Date.now() - 72 * 3600000).toISOString(),
+    squads: fixture.squads.map((squad, index) => ({
+      squad: { ...squad, billingMode: 'payg', paygState: 'normal', features: index === 1
+        ? [{ icon: 'route', title: 'Regional transit', detail: 'Direct access across supported destinations' }]
+        : [{ icon: 'rocket-launch', title: 'Fast access' }, { icon: 'shield', title: 'Private routing', detail: 'Owner-scoped configuration' }] },
+      status: index === 1 ? 'unavailable' : 'available', trafficBytes: String((index + 1) * 1073741824), spent: hourlyMoney(String((index + 1) * 100)),
+    })),
+    trafficBytes: fixture.squads.length ? '6442450944' : '0', spent: hourlyMoney(fixture.squads.length ? '600' : '0'),
+  })
   return response({ items: [] })
 }
 const app = createApp(HourlyAudit, { admin, catalog: params.has('catalog') })

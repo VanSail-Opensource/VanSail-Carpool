@@ -72,3 +72,29 @@ it('retains a recovered review receipt without polling or unlocking its unfinish
     expect(onRefresh).toHaveBeenCalledOnce()
   } finally { wrapper.unmount() }
 })
+
+it('waits for live DIY confirmation before previewing and discards a preview superseded by refresh', async () => {
+  vi.useFakeTimers()
+  const paused = shallowRef(true)
+  const initial: RoutingView = { plan: { revision: 1, phase: 'active', choices: [] }, nodes: [], endpoints: [], templates: [], paths: [] }
+  let finish!: (value: Awaited<ReturnType<typeof xnodeMemberApi.previewRouting>>) => void
+  const preview = vi.spyOn(xnodeMemberApi, 'previewRouting').mockImplementationOnce(() => new Promise(resolve => { finish = resolve })).mockResolvedValue({ paths: [], trace: null })
+  const { state, wrapper } = mountRouting({ initial: () => initial, onDraft: vi.fn(), onRefresh: vi.fn(), paused: () => paused.value })
+  try {
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(500)
+    expect(preview).not.toHaveBeenCalled()
+    paused.value = false
+    await vi.advanceTimersByTimeAsync(400)
+    expect(preview).toHaveBeenCalledOnce()
+    paused.value = true
+    await flushPromises()
+    finish({ paths: [{ nodes: ['obsolete'], rules: [], conditions: [], exclusions: [], excludedRules: [] }], trace: null })
+    await flushPromises()
+    expect(state.paths.value).toEqual([])
+    expect(state.previewing.value).toBe(false)
+    paused.value = false
+    await vi.advanceTimersByTimeAsync(400)
+    expect(preview).toHaveBeenCalledTimes(2)
+  } finally { wrapper.unmount() }
+})

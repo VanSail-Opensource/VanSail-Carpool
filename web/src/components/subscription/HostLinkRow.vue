@@ -87,13 +87,17 @@ async function copyLink(): Promise<void> {
   <li class="host-link" :class="{ 'host-link--custom': host.customRoute || host.splitXhttp }">
     <div class="host-link__row">
       <span class="host-link__flags"><CountryFlag v-for="country in flags" :key="country" :code="country" /></span>
+      <span v-if="host.customRoute || host.splitXhttp" class="host-link__badges">
+        <UTooltip v-if="host.customRoute" :text="t('hostNames.customRoute')">
+          <span class="host-link__badge" tabindex="0" role="img" :aria-label="t('hostNames.customRoute')"><UIcon name="i-ph-path" aria-hidden="true" /></span>
+        </UTooltip>
+        <UTooltip v-if="host.splitXhttp" :text="t('hostNames.splitXhttp')">
+          <span class="host-link__badge" tabindex="0" role="img" :aria-label="t('hostNames.splitXhttp')"><UIcon name="i-ph-arrows-split" aria-hidden="true" /></span>
+        </UTooltip>
+      </span>
       <UButton class="host-link__name" :disabled="saving" color="neutral" variant="link" :aria-label="t('hostNames.edit', { name: host.name })" @click="editName">{{ host.name || host.uuid }}</UButton>
       <UButton color="neutral" variant="ghost" :icon="copied ? 'i-ph-check-bold' : 'i-ph-copy'" :disabled="!host.link" :aria-label="t(copied ? 'common.copied' : 'subscription.copyHost', { name: host.name })" data-haptic="copy" @click="copyLink" />
       <UButton color="neutral" variant="ghost" icon="i-ph-qr-code" :disabled="!host.link" :aria-label="t('subscription.qrHost', { name: host.name })" data-haptic="open" @click="open = true" />
-    </div>
-    <div v-if="host.customRoute || host.splitXhttp" class="host-link__badges">
-      <UBadge v-if="host.customRoute" color="primary" variant="subtle">{{ t('hostNames.customRoute') }}</UBadge>
-      <UBadge v-if="host.splitXhttp" color="primary" variant="subtle">{{ t('hostNames.splitXhttp') }}</UBadge>
     </div>
     <UModal :open="editOpen" :close="!saving" @update:open="!saving && (editOpen = $event)" :title="t('hostNames.title')" :description="t('hostNames.hint', { placeholder: '{price}' })" :dismissible="!saving">
       <template #body>
@@ -123,7 +127,9 @@ async function copyLink(): Promise<void> {
 .host-link { display: grid; gap: 0.4rem; padding: 0.65rem 0; border-bottom: 1px solid var(--line); }
 .host-link--custom { border-inline-start: 2px solid var(--accent); padding-inline-start: .5rem; }
 .host-link__editor { display: grid; gap: 1rem; }
-.host-link__badges { display: flex; flex-wrap: wrap; gap: .4rem; }
+.host-link__badges { display: inline-flex; align-items: center; gap: .2rem; flex: 0 0 auto; }
+.host-link__badge { display: inline-flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.75rem; border-radius: .4rem; color: var(--accent); background: var(--accent-soft); }
+.host-link__badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .host-link:last-child { border-bottom: 0; }
 .host-link__row { display: flex; align-items: center; gap: 0.35rem; min-width: 0; }
 .host-link__flags { display: flex; flex-wrap: wrap; gap: 0.15rem; max-width: 80px; flex-shrink: 0; }

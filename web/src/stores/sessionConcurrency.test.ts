@@ -8,6 +8,7 @@ import { setExperience } from '@/utils/experience'
 import { useSessionStore } from './session'
 
 vi.mock('@/api/cache/preload', () => ({ preloadSession: vi.fn(), stopSessionPreload: vi.fn() }))
+vi.mock('@/router/memberViews', () => ({ preloadMemberViews: vi.fn(), stopMemberViewPreload: vi.fn() }))
 
 const member: Session = { authenticated: true, user: {
   id: 'member-1', telegramId: '42', firstName: 'Member', lastName: '', telegramUsername: 'member', displayName: '@member',

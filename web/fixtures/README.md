@@ -1,5 +1,16 @@
 # Constructed browser fixtures
 
+`member-ui-preview.html` is a framework-free same-origin iframe wrapper for the
+actual Connections, Subscription, Home, Explore and DIY fixtures. Select a
+390px or 1440px viewport, height, language and populated/loading/empty/error
+state. `page`, `width`, `height`, `language`, `state` and `flags` query parameters
+restore the wrapper controls; other query parameters forward to the fixture.
+Example: `member-ui-preview.html?page=diy&width=390&language=zh`.
+The iframe keeps its exact CSS viewport width even when the outer page scrolls.
+Hourly and DIY fixtures accept `reduced` or `reduced-motion` to simulate the
+JavaScript reduced-motion preference using the existing matchMedia fixture
+pattern; this does not override the browser's CSS media-query preference.
+
 `PMRecoveryAudit.vue` uses `pm-admin-audit.html?recovery&lost&pending` to mount the
 actual administrator profile loader and PM command owner around an ambiguous
 accepted moderation. `__pmAudit` records stable keys and exact mutations; toggle
@@ -234,6 +245,14 @@ the root `index.html`, `admin.html` and `subscription.html` and excludes fixture
   polling errors and retry controls; `reduced` constructs reduced-motion preference.
 
 `SubscriptionAudit.vue`, `subscription-audit.ts` and `subscription-audit.html` render constructed member Home and Subscription states for Chrome DevTools MCP.
+Use `shell&mode=home&around=1` for actual Around TX navigation and destination
+views. `around-tx-data.ts` installs constructed Affiliate, Community and Emby
+reads and rejects every invite/account mutation. `access-delay=1800` and
+`preferences-delay=2200` reveal asynchronous menu insertion; `around-slow=1500`
+and `around-error` exercise destination loading and failure states. Synthetic
+read counts are exposed as `window.__aroundTxAudit`.
+The Subscription fixture's `compatibility` flag adds synthetic diagnostic records
+for three client formats to inspect separately expandable compatibility groups.
 Use `mode=home&history-shares` to inspect traffic/cost aggregation, including a node at exactly 1%, on the real PAYG history chart.
 The balance sheet uses constructed balance/limits and empty payment methods;
 `balance-error` exercises its warning notice without a backend request.
@@ -340,6 +359,14 @@ pairs and retained partial results. The fixture never sends agent commands.
 `load-error`, `save-error`, `lost-reply` or `deployment-error`. Run the manual
 `subscription-preview.go` bridge for actual Go allowlist, compatibility and
 pinned-parser validation. It uses synthetic identities and no upstream traffic.
+
+For visual-only DIY checks without the Go bridge, use
+`routing-audit.html?diy&populated&split&local-preview`. `diy-local-preview.ts`
+supplies a small synthetic field catalog and compatibility rows; it does not
+validate real client configurations. The flag is fixture-only and does not
+replace hosted parser/compatibility coverage. The Routing tab's demo is also
+read-only: inspect step selection, pause/replay, match/default paths, and reduced
+motion without generating a routing save or speed test.
 
 X-Node `combo-quota` mounts the real combo editor and records its capacity payload.
 `migration-notice` exercises shared policy migration warnings; `firewall-member`
@@ -551,3 +578,13 @@ original definition reconciles the saved resource without advancing revision 0.
 `window.__catalogCreation` exposes constructed attempts/records for inspection.
 `browser-xnode-creation.mjs` exercises both flows at desktop/mobile sizes and
 checks that opening a subsequent creation editor produces a different ID.
+
+The November 2026 member-interface pass used these constructed fixtures in a
+real Chromium browser at desktop width and a 390px iframe viewport. It checked
+Home spacing and share controls, subscription flags/client groups, connection
+search and empty/error states, both billing demos, DIY keyboard tabs, routing
+match/default scenes, dialog focus restoration, and delayed Around TX links on
+desktop/mobile. The reduced-motion fixture exercised manual playback through
+the JavaScript preference mock. No application console errors were observed;
+production credentials and billing mutations were not used. Local automated
+suites were not run; new regressions are intended for hosted CI.

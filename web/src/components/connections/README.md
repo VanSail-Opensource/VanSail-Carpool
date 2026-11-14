@@ -18,3 +18,13 @@ member route remains separate from the browser admin root. Browser fixtures use
 under administrator modules. Hosted regressions own backend behavior checks.
 
 `ConnectionLeaseForm.vue` accepts a canonical IP. `ConnectionObservationList.vue` displays observations and lease times. `useMemberConnections.ts` owns private paging, cancellation and grant refresh.
+
+`ConnectionSummary.vue` derives the returned address count, configured lease
+duration and snapshot time from the current page. Filtered counts are labelled
+as matches; neither retained observations nor grants imply a currently open
+connection. `ConnectionsPage.vue` separates the searchable address inventory
+from the grant form: mobile places the form before the list, while wide screens
+keep it alongside the paginated results. Refresh retains visible data and shows
+progress; initial failures retain an explicit retry action. Empty, stale and
+incomplete results remain distinct. `ConnectionObservationList.vue` renders
+selectable IPv4/IPv6 addresses with labelled observation and lease timestamps.

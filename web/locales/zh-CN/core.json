@@ -25,8 +25,7 @@
     "admin": "管理",
     "skip": "跳转到内容",
     "member": "Telegram 成员",
-    "memberFallback": "TX 成员",
-    "fullscreenGreeting": "你好，{name}"
+    "memberFallback": "TX 成员"
   },
   "auth": {
     "telegramAccess": "Telegram 访问",

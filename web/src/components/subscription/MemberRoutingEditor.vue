@@ -8,18 +8,18 @@ import RouteSpeedtestPanel from './RouteSpeedtestPanel.vue'
 import { useMemberRouting } from './useMemberRouting'
 import type { RoutingChoice, RoutingView } from '@/api/xnodeMember'
 
-const props = defineProps<{ external?: boolean; initial?: RoutingView; disabled?: boolean }>()
+const props = defineProps<{ external?: boolean; initial?: RoutingView; disabled?: boolean; previewPaused?: boolean }>()
 const emit = defineEmits<{ draft: [value: RoutingChoice[]]; refresh: []; save: [] }>()
 
 const { t } = useI18n()
-const state = useMemberRouting(props.external ? { initial: () => props.initial, onDraft: value => emit('draft', value), onRefresh: () => emit('refresh') } : undefined)
+const state = useMemberRouting(props.external ? { initial: () => props.initial, onDraft: value => emit('draft', value), onRefresh: () => emit('refresh'), paused: () => !!props.previewPaused } : undefined)
 const filtered = computed(() => state.choices.value.map((rule, index) => ({ rule, index })).filter(({ rule }) => !state.filterNode.value || rule.inboundNodeId === state.filterNode.value || rule.outboundNodeId === state.filterNode.value))
 const graphNodes = computed(() => { const participating = new Set(state.choices.value.flatMap(choice => [choice.inboundNodeId, choice.outboundNodeId])); return state.current.value?.nodes.filter(node => participating.has(node.id)) ?? [] })
 const deploying = computed(() => state.locked.value && (!state.command.receipt.value || operationIsActive(state.command.receipt.value.status)))
 </script>
 
 <template>
-  <section class="grid gap-3 min-w-0" :class="{ 'section-block': !external }">
+  <section class="member-routing-editor grid gap-4 min-w-0" :class="{ 'section-block': !external }">
     <div v-if="!external" class="flex items-center justify-between gap-3"><h2>{{ t(external ? 'diy.routing' : 'memberNodes.routing') }}</h2><UButton :data-haptic="external ? 'action' : undefined" variant="ghost" color="neutral" icon="i-ph-arrow-clockwise" :aria-label="t('common.refresh')" :loading="state.loading.value" @click="state.load()" /></div>
     <p v-if="!external" class="text-sm text-muted">{{ t('managedRouting.description') }}</p>
     <UAlert v-if="state.error.value" color="warning" :title="state.error.value" />
@@ -30,17 +30,17 @@ const deploying = computed(() => state.locked.value && (!state.command.receipt.v
       <UAlert v-if="state.current.value.plan.reason" color="warning" :title="t('managedRouting.disabled')" />
       <p v-if="!state.nodes.value.length" class="text-muted">{{ t('memberNodes.noNodes') }}</p>
       <template v-else>
-        <div v-if="state.traceNodes.value.length" class="grid grid-cols-1 gap-2 sm:grid-cols-3"><UFormField class="min-w-0" :label="t('managedRouting.previewFrom')"><USelect v-model="state.start.value" :items="state.traceNodes.value" class="w-full min-w-0" /></UFormField><UFormField class="min-w-0" :label="t('managedRouting.traceHost')"><USelect v-model="state.startEndpoint.value" :items="state.traceEndpoints.value" :ui="{ value: 'whitespace-normal break-words', itemLabel: 'whitespace-normal break-words' }" class="w-full min-w-0" /></UFormField><UFormField class="min-w-0" :label="t('managedRouting.destination')"><UInput v-model="state.destination.value" :placeholder="t('managedRouting.destinationHint')" class="w-full" /></UFormField></div>
+        <div v-if="state.traceNodes.value.length" class="route-trace-controls grid grid-cols-1 gap-3 sm:grid-cols-3"><UFormField class="min-w-0" :label="t('managedRouting.previewFrom')"><USelect v-model="state.start.value" :items="state.traceNodes.value" icon="i-ph-computer-tower" class="w-full min-w-0" /></UFormField><UFormField class="min-w-0" :label="t('managedRouting.traceHost')"><USelect v-model="state.startEndpoint.value" :items="state.traceEndpoints.value" icon="i-ph-sign-in" :ui="{ value: 'whitespace-normal break-words', itemLabel: 'whitespace-normal break-words' }" class="w-full min-w-0" /></UFormField><UFormField class="min-w-0" :label="t('managedRouting.destination')"><UInput v-model="state.destination.value" icon="i-ph-globe" :placeholder="t('managedRouting.destinationHint')" class="w-full" /></UFormField></div>
         <MemberRoutingGraph v-if="graphNodes.length" :nodes="graphNodes" :paths="state.paths.value" :trace="state.trace.value" :selected="state.filterNode.value" :choices="state.choices.value" :endpoints="state.endpoints.value" :templates="state.current.value.templates" :status="state.routeStatus.value" @select="state.selectNode" />
         <RouteSpeedtestPanel v-if="state.traceNodes.value.length" :eligible="state.canSpeedtest.value" :nodes="state.current.value.nodes" :endpoints="state.endpoints.value" :request="{ revision: state.current.value.plan.revision, start: state.start.value, startEndpointId: state.startEndpoint.value, destination: { domain: state.destination.value, ip: state.destination.value, port: 443, network: 'tcp' } }" />
         <UButton :data-haptic="external ? 'action' : undefined" v-if="state.filterNode.value" class="justify-self-start" color="neutral" variant="ghost" :label="t('managedRouting.showAll')" @click="state.filterNode.value = ''" />
         <form class="grid gap-3" @submit.prevent="external ? emit('save') : state.save()">
-          <fieldset v-for="{ rule, index } in filtered" :key="rule.id" :disabled="state.locked.value || disabled" class="grid gap-3 min-w-0 border-b border-default pb-4">
-            <legend class="text-sm text-muted mb-2">{{ t('managedRouting.ruleNumber', { number: index + 1 }) }}</legend>
+          <fieldset v-for="{ rule, index } in filtered" :key="rule.id" :disabled="state.locked.value || disabled" class="route-rule grid gap-3 min-w-0">
+            <legend class="route-rule-title"><UIcon name="i-ph-path" aria-hidden="true" />{{ t('managedRouting.ruleNumber', { number: index + 1 }) }}</legend>
             <div class="grid grid-cols-1 gap-2 md:grid-cols-3">
-              <UFormField :label="t('managedRouting.inboundHost')"><USelect :model-value="rule.inboundEndpointId" :items="state.endpointItems.value.filter(endpoint => endpoint.nodeId !== rule.outboundNodeId)" :ui="{ value: 'whitespace-normal break-words', itemLabel: 'whitespace-normal break-words' }" class="w-full" @update:model-value="state.setEndpoint(rule, 'inbound', $event)" /></UFormField>
-              <UFormField :label="t('memberNodes.template')"><USelect v-model="rule.templateId" :items="state.templates.value" class="w-full" /></UFormField>
-              <UFormField :label="t('managedRouting.outboundHost')"><USelect :model-value="rule.outboundEndpointId" :items="state.endpointItems.value.filter(endpoint => endpoint.nodeId !== rule.inboundNodeId)" :ui="{ value: 'whitespace-normal break-words', itemLabel: 'whitespace-normal break-words' }" class="w-full" @update:model-value="state.setEndpoint(rule, 'outbound', $event)" /></UFormField>
+              <UFormField :label="t('managedRouting.inboundHost')"><USelect :model-value="rule.inboundEndpointId" :items="state.endpointItems.value.filter(endpoint => endpoint.nodeId !== rule.outboundNodeId)" icon="i-ph-sign-in" :ui="{ value: 'whitespace-normal break-words', itemLabel: 'whitespace-normal break-words' }" class="w-full" @update:model-value="state.setEndpoint(rule, 'inbound', $event)" /></UFormField>
+              <UFormField :label="t('memberNodes.template')"><USelect v-model="rule.templateId" :items="state.templates.value" icon="i-ph-funnel" class="w-full" /></UFormField>
+              <UFormField :label="t('managedRouting.outboundHost')"><USelect :model-value="rule.outboundEndpointId" :items="state.endpointItems.value.filter(endpoint => endpoint.nodeId !== rule.inboundNodeId)" icon="i-ph-sign-out" :ui="{ value: 'whitespace-normal break-words', itemLabel: 'whitespace-normal break-words' }" class="w-full" @update:model-value="state.setEndpoint(rule, 'outbound', $event)" /></UFormField>
             </div>
             <div class="flex justify-end gap-1"><UButton :data-haptic="external ? 'action' : undefined" type="button" variant="ghost" color="neutral" icon="i-ph-arrow-up" :aria-label="t('managedRouting.moveUp')" :disabled="index === 0" @click="state.move(index, -1)" /><UButton :data-haptic="external ? 'action' : undefined" type="button" variant="ghost" color="neutral" icon="i-ph-arrow-down" :aria-label="t('managedRouting.moveDown')" :disabled="index === state.choices.value.length - 1" @click="state.move(index, 1)" /><UButton :data-haptic="external ? 'action' : undefined" type="button" variant="ghost" color="neutral" icon="i-ph-trash-bold" :aria-label="t('common.delete')" @click="state.choices.value.splice(index, 1)" /></div>
           </fieldset>
@@ -54,3 +54,11 @@ const deploying = computed(() => state.locked.value && (!state.command.receipt.v
     </template>
   </section>
 </template>
+
+<style scoped>
+.route-trace-controls { padding-bottom: 1rem; border-bottom: 1px solid var(--line); }
+.route-rule { padding: .75rem 0; border-bottom: 1px solid var(--line); }
+.route-rule-title { display: flex; align-items: center; gap: .45rem; padding-right: .5rem; color: var(--text-muted); font-size: .75rem; }
+.route-rule:focus-within .route-rule-title { color: var(--ui-primary); }
+@media (prefers-reduced-motion: no-preference) { .route-rule-title { transition: color .15s; } }
+</style>

@@ -1,10 +1,18 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cacheGeneration, clearResponseCache, readResponseCache, setCacheSession, writeResponseCache } from './session'
 
 beforeEach(() => { setCacheSession(null); setCacheSession('member:one') })
-afterEach(() => setCacheSession(null))
+afterEach(() => { setCacheSession(null); vi.useRealTimers() })
 
 describe('session response snapshots', () => {
+  it('expires short-lived displays without extending freshness on cache hits', () => {
+    vi.useFakeTimers()
+    writeResponseCache('hourly', { price: '100' }, cacheGeneration())
+    vi.advanceTimersByTime(59_000)
+    expect(readResponseCache('hourly', 60_000)).toEqual({ price: '100' })
+    vi.advanceTimersByTime(1001)
+    expect(readResponseCache('hourly', 60_000)).toBeUndefined()
+  })
   it('isolates saved data from both callers and editable restored drafts', () => {
     const response = { items: [{ name: 'Singapore' }] }
     writeResponseCache('catalog', response, cacheGeneration())

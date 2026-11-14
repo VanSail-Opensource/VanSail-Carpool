@@ -28,7 +28,7 @@ export function preloadSession(session: Session): void {
     controller.signal.addEventListener('abort', abort, { once: true })
     const timer = globalThis.setTimeout(abort, 20_000)
     try {
-      await request(resource.path, { ...resource.options, signal: timeout.signal })
+      await request(resource.path, { cache: 'no-cache', ...resource.options, signal: timeout.signal })
     } catch (error) {
       if ((error as { status?: number } | null)?.status === 401) controller.abort()
       // Optional background reads never replace the foreground page's error handling.

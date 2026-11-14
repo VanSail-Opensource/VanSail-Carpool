@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>Member UI preview</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #121714; color: #e8ede9; font: 14px system-ui, sans-serif; }
+    header { padding: 14px 18px; background: #1b241e; border-bottom: 1px solid #35463c; }
+    h1 { margin: 0 0 12px; font-size: 18px; }
+    form { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; }
+    label { display: grid; gap: 4px; color: #c3cec7; font-size: 12px; }
+    select, input, button { min-height: 36px; padding: 7px 9px; border: 1px solid #516357; border-radius: 6px; background: #162019; color: inherit; font: inherit; }
+    input[type="number"] { width: 88px; }
+    button { cursor: pointer; color: #0d2115; background: #98d7ad; font-weight: 650; }
+    .motion { display: flex; align-items: center; min-height: 36px; gap: 6px; }
+    .motion input { min-height: auto; }
+    .stage { overflow: auto; padding: 20px; }
+    iframe { display: block; width: 390px; height: 844px; max-width: none; border: 0; margin: 0 auto; background: #0d100e; box-shadow: 0 0 0 1px #516357; }
+    .details { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 10px; color: #a8b8ae; font-size: 12px; }
+    a { color: #a9e6be; }
+    :focus-visible { outline: 2px solid #a9e6be; outline-offset: 2px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Member UI preview</h1>
+    <form id="controls">
+      <label>Page<select id="page"><option value="connections">Active connections</option><option value="subscription">Subscription</option><option value="home">Home</option><option value="catalog">Explore</option><option value="diy">DIY Center</option></select></label>
+      <label>Viewport<select id="width"><option value="390">Mobile · 390px</option><option value="1440">Desktop · 1440px</option></select></label>
+      <label>Height<input id="height" type="number" min="400" max="1600" step="1" value="844"></label>
+      <label>Language<select id="language"><option value="en">English</option><option value="zh">简体中文</option></select></label>
+      <label>State<select id="state"><option value="ready">Populated</option><option value="loading">Loading</option><option value="empty">Empty</option><option value="error">Error</option></select></label>
+      <label>Extra fixture flags<input id="flags" placeholder="e.g. disabled&incomplete" spellcheck="false"></label>
+      <label class="motion"><input id="reduced" type="checkbox">Reduced motion</label>
+      <button type="submit">Load preview</button>
+    </form>
+    <div class="details"><output id="status" aria-live="polite"></output><a id="direct" target="_blank" rel="noopener">Open fixture</a></div>
+  </header>
+  <main class="stage"><iframe id="preview" title="Member interface preview"></iframe></main>
+  <script>
+    const fixtures = {
+      connections: '/fixtures/member-connections-audit.html',
+      subscription: '/fixtures/subscription-audit.html?compatibility',
+      home: '/fixtures/subscription-audit.html?shell&mode=home&around=1&telegram',
+      catalog: '/fixtures/hourly-audit.html?catalog',
+      diy: '/fixtures/routing-audit.html?diy&populated&split&local-preview',
+    };
+    const params = new URLSearchParams(location.search);
+    const controls = document.getElementById('controls');
+    const frame = document.getElementById('preview');
+    const fields = Object.fromEntries(['page', 'width', 'height', 'language', 'state', 'flags', 'reduced'].map(key => [key, document.getElementById(key)]));
+    fields.page.value = Object.hasOwn(fixtures, params.get('page')) ? params.get('page') : 'connections';
+    fields.width.value = params.get('width') === '1440' ? '1440' : '390';
+    fields.height.value = String(Math.min(1600, Math.max(400, Number(params.get('height')) || 844)));
+    fields.language.value = params.get('language') === 'zh' || params.has('zh') ? 'zh' : 'en';
+    fields.state.value = ['loading', 'empty', 'error'].includes(params.get('state')) ? params.get('state') : 'ready';
+    fields.reduced.checked = params.has('reduced') || params.has('reduced-motion');
+    const extra = new URLSearchParams(params.get('flags') || '');
+    for (const [key, value] of params) if (!Object.hasOwn(fields, key) && !['zh', 'reduced-motion'].includes(key)) extra.set(key, value);
+    fields.flags.value = extra.toString();
+    function render() {
+      const page = fields.page.value;
+      const url = new URL(fixtures[page], location.origin);
+      for (const [key, value] of new URLSearchParams(fields.flags.value.replace(/^\?/, ''))) url.searchParams.set(key, value);
+      if (fields.language.value === 'zh') url.searchParams.set('zh', '1');
+      if (fields.reduced.checked) url.searchParams.set('reduced-motion', '1');
+      const stateFlags = page === 'home' ? { loading: 'home-slow', empty: 'history-empty', error: 'home-error' } : page === 'diy' ? { loading: 'slow', empty: 'empty', error: 'load-error' } : { loading: 'slow', empty: 'empty', error: 'error' };
+      if (fields.state.value !== 'ready') url.searchParams.set(stateFlags[fields.state.value], fields.state.value === 'loading' ? '3000' : '1');
+      frame.style.width = fields.width.value + 'px';
+      frame.style.height = fields.height.value + 'px';
+      frame.src = url.pathname + url.search;
+      frame.title = fields.page.selectedOptions[0].text + ' preview';
+      document.getElementById('direct').href = frame.src;
+      document.getElementById('status').textContent = fields.width.value + ' × ' + fields.height.value + ' CSS pixels · actual fixture viewport';
+      const saved = new URLSearchParams();
+      for (const [key, field] of Object.entries(fields)) if (key !== 'reduced' && field.value) saved.set(key, field.value);
+      if (fields.reduced.checked) saved.set('reduced-motion', '1');
+      history.replaceState(null, '', '?' + saved);
+    }
+    frame.addEventListener('load', () => { frame.contentWindow.__subscriptionAuditLocale?.(fields.language.value === 'zh' ? 'zh-CN' : 'en'); });
+    controls.addEventListener('submit', event => { event.preventDefault(); render(); });
+    controls.addEventListener('change', render);
+    render();
+  </script>
+</body>
+</html>

@@ -5,6 +5,8 @@ export function isReadRequest(path: string, method: string): boolean {
     path === '/api/v1/admin/xnode/firewall/records/search' ||
     path === '/api/v1/ip-lookup/quote' ||
     path === '/api/v1/community/membership/check' ||
+    path === '/api/v1/xnode/diy/preview' ||
+    path === '/api/v1/xnode/routing/preview' ||
     /^\/api\/v1\/purchases(?:\/[^/]+\/addons)?\/quote$/.test(path) ||
     path === '/api/v1/subscription/connections' ||
     /^\/api\/v1\/admin\/database\/tables\/[^/]+\/query$/.test(path)

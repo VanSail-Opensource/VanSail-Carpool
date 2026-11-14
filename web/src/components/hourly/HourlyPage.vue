@@ -16,7 +16,7 @@ import { useHourly } from './useHourly'
 
 const { t } = useI18n()
 const hourly = useHourly()
-const { value: data, loading, error, busy, actionError } = hourly
+const { value: data, loading, error, liveReady, busy, actionError } = hourly
 const disabling = shallowRef<HourlySquad | null>(null)
 const activating = shallowRef<HourlySquad | null>(null)
 const codeOpen = shallowRef(false)
@@ -63,7 +63,7 @@ function beginConsent(): boolean {
 }
 function consentCurrent(): boolean {
   const current = data.value
-  if (!current || current.legacyBlocked || current.policy.version !== reviewedPolicyVersion.value) return false
+  if (!liveReady.value || !current || current.legacyBlocked || current.policy.version !== reviewedPolicyVersion.value) return false
   if (activating.value) {
     const target = current.squads.find(item => item.offer.groupId === activating.value?.offer.groupId)
     if (!target?.ready || !target.offer.enabled || !current.policy.policy.salesEnabled || target.offer.revision !== activating.value.offer.revision) return false
@@ -76,7 +76,7 @@ function consentCurrent(): boolean {
 }
 // Refreshes cannot silently replace the policy, paid enrollment, or gated offer
 // that the member reviewed before opening a destructive/billing dialog.
-watch(data, () => {
+watch([data, liveReady], () => {
   if ((!codeOpen.value && !extraOpen.value && !disabling.value) || consentCurrent()) return
   codeOpen.value = false
   extraOpen.value = false
@@ -113,9 +113,9 @@ async function enableExtra(): Promise<void> {
 
 <template>
   <section class="hourly-page" :aria-label="t('hourly.title')">
-    <header class="hourly-page__toolbar"><UButton color="neutral" variant="ghost" icon="i-ph-arrow-clockwise" :aria-label="t('common.refresh')" :loading="hourly.refreshing.value" @click="hourly.refresh()" /></header>
     <div v-if="loading" aria-busy="true"><SkeletonBlock height="12rem" /><SkeletonBlock height="9rem" /></div>
     <InlineNotice v-if="error" tone="warning">{{ error }}<UButton variant="link" :label="t('common.tryAgain')" @click="hourly.refresh()" /></InlineNotice>
+    <p v-if="data && !liveReady && !error" class="hourly-page__sync" role="status"><UIcon name="i-ph-circle-notch" aria-hidden="true" />{{ t('common.loading') }}</p>
     <HourlyLegacyBlock v-if="data?.legacyBlocked" />
     <template v-else-if="data">
       <HourlySummary v-if="hasHourlyHistory" :data="data" :busy="busy" @extra="extra" />
@@ -135,15 +135,14 @@ async function enableExtra(): Promise<void> {
 
 <style scoped>
 .hourly-page { display: grid; gap: 0.6rem; min-width: 0; }
-.hourly-page__toolbar { display: flex; justify-content: flex-end; padding-top: 0.35rem; }
+.hourly-page__sync { display: flex; align-items: center; justify-content: flex-end; gap: .3rem; margin: 0; color: var(--text-faint); font-size: .7rem; }
+.hourly-page__sync .iconify { animation: hourly-sync 1s linear infinite; }
 .hourly-page__terms { margin: 0.4rem 0 0; color: var(--text-muted); font-size: 0.82rem; line-height: 1.6; }
 .hourly-page__empty { padding-block: 1.5rem; text-align: center; }
-.hourly-page__squads { display: grid; gap: 0.45rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); align-items: start; }
+.hourly-page__squads { display: grid; gap: .65rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); align-items: stretch; }
 .hourly-page__squads > * { animation: hourly-component 220ms ease-out both; animation-delay: var(--entry-delay, 0ms); }
-@media (min-width: 900px) {
-  .hourly-page__squads { display: block; column-width: 20rem; column-gap: 0.65rem; }
-  .hourly-page__squads > * { display: flex; width: 100%; margin-bottom: 0.65rem; break-inside: avoid; }
-}
+@media (min-width: 900px) { .hourly-page__squads { gap: .8rem; } }
 @keyframes hourly-component { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-@media (prefers-reduced-motion: reduce) { .hourly-page__squads > * { animation: none; } }
+@keyframes hourly-sync { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .hourly-page__squads > *, .hourly-page__sync .iconify { animation: none; } }
 </style>

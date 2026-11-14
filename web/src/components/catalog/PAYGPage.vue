@@ -11,7 +11,7 @@ import PAYGSquadCard from './PAYGSquadCard.vue'
 
 const { t } = useI18n()
 const preferences = usePreferencesStore()
-const { value: data, loading, error, refresh } = useSubscriptionData(paygApi.get, 15_000, 'payg.loadFailed')
+const { value: data, loading, error, refresh } = useSubscriptionData(paygApi.get, 15_000, 'payg.loadFailed', undefined, '/api/v1/payg')
 const squads = computed(() => data.value?.squads.filter(item => item.squad.paygState !== 'hidden') ?? [])
 const emit = defineEmits<{ ready: [value: boolean] }>()
 watch(loading, value => emit('ready', !value), { immediate: true })
@@ -37,14 +37,11 @@ watch(loading, value => emit('ready', !value), { immediate: true })
 
 <style scoped>
 .payg-page { display: grid; gap: .6rem; }
-.payg-page__grid { display: grid; gap: .45rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); align-items: start; }
+.payg-page__grid { display: grid; gap: .65rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); align-items: stretch; }
 .payg-page__empty { margin: 0; padding-block: 1.5rem; text-align: center; color: var(--text-muted); font-size: .8rem; }
 .payg-page__error { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
 .payg-page__grid--content > * { animation: payg-component 220ms ease-out both; animation-delay: var(--entry-delay, 0ms); }
-@media (min-width: 900px) {
-  .payg-page__grid--content { display: block; column-width: 20rem; column-gap: .65rem; }
-  .payg-page__grid--content > * { display: flex; width: 100%; margin-bottom: .65rem; break-inside: avoid; }
-}
+@media (min-width: 900px) { .payg-page__grid { gap: .8rem; } }
 @keyframes payg-component { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) { .payg-page__grid > * { animation: none; } }
 </style>

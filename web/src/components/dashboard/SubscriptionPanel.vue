@@ -10,7 +10,6 @@ const props = defineProps<{
   revoking: boolean
   revokeBlocked: boolean
   openRevoke?: boolean
-  showDesktopActions?: boolean
 }>()
 
 const emit = defineEmits<{ revoke: []; revokeRequestConsumed: [] }>()
@@ -51,7 +50,7 @@ function openConnections(): void {
 </script>
 
 <template>
-  <section class="section-block home-subscription" :class="{ 'home-subscription--desktop-actions': showDesktopActions }">
+  <section class="section-block home-subscription">
     <div class="section-heading">
       <h2>{{ $t('dashboard.subscriptionLink') }}</h2>
       <span class="feature-icon feature-icon--small"><UIcon name="i-ph-key" /></span>
@@ -114,5 +113,5 @@ function openConnections(): void {
 </template>
 
 <style scoped>
-@media (min-width: 900px) { .home-subscription:not(.home-subscription--desktop-actions) .home-subscription__actions { display: none; } }
+@media (min-width: 900px) { .home-subscription__actions { display: none; } }
 </style>

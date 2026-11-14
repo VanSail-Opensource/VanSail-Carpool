@@ -33,35 +33,35 @@ export function mobileNavigationItems(_isAdmin: boolean, showActivity = false, i
 export function desktopNavigationItems(t: Translate, _isAdmin: boolean, showAroundTX = false, showActivity = false, showIPLookup = false, showSubscription = true, isNewUser = false): NavigationMenuItem[] {
   if (isNewUser) {
     return [
-      { label: t('nav.home'), to: '/home', icon: 'i-ph-house', exactQuery: true },
-      { label: t('nav.explore'), to: '/catalog', icon: 'i-ph-compass' },
+      { value: 'home', label: t('nav.home'), to: '/home', icon: 'i-ph-house', exactQuery: true },
+      { value: 'explore', label: t('nav.explore'), to: '/catalog', icon: 'i-ph-compass' },
     ]
   }
   const subscriptionChildren = showSubscription
     ? [
-        { label: t('subscription.title'), to: '/subscription', icon: 'i-ph-link-bold' },
-        { label: t('nav.connections'), to: '/connections', icon: 'i-ph-devices' },
-        { label: t('nav.revoke'), to: { path: '/subscription', query: { revoke: '1' } }, icon: 'i-ph-trash', exactQuery: true },
+        { value: 'subscription', label: t('subscription.title'), to: '/subscription', icon: 'i-ph-link-bold' },
+        { value: 'connections', label: t('nav.connections'), to: '/connections', icon: 'i-ph-devices' },
+        { value: 'revoke', label: t('nav.revoke'), to: { path: '/subscription', query: { revoke: '1' } }, icon: 'i-ph-trash', exactQuery: true },
       ]
     : []
   const items: NavigationMenuItem[] = [
     {
-      label: t('nav.home'), to: '/home', icon: 'i-ph-house', defaultOpen: showSubscription, exactQuery: true,
+      value: 'home', label: t('nav.home'), to: '/home', icon: 'i-ph-house', defaultOpen: showSubscription, exactQuery: true,
       ...(subscriptionChildren.length ? { children: subscriptionChildren } : {}),
     },
-    { label: t('nav.explore'), to: '/catalog', icon: 'i-ph-compass' },
-    ...(showActivity ? [{ label: t('nav.activity'), to: '/activity', icon: 'i-ph-game-controller' }] : []),
-    { label: t('settings.title'), to: '/settings', icon: 'i-ph-gear' },
+    { value: 'explore', label: t('nav.explore'), to: '/catalog', icon: 'i-ph-compass' },
+    ...(showActivity ? [{ value: 'activity', label: t('nav.activity'), to: '/activity', icon: 'i-ph-game-controller' }] : []),
+    { value: 'settings', label: t('settings.title'), to: '/settings', icon: 'i-ph-gear' },
   ]
   if (showAroundTX || showIPLookup) {
     items.splice(1, 0, {
-      label: t('nav.aroundTx'), icon: 'i-ph-sparkle', type: 'trigger', defaultOpen: true, popover: true,
+      value: 'around-tx', label: t('nav.aroundTx'), icon: 'i-ph-sparkle', type: 'trigger', defaultOpen: true, popover: true,
       children: [
-        ...(showIPLookup ? [{ label: t('ipLookup.title'), to: '/ip-lookup', icon: 'i-ph-globe-hemisphere-west' }] : []),
+        ...(showIPLookup ? [{ value: 'ip-lookup', label: t('ipLookup.title'), to: '/ip-lookup', icon: 'i-ph-globe-hemisphere-west' }] : []),
         ...(showAroundTX ? [
-        { label: t('affiliates.title'), to: '/affiliates', icon: 'i-ph-users-three' },
-        { label: t('community.title'), to: '/community', icon: 'i-ph-users-three' },
-        { label: t('nav.emby'), to: '/emby', icon: 'i-ph-monitor-play' },
+        { value: 'affiliates', label: t('affiliates.title'), to: '/affiliates', icon: 'i-ph-users-three' },
+        { value: 'community', label: t('community.title'), to: '/community', icon: 'i-ph-users-three' },
+        { value: 'emby', label: t('nav.emby'), to: '/emby', icon: 'i-ph-monitor-play' },
         ] : []),
       ],
     })

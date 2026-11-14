@@ -9,7 +9,7 @@ import { usageBreakdownFixture } from './usage-breakdown-data'
 import { pricingApi } from '@/api/pricing'
 import { ApiError } from '@/api/http'
 import { subscriptionApi, type MemberSubscription } from '@/api/subscription'
-import { xnodeMemberApi } from '@/api/xnodeMember'
+import { xnodeMemberApi, type DIYCompatibility } from '@/api/xnodeMember'
 import { ipLookupApi } from '@/api/ipLookup'
 import { memberOperationsApi } from '@/api/memberOperations'
 import { preferencesApi } from '@/api/preferences'
@@ -18,10 +18,16 @@ import { useSessionStore } from '@/stores/session'
 import { usePreferencesStore } from '@/stores/preferences'
 import { setLocale, t } from '@/i18n'
 import SubscriptionAudit from './SubscriptionAudit.vue'
+import { installAroundTxFixture } from './around-tx-data'
 
 const params = new URLSearchParams(location.search)
+const compatibility: DIYCompatibility[] = params.has('compatibility') ? [
+  { format: 'xray', key: 'fingerprint', state: 'endpoint-incompatible', appliedHosts: 1, incompatibleHosts: 1, reasons: ['tls'] },
+  { format: 'sing-box', key: 'xhttpMode', state: 'unsupported', appliedHosts: 0, incompatibleHosts: 2, reasons: ['format'] },
+  { format: 'clash', key: 'muxXudpConcurrency', state: 'unsupported', appliedHosts: 0, incompatibleHosts: 2, reasons: ['format'] },
+] : []
 ipLookupApi.state = async () => ({ enabled: false }) as never
-xnodeMemberApi.subscription = async () => ({ ready: !params.has('first-sync'), firstSyncedAt: params.has('first-sync') ? null : new Date().toISOString(), username: 'native-member', active: true, incomplete: false, url: 'https://panel.example/subscription/' + 'a'.repeat(43), downloadUrl: 'https://panel.example/api/v1/subscriptions/' + 'a'.repeat(43), usedBytes: '0', limitBytes: '1000', expiresAt: null, formats: { native: true, base64: true, xray: true, 'sing-box': true, clash: true, stash: !params.has('diagnostics') }, formatDiagnostics: params.has('diagnostics') ? { 'sing-box': { code: 'SUBSCRIPTION_ENDPOINTS_EXCLUDED', excludedEndpoints: 2 }, stash: { code: 'SUBSCRIPTION_FORMAT_RENDER_FAILED', excludedEndpoints: 0 } } : undefined })
+xnodeMemberApi.subscription = async () => ({ ready: !params.has('first-sync'), firstSyncedAt: params.has('first-sync') ? null : new Date().toISOString(), username: 'native-member', active: true, incomplete: false, url: 'https://panel.example/subscription/' + 'a'.repeat(43), downloadUrl: 'https://panel.example/api/v1/subscriptions/' + 'a'.repeat(43), usedBytes: '0', limitBytes: '1000', expiresAt: null, connectionOptions: compatibility, formats: { native: true, base64: true, xray: true, 'sing-box': true, clash: true, stash: !params.has('diagnostics') }, formatDiagnostics: params.has('diagnostics') ? { 'sing-box': { code: 'SUBSCRIPTION_ENDPOINTS_EXCLUDED', excludedEndpoints: 2 }, stash: { code: 'SUBSCRIPTION_FORMAT_RENDER_FAILED', excludedEndpoints: 0 } } : undefined })
 xnodeMemberApi.routing = async () => ({ plan: { revision: 0, choices: [], phase: 'active', reason: '', operationId: '' }, nodes: [], templates: [], paths: [] })
 xnodeMemberApi.previewRouting = async () => ({ paths: [], trace: null })
 xnodeMemberApi.metrics = async () => {
@@ -63,7 +69,10 @@ subscriptionApi.subscription = async () => { state.reads++; await delay(); retur
 memberOperationsApi.getPurchaseRefundQuote = async () => ({ eligible:false,reason:'FIXTURE',amount:{currency:'TXB',minor:'0',display:'0.00 TXB'} }) as never
 api.getAutoRenewal = async () => ({ purchaseId:'fixture-purchase',enabled:true,canEnable:true,ineligibleReason:null,grossPrice:{currency:'TXB',minor:'1000',display:'10.00 TXB'},discount:{currency:'TXB',minor:'0',display:'0.00 TXB'},netPrice:{currency:'TXB',minor:'1000',display:'10.00 TXB'},scheduledAt:at(23*day),nextCycleEndsAt:at(53*day) })
 pricingApi.renewalInfo = async () => ({ policy: { dynamicEnabled: false }, quote: null, graceSeconds: 0 }) as never
-api.getCommunityAccess = async () => ({ activeCombo: !params.has('inactive') && (!params.has('zero-balance') || params.has('combo')) })
+api.getCommunityAccess = async () => {
+  if (params.has('access-delay')) await new Promise(resolve => setTimeout(resolve, Number(params.get('access-delay')) || 1800))
+  return { activeCombo: !params.has('inactive') && (!params.has('zero-balance') || params.has('combo')) }
+}
 const fixturePurchase = { id:'fixture-purchase',comboId:'fixture-combo',comboName:'Tokyo monthly',price:{currency:'TXB',minor:'1000',display:'10.00 TXB'},grossPrice:{currency:'TXB',minor:'1000',display:'10.00 TXB'},couponDiscount:{currency:'TXB',minor:'0',display:'0.00 TXB'},couponGrantId:null,validFrom:at(-7*day),validUntil:at(23*day),status:'active',autoRenewEnabled:true,trafficLimitBytes:'100000000000',resetStrategy:'MONTH_ROLLING',squadUuids:['international'],createdAt:at(-7*day),updatedAt:at(0) }
 api.getDashboard = async () => {
   if (params.has('home-slow')) await new Promise(resolve => setTimeout(resolve, 10_000))
@@ -89,7 +98,11 @@ app.use(pinia)
 usePreferencesStore(pinia).value = { paygEnabled: true, paygSquads: {}, activeCombo: true, showAroundTx: true, showActivity: true, includeNodePrices: true, notifications: {} } as never
 useSessionStore(pinia).session = { authenticated: true, user: { id: 'audit-member', telegramId: '42', firstName: 'Mira', role: 'user', onboardingState: 'complete' } } as never
 useSessionStore(pinia).status = 'ready'
-preferencesApi.get = async () => ({ activeCombo: true, showAroundTx: false, showActivity: false, includeNodePrices: true, notifications: {} }) as never
+if (params.has('around')) installAroundTxFixture(params, () => useSessionStore(pinia).user!)
+preferencesApi.get = async () => {
+  if (params.has('preferences-delay')) await new Promise(resolve => setTimeout(resolve, Number(params.get('preferences-delay')) || 1800))
+  return { activeCombo: true, showAroundTx: params.has('around'), showActivity: false, includeNodePrices: true, notifications: {} } as never
+}
 displayCurrencyApi.get = async () => ({ currency: 'TXB', rates: null }) as never
 const router = shell ? (await import('@/router')).default : createRouter({ history: createWebHistory(), routes: [
   { path: '/fixtures/subscription-audit.html', component: SubscriptionAudit },

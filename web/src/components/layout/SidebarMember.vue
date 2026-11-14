@@ -22,7 +22,7 @@ const avatar = computed(() => {
   <div class="side-rail__member">
     <UAvatar :src="avatar" :alt="displayName" size="sm" referrerpolicy="no-referrer" />
     <div>
-      <strong :title="t('nav.fullscreenGreeting', { name: displayName })">{{ t('nav.fullscreenGreeting', { name: displayName }) }}</strong>
+      <strong :title="displayName">{{ displayName }}</strong>
       <span v-if="username" :title="`@${username}`">@{{ username }}</span>
     </div>
   </div>

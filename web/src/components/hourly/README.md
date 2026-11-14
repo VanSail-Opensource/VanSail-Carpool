@@ -1,10 +1,18 @@
 # Hourly member access
 
 `HourlyPage.vue` is the Charge by hour catalog entry. It no longer renders its
-own "Charge by hour" heading (that duplicates the catalog mode switch); only a
-compact right-aligned refresh toolbar remains. `useHourly.ts` reads live
+own "Charge by hour" heading (that duplicates the catalog mode switch), and its
+routine refresh toolbar is removed. Background polling and confirmed-action
+refreshes keep the view current; an error still offers a contextual retry.
+`useHourly.ts` reads live
 owner-scoped state, retains request idempotency keys across uncertain responses,
 tracks the existing durable operation receipts, and refreshes confirmed changes.
+An authenticated rendering snapshot can populate the page immediately, but
+`liveReady` must confirm current terms before any control becomes enabled.
+`busy` includes that read barrier; a small loading status explains disabled
+cached controls, and an error keeps the contextual retry available. Losing
+live confirmation also retires an open consent dialog rather than leaving an
+enabled confirmation whose write would be silently ignored.
 `hourlyHours.ts` exposes `hourlyRequiredHours(offer, fallback)`: an offer's own
 `requiredHours` (`0` inherits the account-wide `activationHours`) uses the
 current generated contract directly; the retired compatibility cast is removed. `HourlyPage.vue` passes that effective value to every card, so the
@@ -83,8 +91,7 @@ lock/portal that fills the component (`min-height: 12rem`): layered gradient
 surfaces, a slowly rotating conic sweep and pulsing concentric rings behind
 centred content that stays legible in both themes. Copy is intentionally limited
 to `hourly.legacyTitle` plus one short `hourly.legacyBlocked` line; there is no
-separate "why" copy and no in-block refresh button, so the compact page toolbar
-refresh remains the single refresh action. Reduced motion keeps the gradient and
+separate "why" copy or routine refresh button. Reduced motion keeps the gradient and
 rings static without pulsing or rotation. Card and extra actions are not rendered,
 and the page guards activation, disable and extra mutations while the flag is set,
 so no hourly call can fire.
@@ -95,7 +102,7 @@ so no hourly call can fire.
 Charge by hour squads share the Charge by traffic card geometry, profile facts,
 price treatment and status slot while adding paid-through time, activation
 eligibility, funding suspension and cooldown details. Enable/disable is a compact
-36px icon control sitting at the right of the paid-through/eligibility line
+44px icon control sitting at the right of the paid-through/eligibility line
 rather than a footer row; enable is green, disable is red, the active `Enabled`
 badge is omitted, and a blocked enable (cooldown, insufficient balance or other
 ineligibility) is grey with a prohibit icon.
@@ -121,6 +128,12 @@ Voluntary disable and automatic extra purchases require the existing confirmatio
 dialog; the latter shows the accepted decimal-GB price and midnight expiry.
 Pending receipts remain visible and block concurrent mutations. No financial
 state is persisted in browser storage and no client-side estimate authorizes use.
+
+Explore lays out hourly squads in the same aligned desktop grid as traffic
+squads, with independent title/price columns and a bottom activity/action area.
+Its mode-level demonstration button opens the shared read-only billing modal
+documented in `../catalog/README.md`; it does not bypass activation eligibility,
+policy-version checks, required confirmations or durable operation receipts.
 
 `HourlyPage.test.ts` supplies hosted consent, disable and legacy-admission
 regressions. Approved extra rates and consent copy retain the exact native TXB

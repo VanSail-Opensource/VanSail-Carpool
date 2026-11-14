@@ -1,6 +1,16 @@
 {
   "connections": {
     "title": "活跃连接",
+    "subtitle": "近期公网 IP 与临时访问授权。",
+    "addresses": "IP 地址",
+    "matching": "匹配地址",
+    "leaseDuration": "租约时长",
+    "hours": "{count} 小时",
+    "leasesDisabled": "未启用",
+    "updated": "更新于",
+    "grantTitle": "授权访问",
+    "ipv4": "IPv4",
+    "ipv6": "IPv6",
     "ip": "公网 IP 地址",
     "ipPlaceholder": "IPv4 或 IPv6 地址",
     "grantHelp": "添加单个公网 IP，租期使用已配置的时长。重复添加不会延长到期时间。",

@@ -21,7 +21,14 @@ export async function cachedTransport<T>(url: string, options: RequestOptions, s
   const work = (async () => {
     try {
       const value = await send()
-      if (key && latest.get(key) === ticket) writeResponseCache(key, value, generation)
+      if (key && latest.get(key) === ticket) {
+        // Dashboard carries a legacy bearer URL alongside display data. Never
+        // retain that capability in a rendering snapshot; live results stay intact.
+        const snapshot = path === '/api/v1/dashboard' && value && typeof value === 'object'
+          ? { ...value, subscriptionUrl: null }
+          : value
+        writeResponseCache(key, snapshot, generation)
+      }
       return value
     } catch (error) {
       const status = (error as { status?: number } | null)?.status

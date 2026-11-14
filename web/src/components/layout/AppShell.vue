@@ -18,6 +18,7 @@ import MobileNavigation from './MobileNavigation.vue'
 import SidebarMember from './SidebarMember.vue'
 import { desktopNavigationItems } from './navigation'
 import { usePageTransition } from './usePageTransition'
+import { useNavigationExpansion } from './useNavigationExpansion'
 
 const route = useRoute()
 const router = useRouter()
@@ -36,16 +37,13 @@ useTelegramSettingsButton(() => { void router.push('/settings') }, () => !isNewU
 
 const { enabled: ipLookupEnabled, refresh: refreshIPLookupAvailability } = useIPLookupAvailability()
 const desktopItems = computed(() => desktopNavigationItems(t, sessionStore.isAdmin, hasValidCombo.value && preferences.showAroundTX, hasValidCombo.value && preferences.showActivity, ipLookupEnabled.value, hasAccess.value, isNewUser.value))
+const expandedNavigation = useNavigationExpansion(() => desktopItems.value)
 const transition = usePageTransition(router, () => desktopItems.value)
 const { reducedMotion, offset } = useMotionPreferences()
 const showBackButton = computed(() => !['/', '/home'].includes(route.path))
 const appContent = useTemplateRef<globalThis.HTMLDivElement>('appContent')
 const mainContent = useTemplateRef<globalThis.HTMLElement>('mainContent')
 const isFullscreen = telegramFullscreenState()
-const greetingName = computed(() => t('nav.fullscreenGreeting', {
-  name: sessionStore.user?.firstName?.trim() || t('nav.memberFallback'),
-}))
-const greetingUsername = computed(() => sessionStore.user?.telegramUsername?.trim() || '')
 const firstPage = shallowRef(true)
 const pageMotion = computed(() => {
   const distance = offset(firstPage.value ? 8 : 14)
@@ -111,7 +109,7 @@ watch(() => route.path, (_next, previous) => {
       <UDashboardSidebar id="navigation-compact" class="side-rail app-dashboard__sidebar" :default-size="13" :min-size="13" :max-size="20" :ui="{ body: 'px-0', footer: 'px-0' }" resizable>
         <template #default>
           <nav class="side-rail__nav" :aria-label="$t('nav.primary')">
-            <UNavigationMenu :items="desktopItems" orientation="vertical" color="primary" variant="pill" />
+            <UNavigationMenu v-model="expandedNavigation" :items="desktopItems" type="multiple" orientation="vertical" color="primary" variant="pill" />
           </nav>
         </template>
         <template #footer>
@@ -132,10 +130,6 @@ watch(() => route.path, (_next, previous) => {
             :exit="pageMotion.exit"
             :transition="pageMotion.transition"
           >
-            <div v-if="isFullscreen" class="app-greeting" role="status">
-              <strong>{{ greetingName }}</strong>
-              <span v-if="greetingUsername">@{{ greetingUsername }}</span>
-            </div>
             <main id="main-content" ref="mainContent" class="app-main" tabindex="-1">
               <slot />
             </main>

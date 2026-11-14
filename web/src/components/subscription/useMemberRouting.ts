@@ -13,7 +13,7 @@ export function routingError(caught: unknown, choices: RoutingChoice[] = []) {
   const message = t(`managedRouting.errors.${caught.code}`)
   return indices.length ? `${message} ${t('managedRouting.involvedRules', { rules: indices.join(' → ') })}` : message
 }
-export function useMemberRouting(options?: { initial: () => RoutingView | undefined; onDraft: (choices: RoutingChoice[]) => void; onRefresh: () => void }) {
+export function useMemberRouting(options?: { initial: () => RoutingView | undefined; onDraft: (choices: RoutingChoice[]) => void; onRefresh: () => void; paused?: () => boolean }) {
   const current = shallowRef<RoutingView | null>(null)
   let savedChoices = ''
   const choices = ref<RoutingChoice[]>([])
@@ -67,7 +67,7 @@ export function useMemberRouting(options?: { initial: () => RoutingView | undefi
   }
   async function preview() {
     const ticket = ++previewGeneration; previewReader?.abort(); previewReader = new AbortController()
-    if (!current.value) { previewing.value = false; return }
+    if (!current.value || options?.paused?.()) { previewing.value = false; return }
     previewing.value = true; previewError.value = null; trace.value = null
     try {
       const text = traceNodes.value.length ? destination.value.trim() : ''
@@ -78,6 +78,7 @@ export function useMemberRouting(options?: { initial: () => RoutingView | undefi
   }
   function schedulePreview() {
     previewGeneration++; previewReader?.abort(); if (timer) clearTimeout(timer)
+    if (options?.paused?.()) { previewing.value = false; trace.value = null; return }
     previewing.value = true; trace.value = null; timer = setTimeout(() => void preview(), 300)
   }
   function add() {
@@ -108,6 +109,7 @@ export function useMemberRouting(options?: { initial: () => RoutingView | undefi
   watch([choices, destination, start, startEndpoint], schedulePreview, { deep: true })
   if (options) {
     watch(options.initial, () => void load())
+    if (options.paused) watch(options.paused, schedulePreview)
     watch(choices, value => options.onDraft(globalThis.structuredClone(value.map(choice => ({ ...choice })))), { deep: true })
   }
   onMounted(load)

@@ -1,6 +1,4 @@
 @media (min-width: 900px) {
-  .app-greeting { display: none; }
-  .app-frame--fullscreen .app-main { padding-top: var(--shell-safe-top); }
   .side-rail__footer {
     display: grid;
     gap: 0.7rem;

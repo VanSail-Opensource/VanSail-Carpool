@@ -52,16 +52,16 @@ const reason = computed(() => {
 </template>
 
 <style scoped>
-.hourly-squad { align-self: start; }
-.hourly-squad__price { display: flex; flex-wrap: nowrap; align-items: baseline; justify-content: flex-end; gap: 0.2rem; }
-.hourly-squad__price strong { font: 600 0.95rem var(--font-mono); white-space: nowrap; }
+.hourly-squad { align-self: stretch; }
+.hourly-squad__price { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: flex-end; gap: 0.2rem; }
+.hourly-squad__price strong { font: 600 1.05rem var(--font-mono); overflow-wrap: anywhere; }
 .hourly-squad__price small { color: var(--text-muted); font-size: 0.65rem; white-space: nowrap; }
 .hourly-squad__facts { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem 0.8rem; color: var(--text-muted); font-size: 0.74rem; line-height: 1.45; }
 .hourly-squad__facts > span { display: inline-flex; align-items: center; gap: 0.28rem; min-width: 0; }
 .hourly-squad__facts > span .iconify { flex: 0 0 auto; color: var(--text-faint); font-size: 0.85rem; }
 .hourly-squad__reason { color: var(--warning); }
 .hourly-squad__reason .iconify { color: inherit; }
-.hourly-squad__toggle { flex: 0 0 auto; margin-inline-start: auto; width: 2.25rem; min-width: 2.25rem; height: 2.25rem; min-height: 2.25rem; padding: 0; }
+.hourly-squad__toggle { flex: 0 0 auto; margin-inline-start: auto; width: 2.75rem; min-width: 2.75rem; height: 2.75rem; min-height: 2.75rem; padding: 0; }
 .hourly-squad__toggle--blocked { color: var(--text-faint); background: color-mix(in srgb, var(--text-faint) 12%, transparent); }
 .hourly-squad__toggle--blocked:disabled { opacity: 0.85; }
 </style>
