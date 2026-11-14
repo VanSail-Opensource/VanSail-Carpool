@@ -27,9 +27,10 @@ Categories use the actual Nuxt UI `UTabs` component with icon-bearing pill
 triggers in one scrollable row. `useScrollableTabs.ts`
 keeps the selected tab visible using horizontal-only scrolling, exposes overflow
 cues, observes label/viewport changes and disposes its listeners with the view.
-Hidden category panels stay mounted, preserving drafts. The Save bar follows
-document flow below 900px and is sticky only on desktop; reduced motion disables
-smooth category scrolling and panel animations.
+Hidden category panels stay mounted, preserving drafts. The heading uses the
+shared member scale. The Save bar follows document flow at every width so it
+cannot cover the last route or Add route action; reduced motion disables smooth
+category scrolling and panel animations.
 
 The page uses member theme assets and no administrator resources. Client
 refresh, not route deployment, activates connection tuning. Routing remains on

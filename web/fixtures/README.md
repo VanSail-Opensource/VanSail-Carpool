@@ -245,6 +245,7 @@ the root `index.html`, `admin.html` and `subscription.html` and excludes fixture
   polling errors and retry controls; `reduced` constructs reduced-motion preference.
 
 `SubscriptionAudit.vue`, `subscription-audit.ts` and `subscription-audit.html` render constructed member Home and Subscription states for Chrome DevTools MCP.
+The `zh` flag selects Simplified Chinese before either view or the real app shell mounts.
 Use `shell&mode=home&around=1` for actual Around TX navigation and destination
 views. `around-tx-data.ts` installs constructed Affiliate, Community and Emby
 reads and rejects every invite/account mutation. `access-delay=1800` and
@@ -258,7 +259,7 @@ The balance sheet uses constructed balance/limits and empty payment methods;
 `balance-error` exercises its warning notice without a backend request.
 
 - `IPLookupAudit.vue` mounts actual member/admin IP Lookup components inside the existing app shell.
-- `ip-lookup-audit.ts` supplies constructed allowance, provider, fee, error and admin data for Chrome DevTools MCP review.
+- `ip-lookup-audit.ts` supplies constructed allowance, provider, fee, error and admin data for Chrome DevTools MCP review, including the member shell's balance read (10 TXB by default, zero in `balance-error` mode).
 - `ip-lookup-audit.html` is the browser fixture entry point; `admin`, `zh`, `no-combo` and `cached` flags select the relevant variants. `mode=cached` displays reports automatically when an IP is entered, without a submission. `risk`, `scamalytics-risk`, `maxmind-risk`, `partial`, `all-failed`, `nulls`, `zero` and `subsource` exercise compact evidence, cached API errors, source names and coordinate visibility; `loading`, `disabled`, `error`, `balance-error` and `save-error` cover recovery states. `__ipAudit.counters()` records quote/submission counts and the saved provider/geolocation order; `__ipAudit.setCached()` changes cache availability before a new address is entered.
 `ip-lookup-live-audit.ts` supplies constructed live topology, origin selection, zero/unknown metrics, traffic windows, errors, slow/cancelled responses and request counters for Chrome DevTools MCP reviews of the real IP Lookup components.
 Its constructed cache reuses exact addresses only; neighboring IPv4 addresses

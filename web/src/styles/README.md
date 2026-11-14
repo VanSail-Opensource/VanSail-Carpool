@@ -6,7 +6,7 @@
 
 - `foundation-01.css` defines tokens, document defaults, typography, and the restrained cyan primary color and graphite surfaces. Native resets preserve Nuxt UI foreground utilities so solid, outline, and ghost controls retain readable contrast.
 - `foundation-02.css` defines shared controls, surfaces, and utility patterns.
-- `shell-01.css` styles the application shell and primary navigation.
+- `shell-01.css` styles the application shell and primary navigation. Page padding has a standalone fallback when shell clearance is absent; desktop safe-area calculations also retain valid padding outside the shell.
 - `shell-02.css` styles page framing, notices, and session states.
 - `shell-03.css` retains only real Telegram/device safe-area insets. The greeting and its fixed-height reserve are removed from desktop and mobile.
 - `onboarding-01.css` styles onboarding structure and progress.
@@ -14,7 +14,7 @@
 - `onboarding-03.css` styles onboarding completion and supporting states.
 - `session-01.css` owns the responsive loading wordmark, bounded 500ms lettering, 450ms Chinese-to-English handoff, and interruptible 160ms cover fade. Readiness never waits for the lettering.
 - `member-fonts.css` loads the self-hosted Space Grotesk variable face for the member experience, preserves Chinese/system fallbacks, and fences its stack from browser-only fixture imports.
-- `member-surfaces.css` unifies member heading sizes, numerical alignment, card edge highlights, keyboard focus feedback, navigation geometry and utility-page spacing. Card travel is limited to selectable surfaces on fine pointers and disabled with reduced motion.
+- `member-surfaces.css` unifies member heading sizes, numerical alignment, card edge lighting, keyboard focus feedback, navigation geometry and utility-page spacing. Filled controls have explicit inverse colors for readable contrast before host theme initialization. Cards use a single 650ms edge sweep on hover, focus or selection, with static touch/keyboard borders; decorative overlays never intercept input. Card travel is limited to selectable surfaces on fine pointers. Reduced motion removes travel and sweeps, and forced colors removes decoration.
 - `fonts.css` declares self-hosted variable Geist and Noto Sans SC with nonblocking swap. Both experience roots import font resources independently of their theme rules; technical monospace roles retain their own stack.
 - `loading.css` provides the shared 192px indeterminate track using each root's accent tokens, with a static reduced-motion state.
 - `dashboard-01.css` styles dashboard summaries and account details.

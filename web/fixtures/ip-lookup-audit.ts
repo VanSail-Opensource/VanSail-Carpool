@@ -141,6 +141,7 @@ ipLookupApi.check = async () => {
   return result
 }
 api.getCommunityAccess = async () => ({ activeCombo: false })
+api.getBalance = async () => ({ balance: money(mode === 'balance-error' ? 0 : 1000), paymentMethods: [], pendingPaymentOrder: null, addAmountLimits: { minimum: money(100), maximum: money(1000000), updatedAt: now() } })
 api.getAdminResource = async () => ({ items: ['standard', 'weekend'].map((id, index) => ({ id, name: index ? 'Weekend' : 'Standard', ipLookupQuota: settings.comboQuotas[id] })) }) as never
 const app = createApp(IPLookupAudit)
 app.config.globalProperties.$t = t

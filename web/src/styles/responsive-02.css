@@ -34,7 +34,7 @@
 
   .page {
     max-width: 1240px;
-    padding: 2.2rem clamp(1.5rem, 3vw, 3rem) calc(3rem + var(--shell-safe-bottom));
+    padding: 2.2rem clamp(1.5rem, 3vw, 3rem) calc(3rem + var(--shell-safe-bottom, 0px));
   }
 
   .page-header h1,

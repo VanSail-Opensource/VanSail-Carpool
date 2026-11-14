@@ -113,13 +113,19 @@ walkthroughs using the real fixture components, desktop cursor/mobile touch
 cues, pause/seek/replay, reduced motion, exact illustrative wallet states,
 routing match/default branches, restored focus and the absence of real writes.
 It opts individual scenarios into normal motion; other recovery suites keep
-their reduced-motion preference.
+their reduced-motion preference. Paused captures finish finite CSS transitions
+while asserting that the illustrative clock and pointer pose stay fixed.
 
 `browser-member-design.mjs` captures every member route and both Explore modes,
 all DIY categories, public subscription and payment results in desktop/mobile
-Chromium. Narrow 320px Chinese captures check the densest member layouts.
+Chromium. Narrow 320px Chinese captures check the densest member layouts and
+assert the document locale; Home and both Explore modes also retain narrow
+English captures. The catalog demonstration keeps a 44px target on the mode
+selector row. Normal-motion hover/focus captures hold finite card decoration
+midway for visual review, then resume it; existing page captures use reduced motion.
 It checks loaded content, connection filtering, loading/empty/error states,
-document overflow, and the shared console/network guards. Missing destination
+document overflow, enabled DIY Save contrast, unobstructed desktop Add route,
+and the shared console/network guards. Missing destination
 fixtures use `member-utility-audit.html` with only constructed data. This scope
 is selected by member theme/layout changes, including the member-only font;
 it does not become a mandatory universal suite for unrelated PRs.

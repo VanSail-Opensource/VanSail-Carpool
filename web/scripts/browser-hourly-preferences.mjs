@@ -13,7 +13,8 @@ export async function hourlyPreferenceScenarios(scenario, size) {
     await toggle.click()
     await page.getByRole('dialog').waitFor()
     assert.deepEqual(await writes(page), [])
-    assert.equal(await toggle.getAttribute('aria-checked'), 'false')
+    // The open modal hides background controls from the accessibility tree.
+    assert.equal(await meter.locator('[role="switch"]').getAttribute('aria-checked'), 'false')
     await page.getByRole('button', { name: 'Enable automatic purchases', exact: true }).click()
     await page.waitForFunction(() => globalThis.__hourlyAudit.fixture.view.extraPreference.extraEnabled)
     await page.locator('[data-hourly-boost]').waitFor()
@@ -41,7 +42,8 @@ export async function hourlyPreferenceScenarios(scenario, size) {
     await toggle.click()
     await page.getByRole('button', { name: 'Enable automatic purchases', exact: true }).click()
     await page.getByRole('dialog').getByText('The policy, price or account state changed. Refresh, review the current terms and try again.', { exact: true }).waitFor()
-    assert.equal(await toggle.getAttribute('aria-checked'), 'false')
+    // Read the retained state behind the modal without interacting with it.
+    assert.equal(await page.locator('[data-settings-hourly] [role="switch"]').getAttribute('aria-checked'), 'false')
     assert.equal(await page.evaluate(() => globalThis.__hourlyAudit.fixture.view.extraPreference.extraEnabled), false)
     assert.equal((await writes(page)).length, 1)
     await capture('saved-preference-retained')

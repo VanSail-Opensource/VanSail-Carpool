@@ -28,18 +28,33 @@ async function pauseAndInspectPointer(page, size, root, pose) {
   assert.equal(await seek.getAttribute('aria-valuenow'), value, 'paused clock continued advancing')
 }
 
+async function capturePaused(page, capture, label) {
+  assert.equal(await page.locator('.billing-demo, .routing-demo').getAttribute('data-demo-playing'), 'false')
+  const seek = page.locator('.demo-transport__seek [role="slider"]')
+  const position = await seek.getAttribute('aria-valuenow')
+  await page.evaluate(async () => {
+    for (const animation of globalThis.document.getAnimations()) {
+      const css = animation instanceof globalThis.CSSTransition || animation instanceof globalThis.CSSAnimation
+      if (css && animation.playState !== 'finished' && Number.isFinite(animation.effect?.getComputedTiming().endTime)) animation.finish()
+    }
+    await new Promise(resolve => globalThis.requestAnimationFrame(() => globalThis.requestAnimationFrame(resolve)))
+  })
+  await capture(label)
+  assert.equal(await seek.getAttribute('aria-valuenow'), position, 'settling CSS advanced the paused demo pose')
+}
+
 export async function demonstrationScenarios(scenario, size) {
   const motion = { ...size, reducedMotion: 'no-preference' }
   await scenario(motion, 'demo-traffic-timeline', 'hourly-audit.html?catalog&active', async (page, capture) => {
     await openBilling(page, 'traffic')
     await pauseAndInspectPointer(page, size, '.billing-demo', 55)
-    await capture('pointer-paused')
+    await capturePaused(page, capture, 'pointer-paused')
     await chapter(page, 1)
     assert.equal(await page.locator('.traffic-scene').getAttribute('data-demo-blocks'), '1')
     assert.equal(await page.locator('.traffic-scene').getAttribute('data-demo-balance'), '9.00')
     await chapter(page, 4)
     assert.equal(await page.locator('.traffic-scene').getAttribute('data-demo-balance'), '8.00')
-    await capture('reconnected-credit')
+    await capturePaused(page, capture, 'reconnected-credit')
     const seek = page.locator('.demo-transport__seek [role="slider"]')
     await seek.focus(); await seek.press('End')
     assert.equal(await seek.getAttribute('aria-valuenow'), '1000')
@@ -59,7 +74,7 @@ export async function demonstrationScenarios(scenario, size) {
     assert.equal(await page.locator('.hourly-scene').getAttribute('data-demo-balance'), '9.50')
     await chapter(page, 3)
     assert.equal(await page.locator('.hourly-scene').getAttribute('data-demo-auto-buy'), 'false')
-    await capture('no-automatic-debit')
+    await capturePaused(page, capture, 'no-automatic-debit')
     await chapter(page, 4)
     assert.equal(await page.locator('.hourly-scene').getAttribute('data-demo-auto-buy'), 'true')
     assert.equal(await page.locator('.hourly-scene').getAttribute('data-demo-balance'), '8.30')
@@ -73,12 +88,12 @@ export async function demonstrationScenarios(scenario, size) {
     await trigger.click()
     await page.locator('.routing-demo').waitFor()
     await pauseAndInspectPointer(page, size, '.routing-demo', 64)
-    await capture('pointer-paused')
+    await capturePaused(page, capture, 'pointer-paused')
     await chapter(page, 2)
     assert.equal(await page.locator('.routing-scene').getAttribute('data-demo-applied'), 'true')
     await page.getByRole('tab', { name: 'No match', exact: true }).click()
     assert.equal(await page.locator('.routing-scene').getAttribute('data-demo-match'), 'false')
-    await capture('default-route')
+    await capturePaused(page, capture, 'default-route')
     await page.getByRole('tab', { name: 'Match', exact: true }).click()
     assert.equal(await page.locator('.routing-scene').getAttribute('data-demo-match'), 'true')
     assert.deepEqual(await page.evaluate(() => globalThis.__routingAudit.writes), [])

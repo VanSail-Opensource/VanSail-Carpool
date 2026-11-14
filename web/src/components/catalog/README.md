@@ -12,7 +12,9 @@ and coupon components below remain in those supported flows.
   for mounting and optional preloading. After mount, one idle callback warms
   both page chunks; it skips hidden documents, Data Saver and 2G connections,
   and cancels pending scheduling on disposal. Demo code warms on trigger hover
-  or keyboard focus and is mounted only when requested.
+  or keyboard focus and is mounted only when requested. The mode selector and
+  demonstration trigger share one row; on mobile the trigger uses one icon with
+  a 44px tap area and localized accessible name beside the billing mode labels.
 - `CatalogChunkState.vue` provides localized loading and chunk-recovery UI
   while keeping the mode controls available.
 - `BillingDemo.vue` opens from the current mode's icon-led demonstration button.

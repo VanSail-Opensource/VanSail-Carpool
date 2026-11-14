@@ -60,12 +60,18 @@ function selectMode(next: 'payg' | 'combo'): void {
 
 <style scoped>
 .catalog-experience { min-width: 0; }
-.catalog-experience__header { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-bottom: .65rem; }
-.catalog-experience__modes { display: flex; flex: 1 1 20rem; gap: .2rem; min-width: 0; max-width: 26rem; padding: .2rem; border-radius: var(--radius-control); background: var(--surface-raised); }
-.catalog-experience__modes :deep(button) { flex: 1; justify-content: center; min-height: 44px; border-radius: var(--radius-control); }
-.catalog-experience__demo { min-height: 44px; margin-inline-start: auto; color: var(--accent); }
+.catalog-experience__header { display: flex; align-items: center; gap: .5rem; margin-bottom: .65rem; }
+.catalog-experience__modes { display: flex; flex: 1 1 0; gap: .2rem; min-width: 0; max-width: 26rem; padding: .2rem; border-radius: var(--radius-control); background: var(--surface-raised); }
+.catalog-experience__modes :deep(button) { flex: 1 1 0; justify-content: center; min-width: 0; min-height: 44px; border-radius: var(--radius-control); }
+.catalog-experience__demo { flex: none; min-width: 44px; min-height: 44px; margin-inline-start: auto; color: var(--accent); }
 .catalog-experience__content { animation: catalog-content-enter 140ms ease-out both; }
 @keyframes catalog-content-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) { .catalog-experience__content { animation: none; } }
-@media (max-width: 480px) { .catalog-experience__modes { flex-basis: 100%; max-width: none; } .catalog-experience__demo { min-height: 36px; padding-block: .25rem; } }
+@media (max-width: 640px) {
+  .catalog-experience__modes { max-width: none; }
+  .catalog-experience__modes :deep(button) { padding-inline: .45rem; line-height: 1.2; }
+  .catalog-experience__modes :deep([data-slot='label']) { white-space: normal; }
+  .catalog-experience__modes :deep([data-slot='leadingIcon']), .catalog-experience__demo :deep([data-slot='label']) { display: none; }
+  .catalog-experience__demo { width: 44px; height: 44px; padding: 0; justify-content: center; }
+}
 </style>
