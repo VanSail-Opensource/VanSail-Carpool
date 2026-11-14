@@ -38,6 +38,8 @@ overflow, and writes per-state screenshots and `results.json` to
 `frontend-browser-recovery-pr-<number>`. `scope.json` records the PR, commit and
 selected suites; every result records its scope. Run it only in hosted PR CI;
 the repository's local automated-suite restriction applies.
+The frontend browser job has a 20-minute budget for the full selected matrix,
+including software-rendered WebGL, with every selected assertion and capture retained.
 
 `plan-browser-recovery.mjs` reads the current GitHub PR event and compares exact
 base/head commits using a NUL-delimited Git diff, including both sides of moves.
