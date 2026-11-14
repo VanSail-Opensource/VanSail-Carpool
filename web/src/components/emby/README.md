@@ -5,3 +5,5 @@
 - `EmbyPreferencesPanel.vue` updates restrictions and passwords in balanced desktop panels with selection and confirmation feedback.
 - `EmbyLibraryPicker.vue` selects disabled libraries and emits haptics only when a library value changes.
 - `EmbyLibraryPicker.vue` also owns the shared selected-library indicator; setup and preference panels remain form-first and static.
+
+Library names wrap inside their shrinkable column, keeping the toggle reachable for long unbroken names on narrow phones.

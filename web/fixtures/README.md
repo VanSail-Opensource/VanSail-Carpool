@@ -588,3 +588,7 @@ desktop/mobile. The reduced-motion fixture exercised manual playback through
 the JavaScript preference mock. No application console errors were observed;
 production credentials and billing mutations were not used. Local automated
 suites were not run; new regressions are intended for hosted CI.
+
+### Member design review
+
+`member-utility-audit.html`, `member-utility-audit.ts`, `member-utility-data.ts` and `MemberUtilityAudit.vue` compose real member shell, Emby, Affiliate Centre, admin-access and session-entry components with synthetic API responses. They include populated, empty, failure, loading and long-name cases in English/Chinese. Unexpected API calls are blocked and recorded. They complement the existing Home, Explore, Subscription, Connections, Settings, DIY, Community, Activity, onboarding, payment and IP fixtures used by PR-scoped browser design checks.

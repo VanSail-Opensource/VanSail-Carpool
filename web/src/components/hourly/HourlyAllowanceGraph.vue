@@ -11,7 +11,8 @@ import HourlyThrottleMeter from './HourlyThrottleMeter.vue'
 type Usage = HourlyView['usage']
 type Policy = HourlyView['policy']['policy']
 
-const props = defineProps<{ usage: Usage; policy: Policy; extraEnabled: boolean }>()
+const props = withDefaults(defineProps<{ usage: Usage; policy: Policy; extraEnabled: boolean; busy?: boolean }>(), { busy: false })
+defineEmits<{ extra: [enabled: boolean] }>()
 const { t } = useI18n()
 const { reducedMotion } = useMotionPreferences()
 
@@ -107,6 +108,11 @@ onScopeDispose(() => globalThis.clearTimeout(boostTimer))
       <HourlyThrottleMeter
         :rate-bytes-per-second="throttleRate"
         :extra-available="policy.extraGBPriceTXBMinor !== '0'"
+        :extra-price="policy.extraGBPriceTXBMinor"
+        :busy="busy"
+        :enabled="extraEnabled"
+        :boosting="boosting"
+        @extra="$emit('extra', $event)"
       />
       <div v-if="boosting" class="hourly-allowance__boost" data-hourly-boost aria-hidden="true">
         <motion.div

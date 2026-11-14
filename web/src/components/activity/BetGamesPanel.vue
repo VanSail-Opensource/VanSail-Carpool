@@ -121,7 +121,7 @@ function selectGame(id: string): void {
 .bet-grid { display: grid; gap: 0.55rem; }
 .bet-option { min-height: 68px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0.7rem; padding: 0.7rem; border: 1px solid var(--line); border-radius: var(--radius-control); color: var(--text); background: var(--surface-raised); text-align: left; cursor: pointer; }
 .bet-option--selected { border-color: #557763; background: var(--accent-soft); }
-.bet-option__icon { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; color: var(--accent); background: #15241b; }
+.bet-option__icon { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; color: var(--accent); background: var(--accent-soft); }
 .bet-option strong, .bet-option small { display: block; }
 .bet-option strong { font-size: 0.82rem; }
 .bet-option small { margin-top: 0.2rem; color: var(--text-faint); font-size: 0.68rem; }

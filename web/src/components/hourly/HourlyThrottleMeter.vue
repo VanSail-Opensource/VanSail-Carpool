@@ -1,66 +1,70 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { motion } from 'motion-v'
-
+import { computed, useId } from 'vue'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { useI18n } from '@/i18n'
-import { formatBytes } from '@/utils/format'
+import { formatBytes, txbInputFromMinor } from '@/utils/format'
 
-const props = defineProps<{ rateBytesPerSecond: string; extraAvailable: boolean }>()
+const props = withDefaults(defineProps<{
+  rateBytesPerSecond: string
+  extraAvailable: boolean
+  extraPrice?: string
+  busy?: boolean
+  enabled?: boolean
+  boosting?: boolean
+}>(), { extraPrice: '0', busy: false, enabled: false, boosting: false })
+defineEmits<{ extra: [enabled: boolean] }>()
 const { t } = useI18n()
 const { reducedMotion } = useMotionPreferences()
-
+const switchId = useId()
+const rateId = useId()
 const speed = computed(() => t('hourly.rate', { rate: formatBytes(props.rateBytesPerSecond) }))
 </script>
 
 <template>
-  <motion.div
-    class="hourly-throttle"
-    data-hourly-throttle
-    role="status"
-    :initial="reducedMotion ? false : { opacity: 0 }"
-    :animate="{ opacity: 1 }"
-    :transition="{ duration: reducedMotion ? 0 : 0.3, ease: 'easeOut' }"
-  >
-    <div class="hourly-throttle__head">
-      <span class="hourly-throttle__label">{{ t('hourly.throttledTitle') }}</span>
+  <div class="hourly-throttle" :class="{ 'hourly-throttle--boosting': boosting, 'hourly-throttle--reduced': reducedMotion }" data-hourly-throttle>
+    <div class="hourly-throttle__head" role="status">
+      <span class="hourly-throttle__label"><UIcon name="i-ph-gauge" aria-hidden="true" />{{ t('hourly.throttledTitle') }}</span>
       <strong class="hourly-throttle__rate">{{ speed }}</strong>
     </div>
     <div class="hourly-throttle__visual" aria-hidden="true">
-      <motion.div
-        class="hourly-throttle__sag"
-        :animate="reducedMotion ? { scaleY: 0.55, opacity: 0.42 } : { scaleY: [1, 0.55, 1], opacity: [0.6, 0.32, 0.6] }"
-        :transition="reducedMotion ? { duration: 0 } : { duration: 6.5, repeat: Infinity, ease: 'easeInOut' }"
-      >
-        <svg viewBox="0 0 120 24" preserveAspectRatio="none" focusable="false">
-          <path d="M0 9 C 10 2 18 17 28 10 S 46 4 56 10 S 74 16 84 12 S 104 10 120 14" />
-        </svg>
-      </motion.div>
-      <motion.span
-        class="hourly-throttle__flow"
-        :animate="reducedMotion ? { x: 0 } : { x: [0, -24] }"
-        :transition="reducedMotion ? { duration: 0 } : { duration: 3.6, repeat: Infinity, ease: 'linear' }"
-      />
-      <motion.span
-        class="hourly-throttle__drop"
-        :animate="reducedMotion ? { y: 0, opacity: 0.35 } : { y: [0, 5, 0], opacity: [0.5, 0.18, 0.5] }"
-        :transition="reducedMotion ? { duration: 0 } : { duration: 5.5, repeat: Infinity, ease: 'easeInOut' }"
-      />
+      <span class="hourly-throttle__endpoint"><UIcon name="i-ph-plugs-connected" /></span>
+      <span class="hourly-throttle__track"><i /><i /><i /></span>
+      <span class="hourly-throttle__endpoint hourly-throttle__destination"><UIcon :name="boosting ? 'i-ph-rocket-launch' : 'i-ph-gauge'" /></span>
     </div>
-    <p class="hourly-throttle__hint">{{ extraAvailable ? t('hourly.throttledAdvice') : t('hourly.throttledUnavailable') }}</p>
-  </motion.div>
+    <div v-if="extraAvailable" class="hourly-throttle__action">
+      <label :for="switchId" class="hourly-throttle__copy">
+        <span>{{ t('hourly.extraTitle') }}</span>
+        <small :id="rateId">{{ t('hourly.extraRate', { price: txbInputFromMinor(extraPrice) }) }}</small>
+      </label>
+      <USwitch :id="switchId" :model-value="enabled" :loading="busy" :disabled="busy || boosting" :aria-label="t('hourly.extraTitle')" :aria-describedby="rateId" @update:model-value="$emit('extra', $event)" />
+    </div>
+    <p v-else class="hourly-throttle__hint">{{ t('hourly.throttledUnavailable') }}</p>
+  </div>
 </template>
 
 <style scoped>
-.hourly-throttle { --throttle-ink: color-mix(in srgb, #6d8197 60%, var(--text-faint)); display: grid; align-content: space-between; gap: 0.35rem; width: 100%; min-height: 5.4rem; padding: 0.7rem 0.85rem 0.6rem; overflow: hidden; border: 1px solid color-mix(in srgb, #6d8197 40%, var(--line)); border-radius: var(--radius-control); background: linear-gradient(180deg, color-mix(in srgb, #6d8197 9%, var(--surface)), color-mix(in srgb, #435061 14%, var(--surface))); }
-.hourly-throttle__head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; min-width: 0; }
-.hourly-throttle__label { color: var(--text-muted); font-size: 0.74rem; }
-.hourly-throttle__rate { color: var(--throttle-ink); font: 600 0.9rem var(--font-mono); white-space: nowrap; }
-.hourly-throttle__visual { position: relative; height: 2.2rem; margin-inline: -0.85rem; overflow: hidden; }
-.hourly-throttle__sag { position: absolute; inset: 0; transform-origin: center; }
-.hourly-throttle__sag svg { display: block; width: 100%; height: 100%; }
-.hourly-throttle__sag path { fill: none; stroke: color-mix(in srgb, #8296ad 52%, var(--text-faint)); stroke-width: 1.3; vector-effect: non-scaling-stroke; }
-.hourly-throttle__flow { position: absolute; left: -24px; right: -24px; top: 50%; height: 2px; margin-top: -1px; background-image: repeating-linear-gradient(90deg, color-mix(in srgb, #8296ad 65%, var(--text-faint)) 0 10px, transparent 10px 24px); opacity: 0.32; }
-.hourly-throttle__drop { position: absolute; left: 50%; top: 50%; width: 0.4rem; height: 0.4rem; margin: -0.2rem 0 0 -0.2rem; border-radius: 50%; background: color-mix(in srgb, #8296ad 60%, var(--text-faint)); opacity: 0.4; }
-.hourly-throttle__hint { margin: 0; color: var(--text-faint); font-size: 0.74rem; line-height: 1.5; }
+.hourly-throttle { --throttle-ink: var(--text-muted); display: grid; gap: .75rem; min-width: 0; padding: 1rem; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--surface-raised); transition: border-color .3s, background-color .3s; }
+.hourly-throttle__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; min-width: 0; }
+.hourly-throttle__label { display: inline-flex; align-items: center; gap: .4rem; color: var(--text-muted); font-size: .75rem; }
+.hourly-throttle__label .iconify { color: var(--warning); font-size: 1rem; }
+.hourly-throttle__rate { color: var(--text); font: 600 .85rem var(--font-mono); white-space: nowrap; }
+.hourly-throttle__visual { display: flex; align-items: center; gap: .6rem; color: var(--throttle-ink); }
+.hourly-throttle__endpoint { display: grid; place-items: center; width: 2rem; height: 2rem; flex: none; border: 1px solid var(--line); border-radius: .5rem; font-size: 1.1rem; }
+.hourly-throttle__track { position: relative; flex: 1; min-width: 0; height: 2px; overflow: hidden; background: var(--line); }
+.hourly-throttle__track i { position: absolute; left: -12%; width: 12%; height: 2px; background: var(--throttle-ink); animation: throttle-packet 4.2s linear infinite; }
+.hourly-throttle__track i:nth-child(2) { animation-delay: -1.4s; }
+.hourly-throttle__track i:nth-child(3) { animation-delay: -2.8s; }
+.hourly-throttle__destination { color: var(--warning); }
+.hourly-throttle__action { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-top: .7rem; border-top: 1px solid var(--line); }
+.hourly-throttle__copy { display: grid; gap: .3rem; min-width: 0; color: var(--text); font-size: .8rem; font-weight: 500; line-height: 1.4; cursor: pointer; }
+.hourly-throttle__copy small { color: var(--text-muted); font: .72rem var(--font-mono); }
+.hourly-throttle__action :deep([role='switch']) { flex: none; position: relative; }
+.hourly-throttle__action :deep([role='switch'])::before { content: ''; position: absolute; width: 44px; height: 44px; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.hourly-throttle__hint { margin: 0; color: var(--text-muted); font-size: .75rem; line-height: 1.5; }
+.hourly-throttle--boosting { --throttle-ink: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.hourly-throttle--boosting .hourly-throttle__destination { color: var(--accent); border-color: var(--accent); }
+.hourly-throttle--boosting .hourly-throttle__track i { animation-duration: .7s; }
+.hourly-throttle--reduced, .hourly-throttle--reduced * { animation: none; transition: none; }
+.hourly-throttle--reduced .hourly-throttle__track i { left: 40%; }
+@keyframes throttle-packet { to { transform: translateX(1000%); } }
 </style>

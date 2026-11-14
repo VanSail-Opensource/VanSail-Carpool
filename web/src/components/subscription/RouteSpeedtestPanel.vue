@@ -24,7 +24,6 @@ const median = (values: number[]) => [...values].sort((a, b) => a - b)[Math.floo
       <UButton v-if="state.command.busy.value || state.command.receipt.value || state.command.error.value" data-result-opener variant="ghost" color="neutral" icon="i-ph-chart-line" :label="t('routeSpeedtest.viewResults')" @click="open = true" />
       <span class="text-xs text-muted">{{ t('routeSpeedtest.metered') }}</span>
     </div>
-    <p v-if="!eligible && !state.command.receipt.value" class="text-xs text-muted">{{ t('routeSpeedtest.requirements') }}</p>
     <UModal v-model:open="open" :title="t('routeSpeedtest.resultsTitle')" :description="t('routeSpeedtest.resultsHint')" :content="{ onCloseAutoFocus: restoreFocus }" :transition="!reducedMotion" close-icon="i-ph-x-bold">
       <template #body>
         <div class="grid gap-4 min-w-0">

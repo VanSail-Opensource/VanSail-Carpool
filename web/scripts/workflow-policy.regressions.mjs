@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { auditWorkflow } from './workflow-policy.mjs'
+import './browser-recovery-scope.regressions.mjs'
 
 const sha = 'a'.repeat(40)
 const checkout = () => ({ uses: `actions/checkout@${sha}`, with: { 'persist-credentials': false } })
@@ -46,4 +47,16 @@ test('persisted checkout credentials and publication bypasses are rejected', () 
     value.on = event
     assert.ok(auditWorkflow('container.yml', value).some(issue => issue.includes('cannot publish')))
   }
+})
+
+test('browser recovery cannot run after merge or discard the PR-specific scope', () => {
+  const value = { permissions: { contents: 'read' }, jobs: { 'frontend-browser': {
+    if: "github.event_name == 'pull_request' && needs.changes.outputs.browser_required == 'true'",
+    steps: [{ run: 'npm run test:browser', env: { BROWSER_AUDIT_SCOPES: '${{ needs.changes.outputs.browser_scopes }}' } }],
+  } } }
+  assert.deepEqual(auditWorkflow('ci.yml', value), [])
+  value.jobs['frontend-browser'].if = "needs.changes.outputs.frontend == 'true'"
+  assert.ok(auditWorkflow('ci.yml', value).some(issue => issue.includes('only for pull requests')))
+  delete value.jobs['frontend-browser'].steps[0].env
+  assert.ok(auditWorkflow('ci.yml', value).some(issue => issue.includes('current pull request scope')))
 })

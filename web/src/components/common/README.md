@@ -38,3 +38,11 @@ beyond the browser timer limit; ready indicators expire at the actual deadline.
 samples. Numeric telemetry or forecasts outside that range keep their formatted
 magnitude without claiming to recover lost precision; `MetricLineChart.test.ts`
 covers unsafe, fractional and exact byte/rate samples.
+
+`DemoTransport.vue` is the shared Explore/DIY film transport: Nuxt UI slider seeking,
+44px playback/chapter controls and localized accessible names. It emits actions
+and owns no playback clock. `DemoPointer.vue` renders the same percentage-based
+interaction path as a mouse cursor on desktop and a touch/ripple on mobile;
+`illustrationTimeline.ts` contains pure easing and pointer interpolation. All
+motion follows the parent's clock, so pause, seeking and hidden-page suspension
+also stop the simulated interactions. Reduced-motion scenes omit the pointer.

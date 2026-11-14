@@ -2,7 +2,6 @@
 import { computed } from 'vue'
 import type { HourlySquad } from '@/api/hourly'
 import SquadPricingCard from '@/components/catalog/SquadPricingCard.vue'
-import StatusBadge from '@/components/common/StatusBadge.vue'
 import { useI18n } from '@/i18n'
 import { formatMemberMoney } from '@/utils/displayCurrency'
 import { formatDateTime } from '@/utils/format'
@@ -24,7 +23,6 @@ const reason = computed(() => {
 
 <template>
   <SquadPricingCard :squad="item.squad" :selected="false" :included="false" informational class="hourly-squad">
-    <template #status><StatusBadge v-if="item.enrollment && item.enrollment.status !== 'active'" tone="neutral" :label="t(`hourly.status.${item.enrollment.status}`)" /></template>
     <template #price>
       <span class="hourly-squad__price"><strong>{{ formatMemberMoney(item.offer.hourlyPrice) }}</strong><small>{{ t('hourly.perHour') }}</small></span>
     </template>

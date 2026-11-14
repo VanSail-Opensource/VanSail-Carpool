@@ -65,7 +65,6 @@ function consumeRevoke(): void {
 <style scoped>
 .page--subscription { display: grid; gap: 1rem; max-width: 760px; }
 .page--subscription .page-header { margin-bottom: 0; }
-.page--subscription .page-header h1 { font-size: 1.5rem; line-height: 1.2; }
 .subscription-page__loading { display: grid; gap: 1rem; }
 .subscription-page__hosts { list-style: none; margin: 0; padding: 0; }
 .subscription-page__empty, .section-heading small { margin: 0; color: var(--text-muted); font-size: 0.8rem; }

@@ -4,6 +4,8 @@ import { createPinia } from 'pinia'
 import { createRouter, createWebHistory } from 'vue-router'
 import ui from '@nuxt/ui/vue-plugin'
 import { paygApi } from '@/api/payg'
+import { hourlyApi } from '@/api/hourly'
+import { hourlyFixture } from './hourly-data'
 import { comboControlsApi } from '@/api/comboControls'
 import { api } from '@/api/client'
 import { preferencesApi, type GroupMemberTag, type UserPreferences } from '@/api/preferences'
@@ -26,6 +28,13 @@ if (params.has('reduced')) {
     if (query === '(prefers-reduced-motion: reduce)') Object.defineProperty(media, 'matches', { value: true })
     return media
   }
+}
+const hourly = hourlyFixture(params).view
+hourlyApi.get = async () => { await pause(); return structuredClone(hourly) }
+hourlyApi.extra = async (enabled, _version, price) => {
+  if (params.has('save-error')) throw new Error('Constructed hourly save failure')
+  hourly.extraPreference = { ...hourly.extraPreference, extraEnabled: enabled, acceptedExtraPriceTXBMinor: enabled ? price : hourly.extraPreference.acceptedExtraPriceTXBMinor }
+  return structuredClone(hourly.extraPreference)
 }
 const now = Date.now()
 const at = (offset: number) => new Date(now + offset).toISOString()

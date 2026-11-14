@@ -12,7 +12,7 @@ const { ip, state, quote, refreshQuote, check, displayCheck, report, requestedIP
 </script>
 
 <template>
-  <main class="page ip-lookup-page">
+  <div class="page ip-lookup-page">
     <header class="page-header lookup-header">
       <h1 class="lookup-title">{{ $t('ipLookup.title') }}</h1>
     </header>
@@ -29,12 +29,11 @@ const { ip, state, quote, refreshQuote, check, displayCheck, report, requestedIP
       <IPLiveDetails v-if="report" :report="report" :requested-ip="requestedIP" :snapshot="report.liveDetails ?? check?.liveDetails ?? null" :refresh-quote="refreshQuote" :busy="busy" @refresh="submit(true)" />
       <UButton v-if="!state" color="neutral" variant="outline" :label="$t('common.tryAgain')" @click="load" />
     </template>
-  </main>
+  </div>
 </template>
 
 <style scoped>
 .ip-lookup-page { max-width: 1080px; }
 .lookup-header { margin-bottom: 1rem; }
-.lookup-title { font-size: 1.5rem; }
 .ip-lookup-empty { padding: 2rem 0; color: var(--text-muted); }
 </style>

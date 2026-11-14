@@ -4,7 +4,7 @@
 
 `main.css` is the ordered entry point for these cascade layers:
 
-- `foundation-01.css` defines tokens, document defaults, typography, and the semantic mint primary color. Native resets preserve Nuxt UI foreground utilities so solid, outline, and ghost controls retain readable contrast.
+- `foundation-01.css` defines tokens, document defaults, typography, and the restrained cyan primary color and graphite surfaces. Native resets preserve Nuxt UI foreground utilities so solid, outline, and ghost controls retain readable contrast.
 - `foundation-02.css` defines shared controls, surfaces, and utility patterns.
 - `shell-01.css` styles the application shell and primary navigation.
 - `shell-02.css` styles page framing, notices, and session states.
@@ -13,6 +13,8 @@
 - `onboarding-02.css` styles onboarding forms and agreements.
 - `onboarding-03.css` styles onboarding completion and supporting states.
 - `session-01.css` owns the responsive loading wordmark, bounded 500ms lettering, 450ms Chinese-to-English handoff, and interruptible 160ms cover fade. Readiness never waits for the lettering.
+- `member-fonts.css` loads the self-hosted Space Grotesk variable face for the member experience, preserves Chinese/system fallbacks, and fences its stack from browser-only fixture imports.
+- `member-surfaces.css` unifies member heading sizes, numerical alignment, card edge highlights, keyboard focus feedback, navigation geometry and utility-page spacing. Card travel is limited to selectable surfaces on fine pointers and disabled with reduced motion.
 - `fonts.css` declares self-hosted variable Geist and Noto Sans SC with nonblocking swap. Both experience roots import font resources independently of their theme rules; technical monospace roles retain their own stack.
 - `loading.css` provides the shared 192px indeterminate track using each root's accent tokens, with a static reduced-motion state.
 - `dashboard-01.css` styles dashboard summaries and account details.
@@ -44,7 +46,7 @@
 - `responsive-03.css` applies compact administrative rows below 640px and owns reduced-motion/transparency fallbacks.
 - `desktop-01.css` adds rail member context and balanced wide-page widths for desktop while keeping the compact phone shell untouched.
 
-The system is dark-only, flat, gradient-free, and uses borders instead of decorative shadows.
+The member system is dark-only with graphite surfaces, restrained cyan accents, 12px panels and 8px controls. Space Grotesk adds geometric character; technical values use the existing monospace stack with tabular figures. Card depth comes from a faint inset edge, with short interaction feedback rather than perpetual decoration. Status colours remain semantic and distinct. The browser console owns a separate theme.
 
 Route roots render through one keyed Motion presence boundary so restoring cached
 data does not replay a full-page entrance. List-level layout/presence and action

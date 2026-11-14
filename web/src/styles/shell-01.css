@@ -5,7 +5,7 @@
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  border: 1px solid #304138;
+  border: 1px solid var(--accent-line);
   border-radius: 14px;
   color: var(--accent);
   background: var(--accent-soft);
@@ -19,7 +19,7 @@
 
 .feature-icon--warning {
   color: var(--warning);
-  border-color: #51452b;
+  border-color: color-mix(in srgb, var(--warning) 32%, var(--line));
   background: var(--warning-soft);
 }
 
@@ -133,9 +133,10 @@
 .page-header h1,
 .error-state h1 {
   margin: 0;
-  font-size: 2rem;
-  line-height: 0.98;
-  letter-spacing: 0;
+  font-size: var(--page-title-size);
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: var(--page-title-tracking);
 }
 
 .page-header > p:last-child,

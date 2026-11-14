@@ -62,10 +62,10 @@
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  border: 1px solid #39423b;
+  border: 1px solid var(--accent-line);
   border-radius: 50%;
   color: var(--accent);
-  background: #1d251f;
+  background: var(--accent-soft);
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.04em;

@@ -25,10 +25,10 @@
   align-items: flex-start;
   gap: 0.7rem;
   padding: 0.85rem 0.95rem;
-  border: 1px solid #36453c;
+  border: 1px solid var(--accent-line);
   border-radius: var(--radius-control);
-  color: #cbe1d2;
-  background: #17251c;
+  color: var(--accent-strong);
+  background: var(--accent-soft);
   font-size: 0.82rem;
   line-height: 1.45;
 }
@@ -44,13 +44,13 @@
 }
 
 .notice--warning {
-  color: #dfcfab;
-  border-color: #4d422b;
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 32%, var(--line));
   background: var(--warning-soft);
 }
 
 .notice--success {
-  color: #c8e7d3;
+  color: var(--success);
 }
 
 .status-badge {
@@ -71,20 +71,20 @@
 }
 
 .status-badge--success {
-  color: var(--accent);
-  border-color: #355242;
-  background: #192b20;
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 30%, var(--line));
+  background: var(--success-soft);
 }
 
 .status-badge--warning {
   color: var(--warning);
-  border-color: #55482c;
+  border-color: color-mix(in srgb, var(--warning) 32%, var(--line));
   background: var(--warning-soft);
 }
 
 .status-badge--danger {
   color: var(--danger);
-  border-color: #583230;
+  border-color: color-mix(in srgb, var(--danger) 32%, var(--line));
   background: var(--danger-soft);
 }
 
@@ -93,9 +93,9 @@
   min-height: 2rem;
   overflow: hidden;
   position: relative;
-  border: 1px solid #252a26;
+  border: 1px solid var(--line);
   border-radius: var(--radius-panel);
-  background: #141714;
+  background: var(--surface);
 }
 
 .skeleton-block::after {

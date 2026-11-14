@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 @import "./fonts.css";
+@import "./member-fonts.css";
 @import "./loading.css";
 
 @import "./foundation-01.css";
@@ -41,3 +42,4 @@
 @import "./admin-08.css";
 @import "./desktop-01.css";
 @import "./page-transitions.css";
+@import "./member-surfaces.css";

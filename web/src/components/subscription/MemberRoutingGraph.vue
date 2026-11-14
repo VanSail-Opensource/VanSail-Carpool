@@ -68,7 +68,6 @@ onScopeDispose(() => observer?.disconnect())
         </g>
       </svg>
     </div>
-    <p class="text-xs text-muted">{{ t('managedRouting.treeHint') }}</p>
     <MemberRoutingTemplateDetails v-model:open="detailOpen" :templates="detailTemplates" :excluded="excluded" :status="status" />
   </div>
 </template>

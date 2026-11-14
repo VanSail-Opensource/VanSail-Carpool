@@ -179,6 +179,29 @@ for mobile and desktop checks.
 Do not claim validation succeeded unless it was actually performed. If the
 app cannot be started without secrets, say which states were not exercised.
 
+### Pull-request browser recovery in CI
+
+The stable **Frontend browser recovery** check runs only for `pull_request`
+events. Container publication and other reusable-workflow callers do not rerun
+it after merge. The changes job derives a separate browser plan from that PR's
+exact base/head diff; it does not reuse the publication baseline.
+
+The plan selects feature recovery suites through
+`web/scripts/browser-recovery-selection.mjs`. Member theme changes cover member
+flows; admin theme changes cover admin flows. Shared runtime or unmapped
+frontend changes, and unavailable comparison commits, select all scopes to
+retain coverage. Documentation, backend-only and unit-test-only changes skip
+the browser job with a successful skipped check. The job name remains stable
+for branch protections.
+
+Review selected scopes in the changes job summary. Each
+`frontend-browser-recovery-pr-<number>` artifact contains `scope.json`,
+per-scenario results, and desktop/mobile screenshots. Add a registry entry and
+ownership rule with new browser scenarios; the runner requires explicit
+`BROWSER_AUDIT_SCOPES` and never defaults to a universal suite. Workflow and
+scope regressions run in hosted CI only. Local real-browser inspection remains
+required for frontend work and is separate from this automated gate.
+
 ## Local test restriction
 
 Repository instructions prohibit local automated test suites. This applies to

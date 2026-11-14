@@ -13,14 +13,15 @@ import HourlyLegacyBlock from './HourlyLegacyBlock.vue'
 import HourlySummary from './HourlySummary.vue'
 import HourlySquadCard from './HourlySquadCard.vue'
 import { useHourly } from './useHourly'
+import { useHourlyExtra } from './useHourlyExtra'
 
 const { t } = useI18n()
 const hourly = useHourly()
+const extra = useHourlyExtra(hourly)
 const { value: data, loading, error, liveReady, busy, actionError } = hourly
 const disabling = shallowRef<HourlySquad | null>(null)
 const activating = shallowRef<HourlySquad | null>(null)
 const codeOpen = shallowRef(false)
-const extraOpen = shallowRef(false)
 const reviewedPolicyVersion = shallowRef<string | null>(null)
 const consentError = shallowRef<string | null>(null)
 const disableOpen = computed({ get: () => disabling.value !== null, set: value => { if (!value) disabling.value = null } })
@@ -77,9 +78,8 @@ function consentCurrent(): boolean {
 // Refreshes cannot silently replace the policy, paid enrollment, or gated offer
 // that the member reviewed before opening a destructive/billing dialog.
 watch([data, liveReady], () => {
-  if ((!codeOpen.value && !extraOpen.value && !disabling.value) || consentCurrent()) return
+  if ((!codeOpen.value && !disabling.value) || consentCurrent()) return
   codeOpen.value = false
-  extraOpen.value = false
   activating.value = null
   disabling.value = null
   if (!hourly.submitting.value) consentError.value = t('hourly.conflict')
@@ -100,15 +100,6 @@ async function disable(): Promise<void> {
   if (!disabling.value || !consentCurrent()) return
   if (disabling.value && await hourly.disable(disabling.value)) disabling.value = null
 }
-async function extra(enabled: boolean): Promise<void> {
-  if (!beginConsent()) return
-  if (enabled) extraOpen.value = true
-  else await hourly.extra(false)
-}
-async function enableExtra(): Promise<void> {
-  if (!extraOpen.value || !consentCurrent()) return
-  if (await hourly.extra(true)) extraOpen.value = false
-}
 </script>
 
 <template>
@@ -118,18 +109,18 @@ async function enableExtra(): Promise<void> {
     <p v-if="data && !liveReady && !error" class="hourly-page__sync" role="status"><UIcon name="i-ph-circle-notch" aria-hidden="true" />{{ t('common.loading') }}</p>
     <HourlyLegacyBlock v-if="data?.legacyBlocked" />
     <template v-else-if="data">
-      <HourlySummary v-if="hasHourlyHistory" :data="data" :busy="busy" @extra="extra" />
+      <HourlySummary v-if="hasHourlyHistory" :data="data" :busy="busy" @extra="extra.request" />
       <InlineNotice v-if="!data.policy.policy.salesEnabled">{{ t('hourly.salesPaused') }}</InlineNotice>
       <p v-if="!data.squads.length" class="hourly-page__terms hourly-page__empty">{{ t('hourly.empty') }}</p>
       <div v-else class="hourly-page__squads">
         <HourlySquadCard v-for="(item, index) in data.squads" :key="item.offer.groupId" :style="{ '--entry-delay': `${Math.min(index, 5) * 30}ms` }" :item="item" :busy="busy" :sales-enabled="data.policy.policy.salesEnabled" :hours="hoursFor(item)" @activate="activate(item)" @disable="requestDisable(item)" />
       </div>
     </template>
-    <InlineNotice v-if="actionError || consentError" tone="warning">{{ actionError || consentError }}</InlineNotice>
+    <InlineNotice v-if="actionError || consentError || extra.error.value" tone="warning">{{ actionError || consentError || extra.error.value }}</InlineNotice>
     <OperationStatusNotice :receipt="hourly.operation.receipt.value" :error="hourly.operation.error.value" :checking="hourly.operation.checking.value" :message="operationMessage" @refresh="hourly.operation.refresh" />
     <SquadActivationDialog v-model:open="codeOpen" :squad="activating?.squad ?? null" :busy="hourly.submitting.value" :error="actionError" @submit="submitCode" @cancel="activating = null" />
     <ConfirmDialog v-model:open="disableOpen" :title="t('hourly.disableTitle')" :description="t('hourly.disableWarning', { hours: cooldownHours })" :confirm-label="t('hourly.disable')" :busy="hourly.submitting.value" :error="actionError" danger @confirm="disable" />
-    <ConfirmDialog v-model:open="extraOpen" :title="t('hourly.extraTitle')" :description="t('hourly.extraWarning', { price: txbInputFromMinor(data?.policy.policy.extraGBPriceTXBMinor ?? '0') })" :confirm-label="t('hourly.extraConfirm')" :busy="hourly.submitting.value" :error="actionError" @confirm="enableExtra" />
+    <ConfirmDialog v-model:open="extra.open.value" :title="t('hourly.extraTitle')" :description="t('hourly.extraWarning', { price: txbInputFromMinor(data?.policy.policy.extraGBPriceTXBMinor ?? '0') })" :confirm-label="t('hourly.extraConfirm')" :busy="hourly.submitting.value" :error="extra.error.value" @confirm="extra.confirm" />
   </section>
 </template>
 

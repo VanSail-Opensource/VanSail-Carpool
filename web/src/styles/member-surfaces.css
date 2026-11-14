@@ -1,0 +1,111 @@
+/* Member experience only. Shared geometry and feedback; no idle decoration. */
+.page, .settings-page { --panel-edge: rgb(190 218 240 / 0.05); }
+
+.page-header h1,
+.affiliate-heading h1,
+.connections-page__heading h1 {
+  font-size: var(--page-title-size);
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: var(--page-title-tracking);
+  text-wrap: balance;
+}
+
+.page-header { margin-bottom: 1.5rem; }
+.page-header > p:last-child { margin-top: .65rem; font-size: .875rem; }
+.section-heading h2 { font-weight: 600; letter-spacing: -.02em; line-height: 1.35; }
+.eyebrow { font-size: .68rem; font-weight: 600; letter-spacing: .1em; }
+:is(.page, .settings-page) :is(h1, h2, h3, strong) { overflow-wrap: anywhere; }
+:is(.page, .settings-page) :is(code, time, output, dd, .money) { font-variant-numeric: tabular-nums; }
+
+:is(.section-block, .squad-selector, .affiliate-section, .connections-page__inventory,
+  .community-rows, .squad-pricing-card, .hourly-squad) {
+  box-shadow: inset 0 1px 0 var(--panel-edge, rgb(190 218 240 / 0.05));
+}
+
+:is(.section-block, .affiliate-section, .connections-page__inventory):focus-within {
+  border-color: var(--accent-line);
+}
+
+.squad-pricing-card::before {
+  content: '';
+  position: absolute;
+  inset: .8rem auto auto -1px;
+  width: 2px;
+  height: 1.4rem;
+  border-radius: 2px;
+  background: var(--squad-profile-tone, var(--accent));
+  opacity: .45;
+  transform: scaleY(.5);
+  transform-origin: top;
+  pointer-events: none;
+}
+
+.squad-pricing-card--selected::before,
+.squad-pricing-card:focus-within::before { opacity: 1; transform: scaleY(1); }
+
+.home-balance {
+  border-color: var(--accent-line);
+  border-inline-start: 2px solid var(--accent);
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: inset 0 1px 0 var(--panel-edge);
+}
+.home-balance__copy strong {
+  color: var(--accent-strong);
+  font-family: var(--font-sans);
+  font-size: clamp(1.8rem, 5vw, 2.5rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.04em;
+  line-height: 1.15;
+}
+.home-balance__copy p { color: var(--text-muted); }
+
+.bottom-nav__list { border-radius: 14px; padding: .3rem; }
+.bottom-nav__item, .bottom-nav__indicator { border-radius: 10px; }
+.bottom-nav__item { min-height: 46px; gap: .25rem; font-size: .68rem; font-weight: 600; }
+.bottom-nav__icon { font-size: 1.1rem; }
+.side-rail [data-slot='link'] { border-radius: var(--radius-control); font-weight: 500; }
+.side-rail a[aria-current='page'] { color: var(--accent-strong); box-shadow: inset 2px 0 0 var(--accent); }
+
+/* A bounded reading width and one spacing scale for the utility pages. */
+.page--emby { display: grid; align-content: start; gap: 1rem; }
+.page--emby .page-header { margin-bottom: .25rem; }
+.ip-lookup-page > .notice { margin-block: .75rem; }
+.page-toolbar, .section-heading { min-width: 0; flex-wrap: wrap; }
+.section-heading > :first-child { min-width: 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  :is(.section-block, .affiliate-section, .connections-page__inventory, .community-rows) {
+    transition: border-color 180ms ease, background-color 180ms ease;
+  }
+  .squad-pricing-card::before { transition: transform 240ms var(--ease-out), opacity 180ms ease; }
+  .squad-pricing-card:not(.squad-pricing-card--nonselectable) {
+    transition: transform 180ms var(--ease-out), border-color 180ms ease, background-color 180ms ease;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .squad-pricing-card:hover::before { opacity: .9; transform: scaleY(1); }
+  .squad-pricing-card:not(.squad-pricing-card--nonselectable):hover { transform: translateY(-2px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .squad-pricing-card:not(.squad-pricing-card--nonselectable):hover { transform: none; }
+}
+
+@media (min-width: 900px) {
+  .page { padding-top: 1.75rem; }
+  .page-header { margin-bottom: 1.5rem; }
+  .page--emby { max-width: 960px; }
+}
+
+@media (max-width: 359px) {
+  .bottom-nav__item { min-width: 3.25rem; padding-inline: .3rem; }
+}
+
+@media (forced-colors: active) {
+  .squad-pricing-card::before { display: none; }
+  .side-rail a[aria-current='page'] { outline: 1px solid Highlight; }
+}

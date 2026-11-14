@@ -39,9 +39,6 @@
       "openFor": "查看{mode}的运作演示",
       "example": "模拟演示 · 示例价格",
       "steps": "演示步骤",
-      "position": "{step} / {total}",
-      "previous": "上一步",
-      "next": "下一步",
       "play": "播放演示",
       "pause": "暂停演示",
       "replay": "重新播放演示",
@@ -51,7 +48,7 @@
       "debit": "−{value} TXB",
       "creditWindow": "最近购入后 72 小时",
       "trafficRate": "1 TXB / GiB",
-      "hourlyRate": "1 个车队 · 1 TXB / 小时",
+      "hourlyRate": "1 TXB / 小时",
       "utc": "UTC",
       "dailyPool": "每日高速额度",
       "extraBlock": "+1 GB",
@@ -60,7 +57,7 @@
       "cooldown": "冷却中 · 不退款",
       "reset": "额度重置 · 加购到期",
       "traffic": {
-        "connect": "直接连接",
+        "connect": "直接连接 · 不预扣费用",
         "connectDetail": "示例初始余额为 10 TXB。开启按流量计费且资金充足时，可自动使用符合条件的车队。仅建立连接不会购入流量块。",
         "firstBlock": "100 MiB → 首个流量块",
         "firstBlockDetail": "该节点在滚动 72 小时内的流量达到 100 MiB 后，购入一个 1 GiB 流量块。以示例单价 1 TXB / GiB 计算，余额变为 9 TXB，抵扣已用流量后剩余 924 MiB。",
@@ -76,19 +73,26 @@
       "hourly": {
         "enable": "启用 · 首小时按比例",
         "enableDetail": "示例中，一个车队每小时 1 TXB，初始余额为 10 TXB。在 UTC 12:30 启用，只为当前小时剩余半小时支付 0.50 TXB。启用所需余额仅用于资格检查，不会预扣或冻结。",
-        "renew": "自动续付下一小时",
+        "renew": "按小时续付 · 空闲时仍计费",
         "renewDetail": "本例下一完整 UTC 小时费用为 1 TXB，可能在整点前短暂提前支付以保持连续可用。各已启用车队独立续付，空闲时也会计费；余额不足以支付下一小时，则在已付时段结束时停止访问。",
         "pool": "每日高速额度共享",
         "poolDetail": "按小时计费车队共享账户的每日高速流量额度。额度内不增加流量费用，各已启用车队仍分别按小时扣费。",
-        "throttle": "额度耗尽 → 降速",
+        "throttle": "继续连接 · 降速使用",
         "throttleDetail": "每日免费额度与已购高速流量均耗尽后，使用配置的降速速率。车队保持启用时，小时费用继续计收。",
         "extra": "主动开启 → 加购 1 GB",
         "extraDetail": "主动开启自动加购后，继续使用流量可按已同意的价格购入一个十进制 1 GB 流量块。本例扣除 0.20 TXB 并恢复高速额度；无法购买时维持降速。",
-        "disable": "停用 → 立即停止并冷却",
+        "disable": "立即停用 · 不退款",
         "disableDetail": "主动停用立即停止该车队访问，已付小时不退款，须等待配置的冷却期才能再次启用。剩余加购流量可供其他按小时车队继续使用，直至 UTC 零点。",
         "midnight": "UTC 00:00 → 重置",
         "midnightDetail": "UTC 零点每日高速额度重置，未使用的加购流量到期。这不会自动重新启用已停用车队，也不会退还到期额度。"
-      }
+      },
+      "seek": "调整演示进度",
+      "node": "节点 A",
+      "squad": "车队 A",
+      "autoBuy": "自动加购 1 GB",
+      "idleRenewal": "空闲时仍按小时续付",
+      "creditKept": "保留额度 · 不重复扣费",
+      "hoursUnit": " 小时"
     }
   }
 }

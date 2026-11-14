@@ -26,16 +26,40 @@ range bounds are generated for administrator controls without a raw JSON editor.
 
 `workflow-policy.mjs` exports the pure `auditWorkflow(name, parsedYaml)` security check for full upstream SHAs, approved repositories, private checkout credentials and bounded job permissions. `check-workflows.mjs` reads `.github/workflows` through the existing YAML dependency and reports static failures without network access or executing jobs. `workflow-policy.regressions.mjs` supplies hostile-ref, privilege and publication-bypass regressions through Node's built-in runner in hosted Actions only. `audit:structure` includes this static gate; `test:workflows` is the separate hosted regression entry point. Extend the reviewed action/job allowlists deliberately and update `docs/actions-security.md` when changing pins.
 
-`browser-recovery-audit.mjs` is a hosted-only Chromium audit using the pinned
-Playwright dependency and a loopback Vite fixture server. It exercises the real
+`browser-recovery-audit.mjs` is a pull-request-only hosted Chromium audit using
+the pinned Playwright dependency and a loopback Vite fixture server. It exercises the real
 App currency hydration and payment sheet plus browser access recovery at desktop
 and mobile widths, including loading, populated, empty and error states. It
 distinguishes invalid one-use links from temporary exchange failures and verifies
 an explicit retry succeeds without returning the token to the URL. It
 blocks unexpected API/external requests, checks console failures and document
 overflow, and writes per-state screenshots and `results.json` to
-`BROWSER_AUDIT_OUTPUT`. CI uploads these artifacts even after a failure. Run it
-only in hosted CI; the repository's local automated-suite restriction applies.
+`BROWSER_AUDIT_OUTPUT`. CI uploads these artifacts even after a failure, named
+`frontend-browser-recovery-pr-<number>`. `scope.json` records the PR, commit and
+selected suites; every result records its scope. Run it only in hosted PR CI;
+the repository's local automated-suite restriction applies.
+
+`plan-browser-recovery.mjs` reads the current GitHub PR event and compares exact
+base/head commits using a NUL-delimited Git diff, including both sides of moves.
+It requires no API token and passes filenames as data, never shell code.
+`browser-recovery-selection.mjs` maps the changed files to related feature
+suites. The job summary and planner log show the selection for that PR.
+Documentation, unit-test-only and backend-only edits skip this browser job.
+Member-only themes select member suites; administrator themes select admin
+suites; shared fonts, runtime, dependencies, API contracts and unmapped frontend
+files retain full coverage. An unavailable diff also selects all suites.
+
+`browser-recovery-scopes.mjs` is the registry shared by selection and execution.
+The runner rejects missing, empty or unknown `BROWSER_AUDIT_SCOPES`, imports only
+selected suites, and refuses non-PR events. There is no universal default run.
+Add a scope/ownership rule with a new browser scenario; keep the conservative
+fallback for runtime paths without a rule. `browser-recovery-scope.regressions.mjs`
+is included in the hosted `test:workflows` gate and covers isolation, shared
+changes, moved/deleted paths, unknown files and invalid selections.
+
+`browser-core-recovery.mjs` preserves the currency, checkout and browser access
+scenarios formerly embedded in the runner. They are separate registry scopes,
+so a focused feature PR does not always rerun unrelated core flows.
 
 `browser-xnode-availability.mjs` verifies optional telemetry failure, tab-scoped
 inventory loading, stale status, long node identities, loading/empty state and
@@ -80,6 +104,25 @@ and paid receipts, including the distinction between order value and credit.
 offer and paid enrollment replacement; no write occurs until new consent. It
 also checks retained purchased traffic with automatic purchases disabled and a
 zero starting allowance.
+Its `browser-hourly-preferences.mjs` scenarios cover inline auto-buy consent and
+the confirmed boost transition, switching off from Settings while exhausted,
+failed saves retaining the confirmed value, and zero/unavailable allowances.
+
+`browser-demonstrations.mjs` validates the continuous traffic/hourly/routing
+walkthroughs using the real fixture components, desktop cursor/mobile touch
+cues, pause/seek/replay, reduced motion, exact illustrative wallet states,
+routing match/default branches, restored focus and the absence of real writes.
+It opts individual scenarios into normal motion; other recovery suites keep
+their reduced-motion preference.
+
+`browser-member-design.mjs` captures every member route and both Explore modes,
+all DIY categories, public subscription and payment results in desktop/mobile
+Chromium. Narrow 320px Chinese captures check the densest member layouts.
+It checks loaded content, connection filtering, loading/empty/error states,
+document overflow, and the shared console/network guards. Missing destination
+fixtures use `member-utility-audit.html` with only constructed data. This scope
+is selected by member theme/layout changes, including the member-only font;
+it does not become a mandatory universal suite for unrelated PRs.
 
 `browser-ip-recovery.mjs` checks partial BGP geometry, same-prefix route-page and
 selection recovery, and retirement of paid live snapshots on account changes.

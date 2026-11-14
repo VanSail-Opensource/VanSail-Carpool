@@ -69,7 +69,7 @@ onScopeDispose(() => { disposed = true; generation++; link.value = null; resetCo
 </template>
 
 <style scoped>
-.admin-access-panel { max-width: 720px; margin-inline: auto; padding: 20px 16px 48px; }
+.admin-access-panel { max-width: 720px; margin-inline: auto; padding: 20px 16px var(--mobile-nav-clearance, 48px); }
 .admin-access-link { display: grid; gap: 16px; padding-block: 12px 28px; margin-bottom: 28px; border-bottom: 1px solid var(--line); }
 .admin-access-meta { display: flex; justify-content: space-between; flex-wrap: wrap; align-items: center; gap: 8px; }
 .admin-access-meta p { color: var(--text-muted); font-size: 12px; margin: 0; }

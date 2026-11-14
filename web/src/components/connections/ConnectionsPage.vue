@@ -44,7 +44,7 @@ const data = computed(() => state.data.value)
 <style scoped>
 .connections-page { display: grid; align-content: start; gap: 1.15rem; max-width: 1140px; }
 .connections-page__heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-.connections-page__heading h1 { margin: 0; font-size: 1.5rem; font-weight: 650; line-height: 1.2; }
+.connections-page__heading h1 { margin: 0; }
 .connections-page__heading p { margin: .45rem 0 0; color: var(--text-muted); font-size: .8rem; line-height: 1.5; }
 .connections-page__heading > div { min-width: 0; }
 .connections-page__workspace, .connections-page__skeleton { display: grid; gap: 1rem; min-width: 0; }

@@ -80,7 +80,6 @@ const {
 <style scoped>
 .page--activity { display: grid; gap: .65rem; }
 .page--activity .page-header, .page--activity .page-toolbar { margin: 0; }
-.page--activity .page-header h1 { font-size: 1.4rem; line-height: 1.2; }
 .activity-layout { display: grid; gap: .65rem; }
 .page--activity :deep(.section-block) { padding: .85rem; }
 .page--activity :deep(.section-heading) { margin-bottom: .6rem; }
