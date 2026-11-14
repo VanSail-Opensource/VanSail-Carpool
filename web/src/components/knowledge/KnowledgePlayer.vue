@@ -18,14 +18,12 @@ const chapters = computed(() => lessonChapters[props.topic].map(chapter => ({
 })))
 const sources = computed(() => knowledgeSources[props.topic] ?? [])
 const sceneStep = (step: number) => lessonChapters[props.topic][step]?.sceneStep ?? 0
-// Paired micro-chapters continue one scene instead of restarting its motion.
-const scenePhase = (step: number, phase: number) => props.topic === 'subscription' ? phase : (step % 2 + phase) / 2
 </script>
 
 <template>
   <DemoPlayer v-model:open="open" :title="t(`knowledge.topics.${topic}.title`)" :description="t(`knowledge.topics.${topic}.subtitle`)" :chapters="chapters" :interval="lessonIntervals[topic]" :reset-key="topic" :return-focus="returnFocus" content-class="knowledge-player">
     <template #default="{ step, phase, reducedMotion }">
-      <KnowledgeScene :topic="topic" :step="sceneStep(step)" :phase="scenePhase(step, phase)" :chapter="step" :count="chapters.length" :reduced-motion="reducedMotion" :description="chapters[step]?.detail ?? ''" />
+      <KnowledgeScene :topic="topic" :step="sceneStep(step)" :phase="phase" :chapter="step" :count="chapters.length" :reduced-motion="reducedMotion" :description="chapters[step]?.detail ?? ''" />
     </template>
     <template #details>
       <nav v-if="sources.length" class="knowledge-player__sources" :aria-label="t('knowledge.sources')">

@@ -15,6 +15,7 @@ export const knowledgeSources: Record<string, readonly KnowledgeSource[]> = {
     { labelKey: 'knowledge.sourcesLabels.maxmind', url: 'https://support.maxmind.com/knowledge-base/articles/anonymizer-and-proxy-data-maxmind' },
   ],
   payment: [
+    { labelKey: 'knowledge.sourcesLabels.bybit', url: 'https://www.bybit.com/en/help-center/article/FAQ-Crypto-Withdrawal' },
     { labelKey: 'knowledge.sourcesLabels.ethereum', url: 'https://ethereum.org/developers/docs/gas/' },
     { labelKey: 'knowledge.sourcesLabels.tron', url: 'https://developers.tron.network/docs/resource-model' },
     { labelKey: 'knowledge.sourcesLabels.solana', url: 'https://solana.com/docs/core/fees' },

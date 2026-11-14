@@ -16,7 +16,7 @@
     "more": "全部教程",
     "topics": {
       "subscription": {
-        "title": "六步，开始连接",
+        "title": "开启第一次连接",
         "subtitle": "从首次充值，到首次连接",
         "points": {"first": "充值并选择计费方式", "second": "下载客户端，导入订阅", "third": "选择节点，开始连接"}
       },
@@ -28,7 +28,7 @@
       "payment": {
         "title": "稳定币，正确到账",
         "subtitle": "币种、手续费与精确金额",
-        "points": {"first": "币种与网络一致", "second": "核对实际到账金额", "third": "预留网络手续费"}
+        "points": {"first": "币种与网络一致", "second": "核对实际到账金额", "third": "计入被扣手续费"}
       },
       "sharing": {
         "title": "有边界的宽带共享",
@@ -62,6 +62,26 @@
       }
     },
     "labels": {
+      "game": "游戏", "commerce": "电商", "malware": "恶意软件",
+      "credentialAttacks": "凭据攻击", "connectionFlood": "连接洪泛", "time": "时间",
+      "client": "客户端", "usage": "用量", "perHour": "每小时",
+      "perGiB": "每 GiB", "transient": "临时数据",
+      "displayedAmount": "订单金额", "transferAmount": "输入金额",
+      "feeDeducted": "扣除手续费", "feeSeparate": "费用另行支付",
+      "checkPreview": "核对到账金额", "provider": "转账平台",
+      "deadline": "有效期内", "pending": "处理中",
+      "confirmed": "已确认", "credited": "已入账",
+      "keepPrivate": "请勿分享", "availableNodes": "可用节点",
+      "compatible": "兼容", "official": "官方下载",
+      "status": "连接状态", "latency": "延时",
+      "congestion": "拥堵", "compare": "比较",
+      "shared": "共享", "limit": "成员上限",
+      "rules": "使用规则", "serviceDecision": "由服务方判断",
+      "noSecrets": "不提供密码或助记词", "issue": "问题",
+      "diagnose": "排查", "recover": "恢复",
+      "records": "计费记录", "account": "账户",
+      "connection": "连接", "first": "首先",
+      "next": "下一步",
       "addBalance": "充值余额",
       "billingChoice": "选择计费方式",
       "or": "或",
@@ -93,7 +113,7 @@
       "bot": "私信机器人",
       "txid": "交易哈希",
       "example": "仅作演示",
-      "gasSeparate": "Gas 另行支付",
+      "gasSeparate": "费用另行支付",
       "crowd": "大量用户",
       "publicIp": "一个公网 IP",
       "dedicatedIp": "节点公网 IP",
@@ -144,6 +164,7 @@
       "startHere": "从这里开始",
       "exchangeFee": "提现手续费",
       "save": "保存",
+      "saved": "已保存",
       "applied": "已应用",
       "defaultRoute": "保留默认",
       "connected": "已连接"
@@ -158,6 +179,7 @@
       "solana": "Solana · 交易手续费",
       "aptos": "Aptos · Gas 与存储费",
       "circle": "Circle · 转账与提现手续费",
+      "bybit": "Bybit · 提现扣费设置",
       "kraken": "Kraken · 选择正确网络",
       "cgnat": "Cloudflare · 一个 IP，多位用户",
       "ietf": "IETF · 地址共享的影响",

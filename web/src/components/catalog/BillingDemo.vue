@@ -12,10 +12,9 @@ const props = defineProps<{ mode: BillingDemoMode; returnFocus?: globalThis.HTML
 const { t } = useI18n()
 const steps = computed(() => billingDemoSteps[props.mode])
 const pointKeys = ['first', 'second', 'third'] as const
-const pointIcons = ['i-ph-check-circle-bold', 'i-ph-coins-bold', 'i-ph-info-bold']
 const chapters = computed(() => steps.value.map(item => ({
   icon: item.icon, label: t(`payg.demo.${props.mode}.${item.id}`), detail: t(`payg.demo.${props.mode}.${item.id}Detail`),
-  points: pointKeys.map((key, index) => ({ icon: pointIcons[index]!, label: t(`payg.demo.${props.mode}.${item.id}Points.${key}`) })),
+  points: pointKeys.map((key, index) => ({ icon: item.points[index]!, label: t(`payg.demo.${props.mode}.${item.id}Points.${key}`) })),
 })))
 </script>
 

@@ -38,8 +38,8 @@ overflow, and writes per-state screenshots and `results.json` to
 `frontend-browser-recovery-pr-<number>`. `scope.json` records the PR, commit and
 selected suites; every result records its scope. Run it only in hosted PR CI;
 the repository's local automated-suite restriction applies.
-The frontend browser job has a 20-minute budget for the full selected matrix,
-including software-rendered WebGL, with every selected assertion and capture retained.
+The frontend browser job has a 20-minute budget for the full selected matrix;
+tutorials use native interfaces and SVG without a software WebGL setup.
 
 `plan-browser-recovery.mjs` reads the current GitHub PR event and compares exact
 base/head commits using a NUL-delimited Git diff, including both sides of moves.
@@ -113,36 +113,39 @@ Failed-save screenshots wait for the current consent title's finite presence
 animation to settle, preserving the visible error and retained switch evidence.
 
 `browser-demonstrations.mjs` validates the continuous traffic/hourly/routing
-walkthroughs using the real fixture components, desktop cursor/mobile touch
-cues, pause/seek/replay, reduced motion, exact illustrative wallet states,
-routing match/default branches, restored focus and the absence of real writes.
+walkthroughs using the real fixture components, pause/seek/replay, reduced
+motion, exact illustrative wallet states, routing match/default branches,
+restored focus and the absence of real writes. It distinguishes auto-buy consent
+from funded traffic, preserves prepaid credit across reconnection/opt-out, and
+waits for node confirmation before presenting a saved route as applied.
 It opts individual scenarios into normal motion; other recovery suites keep
 their reduced-motion preference. Paused captures finish finite CSS transitions
-while asserting that the illustrative clock and pointer pose stay fixed.
+while asserting that the illustrative clock and interface pose stay fixed.
 
 `browser-knowledgebase.mjs` exercises all nine cards through the shared player
 in desktop/mobile English and Chinese. It checks every visible chapter and its
-three icon-led details, shorter durations, direct source links, reduced motion,
+three icon-led details, short beat durations, direct source links, reduced motion,
 keyboard seek/pause/replay, dialog focus return, and the explicit new-member
-tutorial entrance. The six subscription steps each retain a preview image.
+tutorial entrance. Six representative subscription stages retain preview images.
 `browser-knowledgebase-helpers.mjs` shares the fixture settlement, transport,
-visible-content, source-link and renderer assertions. Every chapter checks that
-payment equations, subscription actions and network legends sit below the 3D
-scene without horizontal overflow; narrow payment frames retain gas/fee evidence.
-`browser-knowledgebase-rendering.mjs` verifies real Three.js canvas rendering,
-pixel-stable paused poses, seek-driven redraw, silent unsupported-WebGL fallback,
-actual context loss/recovery, closing during a deferred renderer import, and
-every chapter at 320px in both shipped languages.
+visible-content, source-link and scene assertions. Every chapter checks readable
+copy and horizontally contained mock interfaces/graphs. Payment assertions use
+integer arithmetic to verify the fee-adjusted transfer, the separate-fee case
+without double addition, and the exact recipient amount.
+`browser-knowledgebase-rendering.mjs` verifies pixel-stable paused native/SVG
+poses, seek-driven redraw and deterministic rewind. It confirms every guide
+works without requesting WebGL or Three.js, ignores a superseded asynchronous
+player import, and checks every chapter at 320px in both shipped languages.
 The constructed full-shell fixture records
 all mocked API calls and refuses unexpected network access, proving lesson
 playback has no real or mocked member actions. Assertions wait for the initial
 preferences, access, balance, currency and availability reads to finish before
 recording the baseline. Each locale and viewport retains a top-of-page overview
-and clean wallet/gas and exchange-fee payment frames with details already visible.
+and separate-fee, deducted-fee and wallet-gas payment frames with details visible.
 Chapter/seek captures wait two animation frames, then compare the unique visual
 and accessible chapter selections plus the rendered slider range and contained-thumb geometry.
 The `knowledgebase` scope follows
-the feature, its locales, shared player/clock/3D changes and member-shell changes.
+the feature, its locales, shared player/clock/diagram changes and member-shell changes.
 
 `browser-member-design.mjs` captures every member route and both Explore modes,
 all DIY categories, public subscription and payment results in desktop/mobile

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import {
   topics, lessonSources, chapterCounts, player, calls, frames, settle, settleShell,
-  open, close, inspectDesktopKnowledgeLabel, inspectTransport, inspectVisibleChapter, inspectSources,
+  open, close, inspectDesktopKnowledgeLabel, inspectTransport, inspectVisibleChapter, inspectSources, inspectPaymentAmounts,
 } from './browser-knowledgebase-helpers.mjs'
 import { knowledgebaseRenderingScenarios } from './browser-knowledgebase-rendering.mjs'
 
@@ -42,8 +42,12 @@ export async function knowledgebaseScenarios(scenario, size) {
           assert.equal(await player(page).getAttribute('data-demo-playing'), 'false')
           await inspectTransport(page, index, (index + .92) / count)
           copy.push(await inspectVisibleChapter(page, locale))
-          if (id === 'subscription') await capture(`subscription-step-${index + 1}`)
-          if (id === 'payment' && [2, 4].includes(index)) await capture(`payment-${index === 2 ? 'wallet-gas' : 'exchange-fee'}`)
+          if (id === 'subscription' && [1, 3, 6, 8, 9, 11].includes(index)) await capture(`subscription-step-${index + 1}`)
+          if (id === 'payment' && [3, 4, 6].includes(index)) {
+            const mode = index === 3 ? 'separate' : index === 4 ? 'deducted' : 'wallet'
+            await inspectPaymentAmounts(page, mode)
+            await capture(`payment-${mode}`)
+          }
         }
         inspectLessonCopy(copy.join('\n'), id, locale)
         if (Object.hasOwn(lessonSources, id)) await inspectSources(page, id)
@@ -69,8 +73,9 @@ export async function knowledgebaseScenarios(scenario, size) {
     assert.equal(await seek.getAttribute('aria-valuenow'), paused)
     await seek.focus(); await seek.press('End')
     assert.equal(await seek.getAttribute('aria-valuenow'), '1000')
-    assert.equal(await page.locator('[data-demo-step="7"]').getAttribute('aria-current'), 'step')
-    await inspectTransport(page, 7, 1)
+    const last = chapterCounts.payment - 1
+    assert.equal(await page.locator(`[data-demo-step="${last}"]`).getAttribute('aria-current'), 'step')
+    await inspectTransport(page, last, 1)
     await inspectVisibleChapter(page, 'en')
     await capture('seek-end')
     await page.getByRole('button', { name: 'Replay demonstration', exact: true }).click()

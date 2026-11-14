@@ -16,9 +16,9 @@ export const knowledgeTopics: readonly KnowledgeTopic[] = [
   { id: 'sharing', icon: 'i-ph-users-three-bold', points: ['i-ph-users-three-bold', 'i-ph-hard-drives-bold', 'i-ph-shield-check-bold'], seconds: seconds('sharing') },
   { id: 'rules', icon: 'i-ph-shield-check-bold', points: ['i-ph-check-circle-bold', 'i-ph-prohibit-bold', 'i-ph-gauge-bold'], seconds: seconds('rules') },
   { id: 'why', icon: 'i-ph-sparkle-bold', points: ['i-ph-clock-bold', 'i-ph-code-bold', 'i-ph-chats-circle-bold'], seconds: seconds('why') },
-  { id: 'hourly', icon: 'i-ph-clock-bold', points: ['i-ph-play-circle-bold', 'i-ph-circles-three-bold', 'i-ph-stop-circle-bold'], seconds: Math.ceil(7 * guideIntervals.hourly / 1000) },
-  { id: 'traffic', icon: 'i-ph-arrows-down-up-bold', points: ['i-ph-plugs-connected-bold', 'i-ph-cube-bold', 'i-ph-hourglass-bold'], seconds: Math.ceil(6 * guideIntervals.traffic / 1000) },
-  { id: 'routing', icon: 'i-ph-git-branch-bold', points: ['i-ph-sign-in-bold', 'i-ph-funnel-bold', 'i-ph-sign-out-bold'], seconds: Math.ceil(4 * guideIntervals.routing / 1000) },
+  { id: 'hourly', icon: 'i-ph-clock-bold', points: ['i-ph-play-circle-bold', 'i-ph-circles-three-bold', 'i-ph-stop-circle-bold'], seconds: Math.ceil(10 * guideIntervals.hourly / 1000) },
+  { id: 'traffic', icon: 'i-ph-arrows-down-up-bold', points: ['i-ph-plugs-connected-bold', 'i-ph-cube-bold', 'i-ph-hourglass-bold'], seconds: Math.ceil(9 * guideIntervals.traffic / 1000) },
+  { id: 'routing', icon: 'i-ph-git-branch-bold', points: ['i-ph-sign-in-bold', 'i-ph-funnel-bold', 'i-ph-sign-out-bold'], seconds: Math.ceil(8 * guideIntervals.routing / 1000) },
 ]
 
 export function isKnowledgeLesson(id: KnowledgeTopicId): id is KnowledgeLesson {

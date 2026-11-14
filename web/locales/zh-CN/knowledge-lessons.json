@@ -2,72 +2,90 @@
   "knowledgeLessons": {
     "subscription": {
       "steps": {
-        "balance": { "caption": "从这里，开启连接", "detail": "打开「充值余额」并完成付款。等待余额到账后，再开通使用。", "points": { "first": "充值余额", "second": "按订单付款", "third": "等待到账" } },
-        "billing": { "caption": "选择适合你的计费方式", "detail": "在「探索」启用按小时小队，或在余额充足时直接使用符合条件的按流量节点，无需另购流量套餐。", "points": { "first": "按小时 → 启用小队", "second": "按流量 → 直接连接", "third": "保持余额充足" } },
-        "routing": { "caption": "你的路由，由你选择", "detail": "需要自定义路由？在 DIY 中心选择入口、模板和出口，保存后等待「已应用」。不需要时保留默认设置即可。", "points": { "first": "DIY 中心 · 可选", "second": "入口 → 规则 → 出口", "third": "保存 → 已应用" } },
-        "client": { "caption": "选好客户端，准备出发", "detail": "从官方项目下载新版 Mihomo 或 Xray 内核客户端，选择适合设备且支持所用节点的版本。", "points": { "first": "FlClash · Mihomo", "second": "v2rayN · 电脑", "third": "v2rayNG · Android" } },
-        "import": { "caption": "复制、粘贴、更新订阅", "detail": "从「订阅」复制当前链接，粘贴到客户端的订阅地址栏，保存并更新。链接请勿分享；未显示链接时等待首次同步。", "points": { "first": "复制订阅链接", "second": "粘贴到客户端", "third": "保存并更新" } },
-        "connect": { "caption": "选个节点，开始连接", "detail": "选择可用节点并启动客户端，按需开启系统代理或 VPN/TUN，再打开网页确认连接。", "points": { "first": "选择节点", "second": "启动并开启代理 / VPN", "third": "打开网页" } }
+        "balance": {"caption": "先充值余额", "detail": "打开「充值余额」，按当前付款订单操作。", "points": {"first": "充值余额", "second": "打开订单", "third": "精确付款"}},
+        "credit": {"caption": "等待余额到账", "detail": "账户余额更新后，再继续开通。", "points": {"first": "已付款", "second": "处理中", "third": "余额到账"}},
+        "billing": {"caption": "选择计费方式", "detail": "按小时或按流量，选择适合自己的方式。", "points": {"first": "按小时", "second": "按流量", "third": "按需选择"}},
+        "access": {"caption": "开通你的连接", "detail": "启用按小时小队，或用充足余额直接连接按流量节点。", "points": {"first": "按小时 → 启用", "second": "按流量 → 连接", "third": "无需另购流量套餐"}},
+        "routing": {"caption": "按需自定义路由", "detail": "需要自定义时，在 DIY 中心选择入口、模板和出口。", "points": {"first": "入口", "second": "规则模板", "third": "出口 · 可选"}},
+        "applied": {"caption": "保存，等待已应用", "detail": "不需要自定义路由时，保留默认设置即可。", "points": {"first": "保存", "second": "节点确认", "third": "已应用"}},
+        "client": {"caption": "下载官方客户端", "detail": "从官方项目下载新版 Mihomo 或 Xray 内核客户端。", "points": {"first": "FlClash · Mihomo", "second": "v2rayN · 电脑", "third": "v2rayNG · Android"}},
+        "compatibility": {"caption": "确认客户端兼容", "detail": "在「订阅」中查看所选客户端与节点的兼容情况。", "points": {"first": "你的设备", "second": "支持的客户端", "third": "可用节点"}},
+        "import": {"caption": "复制、粘贴、保存", "detail": "把「订阅」中的当前链接，粘贴到客户端的订阅地址栏。", "points": {"first": "复制私密链接", "second": "粘贴订阅地址", "third": "保存订阅"}},
+        "refresh": {"caption": "更新节点列表", "detail": "尚未显示链接时等待首次同步；权限变化后重新更新订阅。", "points": {"first": "更新订阅", "second": "加载节点", "third": "变更后再更新"}},
+        "connect": {"caption": "选好节点，开启连接", "detail": "启动客户端，按需开启系统代理或 VPN/TUN。", "points": {"first": "选择节点", "second": "启动客户端", "third": "开启代理 / VPN"}},
+        "verify": {"caption": "打开网页，确认连接", "detail": "无法访问时，检查余额、节点可用状态及订阅更新。", "points": {"first": "打开网页", "second": "检查可用权限", "third": "不分享订阅链接"}}
       }
     },
     "networks": {
       "steps": {
-        "entry": { "caption": "从中国出发，选好入口", "detail": "优质线路专注中国与海外的连接，通过加密客户端连接优化入口，再访问海外服务。", "points": { "first": "CTG / CUG / CMI", "second": "中国 → 海外", "third": "加密客户端连接" } },
-        "conditions": { "caption": "线路，决定连接体验", "detail": "运营商、路径、位置和拥堵都会影响速度。优质线路本身并不能绕过网络过滤。", "points": { "first": "运营商与路径", "second": "你的位置", "third": "当前拥堵程度" } },
-        "international": { "caption": "把连接带向更远处", "detail": "国际网络连接不同国家和大洲，适合一般海外访问及后续转发。", "points": { "first": "跨越地区", "second": "继续转发", "third": "海外访问" } },
-        "reputation": { "caption": "速度与信誉，各有所指", "detail": "数据中心出口可能被识别为机房。信誉取决于实际 IP 与使用行为，并不存在统一的质量等级。", "points": { "first": "机房分类", "second": "实际 IP", "third": "使用影响信誉" } },
-        "broadband": { "caption": "通过本地运营商出口", "detail": "宽带出口提供本地 ISP 网络环境，适合日常社交、电商及 AI 工作。", "points": { "first": "本地 ISP", "second": "社交与 AI", "third": "电商业务" } },
-        "services": { "caption": "本地出口，合理期待", "detail": "本地 ISP 连接不能证明居住地、保证账号被接受，也无法阻止 AI 服务改变行为。", "points": { "first": "不等于居住证明", "second": "仍需遵守平台规则", "third": "AI 服务可能变化" } },
-        "pairing": { "caption": "搭配适合你的路径", "detail": "支持时，将中国优化入口与国际或宽带出口搭配使用。目标服务看到的是最终出口的公网 IP。", "points": { "first": "优化入口", "second": "自选出口", "third": "对外显示出口 IP" } },
-        "destination": { "caption": "好入口，合适的出口", "detail": "入口影响路径，出口决定对外 IP；目标服务仍会进行自己的检查。", "points": { "first": "线路速度", "second": "IP 信誉", "third": "服务侧检查" } }
+        "entry": {"caption": "选好出发的入口", "detail": "通过加密客户端连接中国优化入口，再访问海外服务。", "points": {"first": "CTG / CUG / CMI", "second": "中国 → 海外", "third": "加密客户端"}},
+        "conditions": {"caption": "线路影响连接速度", "detail": "优质线路本身并不能绕过网络过滤。", "points": {"first": "运营商与路径", "second": "你的位置", "third": "拥堵程度"}},
+        "international": {"caption": "把连接带向更远处", "detail": "国际网络连接海外地区，适合访问与继续转发。", "points": {"first": "跨越地区", "second": "继续转发", "third": "海外访问"}},
+        "reputation": {"caption": "速度只是一个维度", "detail": "数据中心出口可能被识别为机房，要看实际 IP。", "points": {"first": "网络速度", "second": "IP 分类", "third": "使用历史"}},
+        "broadband": {"caption": "选择本地运营商出口", "detail": "宽带出口为日常使用提供本地 ISP 网络环境。", "points": {"first": "本地 ISP", "second": "社交与 AI", "third": "电商"}},
+        "services": {"caption": "服务方仍会自行判断", "detail": "ISP 出口不等于居住证明，也不保证账号被接受。", "points": {"first": "平台规则", "second": "账号检查", "third": "AI 行为可能变化"}},
+        "pairing": {"caption": "搭配入口与出口", "detail": "支持时，将优化入口与国际或宽带出口组合使用。", "points": {"first": "优化入口", "second": "路由规则", "third": "所选出口"}},
+        "destination": {"caption": "对外显示最终出口", "detail": "目标服务看到的是最终出口的公网 IP。", "points": {"first": "入口影响路径", "second": "出口决定对外 IP", "third": "平台仍会检查"}},
+        "compare": {"caption": "在自己的网络上比较", "detail": "用自己的网络，在常用时段体验可用节点。", "points": {"first": "延时", "second": "稳定性", "third": "传输速度"}},
+        "choose": {"caption": "按使用场景选择", "detail": "入口负责连接体验，出口服务于目标需求。", "points": {"first": "流畅入口", "second": "合适出口", "third": "实际访问验证"}}
       }
     },
     "payment": {
       "steps": {
-        "invoice": { "caption": "核对三项，安心付款", "detail": "从当前订单复制币种、网络和收款地址，发送前逐项核对。", "points": { "first": "相同币种", "second": "相同网络", "third": "准确地址" } },
-        "deadline": { "caption": "每一位小数，都算数", "detail": "在付款窗口结束前发送完整订单金额，不能因为手续费较低就改用其他网络。", "points": { "first": "保留全部小数", "second": "在截止前发送", "third": "保持同一网络" } },
-        "gas": { "caption": "付款归付款，Gas 归网络", "detail": "TX 收到订单金额，Gas 单独付给网络。查看钱包手续费预估，不要把 Gas 加进转给 TX 的稳定币金额。", "points": { "first": "订单金额 → TX", "second": "Gas → 网络", "third": "查看当前费用" } },
-        "resources": { "caption": "为手续费留一点余量", "detail": "保留足够的手续费资金；部分钱包会代付或兑换费用，请以钱包当前预估为准。", "points": { "first": "Ethereum → ETH", "second": "TRON → 资源 / TRX", "third": "Solana → SOL · Aptos → APT" } },
-        "withdrawal": { "caption": "真正重要的是到账金额", "detail": "交易所或托管钱包可能从提现金额中扣费。调整提现总额，让 TX 恰好收到订单金额。", "points": { "first": "提现总额", "second": "减去扣除的费用", "third": "等于订单金额" } },
-        "preview": { "caption": "确认前，再看一眼", "detail": "核对最终到账预览。金额不符可能无法自动入账；画面中的数字仅为示例。", "points": { "first": "查看最终预览", "second": "小数位全部一致", "third": "金额不符 → 联系支持" } },
-        "confirmation": { "caption": "已发送？等待确认完成", "detail": "等待链上确认和付款处理。仍未入账时私信机器人；核查期间不要重复付款。", "points": { "first": "链上确认", "second": "付款处理", "third": "不要重复付款" } },
-        "support": { "caption": "一条消息，让帮助开始", "detail": "私信机器人，附上订单号、网络和交易哈希。绝不分享钱包助记词或私钥。", "points": { "first": "订单号与网络", "second": "交易 ID", "third": "不分享钱包密钥" } }
+        "invoice": {"caption": "打开当前付款订单", "detail": "使用本次订单显示的币种、网络与收款地址。", "points": {"first": "相同币种", "second": "相同网络", "third": "准确地址"}},
+        "network": {"caption": "两端网络必须一致", "detail": "在钱包或交易所选择订单要求的网络后再转账。", "points": {"first": "订单网络", "second": "发送网络", "third": "逐项一致"}},
+        "deadline": {"caption": "每一位小数都保留", "detail": "在付款窗口内，确保实际到账金额与订单完全一致。", "points": {"first": "完整金额", "second": "全部小数", "third": "有效期内"}},
+        "provider": {"caption": "先看手续费扣法", "detail": "Bybit 等平台可能从你输入的转账金额中扣除手续费。", "points": {"first": "查看扣费方式", "second": "查看当前费用", "third": "查看实际到账"}},
+        "withdrawal": {"caption": "扣费？先把费用加上", "detail": "输入金额 = 订单显示金额 + 平台当前扣除的手续费。", "points": {"first": "订单显示金额", "second": "+ 被扣手续费", "third": "= 应输入金额"}},
+        "preview": {"caption": "确认精确到账金额", "detail": "输入总额减去被扣费用，必须等于订单金额。数字仅作示例。", "points": {"first": "输入总额", "second": "− 被扣费用", "third": "= TX 到账"}},
+        "gas": {"caption": "费用另付？不用再加", "detail": "若输入金额已等于到账金额，就填订单金额，另备手续费。", "points": {"first": "填写订单金额", "second": "费用另行支付", "third": "不要重复加费"}},
+        "resources": {"caption": "为 Gas 留足余额", "detail": "部分钱包可代付或兑换费用，请以当前预估为准。", "points": {"first": "Ethereum → ETH", "second": "TRON → 资源 / TRX", "third": "Solana → SOL · Aptos → APT"}},
+        "confirmation": {"caption": "发送、确认、完成", "detail": "等待链上确认及付款处理完成。", "points": {"first": "已转账", "second": "链上确认", "third": "订单处理"}},
+        "credited": {"caption": "查看余额是否到账", "detail": "仍未入账或金额不符时，先联系支持，不要再次付款。", "points": {"first": "余额更新", "second": "保留订单凭证", "third": "不要重复付款"}},
+        "support": {"caption": "附上有效付款信息", "detail": "私信机器人，附上订单号、网络和交易哈希。", "points": {"first": "订单号", "second": "网络", "third": "交易哈希"}},
+        "secrets": {"caption": "钱包密钥始终保密", "detail": "处理付款问题不需要你的助记词或私钥。", "points": {"first": "保管助记词", "second": "保管私钥", "third": "提供交易哈希即可"}}
       }
     },
     "sharing": {
       "steps": {
-        "cgnat": { "caption": "一个 IP，许多日常用户", "detail": "运营商广泛使用 CGNAT，数百个家庭或移动用户可能共用一个公网 IPv4 地址。", "points": { "first": "家庭用户", "second": "移动用户", "third": "共享公网 IPv4" } },
-        "neighbors": { "caption": "共享本身，不代表滥用", "detail": "共享地址本身不能证明滥用，但共享 IP 被封锁时仍可能影响正常用户。", "points": { "first": "运营商常见做法", "second": "使用行为很重要", "third": "可能受共同封锁影响" } },
-        "node": { "caption": "每个节点，都有自己的 IP", "detail": "TX 为每个节点提供独立公网 IP，而非上游共享 NAT 地址。", "points": { "first": "一个节点", "second": "独立公网 IP", "third": "非上游共享 NAT" } },
-        "members": { "caption": "节点独立，成员共享", "detail": "同一节点的成员仍共享出口地址，节点独立 IP 不等于每位成员各有一个私有 IP。", "points": { "first": "节点成员", "second": "相同出口地址", "third": "不是每人一个 IP" } },
-        "controls": { "caption": "控制人数，守好边界", "detail": "我们限制成员数量，并通过协议识别与连接数限制保护共享容量。", "points": { "first": "限制人数", "second": "协议识别", "third": "连接数限制" } },
-        "boundaries": { "caption": "减少本可避免的风险", "detail": "阻止爬虫、批量注册、BT 和转分享，可降低无谓负载与信誉风险，但任何措施都无法消除全部风险。", "points": { "first": "禁止爬虫", "second": "禁止号池", "third": "禁止 BT 与转分享" } },
-        "signals": { "caption": "服务看到的，不止 IP", "detail": "平台会综合判断 IP 信誉、设备与浏览器信号、账号历史及行为。", "points": { "first": "IP 信誉", "second": "设备与浏览器", "third": "账号与行为" } },
-        "support": { "caption": "有边界的共享，有回应的支持", "detail": "仍可能遇到验证、限制或服务质量变化。访问异常时，请私信机器人。", "points": { "first": "降低可避免的风险", "second": "不保证平台接受", "third": "机器人直接支持" } }
+        "cgnat": {"caption": "一个 IP，多位用户", "detail": "运营商级 NAT 可让许多家庭或移动用户共用公网 IPv4。", "points": {"first": "家庭用户", "second": "移动用户", "third": "共用公网 IPv4"}},
+        "neighbors": {"caption": "共享本身很常见", "detail": "共享地址很常见，但按 IP 封禁也可能影响正常用户。", "points": {"first": "常见运营商做法", "second": "使用行为重要", "third": "共用 IP 有封禁风险"}},
+        "node": {"caption": "每个节点独立公网 IP", "detail": "TX 每个节点拥有独立公网 IP，不使用上游共享 NAT。", "points": {"first": "一个节点", "second": "独立公网 IP", "third": "非上游共享 NAT"}},
+        "members": {"caption": "成员共用节点出口", "detail": "节点成员共用该出口，不是每人分配一个私有公网 IP。", "points": {"first": "节点成员", "second": "相同出口 IP", "third": "非每人独立 IP"}},
+        "controls": {"caption": "为共享设好边界", "detail": "人数、协议与连接数控制，共同保护共享容量。", "points": {"first": "限定人数", "second": "协议识别", "third": "连接数限制"}},
+        "boundaries": {"caption": "减少不必要的负担", "detail": "限制可减少负载与信誉风险，但不能消除全部风险。", "points": {"first": "不跑爬虫", "second": "不建号池", "third": "禁止 BT 与转借"}},
+        "signals": {"caption": "平台综合多个信号", "detail": "服务是否接受账号，并非仅由 IP 决定。", "points": {"first": "IP 信誉", "second": "设备与浏览器", "third": "账号与行为"}},
+        "behavior": {"caption": "你的使用方式也重要", "detail": "遵守目标平台规则，避免异常批量自动化。", "points": {"first": "正常使用", "second": "遵守平台规则", "third": "不做批量自动化"}},
+        "limits": {"caption": "平台检查仍可能出现", "detail": "任何出口都可能遇到验证或限制。", "points": {"first": "可能要求验证", "second": "规则可能变化", "third": "不保证免风控"}},
+        "support": {"caption": "告诉我们哪里变了", "detail": "私信机器人，说明节点、受影响服务与时间。", "points": {"first": "所用节点", "second": "服务与时间", "third": "直接联系支持"}}
       }
     },
     "rules": {
       "steps": {
-        "everyday": { "caption": "浏览、追剧、畅玩", "detail": "欢迎日常浏览、流媒体和游戏，请在已购买的使用权限与额度内使用。", "points": { "first": "浏览", "second": "流媒体", "third": "游戏" } },
-        "platforms": { "caption": "工作与创作，都有空间", "detail": "欢迎 AI、合规社交及电商工作，请遵守各平台账号规则与自身使用额度。", "points": { "first": "AI 工作", "second": "社交与电商", "third": "遵守平台规则" } },
-        "private": { "caption": "你的访问权限，留给自己", "detail": "禁止共享、转售访问权限或暴露开放代理，请保护自己的订阅链接。", "points": { "first": "个人使用", "second": "禁止转售与分享", "third": "禁止开放代理" } },
-        "automation": { "caption": "正常使用，远离批量滥用", "detail": "爬虫、批量注册工具和号池会制造异常流量，让其他成员的访问受到风险。", "points": { "first": "禁止爬虫", "second": "禁止号池", "third": "禁止批量注册" } },
-        "torrents": { "caption": "把通道留给正常使用", "detail": "禁止 BT/PT、垃圾信息和网络攻击，共享容量用于正常访问。", "points": { "first": "禁止 BT / PT", "second": "禁止垃圾信息", "third": "禁止网络攻击" } },
-        "abuse": { "caption": "保护连接两端的人", "detail": "禁止传播恶意软件、凭据攻击，以及耗尽连接或伤害他人的高强度自动化活动。", "points": { "first": "禁止恶意软件", "second": "禁止凭据攻击", "third": "禁止连接洪泛" } },
-        "controls": { "caption": "公平使用，持续守护", "detail": "协议识别与连接数限制帮助落实使用规则、保护共享容量。", "points": { "first": "协议检查", "second": "连接数限制", "third": "保护共享容量" } },
-        "support": { "caption": "正常使用受影响？联系我们", "detail": "识别能力有边界，未被识别的违规仍属违规。正常使用受影响时，请私信机器人。", "points": { "first": "识别并非万能", "second": "规则始终有效", "third": "私信机器人" } }
+        "everyday": {"caption": "浏览、影音、游戏", "detail": "在已购权限与使用限制内，欢迎日常使用。", "points": {"first": "浏览", "second": "影音", "third": "游戏"}},
+        "platforms": {"caption": "工作、创作、公平使用", "detail": "正当社交、电商与 AI 工作，仍需遵守各平台规则。", "points": {"first": "AI 工作", "second": "社交与电商", "third": "遵守平台规则"}},
+        "private": {"caption": "连接仅供本人使用", "detail": "禁止转售、转借，也不要搭建开放代理。", "points": {"first": "本人使用", "second": "不转售转借", "third": "不开公开代理"}},
+        "subscription": {"caption": "订阅链接就是钥匙", "detail": "请勿在公开聊天或截图中暴露订阅链接。", "points": {"first": "保密订阅地址", "second": "隐藏凭据", "third": "不公开链接"}},
+        "automation": {"caption": "禁止爬虫与号池", "detail": "批量注册与爬虫会危及其他成员的使用。", "points": {"first": "禁止爬虫", "second": "禁止号池", "third": "禁止批量注册"}},
+        "torrents": {"caption": "把共享容量留给正常使用", "detail": "禁止 BT/PT、垃圾信息与网络攻击。", "points": {"first": "禁止 BT / PT", "second": "禁止垃圾信息", "third": "禁止网络攻击"}},
+        "abuse": {"caption": "保护链路两端的用户", "detail": "禁止恶意软件、凭据攻击与自动化连接洪泛。", "points": {"first": "禁止恶意软件", "second": "禁止凭据攻击", "third": "禁止连接洪泛"}},
+        "controls": {"caption": "公平使用，有规则保障", "detail": "协议识别与连接数限制帮助保护共享容量。", "points": {"first": "协议检查", "second": "连接数限制", "third": "共享容量"}},
+        "limits": {"caption": "所有时候，规则都适用", "detail": "暂未识别的违规流量，同样属于禁止行为。", "points": {"first": "识别存在边界", "second": "规则始终有效", "third": "合理使用"}},
+        "support": {"caption": "正常使用受影响？联系我们", "detail": "私信机器人，说明节点、时间与失败的操作。", "points": {"first": "说明操作", "second": "节点与时间", "third": "获取帮助"}}
       }
     },
     "why": {
       "steps": {
-        "choice": { "caption": "让使用方式适合你的每一天", "detail": "在提供相应方案的小队中选择按小时或按流量计费，让选择贴合使用习惯。", "points": { "first": "按小时", "second": "按流量", "third": "自由选择" } },
-        "terms": { "caption": "每一笔费用，都看得明白", "detail": "查看小队展示的价格与限制，通过计费教程了解什么操作会触发扣费。", "points": { "first": "展示的价格", "second": "小队限制", "third": "可视化计费教程" } },
-        "project": { "caption": "自己开发，自己维护", "detail": "VanSail Carpool 是我们自主维护的项目，覆盖成员界面、计费和 X-Node 集成。", "points": { "first": "自主代码", "second": "成员体验", "third": "计费与 X-Node" } },
-        "improve": { "caption": "问题直达维护代码的人", "detail": "我们能直接调查问题、改进软件，并自主掌控产品功能。", "points": { "first": "直接排查", "second": "持续改进", "third": "自主维护功能" } },
-        "quality": { "caption": "重视质量，也有人负责", "detail": "我们维护服务并调查反馈的质量问题，遇到异常时请告诉我们。", "points": { "first": "服务维护", "second": "问题调查", "third": "TX 背后的团队" } },
-        "recover": { "caption": "需要帮助时，我们在", "detail": "网络可能发生故障，目标服务也可能施加限制。我们承诺调查并提供支持。", "points": { "first": "网络可能故障", "second": "目标服务仍有规则", "third": "调查与支持" } },
-        "privacy": { "caption": "重视隐私，也说明边界", "detail": "实时连接观测只作临时使用，不保留为浏览历史；运营所需的账号、付款和流量记账记录仍会保留。", "points": { "first": "临时连接观测", "second": "账号与付款记录", "third": "流量记账" } },
-        "support": { "caption": "帮助，只差一条消息", "detail": "设置、付款或访问需要帮助时，直接私信机器人，由维护 TX 的人提供支持。", "points": { "first": "设置与访问", "second": "付款问题", "third": "私信机器人" } }
+        "choice": {"caption": "让连接适合你的日常", "detail": "在提供对应模式的节点中，选择按小时或按流量。", "points": {"first": "按小时", "second": "按流量", "third": "按需选择"}},
+        "terms": {"caption": "看清何时产生费用", "detail": "查看价格与限制，再用计费教程理解扣费时机。", "points": {"first": "显示价格", "second": "小队限制", "third": "计费动画"}},
+        "project": {"caption": "自主研发，持续维护", "detail": "自主项目连接用户界面、计费与 X-Node。", "points": {"first": "自主代码", "second": "用户体验", "third": "计费与 X-Node"}},
+        "improve": {"caption": "让问题直接推动改进", "detail": "我们能够直接排查问题，并改进自己的软件。", "points": {"first": "排查", "second": "修复", "third": "改进"}},
+        "quality": {"caption": "服务背后，有人负责", "detail": "我们维护服务，并排查收到的质量问题。", "points": {"first": "持续维护", "second": "问题排查", "third": "提供支持"}},
+        "diagnose": {"caption": "让问题更容易定位", "detail": "反馈时附上节点、时间、客户端及受影响服务。", "points": {"first": "节点与时间", "second": "客户端", "third": "受影响服务"}},
+        "recover": {"caption": "遇到问题，直接求助", "detail": "网络可能故障，目标服务也可能限制访问；我们会协助排查。", "points": {"first": "网络问题", "second": "平台限制", "third": "支持排查"}},
+        "privacy": {"caption": "连接观察为临时数据", "detail": "实时连接观察不会作为浏览历史留存。", "points": {"first": "连接观察", "second": "临时处理", "third": "不留存浏览历史"}},
+        "records": {"caption": "账务记录，边界清晰", "detail": "必要的账号、付款及流量计费记录仍会保留。", "points": {"first": "账号记录", "second": "付款记录", "third": "流量计费"}},
+        "support": {"caption": "一条私信，开始获得帮助", "detail": "设置、付款或访问有问题，直接私信机器人。", "points": {"first": "设置与访问", "second": "付款问题", "third": "私信机器人"}}
       }
     }
   }

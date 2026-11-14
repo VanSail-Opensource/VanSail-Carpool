@@ -20,9 +20,7 @@ const results = []
 let browser
 try {
   await server.listen()
-  // Hosted runners have no hardware GPU; exercise actual WebGL with a stable
-  // software renderer. Fixture requests remain restricted to the local server.
-  browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] })
+  browser = await chromium.launch()
   async function scenario(scope, size, name, path, inspect) {
     const context = await browser.newContext({ viewport: size.viewport, reducedMotion: size.reducedMotion ?? 'reduce', colorScheme: 'dark', hasTouch: size.name.startsWith('mobile') })
     const page = await context.newPage()

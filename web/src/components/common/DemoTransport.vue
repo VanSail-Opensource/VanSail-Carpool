@@ -28,7 +28,7 @@ function seek(value: number | undefined) { if (value !== undefined) emit('seek',
 <style scoped>
 .demo-transport { display: grid; gap: .35rem; min-width: 0; border-top: 1px solid var(--line); padding-top: .55rem; }
 .demo-transport__timeline { display: flex; align-items: center; gap: .6rem; min-width: 0; }
-.demo-transport__timeline :deep(button), .demo-transport__chapters :deep(button) { flex: none; min-width: 44px; min-height: 44px; }
+.demo-transport__timeline :deep(button), .demo-transport__chapters :deep(button) { flex: none; min-width: 44px; min-height: 44px; border-radius: var(--radius-control); }
 .demo-transport__seek { min-width: 0; flex: 1; width: 100%; height: 44px; cursor: pointer; }
 .demo-transport__clock { flex: none; color: var(--text); font: .65rem var(--font-mono); font-variant-numeric: tabular-nums; }
 .demo-transport__clock > span { color: var(--text-faint); }

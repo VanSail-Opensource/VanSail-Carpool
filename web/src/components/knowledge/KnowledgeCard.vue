@@ -24,7 +24,7 @@ function reload(): void { globalThis.location.reload() }
 .knowledge-card { position: relative; display: grid; grid-template-rows: auto auto 1fr auto; gap: 1rem; min-width: 0; padding: 1.2rem; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); transition: border-color .2s, transform .2s; overflow: hidden; }
 .knowledge-card::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 2px; background: var(--accent); opacity: .25; transition: opacity .2s; }
 .knowledge-card__header, .knowledge-card__footer { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
-.knowledge-card__icon { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; color: var(--accent); background: var(--accent-soft); border-radius: .7rem; font-size: 1.35rem; }
+.knowledge-card__icon { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; color: var(--accent); background: var(--accent-soft); border-radius: var(--radius-control); font-size: 1.35rem; }
 .knowledge-card__index { color: var(--text-faint); font: .75rem var(--font-mono); }
 .knowledge-card--start { border-color: var(--accent-line); }
 .knowledge-card--start::before { width: 3px; opacity: 1; }

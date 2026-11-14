@@ -2,7 +2,13 @@
 html:not([data-experience='browser']) {
   --ui-bg-inverted: var(--text);
   --ui-text-inverted: var(--accent-ink);
+  --radius-panel: 22px;
+  --radius-control: 14px;
+  /* Nuxt UI's rounded-md control multiplies this base by 1.5. */
+  --ui-radius: calc(var(--radius-control) / 1.5);
 }
+
+html:not([data-experience='browser']) .squad-pricing-card { border-radius: var(--radius-panel); }
 
 .page, .settings-page { --panel-edge: rgb(190 218 240 / 0.05); }
 

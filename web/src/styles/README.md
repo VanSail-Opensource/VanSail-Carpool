@@ -46,7 +46,7 @@
 - `responsive-03.css` applies compact administrative rows below 640px and owns reduced-motion/transparency fallbacks.
 - `desktop-01.css` spaces the rail shortcut footer and balances wide-page widths for desktop while keeping the compact phone shell untouched.
 
-The member system is dark-only with graphite surfaces, restrained cyan accents, 12px panels and 8px controls. Space Grotesk adds geometric character; technical values use the existing monospace stack with tabular figures. Card depth comes from a faint inset edge, with short interaction feedback rather than perpetual decoration. Status colours remain semantic and distinct. The browser console owns a separate theme.
+The member system is dark-only with graphite surfaces, restrained cyan accents, 22px panels and 14px controls. `member-surfaces.css` sets these tokens only outside the browser-console root and derives Nuxt UI's radius base from the same control token; existing compact spacing and tap targets remain intact. Space Grotesk adds geometric character; technical values use the existing monospace stack with tabular figures. Card depth comes from a faint inset edge, with short interaction feedback rather than perpetual decoration. Status colours remain semantic and distinct. The browser console owns a separate theme.
 
 Route roots render through one keyed Motion presence boundary so restoring cached
 data does not replay a full-page entrance. List-level layout/presence and action
