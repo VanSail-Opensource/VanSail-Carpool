@@ -593,3 +593,20 @@ suites were not run; new regressions are intended for hosted CI.
 ### Member design review
 
 `member-utility-audit.html`, `member-utility-audit.ts`, `member-utility-data.ts` and `MemberUtilityAudit.vue` compose real member shell, Emby, Affiliate Centre, admin-access and session-entry components with synthetic API responses. They include populated, empty, failure, loading and long-name cases in English/Chinese. Unexpected API calls are blocked and recorded. They complement the existing Home, Explore, Subscription, Connections, Settings, DIY, Community, Activity, onboarding, payment and IP fixtures used by PR-scoped browser design checks.
+
+`knowledgebase-audit.html` and `knowledgebase-audit.ts` reuse the constructed
+subscription fixture and actual member shell at `/knowledgebase`. `zh` selects
+Chinese; `mode=home&new-user` starts on the zero-balance newcomer Home. Mocked
+client calls are recorded in `window.__knowledgebaseAudit.calls`; `pending`
+tracks in-flight calls. The subscription setup hook installs those wrappers
+before initial preferences/access/currency reads. Unexpected backend or external
+fetches are blocked and recorded in `unexpected`. There are
+no real member accounts, billing writes or support messages. The subscription
+fixture's `mode=knowledge&shell` route is also available for direct inspection.
+
+Member navigation fixtures bind the preferences store and satisfy it through the
+mocked preferences API, instead of assigning a display-only snapshot.
+`subscription-audit.ts` preserves delayed preference responses and uses this same
+confirmed-state path for navigation and Knowledgebase scenarios.
+`detector-retirement-audit.ts` supplies member preferences before mounting
+`DetectorRetirementAudit.vue`; its browser-admin scenario remains independent.

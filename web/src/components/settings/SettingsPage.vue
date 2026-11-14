@@ -39,17 +39,18 @@ onMounted(() => void preferences.refresh())
     <section class="settings-section">
       <h2>{{ $t('settings.display') }}</h2>
       <template v-if="preferences.value?.activeCombo">
-        <SettingsSwitchRow :label="$t('settings.showAroundTx')" :enabled="preferences.value.showAroundTx" :disabled="preferences.saving" @update="preferences.save({ showAroundTx: $event })" />
-        <SettingsSwitchRow :label="$t('settings.showActivity')" :enabled="preferences.value.showActivity" :disabled="preferences.saving" @update="preferences.save({ showActivity: $event })" />
+        <SettingsSwitchRow :label="$t('settings.showAroundTx')" :enabled="preferences.value.showAroundTx" :disabled="preferences.blocked" @update="preferences.save({ showAroundTx: $event })" />
+        <SettingsSwitchRow :label="$t('settings.showActivity')" :enabled="preferences.value.showActivity" :disabled="preferences.blocked" @update="preferences.save({ showActivity: $event })" />
       </template>
       <div class="settings-selectors"><LanguageControl show-label /><CurrencyControl show-label /></div>
     </section>
     <section class="settings-section">
       <h2>{{ $t('settings.community') }}</h2>
-      <SettingsSwitchRow :label="$t('settings.showReferralUsername')" :description="$t('settings.showReferralUsernameHint')" :enabled="preferences.value?.showReferralUsername ?? true" :disabled="!preferences.value || preferences.saving" @update="preferences.save({ showReferralUsername: $event })" />
+      <SettingsSwitchRow :label="$t('settings.showReferralUsername')" :description="$t('settings.showReferralUsernameHint')" :enabled="preferences.value?.showReferralUsername ?? true" :disabled="!preferences.value || preferences.blocked" @update="preferences.save({ showReferralUsername: $event })" />
       <USkeleton v-if="settings.tagLoading.value" class="h-12" />
-      <GroupMemberTagEditor v-else-if="settings.tag.value?.groupJoined" :state="settings.tag.value" :saving="settings.tagSaving.value" :error="settings.tagError.value" @save="settings.saveTag" />
+      <GroupMemberTagEditor v-else-if="settings.tag.value?.groupJoined" :state="settings.tag.value" :saving="settings.tagSaving.value" :disabled="settings.tagBlocked.value" :error="settings.tagError.value" @save="settings.saveTag" />
       <InlineNotice v-if="settings.tagError.value && !settings.tag.value?.groupJoined" tone="warning">{{ settings.tagError.value }}<UButton variant="link" :label="$t('common.tryAgain')" @click="settings.loadTag()" /></InlineNotice>
+      <UButton v-else-if="settings.tagError.value" variant="link" :label="$t('common.tryAgain')" :disabled="settings.tagSaving.value" @click="settings.loadTag()" />
     </section>
   </div>
 </template>
@@ -60,4 +61,6 @@ onMounted(() => void preferences.refresh())
 .settings-section + .settings-section { border-top: 1px solid var(--line); }
 .settings-section h2 { margin: 0 0 0.75rem; color: var(--text-muted); font-size: 0.875rem; font-weight: 600; }
 .settings-selectors { display: grid; gap: 0; }
+.settings-entrances { display: grid; gap: .6rem; padding-bottom: .75rem; }
+@media (min-width: 900px) { .settings-entrances { display: none; } }
 </style>

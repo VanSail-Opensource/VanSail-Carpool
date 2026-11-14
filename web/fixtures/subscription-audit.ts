@@ -96,15 +96,16 @@ app.mixin({ errorCaptured(error) { console.error(error) } })
 app.config.globalProperties.$t = t
 const pinia = createPinia()
 app.use(pinia)
-usePreferencesStore(pinia).value = { paygEnabled: true, paygSquads: {}, activeCombo: true, showAroundTx: true, showActivity: true, includeNodePrices: true, notifications: {} } as never
 useSessionStore(pinia).session = { authenticated: true, user: { id: 'audit-member', telegramId: '42', firstName: 'Mira', role: 'user', onboardingState: 'complete' } } as never
 useSessionStore(pinia).status = 'ready'
 if (params.has('around')) installAroundTxFixture(params, () => useSessionStore(pinia).user!)
 preferencesApi.get = async () => {
   if (params.has('preferences-delay')) await new Promise(resolve => setTimeout(resolve, Number(params.get('preferences-delay')) || 1800))
-  return { activeCombo: true, showAroundTx: params.has('around'), showActivity: false, includeNodePrices: true, notifications: {} } as never
+  return { paygEnabled: true, paygSquads: {}, activeCombo: true, showAroundTx: params.has('around') || mode === 'navigation', showActivity: mode === 'navigation', includeNodePrices: true, showReferralUsername: true, notifications: { combos: true, traffic: true, money: true, activity: true, account: true } }
 }
 displayCurrencyApi.get = async () => ({ currency: 'TXB', rates: null }) as never
+;(window as Window & { __subscriptionAuditSetup?: () => void }).__subscriptionAuditSetup?.()
+usePreferencesStore(pinia).bind('audit-member')
 const router = shell ? (await import('@/router')).default : createRouter({ history: createWebHistory(), routes: [
   { path: '/fixtures/subscription-audit.html', component: SubscriptionAudit },
   { path: '/subscription', name: 'subscription', component: SubscriptionAudit },
@@ -112,6 +113,6 @@ const router = shell ? (await import('@/router')).default : createRouter({ histo
   { path: '/catalog', component: SubscriptionAudit },
   { path: '/:pathMatch(.*)*', component: SubscriptionAudit },
 ] })
-if (shell) await router.replace(mode === 'home' ? '/home' : '/subscription')
+if (shell) await router.replace(mode === 'home' ? '/home' : mode === 'knowledge' ? '/knowledgebase' : '/subscription')
 app.use(router); app.use(ui)
 void router.isReady().then(() => app.mount('#app'))

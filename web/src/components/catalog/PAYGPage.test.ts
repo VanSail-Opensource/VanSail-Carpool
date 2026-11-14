@@ -4,7 +4,6 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { createPinia } from 'pinia'
 import { paygApi, type PAYGView } from '@/api/payg'
 import PAYGPage from './PAYGPage.vue'
-import PAYGSummary from './PAYGSummary.vue'
 
 const view: PAYGView = {
   balance: { currency: 'TXB', minor: '2500', display: '25.00 TXB' },
@@ -20,22 +19,22 @@ function mountPage() {
 }
 
 describe('PAYG live presentation', () => {
-  it('renders loading and empty states with one reporting window and no recharge action', async () => {
+  it('renders loading and empty states without account totals or duplicate recharge actions', async () => {
     vi.spyOn(paygApi, 'get').mockResolvedValue(view)
     const wrapper = mountPage()
     expect(wrapper.find('[aria-busy=true]').exists()).toBe(true)
     await flushPromises()
-    expect(wrapper.text()).toContain('25.00 TXB')
-    expect(wrapper.text()).toContain('9 GiB')
-    expect(wrapper.text()).toContain('15.00 TXB')
+    expect(wrapper.text()).not.toContain('25.00 TXB')
+    expect(wrapper.text()).not.toContain('9 GiB')
+    expect(wrapper.text()).not.toContain('15.00 TXB')
     expect(wrapper.find('.payg-page__empty').exists()).toBe(true)
     expect(wrapper.find('a[href="/settings"]').exists()).toBe(false)
-    expect(wrapper.text().match(/Last 72 hours/g)).toHaveLength(1)
+    expect(wrapper.text()).not.toContain('Last 72 hours')
     expect(wrapper.find('a[href="/home?topUp=1"]').exists()).toBe(false)
     wrapper.unmount()
   })
 
-  it('retains wallet totals when a background refresh fails', async () => {
+  it('retains the loaded inventory when a background refresh fails without revealing account totals', async () => {
     vi.useFakeTimers()
     const fetcher = vi.spyOn(paygApi, 'get').mockResolvedValue(view)
     const wrapper = mountPage()
@@ -44,9 +43,9 @@ describe('PAYG live presentation', () => {
     await vi.advanceTimersByTimeAsync(15_000)
     await flushPromises()
     expect(wrapper.find('.payg-page__error').exists()).toBe(true)
-    expect(wrapper.findComponent(PAYGSummary).props('data')).toEqual(view)
-    expect(wrapper.text()).toContain('25.00 TXB')
-    expect(wrapper.text()).toContain('15.00 TXB')
+    expect(wrapper.find('.payg-page__empty').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('25.00 TXB')
+    expect(wrapper.text()).not.toContain('15.00 TXB')
     wrapper.unmount()
   })
 })

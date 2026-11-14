@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { xnodeMemberApi } from '@/api/xnodeMember'
 import { useI18n } from '@/i18n'
 import { useSubscriptionData } from './useSubscriptionData'
@@ -7,10 +8,18 @@ import SubscriptionTuningDiagnostics from './SubscriptionTuningDiagnostics.vue'
 
 const { t } = useI18n()
 const { value, loading, error, refresh } = useSubscriptionData(xnodeMemberApi.subscription)
+const hasContent = computed(() => {
+  const data = value.value
+  if (loading.value || error.value) return true
+  if (!data) return false
+  return data.incomplete || (data.active && !Object.values(data.formats).some(Boolean))
+    || Object.values(data.formatDiagnostics ?? {}).some(item => ['SUBSCRIPTION_FORMAT_RENDER_FAILED', 'SUBSCRIPTION_FORMAT_NO_ENDPOINTS', 'SUBSCRIPTION_ENDPOINTS_EXCLUDED'].includes(item.code))
+    || (data.connectionOptions ?? []).some(item => item.state === 'unsupported' || item.state === 'endpoint-incompatible' || item.incompatibleHosts > 0)
+})
 </script>
 
 <template>
-  <section class="section-block grid gap-3">
+  <section v-if="hasContent" class="section-block grid gap-3">
     <UProgress v-if="loading" />
     <p v-if="value?.active && !Object.values(value.formats).some(Boolean)" class="text-sm text-muted">{{ t('memberNodes.noFormats') }}</p>
     <p v-if="value?.incomplete" class="text-xs text-muted">{{ t('memberNodes.incomplete') }}</p>

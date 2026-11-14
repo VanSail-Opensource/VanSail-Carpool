@@ -32,3 +32,8 @@ selection and pending feedback remain short and haptic-aware.
 actions cannot submit another bet. Selection and submission both require a
 currently enabled game. Reward progress accessibility values are bounded by the
 threshold even after message counts exceed it.
+
+Activity restores bounded session display data while revalidating in the background.
+`useActivity` blocks all check-in, bet and draw submissions until that request
+succeeds, and fences late callbacks against the session identity. Disabled props on
+the activity panels distinguish cached rendering from an actual pending mutation.

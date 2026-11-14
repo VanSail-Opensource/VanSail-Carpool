@@ -10,6 +10,7 @@ defineProps<{
   rewardMaxTxbMinor: string
   timeZone: string
   busy: boolean
+  disabled?: boolean
 }>()
 
 defineEmits<{ checkIn: [] }>()
@@ -36,7 +37,7 @@ function displayMinor(minor: string): string {
     <UButton
       color="neutral"
       icon="i-ph-check-circle-fill"
-      :disabled="checkedIn || busy"
+      :disabled="checkedIn || busy || disabled"
       :loading="busy"
       :label="checkedIn ? $t('activity.checkedIn') : busy ? $t('activity.checkingIn') : $t('activity.checkIn')"
       data-haptic="confirm"

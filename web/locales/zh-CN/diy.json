@@ -24,7 +24,7 @@
     "socketOption": "选项",
     "socketValue": "值",
     "socketType": "值类型",
-    "compatibility": "客户端兼容性",
+    "compatibility": "兼容性",
     "clientFormat": "客户端",
     "inheritedCount": "{count} 个选项继承管理员设置。",
     "showInherited": "继承的选项",
@@ -113,7 +113,7 @@
       "connection": "连接",
       "xhttp": "XHTTP",
       "routing": "路由",
-      "compatibility": "客户端兼容性"
+      "compatibility": "兼容性"
     },
     "split": {
       "title": "上下行分离",

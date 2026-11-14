@@ -82,6 +82,9 @@ describe('AppShell accessibility', () => {
     expect(bottomNavigationItems[0]?.attributes('data-state')).toBe('active')
     expect(wrapper.find('.bottom-nav__locale').exists()).toBe(false)
     expect(wrapper.find('.side-rail__footer').exists()).toBe(true)
+    expect(wrapper.find('.side-rail__member').exists()).toBe(false)
+    expect(wrapper.find('.side-rail__footer').text()).toContain('DIY Center')
+    expect(wrapper.find('.side-rail__footer').text()).not.toContain('Admin access')
     await router.push('/catalog')
     await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/catalog'))
     expect(window.location.href).toBe(launchURL)
@@ -97,7 +100,7 @@ describe('AppShell accessibility', () => {
     expect(offClick).toHaveBeenCalledOnce()
   })
 
-  it('keeps administrators on the member navigation with console access in Settings', async () => {
+  it('keeps administrators on member navigation with desktop console access in the sidebar footer', async () => {
     const pinia = createPinia()
     useSessionStore(pinia).session = session('admin')
     const router = createRouter({
@@ -118,6 +121,8 @@ describe('AppShell accessibility', () => {
     expect(bottomNavigationItems).toHaveLength(3)
     expect(wrapper.find('.bottom-nav__locale').exists()).toBe(false)
     expect(bottomNavigationItems.map(item => item.text()).join()).not.toContain('Admin access')
+    expect(wrapper.find('.side-rail__footer').text()).toContain('Admin access')
+    expect(wrapper.find('.side-rail__footer').text()).not.toContain('mira')
     expect(desktopNavigationItems(key => key, true).some(item => item.to === '/settings/admin-access')).toBe(false)
 
     await router.push('/settings/admin-access')
@@ -141,11 +146,11 @@ describe('AppShell accessibility', () => {
     expect(home?.children?.some(item => item.label === 'nav.addSquads')).toBe(false)
   })
 
-  it('only includes the Around TX desktop entry for a valid combo', () => {
+  it('keeps Knowledgebase available while restricting optional Around TX tools', () => {
     const withoutCombo = desktopNavigationItems(key => key, false)
     const withCombo = desktopNavigationItems(key => key, false, true)
 
-    expect(withoutCombo.find(item => item.label === 'nav.aroundTx')).toBeUndefined()
-    expect(withCombo.find(item => item.label === 'nav.aroundTx')).toBeDefined()
+    expect(withoutCombo.find(item => item.label === 'nav.aroundTx')?.children?.map(item => item.to)).toEqual(['/knowledgebase'])
+    expect(withCombo.find(item => item.label === 'nav.aroundTx')?.children?.map(item => item.to)).toEqual(['/knowledgebase', '/affiliates', '/community', '/emby'])
   })
 })

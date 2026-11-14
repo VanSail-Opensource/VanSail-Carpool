@@ -34,11 +34,12 @@ and coupon components below remain in those supported flows.
   purchase, reconnection, consent, non-refund and midnight boundaries in hosted CI.
   Example prices remain explicitly illustrative, and all copy lives in
   `locales/*/payg.json` under `payg.demo`.
-- `PAYGPage.vue` polls owner-scoped availability and the authoritative 72-hour
-  traffic/spending totals through the shared subscription-data lifecycle.
-  `PAYGPage.test.ts` covers loading, empty results, exact totals and retained
-  last-good data after a failed refresh.
-- `PAYGSummary.vue` presents the 72-hour summary. `PAYGSquadCard.vue` adds
+- `PAYGPage.vue` polls owner-scoped availability through the shared
+  subscription-data lifecycle. Account balance and the rolling 72-hour summary
+  are omitted from Explore; authoritative accounting remains unchanged.
+  `PAYGPage.test.ts` covers loading, empty results, hidden account totals and
+  retained inventory after a failed refresh.
+- `PAYGSquadCard.vue` adds
   per-GiB pricing, availability and raw traffic/spending to the shared card.
 - `PAYGStatusDot.vue` exposes localized availability through a keyboard/touch
   popover. Reduced motion disables the opacity/ring animation.

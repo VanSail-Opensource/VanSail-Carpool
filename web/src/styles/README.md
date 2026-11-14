@@ -44,7 +44,7 @@
 - `responsive-01.css` owns shared motion keyframes used by compact surfaces.
 - `responsive-02.css` expands the phone-first shell into a fixed-width resizable Nuxt UI sticky sidebar desktop layout, and restores wide route, dialog, catalog, settings, and administrative list arrangements.
 - `responsive-03.css` applies compact administrative rows below 640px and owns reduced-motion/transparency fallbacks.
-- `desktop-01.css` adds rail member context and balanced wide-page widths for desktop while keeping the compact phone shell untouched.
+- `desktop-01.css` spaces the rail shortcut footer and balances wide-page widths for desktop while keeping the compact phone shell untouched.
 
 The member system is dark-only with graphite surfaces, restrained cyan accents, 12px panels and 8px controls. Space Grotesk adds geometric character; technical values use the existing monospace stack with tabular figures. Card depth comes from a faint inset edge, with short interaction feedback rather than perpetual decoration. Status colours remain semantic and distinct. The browser console owns a separate theme.
 

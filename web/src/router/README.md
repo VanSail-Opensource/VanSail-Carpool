@@ -39,3 +39,7 @@ route. The member router does not expose a statistics view.
 group and channel joining outside onboarding and uses the shared shell back behavior.
 
 `/connections` is a protected thin route. The application shell owns route-level native Back, while the selected-IP confirmation temporarily takes overlay ownership and restores the route owner when it closes.
+
+The idle member queue includes Activity, Settings and Knowledgebase. Warming Home
+also loads its static component dependency graph without mounting those components
+or starting payment flows. The one-use admin-access route remains excluded.

@@ -16,4 +16,5 @@ function openSubscription(): void { void router.push({ name: 'subscription' }).c
 <style scoped>
 .subscription-entrance { display: grid; justify-items: center; }
 .subscription-entrance :deep(button) { min-height: 44px; }
+@media (min-width: 900px) { .subscription-entrance { display: none; } }
 </style>

@@ -17,10 +17,11 @@ describe('initial page preload inventory', () => {
     const paths = resources.map(resource => resource.path)
     expect(paths).toEqual(expect.arrayContaining([
       '/api/v1/dashboard', '/api/v1/payg', '/api/v1/hourly', '/api/v1/xnode/diy',
+      '/api/v1/activity', '/api/v1/usage/breakdown', '/api/v1/me/preferences', '/api/v1/me/group-member-tag', '/api/v1/me/internal-squads',
       '/api/v1/affiliates', '/api/v1/emby/account',
     ]))
     expect(paths.some(path => path.includes('/admin/') || path.includes('/statistics'))).toBe(false)
-    for (const path of ['/api/v1/activity', '/api/v1/catalog', '/api/v1/coupons/wallet', '/api/v1/subscription', '/api/v1/xnode/subscription', '/api/v1/subscription/connections', '/api/v1/subscription/ip-blocks', '/api/v1/dashboard/node-usage']) expect(paths).not.toContain(path)
+    for (const path of ['/api/v1/balance', '/api/v1/catalog', '/api/v1/coupons/wallet', '/api/v1/subscription', '/api/v1/xnode/subscription', '/api/v1/xnode/metrics', '/api/v1/subscription/connections', '/api/v1/subscription/ip-blocks', '/api/v1/dashboard/node-usage']) expect(paths).not.toContain(path)
     expect(resources.find(resource => resource.path.endsWith('/referrals'))?.options?.query).toEqual({ page: 1 })
     expect(resources.every(resource => isReadRequest(resource.path, resource.options?.method ?? 'GET'))).toBe(true)
   })

@@ -3,7 +3,7 @@ import { computed, shallowRef, watch } from 'vue'
 import type { GroupMemberTag } from '@/api/preferences'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 
-const props = defineProps<{ state: GroupMemberTag; saving: boolean; error: string | null }>()
+const props = defineProps<{ state: GroupMemberTag; saving: boolean; disabled?: boolean; error: string | null }>()
 const emit = defineEmits<{ save: [tag: string] }>()
 const draft = shallowRef('')
 watch(() => props.state.tag, value => { draft.value = value }, { immediate: true })
@@ -14,7 +14,7 @@ const changed = computed(() => draft.value.trim() !== props.state.tag)
 <template>
   <div v-if="state.groupJoined" class="tag-editor">
     <UFormField :label="$t('settings.tag.label')" :description="$t('settings.tag.hint')" :error="!valid ? $t('settings.tag.tooLong') : undefined">
-      <div class="tag-editor__controls"><UInput v-model="draft" :disabled="!state.editable || saving" :aria-label="$t('settings.tag.label')" class="tag-editor__input" /><UButton :label="$t('common.save')" :disabled="!state.editable || !valid || !changed || saving" :loading="saving" @click="emit('save', draft.trim())" /></div>
+      <div class="tag-editor__controls"><UInput v-model="draft" :disabled="!state.editable || saving || disabled" :aria-label="$t('settings.tag.label')" class="tag-editor__input" /><UButton :label="$t('common.save')" :disabled="!state.editable || !valid || !changed || saving || disabled" :loading="saving" @click="emit('save', draft.trim())" /></div>
     </UFormField>
     <InlineNotice v-if="!state.editable" tone="warning">{{ $t(`settings.tag.reasons.${state.reasonCode}`) }}</InlineNotice>
     <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>

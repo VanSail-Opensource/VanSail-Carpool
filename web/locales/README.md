@@ -1,5 +1,8 @@
 # Product language catalog
 
+`knowledge.json` and `knowledge-lessons.json` keep the bilingual visual learning
+catalog separate from its concise film captions, explanations and source labels.
+
 `admin-endpoints.json` owns protocol-aware endpoint editing, diagnostics and
 administrator field labels independently from generated member `diy-fields.json`.
 

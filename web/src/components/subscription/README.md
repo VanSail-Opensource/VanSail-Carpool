@@ -35,7 +35,10 @@ selector inclusion and preserves other intersections/exclusions without guessing
 `HomeSubscriptionEntrance.vue` links every onboarded member to Subscription using
 Vue Router so Telegram keeps the launch URL. `HomeSubscriptionEntrance.test.ts`
 covers navigation without a document link. `SubscriptionPage.vue` composes the
-owner-only link, format diagnostics and accessible host links. `HostLinkRow.vue`
+owner-only link, format diagnostics and accessible host links. At wide desktop
+widths, the subscription link and host inventory share the main column while
+client compatibility uses the adjacent column; phones retain their vertical order.
+`HostLinkRow.vue`
 provides name editing, clipboard feedback and on-demand QR codes.
 At narrow panel widths, copy and QR controls move below the host identity so
 long names retain useful reading width; panels at least 28rem wide keep a
@@ -45,11 +48,17 @@ Custom-route and split-XHTTP indicators are inline immediately after country
 flags, with localized keyboard-accessible tooltips. Desktop subscription actions
 reuse the sidebar entrances; mobile retains Connections and Revoke in the link
 panel, and the sidebar revoke query still opens the same confirmation dialog.
-`useSubscriptionData.ts` polls only while visible and clears private data on disposal;
-`useSubscriptionData.test.ts` covers those lifecycle and stale-response boundaries.
+`useSubscriptionData.ts` polls only while visible and synchronously clears private
+data and live readiness on disposal, plus errors on an account/role/onboarding
+identity change. Identity changes abort requests and cancel polling before Vue
+updates the session view. A surviving authenticated view then makes a fresh read
+after that update, without restoring the previous snapshot; logout stays inactive.
+Its hosted `useSubscriptionData.test.ts` covers those lifecycle boundaries,
+same-user identity recovery and obsolete success/failure responses.
 `useSubscriptionDataCache.test.ts` covers immediate optional snapshot rendering,
-live confirmation before actions, snapshot expiry, failed refresh recovery and
-ignored replies/polling after account replacement in hosted CI.
+live confirmation before actions, snapshot expiry, failed refresh recovery,
+synchronous identity retirement and ignored replies/polling after account replacement
+in hosted CI.
 The typed `subscription.ts` client uses no-store responses; `subscription.json`
 provides English and Chinese copy.
 
@@ -63,7 +72,7 @@ for selectable nodes, keyboard activation and exact route-instance highlighting.
 through durable member receipts; failed loads cannot save defaults. Graph predicate
 analysis and traces come from the same backend matcher as native compilation.
 
-`SubscriptionFormats.vue` retains availability diagnostics alongside the automatic subscription link.
+`SubscriptionFormats.vue` retains availability diagnostics alongside the automatic subscription link. Empty diagnostics leave no card or reserved desktop column; loading and recoverable errors retain their visible feedback.
 
 
 If preview is unavailable, the tree keeps individual configured edges and template
@@ -85,7 +94,7 @@ with a separately expandable section. Public-page diagnostics remain scoped to
 the selected format and open that section by default; no client support is
 inferred beyond the server-provided diagnostic records.
 
-The DIY Center entrance lives on Settings. This page retains subscription links,
+The DIY Center entrance lives on mobile Settings and the desktop sidebar. This page retains subscription links,
 host inventory and availability diagnostics.
 
 In the external DIY workspace, MemberRoutingEditor omits its repeated heading/refresh description and delegates Save to the shared bar; rule editing and trace controls keep their existing behavior.

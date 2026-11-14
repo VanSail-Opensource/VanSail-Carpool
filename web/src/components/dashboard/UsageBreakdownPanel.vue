@@ -7,7 +7,7 @@ import UsageBreakdownPie from './UsageBreakdownPie.vue'
 import UsageBreakdownMeasure from './UsageBreakdownMeasure.vue'
 import type { UsageBreakdownMetric } from './usageBreakdownSegments'
 
-const { value, loading, refreshing, error, refresh } = useSubscriptionData(usageBreakdownApi.get, 60_000, 'usageBreakdown.loadFailed')
+const { value, loading, refreshing, error, refresh } = useSubscriptionData(usageBreakdownApi.get, 60_000, 'usageBreakdown.loadFailed', undefined, '/api/v1/usage/breakdown')
 const metric = shallowRef<UsageBreakdownMetric>('traffic')
 const stale = computed(() => !!value.value && Date.now() - new Date(value.value.to).getTime() > 120_000)
 </script>

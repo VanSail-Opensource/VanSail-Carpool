@@ -1,11 +1,11 @@
-import { computed, onMounted, onScopeDispose, readonly, shallowRef } from 'vue'
+import { computed, nextTick, onMounted, onScopeDispose, readonly, shallowRef, watch } from 'vue'
 import { localizedError } from '@/i18n'
 import { createLatestRequest } from '@/utils/latestRequest'
 import { restoreRef } from '@/api/cache/restore'
-import { cacheIdentityGeneration } from '@/api/cache/session'
+import { cacheIdentityGeneration, hasCacheSession } from '@/api/cache/session'
 
 // Only explicitly opted-in display data can restore a short-lived session snapshot.
-// Credentials, connection scans and financial usage retain their live-only policy.
+// Credentials and connection scans retain their live-only policy.
 export function useSubscriptionData<T>(fetcher: (signal: AbortSignal) => Promise<T>, interval = 60_000, errorKey = 'subscription.loadFailed', nextInterval?: (value: T | null) => number, cachePath?: string) {
   const value = shallowRef<T | null>(null)
   if (cachePath) restoreRef(cachePath, value, {}, 60_000)
@@ -17,6 +17,8 @@ export function useSubscriptionData<T>(fetcher: (signal: AbortSignal) => Promise
   let controller: AbortController | undefined
   let timer: ReturnType<typeof setTimeout> | undefined
   let disposed = false
+  let mounted = false
+  let identityReady = true
 
   function schedule(): void {
     if (timer) clearTimeout(timer)
@@ -24,7 +26,7 @@ export function useSubscriptionData<T>(fetcher: (signal: AbortSignal) => Promise
   }
 
   async function refresh(clear = false): Promise<void> {
-    if (disposed) return
+    if (disposed || !identityReady) return
     if (timer) clearTimeout(timer)
     controller?.abort()
     controller = new AbortController()
@@ -55,7 +57,29 @@ export function useSubscriptionData<T>(fetcher: (signal: AbortSignal) => Promise
   }
   function focused(): void { if (!document.hidden) void refresh() }
 
+  watch(cacheIdentityGeneration, identity => {
+    identityReady = false
+    latest.invalidate()
+    controller?.abort()
+    controller = undefined
+    if (timer) clearTimeout(timer)
+    timer = undefined
+    liveReady.value = false
+    value.value = null
+    error.value = null
+    loading.value = true
+    refreshing.value = false
+    // Let the session write schedule its render before waiting for view disposal.
+    void Promise.resolve().then(async () => {
+      await nextTick()
+      if (disposed || identity !== cacheIdentityGeneration() || !hasCacheSession()) return
+      identityReady = true
+      if (mounted && !document.hidden) void refresh()
+    })
+  }, { flush: 'sync' })
+
   onMounted(() => {
+    mounted = true
     document.addEventListener('visibilitychange', visibilityChanged)
     window.addEventListener('focus', focused)
     void refresh()
@@ -68,6 +92,7 @@ export function useSubscriptionData<T>(fetcher: (signal: AbortSignal) => Promise
     document.removeEventListener('visibilitychange', visibilityChanged)
     window.removeEventListener('focus', focused)
     value.value = null
+    liveReady.value = false
   })
   return { value: readonly(value), loading: readonly(loading), refreshing: readonly(refreshing), liveReady: readonly(liveReady), error: readonly(error), hasData: computed(() => value.value != null), refresh }
 }

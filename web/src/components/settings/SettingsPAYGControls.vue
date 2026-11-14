@@ -7,13 +7,13 @@ import { usePreferencesStore } from '@/stores/preferences'
 import SettingsSwitchRow from './SettingsSwitchRow.vue'
 
 const preferences = usePreferencesStore()
-const { value, loading, refreshing, error, refresh } = useSubscriptionData(paygApi.get, 60_000, 'payg.loadFailed')
+const { value, loading, refreshing, liveReady, error, refresh } = useSubscriptionData(paygApi.get, 60_000, 'payg.loadFailed', undefined, '/api/v1/payg')
 const squads = computed(() => value.value?.squads.filter(item => item.squad.billingMode === 'payg') ?? [])
 const enabled = computed(() => preferences.value?.paygEnabled ?? true)
 const balanceMinor = computed(() => value.value?.balance.minor)
 const balanceKnown = computed(() => balanceMinor.value != null && /^-?\d+$/.test(balanceMinor.value))
 const balancePositive = computed(() => balanceKnown.value && BigInt(balanceMinor.value!) > 0n)
-const controlsDisabled = computed(() => !preferences.value || preferences.saving || refreshing.value || !!error.value || !balancePositive.value)
+const controlsDisabled = computed(() => !preferences.value || preferences.blocked || preferences.saving || !liveReady.value || refreshing.value || !!error.value || !balancePositive.value)
 </script>
 
 <template>

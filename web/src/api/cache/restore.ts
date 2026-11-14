@@ -2,6 +2,8 @@ import { createUrl, type RequestOptions } from '../http'
 import { responseCacheKey } from './policy'
 import { readResponseCache, removeResponseCache } from './session'
 import { isResponseCompatible } from '../contracts/responses'
+import { hasValidUsageUnits } from '../usageBreakdownValidation'
+import type { UsageBreakdown } from '../usageBreakdown'
 import type { ShallowRef } from 'vue'
 
 // Only rendering loaders opt into snapshots; request() still resolves with live data.
@@ -11,7 +13,8 @@ export function restoreCached<T>(path: string, apply: (value: T) => void, option
   try {
     const value = readResponseCache<T>(key, maximumAgeMs)
     if (value === undefined) return false
-    if (!isResponseCompatible(path, (options.method ?? 'GET').toUpperCase(), value)) {
+    if (!isResponseCompatible(path, (options.method ?? 'GET').toUpperCase(), value)
+      || (path === '/api/v1/usage/breakdown' && !hasValidUsageUnits(value as UsageBreakdown))) {
       removeResponseCache(key)
       return false
     }

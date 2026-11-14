@@ -92,8 +92,8 @@ html:not([data-experience='browser']) {
 }
 .home-balance__copy p { color: var(--text-muted); }
 
-.bottom-nav__list { border-radius: 14px; padding: .3rem; }
-.bottom-nav__item, .bottom-nav__indicator { border-radius: 10px; }
+.bottom-nav__list { border-radius: 999px; padding: .35rem; }
+.bottom-nav__item, .bottom-nav__indicator { border-radius: 999px; }
 .bottom-nav__item { min-height: 46px; gap: .25rem; font-size: .68rem; font-weight: 600; }
 .bottom-nav__icon { font-size: 1.1rem; }
 .side-rail [data-slot='link'] { border-radius: var(--radius-control); font-weight: 500; }

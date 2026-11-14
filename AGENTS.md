@@ -236,6 +236,22 @@ Animations must clarify state changes, provide interaction feedback, remain
 lightweight, and avoid delaying user actions. Use existing/native transitions
 first. Use AutoAnimate when it meaningfully simplifies list/layout transitions.
 
+#### Member education
+
+All Knowledgebase, Explore billing, and DIY routing guides share
+`web/src/components/common/DemoPlayer.vue`. Reuse its single visibility-aware
+clock, transport, focus restoration, native Back ownership, and reduced-motion
+chapters; do not add independent timers or autoplay loops. Scenes take `step`,
+`phase`, and `reducedMotion` inputs and remain deterministic when paused or scrubbed.
+Use `DemoStage`, `DemoNode`, `DemoFlow`, `DemoPointer`, and
+`illustrationTimeline` for diagram and click/tap motion. Prefer a persistent
+scene that changes continuously over slide replacement, with icons and one short
+caption. Provide a localized textual explanation and meaningful static chapter
+poses for reduced motion. Demonstrations must never make real requests or mutate
+account state. Keep lesson sources and provider claims reviewable; never promise
+that IP reputation or third-party acceptance is guaranteed. See
+`web/src/components/knowledge/README.md` to add a lesson.
+
 ---
 
 ## 7. Backend rules

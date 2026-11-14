@@ -53,7 +53,7 @@ export function useDashboard() {
     const token = latestLoad.begin()
     if (options.quiet) refreshing.value = true
     else {
-      loading.value = !restoreRef('/api/v1/dashboard', dashboard)
+      loading.value = !restoreRef('/api/v1/dashboard', dashboard, {}, 60_000)
     }
     loadError.value = null
     try {

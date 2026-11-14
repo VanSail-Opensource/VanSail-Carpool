@@ -1,5 +1,6 @@
+import { watch } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cacheGeneration, clearResponseCache, readResponseCache, setCacheSession, writeResponseCache } from './session'
+import { cacheGeneration, cacheIdentityGeneration, clearResponseCache, readResponseCache, setCacheSession, writeResponseCache } from './session'
 
 beforeEach(() => { setCacheSession(null); setCacheSession('member:one') })
 afterEach(() => { setCacheSession(null); vi.useRealTimers() })
@@ -49,6 +50,17 @@ describe('session response snapshots', () => {
     clearResponseCache()
     writeResponseCache('balance', { minor: '1000' }, started)
     expect(readResponseCache('balance')).toBeUndefined()
+  })
+
+  it('clears the old snapshots before synchronous identity observers can read them', () => {
+    writeResponseCache('dashboard', { account: 'one' }, cacheGeneration())
+    const observed: unknown[] = []
+    const stop = watch(cacheIdentityGeneration, () => {
+      observed.push(readResponseCache('dashboard'))
+    }, { flush: 'sync' })
+    setCacheSession('member:two')
+    stop()
+    expect(observed).toEqual([undefined])
   })
 
   it('bounds retained entries while keeping recently visited pages', () => {

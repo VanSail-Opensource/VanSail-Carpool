@@ -22,7 +22,7 @@ does not erase it.
 
 ## Allowance and throttling
 
-`HourlySummary.vue` composes the wallet and `HourlyAllowanceGraph.vue` without
+`HourlySummary.vue` composes the funding-suspended notice and `HourlyAllowanceGraph.vue` without
 adding routine reconciliation notices. The graph delegates exact byte arithmetic
 to the pure `hourlyAllowance.ts` helper and reuses `HourlyThrottleMeter.vue` for
 an exhausted usable budget. These components take readonly usage/policy props;
@@ -67,8 +67,9 @@ settles a reservation, debits a wallet or changes saved accounting.
 
 ## Accounting status
 
-The member summary does not render reserved-credit, unconfirmed-usage or approved
-price-ceiling prose. All underlying accounting fields and balances remain intact;
+The member summary does not repeat the account wallet balance or render
+reserved-credit, unconfirmed-usage or approved price-ceiling prose.
+All underlying accounting fields and balances remain intact;
 only the member presentation is quieter. Historical-only evidence still cannot
 make the summary appear. `HourlyAccountingStatus.vue` remains the browser-admin
 presentation, where current/historical holds are available for inspection.

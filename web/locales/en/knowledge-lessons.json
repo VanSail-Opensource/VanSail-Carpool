@@ -1,0 +1,44 @@
+{
+  "knowledgeLessons": {
+    "networks": {
+      "steps": {
+        "first": { "caption": "China Optimized: a faster entry", "detail": "Premium CTG, CUG, and CMI routes focus on connectivity between China and overseas networks. They can be the entry for an encrypted client connection used to reach blocked services. Performance depends on the actual route, carrier, location, and congestion; a premium route alone does not bypass filtering." },
+        "second": { "caption": "International: connect across regions", "detail": "International networks carry traffic between countries and continents. They suit general overseas access and onward connections. A data-center exit may be classified as hosting; its reputation depends on the actual IP and usage, not a universal quality grade." },
+        "third": { "caption": "Broadband: an exit through a local ISP", "detail": "Broadband exits use local ISP connectivity and can suit normal social media, e-commerce, and AI work. They offer a local network environment, but cannot prove residency, guarantee account acceptance, or prevent an AI service from changing its behavior." },
+        "fourth": { "caption": "Pair a good entry with the right exit", "detail": "Use a China Optimized entry to reach an International or Broadband exit where supported. The entry affects your route; the final exit is the public IP a destination sees. Route speed and IP reputation are separate, and service checks still apply." }
+      }
+    },
+    "payment": {
+      "steps": {
+        "first": { "caption": "Same token. Same network. Every decimal.", "detail": "Use the token, network, receiving address, and full decimal amount on the current invoice. Copy them directly and send before the payment window ends. Do not choose a different network because it is cheaper." },
+        "second": { "caption": "The invoice gets the amount. The network gets gas.", "detail": "Check the wallet's current fee estimate before confirming. Keep enough fee funds: Ethereum commonly uses ETH, TRON uses resources or TRX, Solana uses SOL, and Aptos uses APT. Some wallets sponsor or convert fees. Do not add gas to the stablecoin amount sent to TX; gas is paid to the network separately." },
+        "third": { "caption": "Exchange withdrawal? Check the amount received.", "detail": "An exchange or custodial wallet may subtract its withdrawal fee from your entered amount. Adjust the withdrawal total so the receiving address gets exactly the invoice amount. Check the final preview: amount withdrawn minus any deducted fee equals the invoice. A mismatched amount may not be credited automatically." },
+        "fourth": { "caption": "Sent but not credited? Message the bot.", "detail": "Wait for on-chain confirmation and payment processing. If it remains unsettled, send the bot a direct message with the order number, network, and transaction hash. Do not pay again while the first transfer is being reviewed. Never share your wallet seed phrase or private key." }
+      }
+    },
+    "sharing": {
+      "steps": {
+        "first": { "caption": "One public IP can serve hundreds of people", "detail": "Carrier-grade NAT is widely used by internet providers. Many households or mobile users can appear behind a single public IPv4 address, so a shared address is not by itself evidence of abuse. Shared-IP blocks can still affect innocent users." },
+        "second": { "caption": "Our node has its own public IP", "detail": "TX provides a standalone public IP for each node rather than an upstream shared-NAT allocation. Members of that node still share its exit address. A dedicated node IP is not a separate private IP for each member." },
+        "third": { "caption": "Limited members. Controlled use.", "detail": "We limit membership and use protocol recognition and connection-count controls to discourage abuse. Keeping out crawlers, bulk registration, torrents, and resharing reduces avoidable load and reputation risk. These controls cannot eliminate every source of risk." },
+        "fourth": { "caption": "Services look beyond the IP", "detail": "Platforms can consider IP reputation, device and browser signals, account history, and behavior. Controlled sharing aims to reduce avoidable risk; it cannot promise zero verification, restrictions, or changes to service quality. Contact the bot if access behaves unexpectedly." }
+      }
+    },
+    "rules": {
+      "steps": {
+        "first": { "caption": "Browse. Stream. Work. Create.", "detail": "Everyday browsing, streaming, gaming, AI work, and legitimate social media or e-commerce work are welcome. Follow the relevant platform's account rules and keep your use within your purchased access and limits." },
+        "second": { "caption": "Your access stays with you", "detail": "Do not share or resell access, expose an open proxy, run crawlers, or use bulk registration tools and account factories. These activities concentrate abnormal traffic and put other members' access at risk." },
+        "third": { "caption": "No torrents. No abuse.", "detail": "BT/PT traffic, spam, network attacks, malware delivery, and credential attacks are prohibited. Avoid automated high-volume activity that exhausts connections or harms other users and destinations." },
+        "fourth": { "caption": "Protocol checks. Connection limits.", "detail": "We use protocol recognition and connection-count limits to enforce acceptable use and protect shared capacity. Recognition has limits, and controls do not make prohibited activity acceptable. If ordinary use is affected, message the bot for support." }
+      }
+    },
+    "why": {
+      "steps": {
+        "first": { "caption": "Pay in the way that fits", "detail": "Choose hourly access or traffic-based charging where offered. Review each squad's displayed price and limits, and use the billing guides to understand what triggers a charge." },
+        "second": { "caption": "Our own project. Maintained by us.", "detail": "VanSail Carpool is our self-maintained project, with its own member experience, billing, and X-Node integration. We can improve the code and investigate issues directly rather than relying on a standard panel's feature set." },
+        "third": { "caption": "Quality with someone accountable", "detail": "We maintain the service and investigate reported quality problems. No network is immune to outages or destination restrictions; our commitment is to investigate and support you when something goes wrong." },
+        "fourth": { "caption": "Privacy matters. Support is a message away.", "detail": "Live connection observations are transient rather than retained as browsing history. Necessary account, payment, and traffic-accounting records remain for service operation. For setup, payment, or access help, send a direct message to the bot." }
+      }
+    }
+  }
+}

@@ -9,10 +9,11 @@ const data = shallowRef<{ balance: { minor: string }; squads: { squad: { billing
 const error = shallowRef<string | null>(null)
 const loading = shallowRef(false)
 const refreshing = shallowRef(false)
-const preferences = reactive({ value: { paygEnabled: true, paygSquads: { 'squad-1': false } }, saving: false, pendingKey: null, save: vi.fn() })
+const liveReady = shallowRef(true)
+const preferences = reactive({ value: { paygEnabled: true, paygSquads: { 'squad-1': false } }, saving: false, blocked: false, pendingKey: null, save: vi.fn() })
 
 vi.mock('@/components/subscription/useSubscriptionData', () => ({
-  useSubscriptionData: () => ({ value: data, error, loading, refreshing, refresh: vi.fn() }),
+  useSubscriptionData: () => ({ value: data, error, loading, refreshing, liveReady, refresh: vi.fn() }),
 }))
 vi.mock('@/stores/preferences', () => ({ usePreferencesStore: () => preferences }))
 
@@ -26,10 +27,24 @@ describe('SettingsPAYGControls', () => {
     error.value = null
     loading.value = false
     refreshing.value = false
+    liveReady.value = true
     preferences.value.paygEnabled = true
     preferences.value.paygSquads['squad-1'] = false
     preferences.saving = false
+    preferences.blocked = false
     preferences.save.mockClear()
+  })
+
+  it('renders cached choices without allowing changes before fresh eligibility arrives', async () => {
+    liveReady.value = false
+    const wrapper = mountControls()
+    expect(wrapper.findAllComponents(SettingsSwitchRow).every(row => row.props('disabled'))).toBe(true)
+    liveReady.value = true
+    await wrapper.vm.$nextTick()
+    expect(wrapper.findAllComponents(SettingsSwitchRow).every(row => !row.props('disabled'))).toBe(true)
+    preferences.blocked = true
+    await wrapper.vm.$nextTick()
+    expect(wrapper.findAllComponents(SettingsSwitchRow).every(row => row.props('disabled'))).toBe(true)
   })
 
   it('keeps the saved switches visible but disables them at zero or negative balance', async () => {

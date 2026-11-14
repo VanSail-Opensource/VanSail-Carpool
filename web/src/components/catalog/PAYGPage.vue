@@ -6,7 +6,6 @@ import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
 import { useSubscriptionData } from '@/components/subscription/useSubscriptionData'
 import { useI18n } from '@/i18n'
 import { usePreferencesStore } from '@/stores/preferences'
-import PAYGSummary from './PAYGSummary.vue'
 import PAYGSquadCard from './PAYGSquadCard.vue'
 
 const { t } = useI18n()
@@ -19,7 +18,6 @@ watch(loading, value => emit('ready', !value), { immediate: true })
 
 <template>
   <section class="payg-page">
-    <PAYGSummary :data="data" :loading="loading" />
     <InlineNotice v-if="preferences.value?.paygEnabled === false" tone="info">{{ t('payg.disabled') }}</InlineNotice>
     <div v-if="error" class="payg-page__error">
       <InlineNotice tone="warning">{{ error }}</InlineNotice>

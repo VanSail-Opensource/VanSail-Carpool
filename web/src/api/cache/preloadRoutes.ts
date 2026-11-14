@@ -8,7 +8,8 @@ export function memberResources(session: Session, locale: string): PreloadResour
   if (session.user.onboardingState !== 'complete') return [onboarding]
   return [
     // Prioritize the current member surfaces while their lazy chunks load.
-    ...['dashboard', 'balance', 'payg', 'hourly', 'xnode/diy',
+    ...['dashboard', 'usage/breakdown', 'payg', 'hourly', 'xnode/diy',
+      'activity', 'me/preferences', 'me/group-member-tag', 'me/internal-squads',
       'affiliates', 'emby/account',
       'community/membership/check'].map(path => ({ path: `/api/v1/${path}` })),
     { path: '/api/v1/affiliates/referrals', options: { query: { page: 1 } } },

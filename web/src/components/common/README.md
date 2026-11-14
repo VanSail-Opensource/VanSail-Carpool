@@ -46,3 +46,9 @@ interaction path as a mouse cursor on desktop and a touch/ripple on mobile;
 `illustrationTimeline.ts` contains pure easing and pointer interpolation. All
 motion follows the parent's clock, so pause, seeking and hidden-page suspension
 also stop the simulated interactions. Reduced-motion scenes omit the pointer.
+
+`DemoPlayer.vue` unifies the modal and playback lifecycle for all Knowledgebase,
+Explore and DIY lessons. It owns focus restoration and native Back behavior.
+`DemoStage.vue` provides an accessible, responsive diagram canvas;
+`DemoNode.vue` renders shared icon tiles and `DemoFlow.vue` renders continuous
+SVG flow from the same seekable clock. None perform network or account actions.

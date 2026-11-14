@@ -14,7 +14,11 @@ test('focused PRs select related suites without unrelated administrator recovery
   assert.deepEqual(selectBrowserRecovery(['web/src/components/subscription/HostLinkRow.vue']).scopes, ['member', 'member-design'])
   assert.deepEqual(selectBrowserRecovery(['web/src/components/hourly/HourlyAllowanceGraph.vue']).scopes, ['hourly', 'settings', 'member-design'])
   assert.deepEqual(selectBrowserRecovery(['web/src/components/hourly/hourlyAllowance.ts']).scopes, ['hourly', 'settings', 'member-design'])
-  assert.deepEqual(selectBrowserRecovery(['web/src/components/catalog/BillingDemo.vue']).scopes, ['demonstrations'])
+  assert.deepEqual(selectBrowserRecovery(['web/src/components/catalog/BillingDemo.vue']).scopes, ['demonstrations', 'knowledgebase'])
+  assert.deepEqual(selectBrowserRecovery(['web/src/components/common/DemoPlayer.vue']).scopes, ['demonstrations', 'knowledgebase'])
+  assert.deepEqual(selectBrowserRecovery(['web/src/components/knowledge/KnowledgePage.vue']).scopes, ['knowledgebase'])
+  assert.deepEqual(selectBrowserRecovery(['web/fixtures/knowledgebase-audit.ts']).scopes, ['knowledgebase'])
+  assert.deepEqual(selectBrowserRecovery(['web/locales/zh-CN/knowledge-lessons.json']).scopes, ['knowledgebase'])
   assert.deepEqual(selectBrowserRecovery(['web/fixtures/member-utility-data.ts']).scopes, ['member-design'])
 })
 
