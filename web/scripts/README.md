@@ -127,6 +127,8 @@ playback has no real or mocked member actions. Assertions wait for the initial
 preferences, access, balance, currency and availability reads to finish before
 recording the baseline. Each locale and viewport retains a top-of-page overview
 and clean wallet/gas and exchange-fee payment frames before source details open.
+Chapter/seek captures wait two animation frames, then compare the unique visual
+and accessible chapter selections plus the rendered slider range and contained-thumb geometry.
 The `knowledgebase` scope follows
 the feature, its locales, shared player/clock changes and member-shell changes.
 

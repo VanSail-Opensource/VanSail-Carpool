@@ -27,9 +27,9 @@ const preferences = usePreferencesStore()
 const { t } = useI18n()
 const { activeCombo: hasValidCombo, hasAccess, loading: accessLoading, refresh: refreshCommunityAccess } = useCommunityAccess()
 
-// New users live in Home and Explore only until they hold a fixed-term combo,
-// a positive balance or administrator rights; their language and currency
-// controls move onto Home. Administrators keep Settings for the console link.
+// New users keep Home and Explore as primary tabs with Knowledgebase always
+// available; their language and currency controls move onto Home until they
+// hold a fixed-term combo, a positive balance or administrator rights.
 // Wait for the access read so paying members never lose Settings for one
 // request window; a new user's navigation settles as soon as access is known.
 const isNewUser = computed(() => !sessionStore.isAdmin && !accessLoading.value && !hasAccess.value)
@@ -106,7 +106,7 @@ watch(() => route.path, (_next, previous) => {
 <template>
   <div class="app-frame" :class="{ 'app-frame--fullscreen': isFullscreen }">
     <UDashboardGroup class="app-dashboard" storage="local" :persistent="dashboardPersistent" storage-key="tx-carpool-shell" unit="rem">
-      <UDashboardSidebar id="navigation-compact" class="side-rail app-dashboard__sidebar" :default-size="13" :min-size="13" :max-size="20" :ui="{ body: 'px-0', footer: 'px-0' }" resizable>
+      <UDashboardSidebar id="navigation-compact" class="side-rail app-dashboard__sidebar" :default-size="14" :min-size="14" :max-size="20" :ui="{ body: 'px-0', footer: 'px-0' }" resizable>
         <template #default>
           <nav class="side-rail__nav" :aria-label="$t('nav.primary')">
             <UNavigationMenu v-model="expandedNavigation" :items="desktopItems" type="multiple" orientation="vertical" color="primary" variant="pill" />
