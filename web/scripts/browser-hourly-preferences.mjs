@@ -17,8 +17,20 @@ export async function hourlyPreferenceScenarios(scenario, size) {
     assert.equal(await meter.locator('[role="switch"]').getAttribute('aria-checked'), 'false')
     await page.getByRole('button', { name: 'Enable automatic purchases', exact: true }).click()
     await page.waitForFunction(() => globalThis.__hourlyAudit.fixture.view.extraPreference.extraEnabled)
+    await page.waitForFunction(() => globalThis.document.querySelector('[data-hourly-throttle] [role="switch"]')?.getAttribute('aria-checked') === 'true')
+    assert.equal(await meter.isVisible(), true)
+    assert.equal(await page.locator('[data-hourly-boost]').count(), 0)
+    assert.equal(await page.getByRole('progressbar').count(), 0)
+    await capture('consent-without-funding')
+    // Preference confirmation is not funding. Only a later accounting refresh
+    // with a purchased block can restore usable full-speed traffic.
+    await page.evaluate(() => {
+      const usage = globalThis.__hourlyAudit.fixture.view.usage
+      usage.extraFundedBytes = (globalThis.BigInt(usage.extraFundedBytes) + 1000000000n).toString()
+      globalThis.dispatchEvent(new globalThis.Event('focus'))
+    })
     await page.locator('[data-hourly-boost]').waitFor()
-    await capture('confirmed-boost')
+    await capture('funded-boost')
     await meter.waitFor({ state: 'hidden' })
     assert.equal(await page.getByRole('switch', { name: label, exact: true }).count(), 0)
     const mutations = await writes(page)

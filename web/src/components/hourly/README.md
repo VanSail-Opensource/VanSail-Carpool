@@ -22,49 +22,48 @@ does not erase it.
 
 ## Allowance and throttling
 
-`HourlySummary.vue` no longer renders the former "Combined speed after
-allowance" and "Unreserved extra credit" metric rows. `HourlyAllowanceGraph.vue`
-owns one segmented purchased-usage bar; every segment width is computed with
-`BigInt` basis points and the trailing free-remaining segment absorbs the
-sub-basis-point remainder:
+`HourlySummary.vue` composes the wallet and `HourlyAllowanceGraph.vue` without
+adding routine reconciliation notices. The graph delegates exact byte arithmetic
+to the pure `hourlyAllowance.ts` helper and reuses `HourlyThrottleMeter.vue` for
+an exhausted usable budget. These components take readonly usage/policy props;
+the existing `extra` event reaches the same consent flow as Settings.
 
-- Segment order: free used (`--accent`), purchased extra used (same `--accent`
-  base with 2–3 thin, smooth standout-green sine wave lines drawn as inline SVG
-  paths and clipped inside it; the line group translates left→right on a
-  seamless 1.8s loop, and reduced motion leaves the lines static), purchased extra remaining (the accent base at reduced
-  opacity with a faint green inset wash), free remaining (`--line`). The wave
-  lines and the "Purchased extra left" legend swatch use a local
-  `--hourly-extra` derived from the theme-aware `--success` mixed with a vivid
-  green, so it stays distinct from `--warning` in both themes.
-- Existing credit is retained whether automatic purchases are enabled or disabled:
-  capacity is `freeAllowanceBytes + extraFundedBytes`
-  and usage is `freeUsedBytes + extraUsedBytes` (clamped to capacity). The legend
-  always shows used traffic and exactly one secondary row: "Purchased extra
-  left" (`extraFunded - extraUsed - extraReserved`, never reserved bytes as used)
-  once the free allowance is exhausted, otherwise the remaining capacity. The
-  two rows are mutually exclusive. Caption and accessible `aria-valuetext` use
-  `hourly.fullSpeedAllowance` and `hourly.allowanceUsedOf`. Legend pairs stack
-  into full-width rows on narrow screens so labels and exact values stay
-  separated; wider containers retain the compact two-column layout.
-- Turning automatic extra purchases on (false → true) while the previous state
-  had exhausted both free and purchased budgets keeps the reduced-speed card mounted and flies a one-off
-  decorative green rocket through it for ~1.2s (`data-hourly-boost` is on this
-  card-context rocket); the graph swaps to the purchased bar only when the
-  rocket finishes. It never plays on initial load or within allowance. Reduced
-  motion swaps immediately and shows a static green flash instead of travel.
-- Extra purchases disabled and both observed budgets exhausted
-  (`freeUsedBytes >= freeAllowanceBytes` and `extraUsedBytes >= extraFundedBytes`,
-  including a zero budget with zero use): the caption is omitted and `HourlyThrottleMeter.vue` replaces the whole
-  bar area with a compact speed-limit component. It shows the exact configured
-  rate, slow packet flow, and the automatic-purchase switch with its native TXB
-  price in the same component. The controlled switch stays off while consent is
-  open or a write fails; only a confirmed change accelerates the flow and starts
-  the existing one-off boost transition. A zero extra price replaces the switch
-  with the unavailable notice. Reduced motion removes packet travel and freezes
-  the same state. The label describes the configured limit, not measured speed.
-- Otherwise the ordinary free-allowance bar renders.
+- Capacity remains `freeAllowanceBytes + extraFundedBytes`; confirmed Used remains
+  `freeUsedBytes + extraUsedBytes`, clamped separately to each pool's capacity.
+  Current-day `accounting.freeRecoveryUnknownBytes` and
+  `accounting.extraRecoveryUnknownBytes` are unavailable and are deducted from
+  the corresponding remaining pool, never added to Used. Ordinary open credit
+  is still allocated for traffic, so neither `freeReservedBytes` nor
+  `extraReservedBytes` is deducted wholesale. Historical accounting never
+  reduces today's remaining allowance.
+- Segment order: free used (`--accent`), purchased extra used (the existing green
+  sine-wave decoration), usable purchased extra remaining, unavailable recovery
+  credit (a neutral static pattern), and usable free remaining (`--line`).
+  BigInt basis-point widths preserve exact proportions, with the trailing
+  remaining segment absorbing sub-basis-point rounding. No warning prose or
+  accounting-status panel is added to the member summary.
+- The compact legend shows Used and one secondary row: "Purchased extra left"
+  after usable free allowance is exhausted; otherwise combined Remaining. Both
+  subtract only their current recovery holds and retain open allocations and
+  purchased credit when automatic purchases are disabled. An older cached
+  response with only aggregate recovery still has an exact combined Remaining
+  and exhaustion state; the helper does not invent a pool split.
+- The reduced-speed meter appears whenever both usable pools are exhausted,
+  including a zero allowance before any traffic and an enabled automatic-purchase
+  preference with no funded credit. It shows the exact configured rate, not a
+  measured live speed. The inline controlled switch keeps its confirmed server
+  value and permits opting out while reduced. A zero extra price retains the
+  existing unavailable notice.
+- Confirming automatic purchases changes only the preference. The meter stays
+  reduced until a refreshed accounting snapshot actually restores usable credit.
+  A same-day increase in funded extra from an exhausted budget then triggers the
+  existing one-off green rocket, retaining the meter for ~1.2s before showing the
+  purchased bar. Initial render, preference changes alone and UTC-day resets
+  never trigger it. Reduced motion swaps immediately with a static flash and
+  freezes packet/wave movement.
 
-All byte math stays in `BigInt`.
+All byte math stays in `BigInt`; frontend derivation never authorizes grants,
+settles a reservation, debits a wallet or changes saved accounting.
 
 ## Accounting status
 
@@ -83,8 +82,8 @@ constructed accounting evidence is unchanged.
 preference, including when allowance is exhausted, so members can always turn it
 off or review a changed rate. `HourlySummary.vue` forwards the allowance graph's
 `extra` event; it has no standalone preference row. `HourlyThrottleMeter.vue`
-emits the same event from its inline switch only when both recorded free and
-purchased capacity are exhausted and automatic purchases are off. Retained
+emits the same event from its inline switch whenever both usable free and
+purchased capacity are exhausted, with the confirmed preference shown on or off. Retained
 purchased credit stays usable and prevents a premature reduced-speed state.
 
 `useHourlyExtra.ts` shares consent behavior between Settings and Explore. It
@@ -182,6 +181,10 @@ their meaning (`admin`, `light`, `zh`, `slow`, `error`, `empty`, `paused`,
 - `reduced-motion`: overrides `matchMedia` before mount so Motion Vue reports the
   reduced-motion branch.
 - `current-unknown` (also `pending`): current-day recovery-unknown held credit.
+- `recovery-exhausted`: a 2 GiB allowance with 115,152,132 bytes held after
+  recovery and no usable credit, reproducing the former frozen 109.81 MiB label.
+- `open-credit`: the same allowance and admitted traffic with that residual in
+  an ordinary open allocation, which remains usable and displays 109.81 MiB.
 - `historical-unknown`: retained unknown credit from other UTC days, omitted from
   member notices.
 - `historical-unsealed`: retained other-day unsealed proofs and held bytes.
@@ -192,21 +195,27 @@ Use `extra` together with `out-of-allowance` to inspect the purchased-usage bar
 with `extraEnabled` true, and `zh`/`light` for locale and theme parity. The
 `out-of-allowance` fixture keeps existing purchased credit visible while the
 preference is off. `credit-exhausted` shows the reduced-rate meter; enabling
-automatic purchases there (after explicit confirmation) triggers the decorative
-rocket and returns to the budget bar without inventing a funded block. Add `reduced-motion` to
-see the immediate swap and static flash/lines instead.
+automatic purchases there (after explicit confirmation) keeps the reduced meter
+until the fixture receives an actual funded-block refresh. Only that refresh
+triggers the decorative rocket and returns to the budget bar. Add `reduced-motion`
+to see the immediate funded swap and static flash/lines instead.
 
 Open activation-code, extra-price and disable dialogs retain the reviewed policy
 version, offer revision or enrollment identity. A conflicting refresh closes the
 dialog and asks the member to review current terms. `HourlyPage.test.ts` covers
 those replacement races; server revision and policy checks still authorize writes.
-`HourlyAllowanceGraph.test.ts` covers usable purchased/reserved credit with
-automatic purchases disabled and zero free budget before any observed traffic.
+`hourlyAllowance.test.ts` covers the exact recovery residual, mixed free/extra
+holds, ordinary open credit, historical isolation, large integers and older
+aggregate-only snapshots. `HourlyAllowanceGraph.test.ts` covers those presentation
+boundaries, consent without funding, retained paid credit after opt-out, UTC-day
+reset and zero budget before observed traffic.
 
 `SettingsHourlyControls.test.ts` covers persistent discoverability, failed writes,
 changed-policy consent, unavailable purchases and legacy blocking. The browser
 preference scenarios live in `browser-hourly-preferences.mjs` and are included by
 `browser-hourly-recovery.mjs`; they cover Settings and inline controls at the
-selected desktop/mobile sizes without mutating a production account.
+selected desktop/mobile sizes without mutating a production account. Hosted
+recovery also contrasts recovery exhaustion with an equal ordinary open credit.
+The helper and graph select hourly, settings and member-design browser scopes.
 
 `HourlyAccountingStatus.test.ts` preserves the administrator accounting-status projection and tests unknown/stale reservation detail independently of the concise member summary.

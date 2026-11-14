@@ -42,6 +42,9 @@ export function hourlyFixture(params: URLSearchParams): { view: HourlyAccountVie
   const enrollmentStatus: HourlyEnrollment['status'] = params.has('suspended') ? 'funding_suspended' : params.has('capacity-preparing') ? 'preparing' : 'active'
   const enrollment = (groupId: string): HourlyEnrollment => ({ id: `enrollment-${groupId}`, groupId, status: enrollmentStatus, activatedAt: now, paidThrough: boundary, disabledAt: null, cooldownUntil: null, createdAt: now, updatedAt: now })
   const first = params.has('first')
+  const recoveryExhausted = params.has('recovery-exhausted')
+  const openCredit = params.has('open-credit')
+  const recoveryExample = recoveryExhausted || openCredit
   // `out-of-allowance` exhausts the free allowance while retaining funded extra.
   // `credit-exhausted` consumes both budgets; zero-unused has no starting budget.
   // Purchased credit stays funded while the preference is off, so re-enabling
@@ -49,18 +52,21 @@ export function hourlyFixture(params: URLSearchParams): { view: HourlyAccountVie
   const exhausted = params.has('out-of-allowance') || params.has('allowance-zero') || params.has('credit-exhausted')
   const zeroUnused = params.has('allowance-zero-unused')
   const zeroAllowance = params.has('allowance-zero') || zeroUnused
-  const freeAllowance = zeroAllowance ? '0' : '10000000000'
-  if (zeroAllowance) policy.policy.dailyAllowanceBytes = '0'
-  const freeUsed = first || zeroUnused ? '0' : exhausted ? (zeroAllowance ? '2500000000' : freeAllowance) : '2500000000'
+  const freeAllowance = recoveryExample ? '2147483648' : zeroAllowance ? '0' : '10000000000'
+  if (zeroAllowance || recoveryExample) policy.policy.dailyAllowanceBytes = freeAllowance
+  const freeUsed = recoveryExample ? '2032331516' : first || zeroUnused ? '0' : exhausted ? (zeroAllowance ? '2500000000' : freeAllowance) : '2500000000'
   // Existing purchased credit remains after the preference is turned off, so
   // the graph still shows purchased capacity when automatic purchases are off.
-  const extraFunded = first || zeroUnused ? '0' : '2000000000'
-  const extraUsed = first || zeroUnused ? '0' : params.has('credit-exhausted') ? extraFunded : '1000000000'
-  const freeReserved = first || exhausted || zeroUnused ? '0' : '8192'
-  const extraReserved = first || exhausted || zeroUnused ? '0' : '32768'
+  const extraFunded = first || zeroUnused || recoveryExample ? '0' : '2000000000'
+  const extraUsed = first || zeroUnused || recoveryExample ? '0' : params.has('credit-exhausted') ? extraFunded : '1000000000'
+  const freeReserved = openCredit ? '115152132' : first || exhausted || zeroUnused || recoveryExhausted ? '0' : '8192'
+  const extraReserved = first || exhausted || zeroUnused || recoveryExample ? '0' : '32768'
+  const freeRecoveryUnknown = recoveryExhausted ? '115152132' : params.has('pending') || params.has('current-unknown') ? '131072' : '0'
   const accounting = {
     openReservedBytes: (BigInt(freeReserved) + BigInt(extraReserved)).toString(),
-    recoveryUnknownBytes: params.has('pending') || params.has('current-unknown') ? '131072' : '0',
+    recoveryUnknownBytes: freeRecoveryUnknown,
+    freeRecoveryUnknownBytes: freeRecoveryUnknown,
+    extraRecoveryUnknownBytes: '0',
     historicalRecoveryUnknownBytes: params.has('historical-unknown') ? '262144' : '0',
     historicalUnsealedReservedBytes: params.has('historical-unsealed') ? '524288' : '0',
     historicalUnsealedCount: params.has('historical-unsealed') ? '2' : '0',

@@ -8,7 +8,7 @@ import HourlyAccountingStatus from './HourlyAccountingStatus.vue'
 
 type Accounting = NonNullable<HourlyAccountUsage['accounting']>
 const empty: Accounting = {
-  openReservedBytes: '0', recoveryUnknownBytes: '0', historicalRecoveryUnknownBytes: '0',
+  openReservedBytes: '0', recoveryUnknownBytes: '0', freeRecoveryUnknownBytes: '0', extraRecoveryUnknownBytes: '0', historicalRecoveryUnknownBytes: '0',
   historicalUnsealedReservedBytes: '0', historicalUnsealedCount: '0',
 }
 const usage = (accounting: Accounting | undefined, pending = true): HourlyAccountUsage => ({
