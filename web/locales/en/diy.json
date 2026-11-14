@@ -10,7 +10,7 @@
     "enabled": "Enabled",
     "disabled": "Disabled",
     "system": "System default",
-    "reset": "Reset options",
+    "reset": "Reset",
     "resetField": "Inherit this option",
     "resetHint": "Subscription options only. Custom routing is retained.",
     "minimum": "Minimum",
@@ -25,7 +25,7 @@
     "socketValue": "Value",
     "socketType": "Value type",
     "compatibility": "Client compatibility",
-    "clientFormat": "Inspect client format",
+    "clientFormat": "Client",
     "inheritedCount": "{count} options inherit administrator settings.",
     "showInherited": "Inherited options",
     "hostCounts": "Applied to {applied} hosts; omitted for {omitted}.",
@@ -129,6 +129,54 @@
     },
     "noApplicableFields": "No applicable options for your current hosts.",
     "rangeExample": "e.g. 100 or 100-200",
-    "rangeInvalid": "Enter a number or an ascending range, such as 100-200."
+    "rangeInvalid": "Enter a number or an ascending range, such as 100-200.",
+    "about": "About DIY Center",
+    "optionDetails": "Details for {name}",
+    "demo": {
+      "open": "See routing",
+      "title": "Routing in motion",
+      "description": "An illustrative walkthrough of ordered host routing. It does not change settings, deploy routes or send network traffic.",
+      "steps": "Routing walkthrough steps",
+      "example": "Demo only",
+      "play": "Play demo",
+      "pause": "Pause demo",
+      "replay": "Replay demo",
+      "next": "Next step",
+      "destination": "Example destination match",
+      "match": "Match",
+      "noMatch": "No match",
+      "firstMatch": "First match wins",
+      "labels": {
+        "choose": "Choose",
+        "check": "Check",
+        "save": "Apply",
+        "route": "Route"
+      },
+      "captions": {
+        "choose": "Entry → template → exit",
+        "check": "Accessible hosts. No loops.",
+        "save": "Save → queue → applied"
+      },
+      "nodes": {
+        "entry": "Entry",
+        "template": "Template",
+        "exit": "Exit",
+        "access": "Access",
+        "noLoops": "No loops",
+        "valid": "Valid",
+        "save": "Save",
+        "queue": "Queued",
+        "applied": "Applied",
+        "you": "You",
+        "default": "Default",
+        "destination": "Internet"
+      },
+      "descriptions": {
+        "choose": "Choose an accessible entry host, an administrator-provided destination template, and a different accessible exit node. Rules are ordered at each node.",
+        "check": "The server checks endpoint access, template references, and routing loops before accepting the configuration.",
+        "save": "Save the configuration. Routing is queued for deployment and becomes applied only after the nodes confirm it.",
+        "route": "At each node the first matching rule forwards the connection to its selected exit. If no custom rule matches, the node uses its default routing. This example shows one rule; no real traffic is sent."
+      }
+    }
   }
 }

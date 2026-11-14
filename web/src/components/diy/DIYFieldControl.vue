@@ -5,7 +5,7 @@ import { useI18n } from '@/i18n'
 import { selectionHaptic } from '@/utils/feedback'
 import DIYRangeField from './DIYRangeField.vue'
 import DIYHeadersField from './DIYHeadersField.vue'
-const props = defineProps<{ field: DIYField; modelValue: unknown; disabled?: boolean; error?: string; resettable?: boolean; label?: string }>()
+const props = defineProps<{ field: DIYField; modelValue: unknown; disabled?: boolean; error?: string; resettable?: boolean; label?: string; icon?: string; compact?: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [value: unknown] }>()
 const { t } = useI18n()
 const label = computed(() => props.label ?? t(`diyFields.${props.field.key}`))
@@ -33,7 +33,8 @@ function addString(value: string) { selectionHaptic(); emit('update:modelValue',
 </script>
 
 <template>
-  <UFormField :label="label" :hint="fixedOff ? t('diy.states.fixed-off') : undefined" :error="error || (field.kind === 'range' && typeof modelValue === 'string' ? t('diy.rangeInvalid') : undefined)" :description="field.unit ? t(`diy.units.${field.unit}`) : undefined" class="min-w-0">
+  <UFormField :label="label" :hint="fixedOff ? t('diy.states.fixed-off') : compact && field.unit ? t(`diy.units.${field.unit}`) : undefined" :error="error || (field.kind === 'range' && typeof modelValue === 'string' ? t('diy.rangeInvalid') : undefined)" :description="!compact && field.unit ? t(`diy.units.${field.unit}`) : undefined" class="min-w-0">
+    <template v-if="icon" #label><span class="inline-flex items-center gap-1.5"><UIcon :name="icon" class="shrink-0 text-muted" aria-hidden="true" />{{ label }}</span></template>
     <div class="flex items-start gap-1">
       <div class="grid flex-1 min-w-0 gap-2">
         <UInput v-if="fixedOff" :model-value="t('diy.disabled')" disabled class="w-full" />

@@ -14,10 +14,10 @@ import { selectionHaptic } from '@/utils/telegramHaptics'
 import { formatUsageCost } from './usageBreakdownFormat'
 import { assignUsageEntryColors, usageEntryIDs, usageBreakdownSegments, usageSegmentColor, usageSegmentID, usageSegmentValue, type UsageBreakdownMetric, type UsageBreakdownSegment } from './usageBreakdownSegments'
 
-const props = defineProps<{ history: UsageBreakdown }>()
+const props = defineProps<{ history: UsageBreakdown; hideMeasure?: boolean }>()
 const MEASURE_SWITCH_DURATION_MS = 320
 const { reducedMotion } = useMotionPreferences()
-const metric = shallowRef<UsageBreakdownMetric>('traffic')
+const metric = defineModel<UsageBreakdownMetric>('metric', { default: 'traffic' })
 const nodeColors = shallowRef(new Map<string, string>())
 watch(() => usageEntryIDs(props.history), ids => { nodeColors.value = assignUsageEntryColors(ids, nodeColors.value) }, { immediate: true })
 const plotted = computed(() => usageBreakdownSegments(props.history, metric.value, nodeColors.value))
@@ -56,7 +56,7 @@ const events = { [Donut.selectors.segment]: {
 
 <template>
   <div class="usage-breakdown" data-usage-breakdown>
-    <UTabs :model-value="metric" :items="tabs" :content="false" color="neutral" variant="pill" size="sm" :ui="{ root: 'justify-self-start', trigger: 'min-h-11 px-4' }" :aria-label="t('usageBreakdown.measure')" @update:model-value="selectMetric" />
+    <UTabs v-if="!hideMeasure" :model-value="metric" :items="tabs" :content="false" color="neutral" variant="pill" size="sm" :ui="{ root: 'justify-self-start', trigger: 'min-h-11 px-4' }" :aria-label="t('usageBreakdown.measure')" @update:model-value="selectMetric" />
     <dl class="flex items-baseline justify-between gap-3 text-sm"><dt class="min-w-0 text-muted">{{ t(metric === 'traffic' ? 'usageBreakdown.trafficTotal' : 'usageBreakdown.costTotal') }}</dt><dd class="min-w-0 max-w-[70%] break-all text-right font-semibold tabular-nums">{{ total }}</dd></dl>
     <p v-if="!plotted.showPie" role="status" class="py-4 text-sm text-muted" data-usage-no-comparison>{{ emptyMessage }}</p>
     <div v-show="plotted.showPie" class="usage-breakdown__body" data-usage-chart>

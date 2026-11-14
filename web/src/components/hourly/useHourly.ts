@@ -13,17 +13,17 @@ export function hourlyError(caught: unknown): string {
 }
 
 export function useHourly() {
-  const data = useSubscriptionData(hourlyApi.get, 15_000, 'hourly.loadFailed')
+  const data = useSubscriptionData(hourlyApi.get, 15_000, 'hourly.loadFailed', undefined, '/api/v1/hourly')
   const operation = useOperationReceipt()
   const submitting = shallowRef(false)
   const actionError = shallowRef<string | null>(null)
   const keys = new Map<string, string>()
   let active = true
-  const busy = computed(() => submitting.value || operation.polling.value)
+  const busy = computed(() => !data.liveReady.value || submitting.value || operation.polling.value)
   watch(operation.terminal, terminal => { if (terminal) void data.refresh() })
 
   async function run(identity: string, action: (key: string) => Promise<OperationReceipt>): Promise<boolean> {
-    if (!active || busy.value) return false
+    if (!active || !data.liveReady.value || busy.value) return false
     submitting.value = true
     actionError.value = null
     const key = keys.get(identity) ?? createUuid()
@@ -53,7 +53,7 @@ export function useHourly() {
   }
   async function extra(enabled: boolean): Promise<boolean> {
     const snapshot = data.value.value?.policy
-    if (!active || !snapshot || busy.value) return false
+    if (!active || !snapshot || !data.liveReady.value || busy.value) return false
     submitting.value = true
     actionError.value = null
     try {

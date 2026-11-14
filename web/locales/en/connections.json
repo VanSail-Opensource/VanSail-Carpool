@@ -1,6 +1,16 @@
 {
   "connections": {
     "title": "Active connections",
+    "subtitle": "Recent public IPs and temporary access grants.",
+    "addresses": "IP addresses",
+    "matching": "Matching addresses",
+    "leaseDuration": "Lease duration",
+    "hours": "{count} h",
+    "leasesDisabled": "Off",
+    "updated": "Updated",
+    "grantTitle": "Grant access",
+    "ipv4": "IPv4",
+    "ipv6": "IPv6",
     "ip": "Public IP address",
     "ipPlaceholder": "IPv4 or IPv6 address",
     "grantHelp": "Add one public IP for the configured lease duration. Adding it again does not extend its expiry.",

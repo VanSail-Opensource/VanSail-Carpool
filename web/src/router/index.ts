@@ -5,6 +5,7 @@ import { getTelegramStartParam, isTelegramWebAppDetected } from '@/utils/telegra
 import { resolveProtectedRoute } from './guards'
 import { createAppHistory } from './history'
 import { beginRouteRecovery, completeRouteRecovery, isRouteChunkError } from './recovery'
+import { memberViews } from './memberViews'
 
 const router = createRouter({
   history: createAppHistory(),
@@ -17,20 +18,20 @@ const router = createRouter({
       component: () => import('@/views/OnboardingView.vue'),
       meta: { immersive: true },
     },
-    { path: '/home', name: 'home', component: () => import('@/views/HomeView.vue') },
-    { path: '/subscription', name: 'subscription', component: () => import('@/views/SubscriptionView.vue') },
-    { path: '/settings', name: 'settings', component: () => import('@/views/SettingsView.vue') },
-    { path: '/settings/diy', name: 'diy', component: () => import('@/views/DIYView.vue') },
+    { path: '/home', name: 'home', component: memberViews['/home'] },
+    { path: '/subscription', name: 'subscription', component: memberViews['/subscription'] },
+    { path: '/settings', name: 'settings', component: memberViews['/settings'] },
+    { path: '/settings/diy', name: 'diy', component: memberViews['/settings/diy'] },
     { path: '/settings/admin-access', name: 'admin-access', component: () => import('@/components/settings/AdminAccessPanel.vue') },
-    { path: '/connections', name: 'connections', component: () => import('@/views/ConnectionsView.vue') },
-    { path: '/catalog', name: 'catalog', component: () => import('@/views/CatalogView.vue') },
+    { path: '/connections', name: 'connections', component: memberViews['/connections'] },
+    { path: '/catalog', name: 'catalog', component: memberViews['/catalog'] },
     { path: '/payment-result', name: 'payment-result', component: () => import('@/views/PaymentResultView.vue'), meta: { immersive: true, browserPublic: true } },
     { path: '/balance', redirect: { name: 'home', query: { topUp: '1' } } },
-    { path: '/activity', name: 'activity', component: () => import('@/views/ActivityView.vue') },
+    { path: '/activity', name: 'activity', component: memberViews['/activity'] },
     { path: '/games', redirect: '/activity' },
-    { path: '/affiliates', name: 'affiliates', component: () => import('@/views/AffiliatesView.vue') },
-    { path: '/community', name: 'community', component: () => import('@/views/CommunityView.vue') },
-    { path: '/emby', name: 'emby', component: () => import('@/views/EmbyView.vue') },
+    { path: '/affiliates', name: 'affiliates', component: memberViews['/affiliates'] },
+    { path: '/community', name: 'community', component: memberViews['/community'] },
+    { path: '/emby', name: 'emby', component: memberViews['/emby'] },
     { path: '/ip-lookup', name: 'ip-lookup', component: () => import('@/views/IPLookupView.vue') },
     { path: '/admin/:pathMatch(.*)*', redirect: to => ({ name: 'admin-access', query: { returnTo: to.fullPath } }) },
     { path: '/:pathMatch(.*)*', redirect: '/' },

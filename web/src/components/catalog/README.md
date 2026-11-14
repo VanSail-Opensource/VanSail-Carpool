@@ -8,9 +8,23 @@ and coupon components below remain in those supported flows.
 - `CatalogExperience.vue` lazily selects `PAYGPage.vue` or
   `../hourly/HourlyPage.vue`, defaults to PAYG and emits one selection haptic
   per actual change. `CatalogExperience.test.ts` covers mode switching and
-  independent lazy loading.
+  independent lazy loading. `catalogPages.ts` provides shared import identities
+  for mounting and optional preloading. After mount, one idle callback warms
+  both page chunks; it skips hidden documents, Data Saver and 2G connections,
+  and cancels pending scheduling on disposal. Demo code warms on trigger hover
+  or keyboard focus and is mounted only when requested.
 - `CatalogChunkState.vue` provides localized loading and chunk-recovery UI
   while keeping the mode controls available.
+- `BillingDemo.vue` opens from the current mode's icon-led demonstration button.
+  It composes `TrafficBillingScene.vue` or `HourlyBillingScene.vue` using the
+  synthetic snapshots in `billingDemo.ts`. The shared
+  `useIllustrationPlayback` owns play/pause/replay, manual steps, visibility
+  suspension and timer disposal. Reduced motion uses manual steps with static
+  diagrams. Nuxt UI's modal owns focus, dismissal and accessible naming; each
+  step supplies a localized screen-reader explanation alongside its short
+  visual caption. Demo state never enters account caches or calls a write API.
+  Example prices remain explicitly illustrative, and all copy lives in
+  `locales/*/payg.json` under `payg.demo`.
 - `PAYGPage.vue` polls owner-scoped availability and the authoritative 72-hour
   traffic/spending totals through the shared subscription-data lifecycle.
   `PAYGPage.test.ts` covers loading, empty results, exact totals and retained
@@ -24,7 +38,7 @@ and coupon components below remain in those supported flows.
   `SquadPricingCard.vue`. `CatalogSquadStep.test.ts` and
   `SquadSelector.test.ts` cover prepared ordering, type groups and events.
 - `SquadPricingCard.vue` renders profile facts and keyboard-accessible selection;
-  PAYG uses its informational variant. `SquadPricingCard.test.ts` covers profile
+  PAYG and hourly use its informational variant. `SquadPricingCard.test.ts` covers profile
   types, absent profiles/nodes, hidden node names and ordered features.
 - `SquadFeatures.vue` shows administrator-authored icon/title/detail rows in
   saved order through the allowlisted icon map.
@@ -42,9 +56,21 @@ and coupon components below remain in those supported flows.
   squads and hourly activation, with busy/error handling and Enter submission.
 
 Cards omit individual node names and legacy traffic multipliers. Feature text is
-escaped Vue text; no application Markdown parser is involved. PAYG cards use
-content-sized desktop columns and one column on mobile. The 140ms mode entrance
-is interruptible and disabled by reduced-motion preferences.
+escaped Vue text; no application Markdown parser is involved. Explore cards use
+an aligned, responsive desktop grid and one column on narrow screens. The title
+and price have independent header columns; long names wrap, facts use compact
+icon rows, and the activity/action area stays at the bottom of each card. This
+keeps row order consistent with keyboard and reading order. The 140ms mode
+entrance is interruptible and disabled by reduced-motion preferences.
+
+The traffic demonstration follows native block accounting: 100 MiB of usage in
+the rolling 72-hour window triggers the first binary 1 GiB block, additional
+usage buys whole blocks, a reconnect retains unexpired credit, and unused
+credit expires 72 hours after the latest purchase without an idle debit.
+The hourly demonstration covers prorated first-hour activation, whole-hour
+renewal, shared daily allowance, reduced speed, consented decimal-GB extras,
+voluntary disable/cooldown and the UTC-day reset. These visuals explain the
+server rules; they never calculate a member quote or authorize access.
 
 Hidden PAYG squads are omitted from Explore/subscription output while server
 totals preserve consumption. Client presentation never substitutes for server

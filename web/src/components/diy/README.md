@@ -23,7 +23,8 @@ and revision conflicts retain both sections. Reset restores subscription
 inheritance without touching routing. The backend owns the allowlist,
 compatibility and atomic encrypted persistence; generated clients type all data.
 
-Categories reuse native Nuxt tabs in one scrollable row. `useScrollableTabs.ts`
+Categories use the actual Nuxt UI `UTabs` component with icon-bearing pill
+triggers in one scrollable row. `useScrollableTabs.ts`
 keeps the selected tab visible using horizontal-only scrolling, exposes overflow
 cues, observes label/viewport changes and disposes its listeners with the view.
 Hidden category panels stay mounted, preserving drafts. The Save bar follows
@@ -63,7 +64,12 @@ receipt before validating current access. Backend transactions own revision fenc
 
 `diyRange.ts` parses exact values or ascending hyphen ranges into the existing min/max wire object. `DIYRangeField.vue` retains incomplete text in the shared draft, shows examples when empty, and blocks invalid Save/automatic preview without discarding input.
 
-The four tabs are Connection, XHTTP, Routing and Compatibility. Applicable fields and compatibility rows stay expanded without subgroup headings. One Reset and Save bar owns submission. Native tab scrolling hides its scrollbar while retaining keyboard/swipe access; mounted panels retain drafts.
+The four tabs are Connection, XHTTP, Routing and Compatibility. Applicable fields
+stay expanded without subgroup headings. Compact field labels pair a group icon
+with inline units. Compatibility rows show an option icon and status; accessible
+popovers retain host counts and detailed restrictions without repeating prose in
+every row. One Reset and Save bar owns submission. Native tab scrolling retains
+keyboard/swipe access and overflow cues; mounted panels retain drafts.
 
 The page grid and tab root constrain intrinsic width so long labels scroll
 inside navigation instead of widening the phone viewport. The Save bar uses
@@ -74,3 +80,20 @@ on phones, then use bounded columns on desktop. Compatibility names wrap beside
 their status without squeezing either into a narrow column.
 
 Mini App tabs and selection controls use selection haptics. Buttons use existing intent feedback; Save reports success/error through the existing Telegram notification helper. Scoped CSS clarifies presses and panel/status changes only when reduced motion is not requested. Browser admin roots do not import this page or initialize these controls.
+
+`RoutingDemoButton.vue` lazily loads `RoutingDemo.vue` on demand.
+`RoutingDemoScene.vue` illustrates ordered entry/template/exit selection, access
+and loop checks, queued deployment, and first-match/default routing. The four
+steps and match switch are local presentation state; the demo does not call APIs
+or modify the draft. Shared `useIllustrationPlayback.ts` handles pause, replay,
+manual stepping, hidden-page suspension and reduced motion. Full explanations
+remain available to assistive technology while the visible scene favors icons.
+
+`useDIY.ts` can restore a typed, account-scoped in-memory rendering snapshot up to
+60 seconds old before its live read. It merges untouched sections from the first
+fresh response while preserving edits made during that read. Save and automatic
+previews require live confirmation; failed reads keep the draft visible but do
+not authorize a save or start inventory polling from cached state. The routing
+editor accepts `previewPaused` from this freshness boundary. Hosted
+`useDIYCache.test.ts` covers draft preservation, fresh replacement and failed-read
+blocking. No settings, credentials or previews are persisted in browser storage.

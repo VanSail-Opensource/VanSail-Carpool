@@ -4,6 +4,18 @@ import { assignUsageEntryColors, usageEntryIDs, usageBreakdownSegments } from '.
 import { addUsageAmounts, readUsageAmount, zeroUsageAmount } from '@/utils/usageRational'
 
 describe('Usage Breakdown aggregation', () => {
+  it('ranks both measures by exact descending share with stable identity and color', () => {
+    const view = usageBreakdownFixture(new URLSearchParams('hourly-large'))
+    const colors = assignUsageEntryColors(usageEntryIDs(view))
+    for (const metric of ['traffic', 'cost'] as const) {
+      const { segments } = usageBreakdownSegments(view, metric, colors)
+      for (let index = 1; index < segments.length; index++) {
+        const previous = segments[index - 1]!, current = segments[index]!
+        expect(previous.amount.numerator * current.amount.denominator >= current.amount.numerator * previous.amount.denominator).toBe(true)
+      }
+      for (const row of segments.filter(row => row.kind === 'node' || row.kind === 'hourly')) expect(row.color).toBe(colors.get(row.interactionId))
+    }
+  })
   it.each(['', 'large', 'omitted', 'grouping', 'unallocated', 'unknown-term', 'hourly', 'hourly-only', 'hourly-one', 'hourly-small', 'hourly-idle', 'hourly-ended', 'hourly-extra', 'hourly-omitted', 'hourly-large'])('conserves traffic and exact cost for %s', mode => {
     const view = usageBreakdownFixture(new URLSearchParams(mode))
     for (const metric of ['traffic', 'cost'] as const) {

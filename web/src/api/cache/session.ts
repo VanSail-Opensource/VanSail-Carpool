@@ -1,5 +1,5 @@
 // Response snapshots live only in this document's authenticated session.
-const entries = new Map<string, string>()
+const entries = new Map<string, { json: string; writtenAt: number }>()
 const maximumBytes = 8 * 1024 * 1024
 const maximumEntries = 256
 let bytes = 0
@@ -13,7 +13,7 @@ export function cacheIdentityGeneration(): number { return identityGeneration }
 export function hasCacheSession(): boolean { return owner !== null }
 
 export function removeResponseCache(key: string): void {
-  bytes -= (entries.get(key)?.length ?? 0) * 2
+  bytes -= (entries.get(key)?.json.length ?? 0) * 2
   entries.delete(key)
 }
 
@@ -31,12 +31,16 @@ export function setCacheSession(identity: string | null): boolean {
   return true
 }
 
-export function readResponseCache<T>(key: string): T | undefined {
-  const serialized = entries.get(key)
-  if (serialized === undefined || owner === null) return undefined
+export function readResponseCache<T>(key: string, maximumAgeMs = Infinity): T | undefined {
+  const entry = entries.get(key)
+  if (entry === undefined || owner === null) return undefined
+  if (Date.now() - entry.writtenAt > maximumAgeMs) {
+    removeResponseCache(key)
+    return undefined
+  }
   entries.delete(key)
-  entries.set(key, serialized)
-  try { return JSON.parse(serialized) as T }
+  entries.set(key, entry)
+  try { return JSON.parse(entry.json) as T }
   catch { removeResponseCache(key); return undefined }
 }
 
@@ -50,14 +54,14 @@ export function writeResponseCache(key: string, value: unknown, expectedGenerati
     removeResponseCache(key)
     return
   }
-  bytes -= (entries.get(key)?.length ?? 0) * 2
+  bytes -= (entries.get(key)?.json.length ?? 0) * 2
   entries.delete(key)
-  entries.set(key, serialized)
+  entries.set(key, { json: serialized, writtenAt: Date.now() })
   bytes += serialized.length * 2
   while (entries.size > maximumEntries || bytes > maximumBytes) {
     const oldest = entries.keys().next().value
     if (oldest === undefined) break
-    bytes -= entries.get(oldest)!.length * 2
+    bytes -= entries.get(oldest)!.json.length * 2
     entries.delete(oldest)
   }
 }

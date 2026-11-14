@@ -1,39 +1,6 @@
 .app-frame--fullscreen {
   --shell-safe-top: max(
-    3.5rem,
     calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px)),
     env(safe-area-inset-top, 0px)
   );
-}
-
-.app-greeting {
-  min-height: var(--shell-safe-top);
-  display: grid;
-  align-content: center;
-  justify-items: center;
-  gap: 0.12rem;
-  padding: max(var(--tg-safe-area-inset-top, 0px), env(safe-area-inset-top, 0px)) 1rem 0.55rem;
-  color: var(--text);
-  text-align: center;
-}
-
-.app-greeting strong {
-  overflow-wrap: anywhere;
-  font-size: 0.86rem;
-  font-weight: 700;
-}
-
-.app-greeting span {
-  overflow-wrap: anywhere;
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-}
-
-.app-frame--fullscreen .app-main {
-  padding-top: 0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .app-greeting { transition: none; }
 }

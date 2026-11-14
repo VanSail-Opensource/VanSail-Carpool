@@ -2,8 +2,17 @@ import { xnodeMemberApi, type DIYOverrides, type DIYPreview, type DIYView, type 
 import { memberOperationsApi } from '@/api/memberOperations'
 import { ApiError } from '@/api/http'
 import type { OperationReceipt } from '@/api/types'
+import { localDIYPreview } from './diy-local-preview'
 
 export function installDIYAudit(params: URLSearchParams, trace: { calls: string[]; keys: string[]; writes: unknown[] }, routing: () => Promise<RoutingView>) {
+  if (params.has('reduced') || params.has('reduced-motion')) {
+    const nativeMatchMedia = window.matchMedia.bind(window)
+    window.matchMedia = query => {
+      const media = nativeMatchMedia(query)
+      if (query === '(prefers-reduced-motion: reduce)' && !media.matches) Object.defineProperty(media, 'matches', { value: true })
+      return media
+    }
+  }
   let revision = 0, overrides: DIYOverrides = params.has('populated') ? { fingerprint: 'firefox', tcpFastOpen: false, muxXudpConcurrency: -1 } : {}
   let splitProfiles: DIYSplitProfile[] = params.has('split') ? [{ id: 'split-one', uploadEndpointId: 'a-primary', downloadEndpointId: 'a-secondary', mode: 'auto' }] : []
   const splitHosts: DIYView['splitHosts'] = params.has('empty') ? [] : [
@@ -15,6 +24,7 @@ export function installDIYAudit(params: URLSearchParams, trace: { calls: string[
   const operations = new Map<string, { receipt: OperationReceipt; routingChanged: boolean; deploymentChanged: boolean }>()
   const pause = () => new Promise(resolve => setTimeout(resolve, params.has('slow') ? 1800 : 30))
   async function preview(value: DIYOverrides, signal?: AbortSignal): Promise<DIYPreview & { fields: DIYView['fields'] }> {
+    if (params.has('local-preview')) return localDIYPreview(value, params.has('empty'))
     const query = new URLSearchParams()
     if (params.has('inherited-stream-one')) query.set('mode', 'stream-one')
     if (params.has('empty')) query.set('empty', '1')

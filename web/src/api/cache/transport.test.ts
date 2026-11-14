@@ -14,14 +14,20 @@ beforeEach(() => { setCacheSession(null); setCacheSession('member:one') })
 afterEach(() => setCacheSession(null))
 
 describe('response cache transport', () => {
+  it('retains dashboard display data without retaining its legacy bearer URL', async () => {
+    const live = { balance: 10, subscriptionUrl: 'https://example.test/private-token' }
+    expect(await cachedTransport(path, {}, async () => live)).toEqual(live)
+    expect(readResponseCache(key)).toEqual({ balance: 10, subscriptionUrl: null })
+    expect(live.subscriptionUrl).toBe('https://example.test/private-token')
+  })
   it('always awaits a new backend response while the snapshot stays available', async () => {
     await cachedTransport(path, {}, async () => ({ balance: 10 }))
     const next = deferred<{ balance: number }>()
     const fresh = cachedTransport(path, {}, () => next.promise)
-    expect(readResponseCache(key)).toEqual({ balance: 10 })
+    expect(readResponseCache(key)).toEqual({ balance: 10, subscriptionUrl: null })
     next.resolve({ balance: 20 })
     expect(await fresh).toEqual({ balance: 20 })
-    expect(readResponseCache(key)).toEqual({ balance: 20 })
+    expect(readResponseCache(key)).toEqual({ balance: 20, subscriptionUrl: null })
   })
 
   it('shares overlapping reads but keeps sequential refreshes live', async () => {
@@ -65,6 +71,15 @@ describe('response cache transport', () => {
     old.resolve(1)
     await read
     expect(readResponseCache(key)).toBeUndefined()
+  })
+
+  it('keeps rendering snapshots through read-only DIY previews without caching preview contents', async () => {
+    await cachedTransport(path, {}, async () => ({ balance: 10, subscriptionUrl: 'private' }))
+    for (const previewPath of ['/api/v1/xnode/diy/preview', '/api/v1/xnode/routing/preview']) {
+      await cachedTransport(previewPath, { method: 'POST', cache: 'no-store' }, async () => ({ valid: true }))
+      expect(readResponseCache(key)).toEqual({ balance: 10, subscriptionUrl: null })
+      expect(responseCacheKey(previewPath, { method: 'POST', cache: 'no-store' })).toBeNull()
+    }
   })
 
   it('keeps ordinary errors visible without saving failed data', async () => {

@@ -6,7 +6,7 @@ defineProps<{ features: readonly { icon: string; title: string; detail?: string 
 
 <template>
   <section v-if="features.length" class="squad-features" :aria-label="$t('catalog.features')">
-    <div class="squad-features__heading"><span>{{ $t('catalog.features') }}</span></div>
+    <div class="squad-features__heading sr-only"><span>{{ $t('catalog.features') }}</span></div>
     <ul>
       <li v-for="(feature, index) in features" :key="index">
         <span class="squad-features__icon"><UIcon :name="squadFeatureIcon(feature.icon)" aria-hidden="true" /></span>
@@ -17,7 +17,7 @@ defineProps<{ features: readonly { icon: string; title: string; detail?: string 
 </template>
 
 <style scoped>
-.squad-features { min-width: 0; padding-block: .5rem; border-top: 1px solid var(--line); }
+.squad-features { min-width: 0; padding-block: .4rem .15rem; border-top: 1px solid var(--line); }
 .squad-features__heading { margin-bottom: .45rem; color: var(--text-faint); font: 650 .625rem var(--font-mono); }
 .squad-features ul { display: grid; gap: .4rem; margin: 0; padding: 0; list-style: none; }
 .squad-features li { display: grid; grid-template-columns: 1.125rem minmax(0, 1fr); align-items: start; gap: .4rem; min-width: 0; }

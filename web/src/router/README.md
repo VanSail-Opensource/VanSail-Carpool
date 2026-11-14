@@ -5,6 +5,7 @@ Catalog and billing endpoints enforce purchase eligibility; route or cached stat
 never grants purchase permission.
 
 - `index.ts` declares routes and installs the session guard.
+- `memberViews.ts` shares the member lazy loaders with bounded, idle code preloading after authenticated onboarding. Data Saver and slow connections skip optional warming; failed chunks retain normal foreground recovery. Session changes cancel queued work, and administrator routes are excluded.
 - `history.ts` selects WebView-safe in-memory history or browser history.
 - `recovery.ts` performs one-shot recovery for stale lazy route chunks.
 - `guards.ts` resolves onboarding, administrator, and member access.

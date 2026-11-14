@@ -14,7 +14,7 @@ export type HourlyView = DeepReadonly<HourlyAccountView>
 export type HourlySquad = DeepReadonly<HourlySquadView>
 
 export const hourlyApi = {
-  get: (signal?: AbortSignal) => request<HourlyView>('/api/v1/hourly', { cache: 'no-store', signal }),
+  get: (signal?: AbortSignal) => request<HourlyView>('/api/v1/hourly', { cache: 'no-cache', signal }),
   activate: (groupId: string, policyVersion: string, offerRevision: string, key: string, activationCode?: string) =>
     request<OperationReceipt>('/api/v1/hourly/activate', {
       method: 'POST', headers: { 'Idempotency-Key': key },

@@ -25,8 +25,7 @@
     "admin": "Admin",
     "skip": "Skip to content",
     "member": "Telegram member",
-    "memberFallback": "TX Member",
-    "fullscreenGreeting": "Hi, {name}"
+    "memberFallback": "TX Member"
   },
   "auth": {
     "telegramAccess": "Telegram access",

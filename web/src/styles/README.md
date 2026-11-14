@@ -8,7 +8,7 @@
 - `foundation-02.css` defines shared controls, surfaces, and utility patterns.
 - `shell-01.css` styles the application shell and primary navigation.
 - `shell-02.css` styles page framing, notices, and session states.
-- `shell-03.css` styles the fullscreen-only localized greeting and its safe-area reserve.
+- `shell-03.css` retains only real Telegram/device safe-area insets. The greeting and its fixed-height reserve are removed from desktop and mobile.
 - `onboarding-01.css` styles onboarding structure and progress.
 - `onboarding-02.css` styles onboarding forms and agreements.
 - `onboarding-03.css` styles onboarding completion and supporting states.

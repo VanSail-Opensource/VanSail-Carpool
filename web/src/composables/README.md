@@ -5,6 +5,13 @@
 
 - `motionPresets.ts` owns the shared timing tokens and critically damped layout spring.
 - `useMotionPreferences.ts` is the central reduced-motion boundary for Motion Vue components; it returns reduced-safe transitions and bounded offsets without storing animation state in components.
+- `useIllustrationPlayback.ts` shares read-only Explore/DIY demo playback. It
+  resets on opening or scenario changes, stops at the final step, supports
+  pause/replay/manual selection, suspends timers while the document is hidden,
+  and defaults to manual steps for reduced motion. It owns no billing or routing
+  requests and disposes its timer and visibility listener with the consumer.
+- `useIllustrationPlayback.test.ts` covers replay restarting the current step's
+  timer in hosted CI.
 
 Page loaders restore typed session snapshots through `api/cache/restore.ts` before
 their existing requests. Cached content renders during refresh; backend responses

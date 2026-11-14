@@ -9,7 +9,7 @@ facts without purchase entrances; legacy Home add-on query links redirect to
 Settings. This keeps dashboard actions separate from subscription settings.
 
 - `UserHome.vue` composes Home in one balance-first flow. Ordered active squad labels arrive in its owner-scoped dashboard response, and usage summaries carry node labels and country metadata. Home no longer fetches the full Explore catalog or persists duplicate squad data. Retired traffic multiplier metadata remains constant 1 only for API compatibility and is not displayed.
-- `BalanceHero.vue` opens the real funding sheet from Home and refetches a provider-returned reissue order before prepopulating it; `SubscriptionPanel.vue` is reused on Subscription for the active URL and Connections/Revoke actions on both mobile and desktop. Home exposes the subscription entrance only when the account has a positive balance or a server-confirmed active combo; otherwise `AddBalanceGuide.vue` shows a localized animated icon guide that opens the same funding sheet, and `BalanceHero` hides its own action so the guide owns the only Add Balance button. The guide's two billing-mode rows animate in with a staggered reveal and a looping icon pulse/ring, state their advantage (no commitment for Charge by traffic; stop anytime for Charge by hour), and fall back to static rows under reduced motion. The sidebar's Subscription/Connections/Revoke children follow the same access gate.
+- `BalanceHero.vue` opens the real funding sheet from Home and refetches a provider-returned reissue order before prepopulating it; `SubscriptionPanel.vue` is reused on Subscription for the active URL and mobile Connections/Revoke actions, with desktop actions in the sidebar. Home exposes the subscription entrance only when the account has a positive balance or a server-confirmed active combo; otherwise `AddBalanceGuide.vue` shows a localized animated icon guide that opens the same funding sheet, and `BalanceHero` hides its own action so the guide owns the only Add Balance button. The guide's two billing-mode rows animate in with a staggered reveal and a looping icon pulse/ring, state their advantage (no commitment for Charge by traffic; stop anytime for Charge by hour), and fall back to static rows under reduced motion. The sidebar's Subscription/Connections/Revoke children follow the same access gate.
 
 `UsagePanel.vue` retains the legacy quota meter and stale-data disclosure. The old per-node breakdown bar and reset controls are retired; detailed traffic belongs to Usage Breakdown.
 - `HomePreferences.vue` is the compact new-user preferences strip on Home, rendered only for a non-administrator member without combo access or a positive balance: a centered inline `LanguageControl.vue` · `CurrencyControl.vue` group without the Settings row labels, placed below `AddBalanceGuide.vue`. It exposes a localized group name for assistive technology, keeps 44px controls that wrap at 390px, and removes its short fade under reduced motion. Members with access keep the labelled rows in Settings.
@@ -69,6 +69,12 @@ The zero-balance Home fixture now shows the add-balance guide and no product
 entrances; a zero-balance active combo and a positive-balance inactive combo still
 show them. No local automated suites were run; hosted regressions provide
 execution coverage.
+
+`UsageBreakdownPanel.vue` places the traffic/cost control immediately beside its
+title through `UsageBreakdownMeasure.vue`, sharing the metric with the chart.
+Standalone charts retain their own control. Legend entries are sorted by exact
+descending shares for the selected measure, with stable identity tie-breaking
+and unchanged colors across reordering.
 
 `UsageBreakdownPie.vue` owns only metric selection and presentation. Traffic
 includes all billing modes. Cost keeps recorded charges; the removed explanatory

@@ -4,6 +4,7 @@ import { defineStore } from 'pinia'
 import { api, ApiError } from '@/api/client'
 import { setCacheSession } from '@/api/cache/session'
 import { preloadSession, stopSessionPreload } from '@/api/cache/preload'
+import { preloadMemberViews, stopMemberViewPreload } from '@/router/memberViews'
 import type { Session } from '@/api/types'
 import { localizedError, t } from '@/i18n'
 import { isBrowserExperience } from '@/utils/experience'
@@ -55,6 +56,7 @@ export const useSessionStore = defineStore('session', () => {
     } catch (caught) {
       if (current !== revision) return
       stopSessionPreload()
+      stopMemberViewPreload()
       setCacheSession(null)
       session.value = null
       status.value = 'error'
@@ -73,8 +75,12 @@ export const useSessionStore = defineStore('session', () => {
     status.value = 'ready'
     error.value = null
     errorCode.value = null
-    if (next.captcha?.required) stopSessionPreload()
-    else if (changed && !isBrowserExperience()) preloadSession(next)
+    if (next.captcha?.required) { stopSessionPreload(); stopMemberViewPreload() }
+    else if (changed && !isBrowserExperience()) {
+      preloadSession(next)
+      if (next.user.onboardingState === 'complete') preloadMemberViews()
+      else stopMemberViewPreload()
+    }
   }
 
   function clear(): void {
@@ -82,6 +88,7 @@ export const useSessionStore = defineStore('session', () => {
     pending = null
     globalThis.dispatchEvent(new Event('txc:session-cleared'))
     stopSessionPreload()
+    stopMemberViewPreload()
     setCacheSession(null)
     session.value = null
     status.value = 'idle'

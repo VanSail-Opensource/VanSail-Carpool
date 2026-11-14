@@ -18,6 +18,13 @@ direct action. Existing Home query links redirect to the Settings action.
 - `navigation.ts` owns the localized member mobile and hierarchical desktop sidebar item definitions. The Home submenu's Subscription, Connections and Revoke entries render only when the account has a positive balance or a server-confirmed active combo; Home itself remains available. New users (no combo access, no positive balance, not an administrator) see only Home and Explore in both the mobile tab bar and desktop sidebar, so Settings, Activity and Around TX stay hidden until access arrives; administrators keep the complete navigation. Browser administrator navigation is independent.
 - `AppShell.test.ts` verifies focus restoration, Telegram BackButton behavior and the shared member navigation for administrators.
 - `navigation.test.ts` checks the new-user gating directly: only Home and Explore are exposed until access exists, while members with access keep Settings.
+- `useNavigationExpansion.ts` supplies controlled expansion for the member's
+  vertical Nuxt menu. Every item uses a stable value rather than its array index.
+  Home quick actions and Around TX open when their independent eligibility and
+  preference reads first add them; subsequent refreshes, localization and menu
+  insertions preserve explicit user collapses. Removed groups lose their open
+  state. `useNavigationExpansion.test.ts` covers asynchronous arrival, retained
+  manual choices and eligibility removal/re-entry in hosted CI.
 
 Route and native Back actions use soft navigation feedback; locale feedback is emitted only after the locale actually changes.
 

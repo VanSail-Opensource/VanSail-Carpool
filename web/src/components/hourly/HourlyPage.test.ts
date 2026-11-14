@@ -21,7 +21,7 @@ function setup(query = '') {
   const view = hourlyFixture(new URLSearchParams(query)).view
   snapshot = shallowRef(view)
   state = {
-    value: snapshot, loading: shallowRef(false), refreshing: shallowRef(false), error: shallowRef(null), hasData: shallowRef(true),
+    value: snapshot, loading: shallowRef(false), liveReady: shallowRef(true), refreshing: shallowRef(false), error: shallowRef(null), hasData: shallowRef(true),
     busy: shallowRef(false), submitting: shallowRef(false), actionError: shallowRef(null), refresh: vi.fn(),
     activate: vi.fn().mockResolvedValue(true), disable: vi.fn().mockResolvedValue(true), extra: vi.fn().mockResolvedValue(true),
     operation: { receipt: shallowRef(query.includes('failed') ? { id: 'failed', kind: 'hourly_access', status: 'failed', errorCode: 'HOURLY_LEGACY_ACTIVE', createdAt: '', updatedAt: '', completedAt: null } satisfies OperationReceipt : null), polling: shallowRef(false), checking: shallowRef(false), error: shallowRef(null), terminal: shallowRef(false), track: vi.fn(), refresh: vi.fn(), reset: vi.fn() },

@@ -37,8 +37,15 @@ Vue Router so Telegram keeps the launch URL. `HomeSubscriptionEntrance.test.ts`
 covers navigation without a document link. `SubscriptionPage.vue` composes the
 owner-only link, format diagnostics and accessible host links. `HostLinkRow.vue`
 provides name editing, clipboard feedback and on-demand QR codes.
+Custom-route and split-XHTTP indicators are inline immediately after country
+flags, with localized keyboard-accessible tooltips. Desktop subscription actions
+reuse the sidebar entrances; mobile retains Connections and Revoke in the link
+panel, and the sidebar revoke query still opens the same confirmation dialog.
 `useSubscriptionData.ts` polls only while visible and clears private data on disposal;
 `useSubscriptionData.test.ts` covers those lifecycle and stale-response boundaries.
+`useSubscriptionDataCache.test.ts` covers immediate optional snapshot rendering,
+live confirmation before actions, snapshot expiry, failed refresh recovery and
+ignored replies/polling after account replacement in hosted CI.
 The typed `subscription.ts` client uses no-store responses; `subscription.json`
 provides English and Chinese copy.
 
@@ -69,6 +76,10 @@ only. Mini App subscription actions use the existing automatic link; public-page
 format selection and explicit-format URLs remain available.
 
 `SubscriptionTuningDiagnostics.vue` shows omitted client options in Mini App availability and the public page. Custom routing is composed by DIY Center; `useMemberRouting.ts` accepts an external draft/save owner while preserving the existing routing API.
+Compatibility omissions are grouped by their actual output client/format, each
+with a separately expandable section. Public-page diagnostics remain scoped to
+the selected format and open that section by default; no client support is
+inferred beyond the server-provided diagnostic records.
 
 The DIY Center entrance lives on Settings. This page retains subscription links,
 host inventory and availability diagnostics.

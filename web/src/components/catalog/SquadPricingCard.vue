@@ -4,6 +4,7 @@ import { computed } from 'vue'
 import type { SquadProduct } from '@/api/types'
 import SquadProfileFacts from '@/components/squad-profile/SquadProfileFacts.vue'
 import SquadProfileSummary from '@/components/squad-profile/SquadProfileSummary.vue'
+import { profileTypeMeta } from '@/components/squad-profile/profile'
 import { selectionHaptic } from '@/utils/telegram'
 import SquadFeatures from './SquadFeatures.vue'
 
@@ -52,6 +53,7 @@ function toggle(): void {
         'squad-pricing-card--selected': selected,
         'squad-pricing-card--included': included,
         'squad-pricing-card--nonselectable': informational || included || isFull,
+        'squad-pricing-card--informational': informational,
       },
     ]"
     :aria-label="squad.name"
@@ -74,6 +76,7 @@ function toggle(): void {
         presentation="member"
         :show-facts="false"
       >
+        <template #namePrefix><UIcon class="squad-card__type-icon" :name="squad.profile ? profileTypeMeta(squad.profile.type).icon : 'i-ph-stack'" aria-hidden="true" /></template>
         <template v-if="!informational || $slots.status" #nameTags>
           <slot name="status" />
           <UIcon v-if="!informational && !squad.visible" name="i-ph-lock-key" :aria-label="$t('catalog.hidden')" />
@@ -81,18 +84,15 @@ function toggle(): void {
           <UBadge v-if="!informational && isFull" size="sm" class="shrink-0 rounded-full px-1.5 py-0.5 font-bold" color="error" variant="solid" icon="i-ph-user-minus" :aria-label="$t('catalog.full')" />
           <UBadge v-else-if="!informational && !included" size="sm" class="shrink-0 rounded-full px-1.5 py-0.5 font-bold" :color="remainingBadge.color" variant="solid" :icon="remainingBadge.icon" :aria-label="`${$t('catalog.remaining')} ${remainingBadge.label}`" />
         </template>
-        <template v-if="informational && $slots.price" #headingMeta>
-          <span class="squad-card__price"><slot name="price" /></span>
-        </template>
       </SquadProfileSummary>
-      <div v-if="!informational && !included && $slots.price" class="squad-card__price">
+      <div v-if="!included && $slots.price" class="squad-card__price">
         <slot name="price" />
       </div>
     </div>
 
     <SquadProfileFacts :profile="squad.profile" presentation="member" />
     <SquadFeatures v-if="informational || squad.visible" :features="squad.features ?? []" />
-    <slot />
+    <div v-if="$slots.default" class="squad-card__activity"><slot /></div>
     <div v-if="!informational" class="squad-card__footer" aria-hidden="true">
       <span>{{ included ? $t('catalog.includedSquads') : isFull ? $t('catalog.full') : selected ? $t('catalog.selectedBadge') : $t('catalog.selectSquad') }}</span>
       <UIcon :name="included || selected ? 'i-ph-check-circle' : isFull ? 'i-ph-lock-key' : 'i-ph-plus-circle'" />
@@ -135,16 +135,23 @@ function toggle(): void {
 .squad-card__header :deep(.squad-profile-summary--member .squad-profile-summary__name-row--with-tags) { flex-wrap: wrap; }
 .squad-card__header :deep(.squad-profile-summary--member .squad-profile-summary__name-row--with-tags .squad-profile-summary__name-copy strong) { overflow: visible; overflow-wrap: anywhere; white-space: normal; }
 .squad-card__price { min-width: 0; padding-top: 0.05rem; text-align: right; }
-.squad-card__header--informational { display: block; }
-.squad-card__header--informational :deep(.squad-profile-summary__name-row) { flex-wrap: nowrap; align-items: center; gap: .2rem; }
+.squad-card__header--informational { align-items: start; }
+.squad-card__header--informational :deep(.squad-profile-summary__name-row) { flex-wrap: wrap; align-items: center; gap: .2rem; }
 .squad-card__header--informational :deep(.squad-profile-summary__name-copy) { flex: 0 1 auto; }
-.squad-card__header--informational :deep(.squad-profile-summary__name-row .squad-profile-summary__name-copy strong) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.squad-card__header--informational .squad-card__price { flex: none; margin-inline-start: auto; padding-top: 0; color: var(--text); }
+.squad-card__header--informational :deep(.squad-profile-summary__name-row .squad-profile-summary__name-copy strong) { overflow-wrap: anywhere; white-space: normal; }
+.squad-card__header--informational .squad-card__price { max-width: 12rem; padding-top: .05rem; color: var(--text); }
+.squad-card__type-icon { flex: none; color: var(--squad-profile-tone); font-size: 1.1rem; }
+.squad-card__activity { margin-top: auto; padding-top: .55rem; border-top: 1px solid var(--line); }
+.squad-pricing-card--informational { align-self: stretch; gap: .65rem; padding: .85rem; }
+.squad-pricing-card--informational :deep(.squad-profile-summary__heading-copy strong) { font-size: .86rem; }
+.squad-pricing-card--informational :deep(.squad-profile-facts--member > span) { padding: .05rem 0; border: none; background: none; }
+.squad-pricing-card--informational :deep(.squad-profile-facts--member) { gap: .35rem .7rem; }
 .squad-card__price > strong { display: block; white-space: nowrap; font-family: var(--font-mono); font-size: 1.1rem; }
 .squad-card__footer { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding-top: .45rem; border-top: 1px solid var(--line); color: var(--squad-profile-tone, var(--text-muted)); font-size: .68rem; font-weight: 650; }
 .squad-card__footer .iconify { flex: none; font-size: .95rem; }
 @media (min-width: 900px) {
-  .squad-pricing-card { gap: 0.4rem; padding: 0.55rem; }
-  .squad-card__header { gap: 0.45rem; }
+  .squad-pricing-card--informational { padding: 1rem; }
+  .squad-card__header { gap: .75rem; }
 }
+@media (hover: hover) { .squad-pricing-card:hover { border-color: var(--squad-profile-tone-line); background: var(--surface-raised); } }
 </style>

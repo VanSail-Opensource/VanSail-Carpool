@@ -66,7 +66,7 @@ export function usageBreakdownSegments(history: UsageBreakdown, metric: UsageBre
     interactionId: `hourly:${squad.groupId}`, name: squad.name, kind: 'hourly' as const,
     amount: metric === 'cost' ? readUsageAmount(squad.costMinor) : usageAmount(BigInt(squad.uploadBytes) + BigInt(squad.downloadBytes)),
   }))]
-  const rows = entries.map(row => ({ ...row, color: colors.get(row.interactionId)! })).filter(row => row.amount.numerator > 0n).sort((a, b) => a.interactionId < b.interactionId ? -1 : a.interactionId > b.interactionId ? 1 : 0)
+  const rows = entries.map(row => ({ ...row, color: colors.get(row.interactionId)! })).filter(row => row.amount.numerator > 0n)
   const omitted = metric === 'cost' ? readUsageAmount(history.omitted.costMinor) : usageAmount(BigInt(history.omitted.uploadBytes) + BigInt(history.omitted.downloadBytes))
   const total = metric === 'cost' ? readUsageAmount(history.cost.knownTotalMinor) : rows.reduce((sum, row) => addUsageAmounts(sum, row.amount), omitted)
   let others = omitted
@@ -79,6 +79,12 @@ export function usageBreakdownSegments(history: UsageBreakdown, metric: UsageBre
   if (others.numerator > 0n) output.push({ interactionId: 'group:others', name: '', kind: 'others', amount: others, color: '#88929b' })
   const unallocated = metric === 'cost' ? readUsageAmount(history.cost.unallocatedMinor) : zeroUsageAmount()
   if (unallocated.numerator > 0n) output.push({ interactionId: 'group:unallocated', name: '', kind: 'unallocated', amount: unallocated, color: '#626a74' })
+  // Compare exact fractions: drawing shares can round very large/close values
+  // to the same float. Identity is a stable tie-breaker, never the ranking.
+  output.sort((a, b) => {
+    const difference = b.amount.numerator * a.amount.denominator - a.amount.numerator * b.amount.denominator
+    return difference < 0n ? -1 : difference > 0n ? 1 : a.interactionId.localeCompare(b.interactionId)
+  })
   const segments: UsageBreakdownSegment[] = output.map(row => {
     const share = usageShare(row.amount, total)
     return { ...row, share, percentage: share * 100 }

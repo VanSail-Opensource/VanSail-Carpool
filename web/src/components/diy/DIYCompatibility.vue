@@ -12,7 +12,7 @@ const selected = computed(() => props.items.filter(item => item.format === forma
 </script>
 <template>
   <section class="grid gap-3 min-w-0">
-    <UFormField :label="t('diy.clientFormat')"><USelect v-model="format" :items="formats" class="w-full" @update:model-value="selectionHaptic" /></UFormField>
+    <UFormField :label="t('diy.clientFormat')" class="sm:max-w-xs"><USelect v-model="format" :items="formats" icon="i-ph-devices" class="w-full" @update:model-value="selectionHaptic" /></UFormField>
     <TuningCompatibilityList :items="selected" />
   </section>
 </template>
