@@ -31,6 +31,8 @@ to it on both screen sizes and new members receive a separate Home invitation.
   its clock. Sources are directly available below the transport.
 - `KnowledgeScene.vue` composes the shared Three.js renderer, localized scene
   labels, exact illustrative payment arithmetic and simulated pointer actions.
+  Payment amounts, subscription actions and network legends sit below the 3D
+  viewport so labels never obscure objects or imply the wrong recipient.
 - `knowledgeSceneLabels.ts` maps the visual stage to its localized role.
 - `KnowledgeSubscriptionAction.vue` demonstrates balance, alternative billing
   modes, optional routing, official clients, subscription import/refresh and

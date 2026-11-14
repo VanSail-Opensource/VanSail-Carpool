@@ -101,6 +101,17 @@ export async function inspectVisibleChapter(page, locale) {
   }
   const overflow = await page.locator('.demo-player__detail, .demo-player__points > li').evaluateAll(elements => elements.some(element => element.scrollWidth > element.clientWidth + 1))
   assert.equal(overflow, false, 'visible tutorial details overflow at this viewport')
+  const annotations = await page.locator('.knowledge-payment-equation, .subscription-action, .knowledge-scene__legend').evaluateAll(elements => elements.map(element => {
+    const scene = element.closest('.knowledge-scene')?.querySelector('.demo-three-scene')?.getBoundingClientRect()
+    const bounds = element.getBoundingClientRect()
+    return {
+      annotation: element.className,
+      belowScene: Boolean(scene && bounds.top >= scene.bottom - 1),
+      withinSceneWidth: Boolean(scene && bounds.left >= scene.left - 1 && bounds.right <= scene.right + 1),
+      fitsContent: element.scrollWidth <= element.clientWidth + 1,
+    }
+  }))
+  assert.deepEqual(annotations.filter(item => !item.belowScene || !item.withinSceneWidth || !item.fitsContent), [], 'tutorial annotation overlaps the 3D scene or overflows horizontally')
   return await player(page).innerText()
 }
 

@@ -124,7 +124,9 @@ three icon-led details, shorter durations, direct source links, reduced motion,
 keyboard seek/pause/replay, dialog focus return, and the explicit new-member
 tutorial entrance. The six subscription steps each retain a preview image.
 `browser-knowledgebase-helpers.mjs` shares the fixture settlement, transport,
-visible-content, source-link and renderer assertions.
+visible-content, source-link and renderer assertions. Every chapter checks that
+payment equations, subscription actions and network legends sit below the 3D
+scene without horizontal overflow; narrow payment frames retain gas/fee evidence.
 `browser-knowledgebase-rendering.mjs` verifies real Three.js canvas rendering,
 pixel-stable paused poses, seek-driven redraw, silent unsupported-WebGL fallback,
 actual context loss/recovery, closing during a deferred renderer import, and

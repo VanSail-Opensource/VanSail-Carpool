@@ -104,6 +104,7 @@ export async function knowledgebaseRenderingScenarios(scenario, size) {
         for (let index = 0; index < chapterCounts[id]; index++) {
           await chapters.nth(index).click()
           await inspectVisibleChapter(page, locale)
+          if (id === 'payment' && [2, 4].includes(index)) await capture(`payment-${index === 2 ? 'wallet-gas' : 'exchange-fee'}-narrow`)
         }
         assert.equal(await page.getByRole('dialog').evaluate(element => element.getBoundingClientRect().width <= globalThis.innerWidth), true, 'dialog exceeds the narrow viewport')
         await capture(`${id}-narrow`)
