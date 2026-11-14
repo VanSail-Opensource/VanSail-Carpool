@@ -92,8 +92,10 @@ film. These chapters and selectors are local presentation state; the demo does
 not call APIs or modify the draft. Shared `useIllustrationPlayback.ts` handles a
 continuous seekable clock, exact pause/resume, replay, manual chapter snapshots,
 hidden-page suspension and reduced motion. `DemoTransport` and `DemoPointer`
-share playback and cursor/touch behavior with Explore. Full explanations remain
-available to assistive technology while the visible scene favors icons.
+share playback and cursor/touch behavior with Explore. The shared Three.js stage
+shows the selected path, with readable fallback symbols without WebGL. Each
+chapter lasts 3.2 seconds and keeps its explanation and three icon points visible.
+Pointers are anchored to their target fields and Save control on both layouts.
 
 Routing no longer repeats the select-node instructions above the graph or the
 save/trace prerequisites beneath speed testing. Existing accessible graph naming,

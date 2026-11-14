@@ -30,7 +30,7 @@ export function mobileNavigationItems(_isAdmin: boolean, showActivity = false, i
 }
 
 export function desktopNavigationItems(t: Translate, _isAdmin: boolean, showAroundTX = false, showActivity = false, showIPLookup = false, showSubscription = true, isNewUser = false): NavigationMenuItem[] {
-  const knowledge = { value: 'knowledgebase', label: t('knowledge.title'), to: '/knowledgebase', icon: 'i-ph-book-open-text-bold' }
+  const knowledge = { value: 'knowledgebase', label: t('knowledge.navTitle'), to: '/knowledgebase', icon: 'i-ph-book-open-text-bold' }
   if (isNewUser) {
     return [
       { value: 'home', label: t('nav.home'), to: '/home', icon: 'i-ph-house', exactQuery: true },

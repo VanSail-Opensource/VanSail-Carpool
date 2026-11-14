@@ -2,6 +2,12 @@ export interface KnowledgeSource { labelKey: string; url: string }
 
 /** Primary documentation backs general guidance; TX operating policies come from the project. */
 export const knowledgeSources: Record<string, readonly KnowledgeSource[]> = {
+  subscription: [
+    { labelKey: 'knowledge.sourcesLabels.flclash', url: 'https://chen08209.github.io/FlClash/' },
+    { labelKey: 'knowledge.sourcesLabels.v2rayn', url: 'https://github.com/2dust/v2rayN' },
+    { labelKey: 'knowledge.sourcesLabels.v2rayng', url: 'https://github.com/2dust/v2rayNG' },
+    { labelKey: 'knowledge.sourcesLabels.clientImport', url: 'https://github.com/2dust/v2rayN/wiki/Description-of-subscription' },
+  ],
   networks: [
     { labelKey: 'knowledge.sourcesLabels.telecom', url: 'https://www.chinatelecom-ctap.com/global-ip-transit' },
     { labelKey: 'knowledge.sourcesLabels.unicom', url: 'https://kr.chinaunicomglobal.com/products-dia.php' },

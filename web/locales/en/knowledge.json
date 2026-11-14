@@ -1,62 +1,70 @@
 {
   "knowledge": {
-    "title": "Knowledgebase",
-    "subtitle": "See how it works. Make it yours.",
-    "watch": "Watch guide",
+    "title": "Tutorials & knowledgebase",
+    "navTitle": "Tutorials",
+    "subtitle": "Watch it. Try it. Make TX yours.",
+    "watch": "Play tutorial",
     "loadingGuide": "Loading {title}…",
     "loadFailed": "This guide could not load. Try again, or reload if it still will not open.",
-    "start": "Start here",
-    "homeTitle": "Your first minute with TX",
-    "homeNote": "Pick a network. Pay confidently. Get connected.",
-    "homeEyebrow": "NEW TO TX?",
+    "start": "Open tutorials",
+    "homeTitle": "Your tutorials start here",
+    "homeNote": "New to TX? Start with setup, then explore billing, routing and more.",
+    "homeEyebrow": "NEW TO TX · TUTORIALS",
     "sources": "Sources",
-    "details": "Read the explanation",
     "duration": "{seconds}s",
-    "topicCount": "{count} visual guides",
-    "more": "Explore all guides",
+    "topicCount": "{count} quick tutorials",
+    "more": "All tutorials",
     "topics": {
+      "subscription": {
+        "title": "Get connected in six steps",
+        "subtitle": "From your first top-up to your first connection",
+        "points": {"first": "Add balance, choose how to pay", "second": "Get a client and import your link", "third": "Pick a node and connect"}
+      },
       "networks": {
         "title": "Three networks. Different jobs.",
         "subtitle": "China Optimized, International, and Broadband",
-        "points": { "first": "Fast entry from China", "second": "Reach across regions", "third": "Choose a local ISP exit" }
+        "points": {"first": "Fast entry from China", "second": "Reach across regions", "third": "Choose a local ISP exit"}
       },
       "payment": {
         "title": "Get your payment right",
         "subtitle": "Stablecoins, fees, and the exact amount",
-        "points": { "first": "Match token and network", "second": "Check the amount received", "third": "Reserve the network fee" }
+        "points": {"first": "Match token and network", "second": "Check the amount received", "third": "Reserve the network fee"}
       },
       "sharing": {
         "title": "Sharing, with boundaries",
         "subtitle": "How controlled broadband sharing works",
-        "points": { "first": "Shared IPs are common", "second": "Dedicated node IPs", "third": "Limited members, controlled use" }
+        "points": {"first": "Shared IPs are common", "second": "Dedicated node IPs", "third": "Limited members, controlled use"}
       },
       "rules": {
         "title": "Keep the lane clear",
         "subtitle": "Everyday use welcome. Abuse stays out.",
-        "points": { "first": "Browse, stream, work, create", "second": "No bots, torrents, or resharing", "third": "Protocol and connection controls" }
+        "points": {"first": "Browse, stream, work, create", "second": "No bots, torrents, or resharing", "third": "Protocol and connection controls"}
       },
       "why": {
         "title": "Why choose TX?",
         "subtitle": "Flexible access. People behind the product.",
-        "points": { "first": "Pay by hour or traffic", "second": "Built and maintained by us", "third": "Privacy and direct support" }
+        "points": {"first": "Pay by hour or traffic", "second": "Built and maintained by us", "third": "Privacy and direct support"}
       },
       "hourly": {
         "title": "Pay by hour",
         "subtitle": "A closer look at hourly access",
-        "points": { "first": "Choose your squad", "second": "Watch how charges work", "third": "Stay in control" }
+        "points": {"first": "Choose your squad", "second": "Watch how charges work", "third": "Stay in control"}
       },
       "traffic": {
         "title": "Pay by traffic",
         "subtitle": "Follow your data from use to payment",
-        "points": { "first": "Choose an exit", "second": "See how traffic is counted", "third": "Understand traffic credits" }
+        "points": {"first": "Choose an exit", "second": "See how traffic is counted", "third": "Understand traffic credits"}
       },
       "routing": {
         "title": "Make your own route",
         "subtitle": "Entry, rules, and exit in motion",
-        "points": { "first": "Choose an entry", "second": "Match a routing rule", "third": "Choose the right exit" }
+        "points": {"first": "Choose an entry", "second": "Match a routing rule", "third": "Choose the right exit"}
       }
     },
     "labels": {
+      "addBalance": "Add balance",
+      "billingChoice": "Choose your billing",
+      "or": "or",
       "you": "You",
       "china": "China",
       "optimized": "Optimized",
@@ -119,7 +127,26 @@
       "code": "Our own code",
       "quality": "Quality matters",
       "privacy": "Privacy",
-      "support": "Direct support"
+      "support": "Direct support",
+      "tutorial": "Quick tutorial",
+      "optional": "Optional",
+      "subscriptionLink": "Subscription link",
+      "importLink": "Paste link",
+      "refresh": "Update subscription",
+      "connect": "Connect",
+      "balanceReady": "Balance ready",
+      "hourlyPurchase": "Enable hourly",
+      "trafficReady": "Use traffic billing",
+      "routingOptional": "Routing · optional",
+      "clientDownload": "Download client",
+      "nodeSelected": "Node selected",
+      "privateLink": "Your private link",
+      "startHere": "START HERE",
+      "exchangeFee": "Withdrawal fee",
+      "save": "Save",
+      "applied": "Applied",
+      "defaultRoute": "Keep defaults",
+      "connected": "Connected"
     },
     "sourcesLabels": {
       "telecom": "China Telecom · CN2 transit",
@@ -136,7 +163,12 @@
       "ietf": "IETF · issues with address sharing",
       "detection": "Cloudflare · how service checks work",
       "project": "VanSail Carpool · project source",
-      "privacy": "VanSail Carpool · connection privacy"
-    }
+      "privacy": "VanSail Carpool · connection privacy",
+      "flclash": "FlClash · official downloads",
+      "v2rayn": "v2rayN · desktop client",
+      "v2rayng": "v2rayNG · Android client",
+      "clientImport": "v2rayN · subscription guide"
+    },
+    "clients": {"flclash": "FlClash · Mihomo", "v2rayn": "v2rayN · desktop", "v2rayng": "v2rayNG · Android"}
   }
 }

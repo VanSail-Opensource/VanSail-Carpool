@@ -4,7 +4,7 @@ import type { KnowledgeTopicId } from './knowledgeTopics'
 
 /** Import readiness belongs to the page; the mounted player owns its playback. */
 export function useKnowledgePlayer() {
-  const selected = shallowRef<KnowledgeTopicId>('networks')
+  const selected = shallowRef<KnowledgeTopicId>('subscription')
   const open = shallowRef(false)
   const trigger = shallowRef<globalThis.HTMLElement | null>(null)
   const loadingTopic = shallowRef<KnowledgeTopicId | null>(null)

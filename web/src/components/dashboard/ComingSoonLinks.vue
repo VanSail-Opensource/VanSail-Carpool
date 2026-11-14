@@ -14,7 +14,7 @@ const items = [
 
 const { enabled: ipLookupEnabled } = useIPLookupAvailability()
 const visibleItems = computed(() => [
-  { to: '/knowledgebase', labelKey: 'knowledge.title', noteKey: 'knowledge.subtitle', icon: 'i-ph-book-open-text-bold' },
+  { to: '/knowledgebase', labelKey: 'knowledge.navTitle', noteKey: 'knowledge.subtitle', icon: 'i-ph-book-open-text-bold' },
   ...(ipLookupEnabled.value ? [{ to: '/ip-lookup', labelKey: 'ipLookup.title', noteKey: 'ipLookup.subtitle', icon: 'i-ph-globe-hemisphere-west' }] : []),
   ...(props.hasValidCombo && preferences.showAroundTX ? items : []),
 ])
