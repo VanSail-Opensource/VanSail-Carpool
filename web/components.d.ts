@@ -145,6 +145,7 @@ declare module 'vue' {
     HomePreferences: typeof import('./src/components/dashboard/HomePreferences.vue')['default']
     HomeSubscriptionEntrance: typeof import('./src/components/subscription/HomeSubscriptionEntrance.vue')['default']
     HostLinkRow: typeof import('./src/components/subscription/HostLinkRow.vue')['default']
+    HourlyAccountingStatus: typeof import('./src/components/hourly/HourlyAccountingStatus.vue')['default']
     HourlyAdminPage: typeof import('./src/components/admin/hourly/HourlyAdminPage.vue')['default']
     HourlyAllowanceGraph: typeof import('./src/components/hourly/HourlyAllowanceGraph.vue')['default']
     HourlyLegacyBlock: typeof import('./src/components/hourly/HourlyLegacyBlock.vue')['default']
