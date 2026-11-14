@@ -51,7 +51,36 @@ HourlyAccountUsage: {
         "pattern": "^[0-9]+$"
       },
       "accountingPending": {
-        "type": "boolean"
+        "type": "boolean",
+        "description": "Compatibility flag: any unsealed reservation or recovery-unknown bytes in the current account generation, across all UTC days. A normal open credit also sets this flag; use accounting for display distinctions."
+      },
+      "accounting": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Read-only reservation breakdown for this account generation. Current fields belong to dayUTC; historical fields include every other UTC day. Historical holds do not reduce dayUTC's allowance. No amount is released by this projection.",
+        "required": ["openReservedBytes", "recoveryUnknownBytes", "historicalRecoveryUnknownBytes", "historicalUnsealedReservedBytes", "historicalUnsealedCount"],
+        "properties": {
+          "openReservedBytes": {
+            "type": "string", "pattern": "^[0-9]+$",
+            "description": "Bytes held by unsealed reservations on dayUTC, including ordinary live credits. Does not imply a synchronization failure."
+          },
+          "recoveryUnknownBytes": {
+            "type": "string", "pattern": "^[0-9]+$",
+            "description": "Bytes still unknown after a final recovery proof on dayUTC. They remain reserved; automatic reconciliation is not promised."
+          },
+          "historicalRecoveryUnknownBytes": {
+            "type": "string", "pattern": "^[0-9]+$",
+            "description": "Recovery-unknown bytes retained against UTC days other than dayUTC."
+          },
+          "historicalUnsealedReservedBytes": {
+            "type": "string", "pattern": "^[0-9]+$",
+            "description": "Bytes held by unsealed reservations from UTC days other than dayUTC."
+          },
+          "historicalUnsealedCount": {
+            "type": "string", "pattern": "^[0-9]+$",
+            "description": "Unsealed reservations from UTC days other than dayUTC, including records with zero remaining held bytes."
+          }
+        }
       }
     }
   }

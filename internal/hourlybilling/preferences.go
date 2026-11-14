@@ -61,10 +61,10 @@ func (s *Service) hourlyAccountUsage(ctx context.Context, owner model.User, poli
 		usage.FreeAllowanceBytes, usage.FreeUsedBytes, usage.FreeReservedBytes = value.FreeAllowanceBytes, value.FreeAdmittedBytes, value.FreeReservedBytes
 		usage.ExtraFundedBytes, usage.ExtraUsedBytes, usage.ExtraReservedBytes = value.ExtraFundedBytes, value.ExtraAdmittedBytes, value.ExtraReservedBytes
 	}
-	outstanding, err := s.store.OutstandingHourlyCredits(ctx, owner.ID, owner.AccountGeneration, "", 1)
+	accounting, pending, err := s.store.HourlyCreditAccounting(ctx, owner.ID, owner.AccountGeneration, day)
 	if err != nil {
 		return nil, err
 	}
-	usage.AccountingPending = len(outstanding) != 0
+	usage.AccountingPending, usage.Accounting = pending, &accounting
 	return usage, nil
 }

@@ -4,6 +4,51 @@ const conflict = 'The policy, price or account state changed. Refresh, review th
 const mutations = page => page.evaluate(() => globalThis.__hourlyAudit.calls.filter(call => call.method !== 'GET'))
 
 export async function hourlyRecoveryScenarios(scenario, size) {
+  await scenario(size, 'hourly-accounting-open', 'hourly-audit.html?active', async (page, capture) => {
+    const open = page.locator('[data-hourly-accounting-kind="open"]')
+    await open.waitFor()
+    assert.equal(await open.textContent(), 'Today, 40 KiB is reserved for open traffic credits.')
+    assert.equal(await page.locator('[data-hourly-accounting-kind]').count(), 1)
+    assert.equal(await page.getByText(/still being reconciled/).count(), 0)
+    assert.deepEqual(await mutations(page), [])
+    await capture('normal-reservation')
+  })
+  await scenario(size, 'hourly-accounting-unknown', 'hourly-audit.html?active&current-unknown&historical-unknown&historical-unsealed', async (page, capture) => {
+    const current = page.locator('[data-hourly-accounting-kind="recovery"]')
+    const historical = page.locator('[data-hourly-accounting-kind="historical-recovery"]')
+    const unsealed = page.locator('[data-hourly-accounting-kind="historical-unsealed"]')
+    await current.waitFor()
+    assert.match(await current.textContent(), /128 KiB remains reserved and unavailable/)
+    assert.equal(await historical.count(), 0)
+    assert.equal(await unsealed.count(), 0)
+    assert.equal(await page.locator('[data-hourly-accounting-kind]').count(), 2)
+    await capture('current-day-only')
+    await page.evaluate(() => {
+      const usage = globalThis.__hourlyAudit.fixture.view.usage
+      usage.accounting.openReservedBytes = '0'
+      usage.freeReservedBytes = usage.accounting.recoveryUnknownBytes
+      usage.extraReservedBytes = '0'
+      globalThis.dispatchEvent(new globalThis.Event('focus'))
+    })
+    await page.locator('[data-hourly-accounting-kind="open"]').waitFor({ state: 'hidden' })
+    assert.equal(await page.locator('[data-hourly-accounting-kind]').count(), 1)
+    assert.match(await current.textContent(), /128 KiB remains reserved and unavailable/)
+    assert.equal(await historical.count(), 0)
+    assert.equal(await unsealed.count(), 0)
+    assert.deepEqual(await mutations(page), [])
+    await capture('current-unknown-retained')
+  })
+  await scenario(size, 'hourly-accounting-history-ignored-zh', 'hourly-audit.html?first&historical-unknown&historical-unsealed&zh', async (page, capture) => {
+    await page.getByText('Tokyo Direct', { exact: true }).first().waitFor()
+    assert.equal(await page.locator('[data-hourly-accounting]').count(), 0)
+    assert.equal(await page.locator('.hourly-summary').count(), 0)
+    assert.deepEqual(await page.evaluate(() => {
+      const usage = globalThis.__hourlyAudit.fixture.view.usage
+      return [usage.accountingPending, usage.accounting.historicalRecoveryUnknownBytes, usage.accounting.historicalUnsealedReservedBytes]
+    }), [true, '262144', '524288'])
+    assert.deepEqual(await mutations(page), [])
+    await capture('historical-only-ignored')
+  })
   await scenario(size, 'hourly-price-consent', 'hourly-audit.html?active', async (page, capture) => {
     const toggle = page.getByRole('switch', { name: 'Buy extra full-speed traffic automatically', exact: true })
     await toggle.click()

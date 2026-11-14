@@ -32,6 +32,21 @@ beforeEach(() => vi.clearAllMocks())
 afterEach(() => resetDisplayCurrency())
 
 describe('hourly consent and access controls', () => {
+  it('does not show the member summary for historical-only accounting obligations', async () => {
+    const wrapper = setup('first&historical-unknown&historical-unsealed')
+    expect(state.value.value?.usage?.accountingPending).toBe(true)
+    expect(wrapper.findComponent(HourlySummary).exists()).toBe(false)
+    const current = state.value.value!
+    snapshot.value = { ...current, usage: { ...current.usage!, freeReservedBytes: '8192', accounting: { ...current.usage!.accounting!, recoveryUnknownBytes: '8192' } } }
+    await flushPromises()
+    expect(wrapper.findComponent(HourlySummary).exists()).toBe(true)
+    expect(wrapper.get('[data-hourly-accounting-kind="recovery"]').text()).toContain('8 KiB')
+    expect(wrapper.find('[data-hourly-accounting-kind="historical-recovery"]').exists()).toBe(false)
+    expect(wrapper.find('[data-hourly-accounting-kind="historical-unsealed"]').exists()).toBe(false)
+    expect(state.activate).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
   it('retires reviewed extra-traffic terms when a refresh changes the policy', async () => {
     const wrapper = setup('active')
     wrapper.findComponent(HourlySummary).vm.$emit('extra', true)

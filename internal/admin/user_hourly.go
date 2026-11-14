@@ -17,7 +17,7 @@ type adminHourlyRepository interface {
 	Balance(context.Context, string) (model.Money, error)
 	HourlyExtraPreference(context.Context, string, int64) (model.HourlyExtraPreference, error)
 	HourlyCreditDay(context.Context, string, int64, string) (model.HourlyCreditDay, error)
-	OutstandingHourlyCredits(context.Context, string, int64, string, int) ([]model.HourlyCreditReservation, error)
+	HourlyCreditAccounting(context.Context, string, int64, string) (model.HourlyAccountingStatus, bool, error)
 	ListAdminHourlyEnrollments(context.Context, string, int64) ([]database.AdminHourlyEnrollment, error)
 }
 
@@ -105,10 +105,10 @@ func adminHourlyUsage(ctx context.Context, repository adminHourlyRepository, own
 		usage.FreeAllowanceBytes, usage.FreeUsedBytes, usage.FreeReservedBytes = value.FreeAllowanceBytes, value.FreeAdmittedBytes, value.FreeReservedBytes
 		usage.ExtraFundedBytes, usage.ExtraUsedBytes, usage.ExtraReservedBytes = value.ExtraFundedBytes, value.ExtraAdmittedBytes, value.ExtraReservedBytes
 	}
-	outstanding, err := repository.OutstandingHourlyCredits(ctx, owner.ID, owner.AccountGeneration, "", 1)
+	accounting, pending, err := repository.HourlyCreditAccounting(ctx, owner.ID, owner.AccountGeneration, day)
 	if err != nil {
 		return nil, err
 	}
-	usage.AccountingPending = len(outstanding) != 0
+	usage.AccountingPending, usage.Accounting = pending, &accounting
 	return usage, nil
 }

@@ -36,6 +36,11 @@ func TestHourlyMemberViewRequiresSessionAndPublishesIndependentHourlyOffers(t *t
 	if !strings.Contains(w.Body.String(), `"freeAllowanceBytes":"9007199254740993"`) || view.Balance.Minor != "9007199254740993" || view.ExtraPreference.ExtraEnabled {
 		t.Fatal("hourly view lost decimal precision or enabled extras by default")
 	}
+	if view.Usage == nil || view.Usage.Accounting == nil || view.Usage.AccountingPending ||
+		*view.Usage.Accounting != (model.HourlyAccountingStatus{OpenReservedBytes: "0", RecoveryUnknownBytes: "0", HistoricalRecoveryUnknownBytes: "0", HistoricalUnsealedReservedBytes: "0"}) ||
+		!strings.Contains(w.Body.String(), `"historicalUnsealedCount":"0"`) {
+		t.Fatal("empty hourly view did not publish the safe decimal-string accounting breakdown")
+	}
 	if view.Squads[0].Squad.CreatedAt.IsZero() {
 		t.Fatal("synthesized squad metadata violates the public catalog shape")
 	}

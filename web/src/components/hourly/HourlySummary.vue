@@ -6,6 +6,7 @@ import { useI18n } from '@/i18n'
 import { formatMemberMoney } from '@/utils/displayCurrency'
 import { txbInputFromMinor } from '@/utils/format'
 import HourlyAllowanceGraph from './HourlyAllowanceGraph.vue'
+import HourlyAccountingStatus from './HourlyAccountingStatus.vue'
 const props = defineProps<{ data: HourlyView; busy: boolean }>()
 defineEmits<{ extra: [enabled: boolean] }>()
 const { t } = useI18n()
@@ -26,7 +27,7 @@ const fundingSuspended = computed(() => props.data.squads.some(item => item.enro
       <p v-if="data.extraPreference.extraEnabled" class="hourly-summary__hint">{{ t('hourly.acceptedPrice', { price: txbInputFromMinor(data.extraPreference.acceptedExtraPriceTXBMinor ?? '0') }) }}</p>
       <UButton v-if="consentChanged" color="neutral" variant="link" :disabled="busy" :label="t('hourly.reviewPrice')" @click="$emit('extra', true)" />
     </div>
-    <p v-if="data.usage?.accountingPending" class="hourly-summary__hint" role="status">{{ t('hourly.accountingPending') }}</p>
+    <HourlyAccountingStatus :usage="data.usage" />
   </section>
 </template>
 

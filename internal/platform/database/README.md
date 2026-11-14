@@ -1545,6 +1545,15 @@ Hourly credit persistence responsibilities:
   and assigns agent-global issue sequences in the same transaction.
 - `hourly_credit_read.go` provides exact reservation/day reads;
   `hourly_credit_outstanding.go` supplies bounded lifecycle and holding queries.
+- `hourly_credit_accounting.go` supplies the read-only member/admin display
+  breakdown, separating current-day open/recovery bytes from other-day
+  recovery/unsealed evidence. PostgreSQL numeric sums become exact decimal
+  strings, without narrowing or capping combined pools/days. The legacy pending
+  predicate and all credit/lifecycle mutations remain unchanged.
+- `hourly_credit_accounting_test.go` covers normal open credit, current and
+  historical recovery, historical unsealed zero-byte proofs, empty/settled state,
+  owner/generation isolation, read-only evidence conservation and totals above
+  int64. These regressions run in hosted CI only.
 - `hourly_credit_progress.go` validates and batches progress;
   `hourly_credit_progress_write.go` writes directional maxima atomically.
 - `hourly_credit_digest.go` defines canonical proof hashing;
