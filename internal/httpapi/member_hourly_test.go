@@ -37,7 +37,8 @@ func TestHourlyMemberViewRequiresSessionAndPublishesIndependentHourlyOffers(t *t
 		t.Fatal("hourly view lost decimal precision or enabled extras by default")
 	}
 	if view.Usage == nil || view.Usage.Accounting == nil || view.Usage.AccountingPending ||
-		*view.Usage.Accounting != (model.HourlyAccountingStatus{OpenReservedBytes: "0", RecoveryUnknownBytes: "0", HistoricalRecoveryUnknownBytes: "0", HistoricalUnsealedReservedBytes: "0"}) ||
+		*view.Usage.Accounting != (model.HourlyAccountingStatus{OpenReservedBytes: "0", RecoveryUnknownBytes: "0",
+			FreeRecoveryUnknownBytes: "0", ExtraRecoveryUnknownBytes: "0", HistoricalRecoveryUnknownBytes: "0", HistoricalUnsealedReservedBytes: "0"}) ||
 		!strings.Contains(w.Body.String(), `"historicalUnsealedCount":"0"`) {
 		t.Fatal("empty hourly view did not publish the safe decimal-string accounting breakdown")
 	}

@@ -7,7 +7,7 @@ const rules = [
   [/^web\/scripts\/browser-member-design-checks\.mjs$/, ['member-design']],
   [/^web\/src\/components\/activity\/BetGamesPanel\.vue$/, ['activity', 'member-design']],
   [/^web\/src\/components\/subscription\/HostLinkRow\.vue$/, ['member', 'member-design']],
-  [/^web\/src\/components\/hourly\/HourlyAllowanceGraph\.vue$/, ['hourly', 'settings', 'member-design']],
+  [/^web\/src\/components\/hourly\/(?:HourlyAllowanceGraph\.vue|hourlyAllowance\.ts)$/, ['hourly', 'settings', 'member-design']],
   [/^web\/src\/components\/common\/(?:Demo|illustrationTimeline)/, ['demonstrations', 'knowledgebase']],
   [/^web\/src\/components\/catalog\/(?:BillingDemo|HourlyBillingScene|TrafficBillingScene|billingDemo)/, ['demonstrations', 'knowledgebase']],
   [/^web\/src\/components\/diy\/RoutingDemo/, ['demonstrations', 'knowledgebase']],

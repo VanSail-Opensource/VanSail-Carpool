@@ -24,6 +24,8 @@ type HourlyAccountUsage struct {
 type HourlyAccountingStatus struct {
 	OpenReservedBytes               string `json:"openReservedBytes"`
 	RecoveryUnknownBytes            string `json:"recoveryUnknownBytes"`
+	FreeRecoveryUnknownBytes        string `json:"freeRecoveryUnknownBytes"`
+	ExtraRecoveryUnknownBytes       string `json:"extraRecoveryUnknownBytes"`
 	HistoricalRecoveryUnknownBytes  string `json:"historicalRecoveryUnknownBytes"`
 	HistoricalUnsealedReservedBytes string `json:"historicalUnsealedReservedBytes"`
 	HistoricalUnsealedCount         int64  `json:"historicalUnsealedCount,string"`

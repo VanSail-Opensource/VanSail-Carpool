@@ -109,6 +109,7 @@ func TestAdminHourlyProjectsPolicyWalletUsageAndSafeEnrollments(t *testing.T) {
 		credit: model.HourlyCreditDay{FreeAllowanceBytes: 1_000, FreeAdmittedBytes: 400, FreeReservedBytes: 50,
 			ExtraFundedBytes: 500, ExtraAdmittedBytes: 100, ExtraReservedBytes: 20},
 		accounting: model.HourlyAccountingStatus{OpenReservedBytes: "30", RecoveryUnknownBytes: "40",
+			FreeRecoveryUnknownBytes: "25", ExtraRecoveryUnknownBytes: "15",
 			HistoricalRecoveryUnknownBytes: "60", HistoricalUnsealedReservedBytes: "80", HistoricalUnsealedCount: 1},
 		pending: true,
 		enrollments: []database.AdminHourlyEnrollment{{EnrollmentID: "enrollment-a", GroupID: "group-a", Name: "Group A",

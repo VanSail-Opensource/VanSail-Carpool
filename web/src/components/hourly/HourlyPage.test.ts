@@ -37,7 +37,7 @@ describe('hourly consent and access controls', () => {
     expect(state.value.value?.usage?.accountingPending).toBe(true)
     expect(wrapper.findComponent(HourlySummary).exists()).toBe(false)
     const current = state.value.value!
-    snapshot.value = { ...current, usage: { ...current.usage!, freeReservedBytes: '8192', accounting: { ...current.usage!.accounting!, recoveryUnknownBytes: '8192' } } }
+    snapshot.value = { ...current, usage: { ...current.usage!, freeReservedBytes: '8192', accounting: { ...current.usage!.accounting!, recoveryUnknownBytes: '8192', freeRecoveryUnknownBytes: '8192' } } }
     await flushPromises()
     expect(wrapper.findComponent(HourlySummary).exists()).toBe(true)
     expect(wrapper.find('[data-hourly-accounting]').exists()).toBe(false)
