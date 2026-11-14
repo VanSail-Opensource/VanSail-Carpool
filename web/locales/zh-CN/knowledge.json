@@ -1,62 +1,70 @@
 {
   "knowledge": {
-    "title": "知识库",
-    "subtitle": "看懂原理，用得顺手。",
-    "watch": "播放指南",
+    "title": "使用教程与知识库",
+    "navTitle": "使用教程",
+    "subtitle": "看懂，动手，让 TX 更合你心意。",
+    "watch": "播放教程",
     "loadingGuide": "正在加载《{title}》…",
     "loadFailed": "此指南暂时无法加载。请重试；若仍无法打开，可重新加载页面。",
-    "start": "从这里开始",
-    "homeTitle": "一分钟，认识 TX",
-    "homeNote": "选对网络，安心付款，轻松连接。",
-    "homeEyebrow": "初次使用 TX？",
+    "start": "打开新手教程",
+    "homeTitle": "新手教程，从这里开始",
+    "homeNote": "初次使用 TX？先看连接教程，再了解计费、路由和更多玩法。",
+    "homeEyebrow": "初次使用 TX · 教程入口",
     "sources": "参考资料",
-    "details": "阅读详细说明",
     "duration": "{seconds}秒",
-    "topicCount": "{count} 个动画指南",
-    "more": "查看全部指南",
+    "topicCount": "{count} 个快速教程",
+    "more": "全部教程",
     "topics": {
+      "subscription": {
+        "title": "六步，开始连接",
+        "subtitle": "从首次充值，到首次连接",
+        "points": {"first": "充值并选择计费方式", "second": "下载客户端，导入订阅", "third": "选择节点，开始连接"}
+      },
       "networks": {
         "title": "三种网络，各有所长",
         "subtitle": "中国优化、国际网络与宽带",
-        "points": { "first": "中国方向优质入口", "second": "跨地区互联", "third": "选择当地运营商出口" }
+        "points": {"first": "中国方向优质入口", "second": "跨地区互联", "third": "选择当地运营商出口"}
       },
       "payment": {
         "title": "稳定币，正确到账",
         "subtitle": "币种、手续费与精确金额",
-        "points": { "first": "币种与网络一致", "second": "核对实际到账金额", "third": "预留网络手续费" }
+        "points": {"first": "币种与网络一致", "second": "核对实际到账金额", "third": "预留网络手续费"}
       },
       "sharing": {
         "title": "有边界的宽带共享",
         "subtitle": "了解人数与使用规范如何发挥作用",
-        "points": { "first": "共享 IP 很常见", "second": "节点独立公网 IP", "third": "限定人数，规范使用" }
+        "points": {"first": "共享 IP 很常见", "second": "节点独立公网 IP", "third": "限定人数，规范使用"}
       },
       "rules": {
         "title": "共同维护好线路",
         "subtitle": "欢迎日常使用，拒绝资源滥用。",
-        "points": { "first": "浏览、影音、办公、创作", "second": "禁止爬虫、BT 与转借", "third": "协议识别与连接数限制" }
+        "points": {"first": "浏览、影音、办公、创作", "second": "禁止爬虫、BT 与转借", "third": "协议识别与连接数限制"}
       },
       "why": {
         "title": "为什么选择 TX？",
         "subtitle": "灵活使用，服务背后有人负责。",
-        "points": { "first": "按小时或流量付费", "second": "自主研发与持续维护", "third": "重视隐私，直接支持" }
+        "points": {"first": "按小时或流量付费", "second": "自主研发与持续维护", "third": "重视隐私，直接支持"}
       },
       "hourly": {
         "title": "按小时付费",
         "subtitle": "直观看懂小时计费",
-        "points": { "first": "选择车队", "second": "了解费用如何产生", "third": "自主控制使用" }
+        "points": {"first": "选择车队", "second": "了解费用如何产生", "third": "自主控制使用"}
       },
       "traffic": {
         "title": "按流量付费",
         "subtitle": "跟随数据，看懂流量计费",
-        "points": { "first": "选择出口", "second": "了解流量如何计算", "third": "看懂流量额度" }
+        "points": {"first": "选择出口", "second": "了解流量如何计算", "third": "看懂流量额度"}
       },
       "routing": {
         "title": "构建自己的路由",
         "subtitle": "动态演示入口、规则与出口",
-        "points": { "first": "选择入口", "second": "匹配路由规则", "third": "选择合适出口" }
+        "points": {"first": "选择入口", "second": "匹配路由规则", "third": "选择合适出口"}
       }
     },
     "labels": {
+      "addBalance": "充值余额",
+      "billingChoice": "选择计费方式",
+      "or": "或",
       "you": "你",
       "china": "中国",
       "optimized": "中国优化",
@@ -119,7 +127,26 @@
       "code": "自主代码",
       "quality": "品质承诺",
       "privacy": "隐私",
-      "support": "直接支持"
+      "support": "直接支持",
+      "tutorial": "快速教程",
+      "optional": "可选",
+      "subscriptionLink": "订阅链接",
+      "importLink": "粘贴链接",
+      "refresh": "更新订阅",
+      "connect": "连接",
+      "balanceReady": "余额已到账",
+      "hourlyPurchase": "启用按小时",
+      "trafficReady": "使用按流量",
+      "routingOptional": "路由 · 可选",
+      "clientDownload": "下载客户端",
+      "nodeSelected": "已选择节点",
+      "privateLink": "你的私密链接",
+      "startHere": "从这里开始",
+      "exchangeFee": "提现手续费",
+      "save": "保存",
+      "applied": "已应用",
+      "defaultRoute": "保留默认",
+      "connected": "已连接"
     },
     "sourcesLabels": {
       "telecom": "中国电信 · CN2 国际传输",
@@ -136,7 +163,12 @@
       "ietf": "IETF · 地址共享的影响",
       "detection": "Cloudflare · 平台检查的依据",
       "project": "VanSail Carpool · 项目源码",
-      "privacy": "VanSail Carpool · 连接隐私"
-    }
+      "privacy": "VanSail Carpool · 连接隐私",
+      "flclash": "FlClash · 官方下载",
+      "v2rayn": "v2rayN · 电脑客户端",
+      "v2rayng": "v2rayNG · Android 客户端",
+      "clientImport": "v2rayN · 订阅指南"
+    },
+    "clients": {"flclash": "FlClash · Mihomo", "v2rayn": "v2rayN · 电脑", "v2rayng": "v2rayNG · Android"}
   }
 }

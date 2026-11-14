@@ -16,17 +16,18 @@ function setup() {
   let now = 0, sequence = 0, hidden = false
   const frames = new Map<number, globalThis.FrameRequestCallback>()
   const active = shallowRef(true)
+  const interval = shallowRef(1000)
   vi.spyOn(performance, 'now').mockImplementation(() => now)
   vi.spyOn(document, 'hidden', 'get').mockImplementation(() => hidden)
   vi.stubGlobal('requestAnimationFrame', vi.fn((callback: globalThis.FrameRequestCallback) => { frames.set(++sequence, callback); return sequence }))
   vi.stubGlobal('cancelAnimationFrame', vi.fn((handle: number) => frames.delete(handle)))
   let playback!: ReturnType<typeof useIllustrationPlayback>
   wrapper = mount(defineComponent({ setup() {
-    playback = useIllustrationPlayback({ active, stepCount: 3, interval: 1000 })
+    playback = useIllustrationPlayback({ active, stepCount: 3, interval })
     return () => null
   } }))
   return {
-    playback, frames, active,
+    playback, frames, active, interval,
     async advance(milliseconds: number) {
       now += milliseconds
       const pending = [...frames.values()]
@@ -124,4 +125,22 @@ it('provides completed manual chapter states without scheduling reduced motion',
   playback.replay()
   expect(playback.step.value).toBe(0)
   expect(playback.phase.value).toBeCloseTo(.92)
+})
+
+it('resets to the new lesson interval without retaining the previous runtime', async () => {
+  const { playback, interval, advance, frames } = setup()
+  await advance(450)
+  interval.value = 3200
+  await nextTick()
+  expect(playback.duration.value).toBe(9600)
+  expect(playback.elapsed.value).toBe(0)
+  expect(frames.size).toBe(1)
+  playback.selectStep(1)
+  expect(playback.elapsed.value).toBe(6144)
+  motion.reduced.value = true
+  interval.value = 2800
+  await nextTick()
+  expect(playback.duration.value).toBe(8400)
+  expect(playback.phase.value).toBeCloseTo(.92)
+  expect(frames.size).toBe(0)
 })

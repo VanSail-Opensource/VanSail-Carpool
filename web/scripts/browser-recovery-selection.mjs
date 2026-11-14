@@ -5,10 +5,11 @@ import { allBrowserScopes, memberBrowserScopes, adminBrowserScopes, browserRecov
 const rules = [
   [/^web\/scripts\/browser-hourly-preferences\.mjs$/, ['hourly']],
   [/^web\/scripts\/browser-member-design-checks\.mjs$/, ['member-design']],
+  [/^web\/scripts\/browser-knowledgebase(?:-[^/]+)?\.mjs$/, ['knowledgebase']],
   [/^web\/src\/components\/activity\/BetGamesPanel\.vue$/, ['activity', 'member-design']],
   [/^web\/src\/components\/subscription\/HostLinkRow\.vue$/, ['member', 'member-design']],
   [/^web\/src\/components\/hourly\/(?:HourlyAllowanceGraph\.vue|hourlyAllowance\.ts)$/, ['hourly', 'settings', 'member-design']],
-  [/^web\/src\/components\/common\/(?:Demo|illustrationTimeline)/, ['demonstrations', 'knowledgebase']],
+  [/^web\/src\/components\/common\/(?:Demo|demoThree|illustrationTimeline)/, ['demonstrations', 'knowledgebase']],
   [/^web\/src\/components\/catalog\/(?:BillingDemo|HourlyBillingScene|TrafficBillingScene|billingDemo)/, ['demonstrations', 'knowledgebase']],
   [/^web\/src\/components\/diy\/RoutingDemo/, ['demonstrations', 'knowledgebase']],
   [/^web\/src\/components\/knowledge\//, ['knowledgebase']],

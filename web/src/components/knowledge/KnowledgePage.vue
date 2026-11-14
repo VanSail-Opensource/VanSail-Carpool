@@ -6,7 +6,7 @@ import { isKnowledgeLesson, knowledgeTopics } from './knowledgeTopics'
 import { loadKnowledgePlayer, preloadKnowledgePlayer } from './knowledgePlayers'
 import { useKnowledgePlayer } from './useKnowledgePlayer'
 
-const KnowledgePlayer = defineAsyncComponent(() => loadKnowledgePlayer('networks'))
+const KnowledgePlayer = defineAsyncComponent(() => loadKnowledgePlayer('subscription'))
 const BillingDemo = defineAsyncComponent(() => loadKnowledgePlayer('traffic'))
 const RoutingDemo = defineAsyncComponent(() => loadKnowledgePlayer('routing'))
 const { t } = useI18n()

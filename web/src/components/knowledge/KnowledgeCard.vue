@@ -10,8 +10,8 @@ function reload(): void { globalThis.location.reload() }
 </script>
 
 <template>
-  <article class="knowledge-card" :data-knowledge-topic="topic.id">
-    <header class="knowledge-card__header"><span class="knowledge-card__icon"><UIcon :name="topic.icon" aria-hidden="true" /></span><span class="knowledge-card__index">{{ String(index + 1).padStart(2, '0') }}</span></header>
+  <article class="knowledge-card" :class="{ 'knowledge-card--start': topic.id === 'subscription' }" :data-knowledge-topic="topic.id">
+    <header class="knowledge-card__header"><span class="knowledge-card__icon"><UIcon :name="topic.icon" aria-hidden="true" /></span><span v-if="topic.id === 'subscription'" class="knowledge-card__start">{{ t('knowledge.labels.startHere') }}</span><span v-else class="knowledge-card__index">{{ String(index + 1).padStart(2, '0') }}</span></header>
     <div class="knowledge-card__heading"><h2>{{ t(`knowledge.topics.${topic.id}.title`) }}</h2><p>{{ t(`knowledge.topics.${topic.id}.subtitle`) }}</p></div>
     <ul class="knowledge-card__points"><li v-for="(point, i) in points" :key="point"><UIcon :name="topic.points[i]" aria-hidden="true" /><span>{{ t(`knowledge.topics.${topic.id}.points.${point}`) }}</span></li></ul>
     <footer class="knowledge-card__footer"><span>{{ t('knowledge.duration', { seconds: topic.seconds }) }}</span><UButton color="primary" variant="soft" icon="i-ph-play-fill" :loading="loading" :aria-busy="loading || undefined" :label="t(error ? 'common.tryAgain' : 'knowledge.watch')" :aria-label="`${t(error ? 'common.tryAgain' : 'knowledge.watch')} · ${t(`knowledge.topics.${topic.id}.title`)}`" @pointerenter="emit('intent')" @focus="emit('intent')" @click="emit('play', $event)" /></footer>
@@ -26,6 +26,9 @@ function reload(): void { globalThis.location.reload() }
 .knowledge-card__header, .knowledge-card__footer { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
 .knowledge-card__icon { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; color: var(--accent); background: var(--accent-soft); border-radius: .7rem; font-size: 1.35rem; }
 .knowledge-card__index { color: var(--text-faint); font: .75rem var(--font-mono); }
+.knowledge-card--start { border-color: var(--accent-line); }
+.knowledge-card--start::before { width: 3px; opacity: 1; }
+.knowledge-card__start { color: var(--accent); font-size: .67rem; font-weight: 650; }
 .knowledge-card__heading h2 { margin: 0; font-size: 1.08rem; line-height: 1.35; letter-spacing: -.025em; }
 .knowledge-card__heading p { margin: .35rem 0 0; color: var(--text-faint); font-size: .76rem; }
 .knowledge-card__points { display: grid; align-content: start; gap: .65rem; list-style: none; padding: 0; margin: 0; }

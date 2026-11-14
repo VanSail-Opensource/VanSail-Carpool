@@ -38,7 +38,7 @@ describe('ComingSoonLinks navigation', () => {
     wrapper.unmount()
   })
 
-  it('keeps the Knowledgebase entrance without granting paid community tools', () => {
+  it('keeps the Tutorials entrance without granting paid community tools', () => {
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [{ path: '/:pathMatch(.*)*', component: { template: '<div />' } }],
@@ -47,7 +47,7 @@ describe('ComingSoonLinks navigation', () => {
 
     expect(wrapper.find('.home-around').exists()).toBe(true)
     expect(wrapper.findAll('.home-around__link')).toHaveLength(1)
-    expect(wrapper.text()).toContain('Knowledgebase')
+    expect(wrapper.text()).toContain('Tutorials')
     wrapper.unmount()
   })
 })

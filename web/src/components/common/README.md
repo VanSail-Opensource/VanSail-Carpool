@@ -49,6 +49,16 @@ also stop the simulated interactions. Reduced-motion scenes omit the pointer.
 
 `DemoPlayer.vue` unifies the modal and playback lifecycle for all Knowledgebase,
 Explore and DIY lessons. It owns focus restoration and native Back behavior.
-`DemoStage.vue` provides an accessible, responsive diagram canvas;
-`DemoNode.vue` renders shared icon tiles and `DemoFlow.vue` renders continuous
-SVG flow from the same seekable clock. None perform network or account actions.
+Its short caption, three icon points and full chapter explanation are visible
+inside the film, with no separate disclosure. Chapter intervals remain reactive
+when a different tutorial is selected. `DemoStage.vue` provides the accessible
+diagram wrapper, keeping decorative 3D content separate from localized text.
+
+`DemoThreeScene.vue` owns lazy canvas creation, resize handling, WebGL fallback,
+context restoration and teardown. `demoThreeModel.ts` supplies nine persistent
+stories and meaningful fallback symbols. `demoThreeObjects.ts` and
+`demoThreePrimitives.ts` build the procedural lit solids; `demoThreeRenderer.ts`
+loads Three.js and renders only when the shared step/phase or size changes.
+There is no second clock, remote texture/model, or account action. Pixel density
+is capped at 1.5; all geometry, materials and the context are released on close.
+`demoThreeModel.test.ts` checks one-exit routing and billing-aware packet flow.

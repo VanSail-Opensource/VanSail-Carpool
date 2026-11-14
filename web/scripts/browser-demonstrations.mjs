@@ -7,6 +7,9 @@ async function openBilling(page, mode) {
   if (mode === 'hourly') await page.getByRole('button', { name: 'Charge by hour', exact: true }).click()
   await page.locator('[data-billing-demo]').click()
   await page.locator(`.billing-demo[data-billing-mode="${mode}"]`).waitFor()
+  await page.locator('.demo-three-scene[data-three-status="ready"]').waitFor()
+  assert.equal(await page.locator('.demo-player__detail').isVisible(), true)
+  assert.equal(await page.locator('.demo-player__points > li').count(), 3)
 }
 
 async function pauseAndInspectPointer(page, size, root, pose) {
@@ -87,6 +90,9 @@ export async function demonstrationScenarios(scenario, size) {
     const trigger = page.getByRole('button', { name: 'See routing', exact: true })
     await trigger.click()
     await page.locator('.routing-demo').waitFor()
+    await page.locator('.demo-three-scene[data-three-status="ready"]').waitFor()
+    assert.equal(await page.locator('.demo-player__detail').isVisible(), true)
+    assert.equal(await page.locator('.demo-player__points > li').count(), 3)
     await pauseAndInspectPointer(page, size, '.routing-demo', 64)
     await capturePaused(page, capture, 'pointer-paused')
     await chapter(page, 2)

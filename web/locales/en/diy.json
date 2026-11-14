@@ -171,7 +171,13 @@
         "choose": "Choose an accessible entry host, an administrator-provided destination template, and a different accessible exit node. Rules are ordered at each node.",
         "check": "The server checks endpoint access, template references, and routing loops before accepting the configuration.",
         "save": "Save the configuration. Routing is queued for deployment and becomes applied only after the nodes confirm it.",
-        "route": "At each node the first matching rule forwards the connection to its selected exit. If no custom rule matches, the node uses its default routing. This example shows one rule; no real traffic is sent."
+        "route": "At each node the first matching rule forwards the connection to its selected exit. If no custom rule matches, the node uses its default routing. This example shows one rule; no real traffic is sent. Refresh the client subscription after relevant DIY changes."
+      },
+      "points": {
+        "choose": { "first": "Accessible entry", "second": "Admin template", "third": "Different exit" },
+        "check": { "first": "Access checked", "second": "Valid template", "third": "No routing loops" },
+        "save": { "first": "Save configuration", "second": "Queued for deployment", "third": "Node-confirmed applied" },
+        "route": { "first": "First matching rule", "second": "Otherwise default", "third": "Refresh subscription" }
       }
     }
   }

@@ -19,7 +19,8 @@ and coupon components below remain in those supported flows.
   while keeping the mode controls available.
 - `BillingDemo.vue` opens from the current mode's icon-led demonstration button.
   It composes `TrafficBillingScene.vue` or `HourlyBillingScene.vue` as a persistent
-  simulated interface, driven by a continuous animation-frame clock. The pure
+  simulated interface with a shared procedural Three.js stage, driven by the
+  player's continuous animation-frame clock. Each chapter lasts 3.2 seconds. The pure
   synthetic presentation functions in `billingDemo.ts` interpolate usage while
   keeping wallet debits discrete at their purchase boundaries. The shared
   `useIllustrationPlayback` owns seek, pause/resume, replay, chapter selection,
@@ -28,7 +29,7 @@ and coupon components below remain in those supported flows.
   simulated controls with a desktop cursor or mobile touch ripple. Reduced motion
   displays completed manual chapter states without scheduling an animation loop.
   Nuxt UI's modal owns focus, dismissal and accessible naming; each chapter has a
-  localized screen-reader explanation alongside its short visual caption. The
+  visible localized explanation and three icon points alongside its short caption. The
   continuous counters never become live announcements. Demo state never enters
   account caches or calls a write API. `billingDemo.test.ts` protects the example
   purchase, reconnection, consent, non-refund and midnight boundaries in hosted CI.

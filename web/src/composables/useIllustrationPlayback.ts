@@ -6,17 +6,17 @@ export function useIllustrationPlayback(options: {
   active: MaybeRefOrGetter<boolean>
   stepCount: MaybeRefOrGetter<number>
   resetKey?: MaybeRefOrGetter<unknown>
-  interval?: number
+  interval?: MaybeRefOrGetter<number>
 }) {
   const { reducedMotion } = useMotionPreferences()
   const elapsed = shallowRef(0)
   const requested = shallowRef(false)
   const hidden = shallowRef(typeof document !== 'undefined' && document.hidden)
   const count = computed(() => Math.max(1, Math.trunc(toValue(options.stepCount)) || 1))
-  const interval = Math.max(1, options.interval ?? 4200)
-  const duration = computed(() => count.value * interval)
-  const step = computed(() => Math.min(count.value - 1, Math.floor(elapsed.value / interval)))
-  const phase = computed(() => Math.min(1, (elapsed.value - step.value * interval) / interval))
+  const interval = computed(() => Math.max(1, toValue(options.interval) ?? 4200))
+  const duration = computed(() => count.value * interval.value)
+  const step = computed(() => Math.min(count.value - 1, Math.floor(elapsed.value / interval.value)))
+  const phase = computed(() => Math.min(1, (elapsed.value - step.value * interval.value) / interval.value))
   const progress = computed(() => elapsed.value / duration.value)
   const playing = computed(() => toValue(options.active) && requested.value && !hidden.value && !reducedMotion.value && elapsed.value < duration.value)
   let frame: number | undefined
@@ -49,7 +49,7 @@ export function useIllustrationPlayback(options: {
   }
   function replay() {
     // Manual reduced-motion chapters display their completed, useful state.
-    elapsed.value = reducedMotion.value ? interval * .92 : 0
+    elapsed.value = reducedMotion.value ? interval.value * .92 : 0
     requested.value = toValue(options.active) && !reducedMotion.value
     schedule()
   }
@@ -62,11 +62,11 @@ export function useIllustrationPlayback(options: {
   function selectStep(index: number) {
     if (!Number.isFinite(index)) return
     pause()
-    elapsed.value = (Math.min(count.value - 1, Math.max(0, Math.trunc(index))) + .92) * interval
+    elapsed.value = (Math.min(count.value - 1, Math.max(0, Math.trunc(index))) + .92) * interval.value
   }
   function visibilityChanged() { hidden.value = document.hidden }
 
-  watch([() => toValue(options.active), count, () => toValue(options.resetKey)], replay, { immediate: true })
+  watch([() => toValue(options.active), count, interval, () => toValue(options.resetKey)], replay, { immediate: true })
   watch(reducedMotion, value => { if (value) { pause(); selectStep(step.value) } })
   watch(playing, schedule, { immediate: true, flush: 'sync' })
 

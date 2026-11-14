@@ -4,10 +4,10 @@ import { preloadMemberView } from '@/router/memberViews'
 import { preloadKnowledgePlayer } from './knowledgePlayers'
 
 const { t } = useI18n()
-const icons = ['i-ph-device-mobile-bold', 'i-ph-path-bold', 'i-ph-globe-hemisphere-west-bold']
+const icons = ['i-ph-wallet-bold', 'i-ph-link-bold', 'i-ph-plugs-connected-bold']
 function warm(): void {
   void preloadMemberView('/knowledgebase')
-  void preloadKnowledgePlayer('networks')
+  void preloadKnowledgePlayer('subscription')
 }
 </script>
 
