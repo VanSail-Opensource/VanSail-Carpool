@@ -14,6 +14,14 @@ function mountRows(overrides: Partial<InstanceType<typeof CommunityMembershipRow
 }
 
 describe('CommunityMembershipRows', () => {
+  it('blocks cached join eligibility while its live refresh is pending', async () => {
+    const wrapper = mountRows({ activeCombo: true, disabled: true })
+    const actions = wrapper.findAll('.community-row__join')
+    expect(actions.every(action => action.attributes('disabled') !== undefined)).toBe(true)
+    await actions[0].trigger('click')
+    expect(wrapper.emitted('join')).toBeUndefined()
+  })
+
   it('keeps confirmed membership ahead of lapsed eligibility', () => {
     const wrapper = mountRows({ groupJoined: true })
 

@@ -9,6 +9,8 @@ import DetectorRetirementAudit from './DetectorRetirementAudit.vue'
 import RetiredControlsAudit from './RetiredControlsAudit.vue'
 import MemberNodesAudit from './MemberNodesAudit.vue'
 import { xnodeMemberApi, type RoutingView } from '@/api/xnodeMember'
+import { preferencesApi } from '@/api/preferences'
+import { usePreferencesStore } from '@/stores/preferences'
 
 const params = new URLSearchParams(location.search)
 setExperience(params.has('member') ? 'miniapp' : 'browser')
@@ -48,4 +50,7 @@ if (params.has('native')) {
 }
 const app = createApp(params.has('native') ? MemberNodesAudit : params.has('legacy') ? RetiredControlsAudit : DetectorRetirementAudit)
 app.config.globalProperties.$t = t
-app.use(createPinia()).use(createRouter({ history: createWebHistory(), routes: [{ path: '/:pathMatch(.*)*', component: DetectorRetirementAudit, meta: { adminSection: 'users' } }] })).use(ui).mount('#app')
+const pinia = createPinia()
+preferencesApi.get = async () => ({ paygEnabled: true, paygSquads: {}, activeCombo: true, showAroundTx: true, showActivity: false, includeNodePrices: true, showReferralUsername: true, notifications: { combos: true, traffic: true, money: true, activity: true, account: true } })
+if (params.has('member')) usePreferencesStore(pinia).bind('detector-audit-member')
+app.use(pinia).use(createRouter({ history: createWebHistory(), routes: [{ path: '/:pathMatch(.*)*', component: DetectorRetirementAudit, meta: { adminSection: 'users' } }] })).use(ui).mount('#app')

@@ -1,5 +1,8 @@
 # Simplified Chinese messages
 
+- `knowledge.json` owns Knowledgebase cards, entrances, scene labels and sources.
+- `knowledge-lessons.json` owns short film captions and expanded explanations.
+
 - `admin-endpoints.json` owns localized administrator endpoint fields, protocol
   context, draft validation, hopping controls and client compatibility.
 

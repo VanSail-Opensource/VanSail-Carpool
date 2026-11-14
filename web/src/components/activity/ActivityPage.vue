@@ -12,7 +12,7 @@ import GroupMessageRewardPanel from './GroupMessageRewardPanel.vue'
 import GroupBoostPanel from './GroupBoostPanel.vue'
 import ActivityResultDialog from './ActivityResultDialog.vue'
 
-const { overview, result, loading, refreshing, busy, error, load, checkIn, placeBet, draw, clearResult } = useActivity()
+const { overview, result, loading, refreshing, actionsDisabled, busy, error, load, checkIn, placeBet, draw, clearResult } = useActivity()
 const {
   draw: activeDraw, style: drawStyle, phase: drawPhase, result: drawResult,
   error: drawError, resetToken, started: drawStarted, begin: beginDraw, retry: retryDraw,
@@ -44,13 +44,15 @@ const {
           :reward-max-txb-minor="overview.dailyRewardMaxTxbMinor"
           :time-zone="overview.timeZone"
           :busy="busy === 'check-in'"
+          :disabled="actionsDisabled"
           @check-in="checkIn"
         />
         <GroupMessageRewardPanel v-if="overview.groupBoost.state === 'boosted'" :reward="overview.groupMessageReward" />
-        <BetGamesPanel :games="overview.games" :busy="busy === 'bet'" @bet="placeBet" />
+        <BetGamesPanel :games="overview.games" :busy="busy === 'bet'" :disabled="actionsDisabled" @bet="placeBet" />
         <LuckyDrawPanel
           :draws="overview.draws"
           :busy="Boolean(busy) || Boolean(activeDraw)"
+          :disabled="actionsDisabled"
           :drawing-id="activeDraw?.id ?? null"
           :reset-token="resetToken"
           @draw="beginDraw"

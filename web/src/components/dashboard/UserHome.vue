@@ -12,6 +12,7 @@ import BalanceHero from './BalanceHero.vue'
 import ComingSoonLinks from './ComingSoonLinks.vue'
 import EntitlementSummary from './EntitlementSummary.vue'
 import HomeSubscriptionEntrance from '@/components/subscription/HomeSubscriptionEntrance.vue'
+import KnowledgeHomeCard from '@/components/knowledge/KnowledgeHomeCard.vue'
 import AddBalanceGuide from './AddBalanceGuide.vue'
 import HomePreferences from './HomePreferences.vue'
 import UsagePanel from './UsagePanel.vue'
@@ -122,6 +123,7 @@ function requestTopUp(): void {
           @top-up-request-consumed="consumeTopUpRequest"
           @reissue-request-consumed="consumeReissueRequest"
         />
+        <KnowledgeHomeCard v-if="isNewUser" />
         <div class="home-layout__columns">
           <div class="home-alerts">
             <InlineNotice v-if="autoRenewalFailureMessage" tone="warning" :title="$t('home.autoRenewalFailureTitle')">{{ autoRenewalFailureMessage }}</InlineNotice>
@@ -150,12 +152,12 @@ function requestTopUp(): void {
               @queued-cancelled="handleQueuedCancelled"
               @auto-renewal-changed="handleAutoRenewalChanged"
             />
-            <ComingSoonLinks :has-valid-combo="hasValidCombo" />
           </template>
           <template v-else>
             <AddBalanceGuide @add-balance="requestTopUp" />
             <HomePreferences v-if="isNewUser" />
           </template>
+          <ComingSoonLinks :has-valid-combo="hasValidCombo" />
         </div>
       </div>
     </template>

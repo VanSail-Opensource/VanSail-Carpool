@@ -8,7 +8,7 @@ import { useI18n } from '@/i18n'
 import { formatMemberMoney } from '@/utils/displayCurrency'
 import { drawStyles, type DrawStyleChoice } from './draw/selection'
 
-const props = defineProps<{ draws: readonly LuckyDraw[]; busy: boolean; resetToken: number; drawingId?: string | null }>()
+const props = defineProps<{ draws: readonly LuckyDraw[]; busy: boolean; disabled?: boolean; resetToken: number; drawingId?: string | null }>()
 const emit = defineEmits<{ draw: [draw: LuckyDraw, style: DrawStyleChoice] }>()
 const { reducedMotion, offset } = useMotionPreferences()
 const { t } = useI18n()
@@ -27,6 +27,7 @@ function choose(drawId: string, value: string): void {
 }
 
 function start(draw: LuckyDraw): void {
+  if (props.busy || props.disabled) return
   emit('draw', draw, selectedStyles[draw.id] ?? 'random')
 }
 
@@ -51,13 +52,13 @@ function displayMinor(minor: string): string {
             <USelect
               :items="styleOptions"
               :model-value="selectedStyles[draw.id] ?? 'random'"
-              :disabled="busy"
+              :disabled="busy || disabled"
               @update:model-value="choose(draw.id, String($event))"
             />
           </UFormField>
           <UButton
             block
-            :disabled="!draw.enabled || !draw.prizes?.length || busy"
+            :disabled="!draw.enabled || !draw.prizes?.length || busy || disabled"
             :loading="busy && props.drawingId === draw.id"
             :label="!draw.prizes?.length ? $t('activity.drawUnavailable') : busy && props.drawingId === draw.id ? $t('activity.drawing') : $t('activity.drawFor', { amount: displayMinor(draw.feeTxbMinor) })"
             data-haptic="confirm"

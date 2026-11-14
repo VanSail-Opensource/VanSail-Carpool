@@ -46,15 +46,15 @@ function consumeRevoke(): void {
     <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
     <UButton v-if="error" color="neutral" variant="outline" :label="t('common.tryAgain')" @click="refresh()" />
     <div v-if="loading" class="subscription-page__loading"><SkeletonBlock height="11rem" /><SkeletonBlock height="10rem" /></div>
-    <template v-else-if="subscription?.subscriptionUrl">
-      <SubscriptionPanel :subscription-url="subscription.subscriptionUrl" :revoking="busy" :revoke-blocked="blocksMutations" :open-revoke="revokeRequested" @revoke="revoke" @revoke-request-consumed="consumeRevoke" />
-      <SubscriptionFormats :key="subscription.subscriptionUrl ?? ''" />
-      <section class="section-block">
+    <div v-else-if="subscription?.subscriptionUrl" class="subscription-page__workspace">
+      <SubscriptionPanel class="subscription-page__link" :subscription-url="subscription.subscriptionUrl" :revoking="busy" :revoke-blocked="blocksMutations" :open-revoke="revokeRequested" @revoke="revoke" @revoke-request-consumed="consumeRevoke" />
+      <SubscriptionFormats :key="subscription.subscriptionUrl ?? ''" class="subscription-page__formats" />
+      <section class="section-block subscription-page__inventory">
         <div class="section-heading"><h2>{{ t('subscription.hosts') }}</h2></div>
         <ul v-if="subscription.hosts.length" class="subscription-page__hosts"><HostLinkRow v-for="host in subscription.hosts" :key="host.uuid" :host="host" @saved="refresh()" /></ul>
         <p v-else class="subscription-page__empty">{{ t('subscription.noHosts') }}</p>
       </section>
-    </template>
+    </div>
     <section v-else-if="subscription?.ready === false" class="section-block grid gap-3"><h2>{{ t('subscription.firstSyncPending') }}</h2><p class="text-sm text-muted">{{ t('subscription.firstSyncHint') }}</p><UButton variant="outline" color="neutral" :label="t('common.refresh')" @click="refresh()" /></section>
     <section v-else-if="subscription" class="section-block empty-inline">
       <div><h2>{{ t('subscription.noCombo') }}</h2><p>{{ t('subscription.noComboHint') }}</p><UButton to="/catalog" :label="t('nav.explore')" color="neutral" variant="outline" /></div>
@@ -63,9 +63,17 @@ function consumeRevoke(): void {
 </template>
 
 <style scoped>
-.page--subscription { display: grid; gap: 1rem; max-width: 760px; }
+.page--subscription { display: grid; gap: 1rem; max-width: 1240px; }
 .page--subscription .page-header { margin-bottom: 0; }
-.subscription-page__loading { display: grid; gap: 1rem; }
+.subscription-page__loading, .subscription-page__workspace { display: grid; gap: 1rem; min-width: 0; }
+.subscription-page__workspace > * { min-width: 0; }
 .subscription-page__hosts { list-style: none; margin: 0; padding: 0; }
 .subscription-page__empty, .section-heading small { margin: 0; color: var(--text-muted); font-size: 0.8rem; }
+@media (min-width: 1180px) {
+  .subscription-page__workspace:has(> .subscription-page__formats) { grid-template-columns: minmax(0, 1.5fr) minmax(17rem, 1fr); grid-template-rows: auto 1fr; align-items: start; }
+  .subscription-page__workspace:has(> .subscription-page__formats) > .subscription-page__link { grid-column: 1; grid-row: 1; }
+  .subscription-page__formats { grid-column: 2; grid-row: 1 / 3; }
+  .subscription-page__workspace:has(> .subscription-page__formats) > .subscription-page__inventory { grid-column: 1; grid-row: 2; }
+  .subscription-page__loading { grid-template-columns: minmax(0, 1.5fr) minmax(17rem, 1fr); }
+}
 </style>

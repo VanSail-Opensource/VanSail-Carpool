@@ -12,6 +12,7 @@ export function useCommunityMembership() {
   const membership = shallowRef<CommunityMembership | null>(null)
   const loading = shallowRef(true)
   const refreshing = shallowRef(false)
+  const liveReady = shallowRef(false)
   const joining = shallowRef<readonly CommunitySpace[]>([])
   const error = shallowRef<string | null>(null)
   let disposed = false
@@ -26,13 +27,15 @@ export function useCommunityMembership() {
     if (!owner) { loading.value = false; return }
     const revision = ++requestRevision
     const current = () => !disposed && revision === requestRevision && sessionStore.user?.id === owner
-    if (initial) loading.value = !restoreRef('/api/v1/community/membership/check', membership, { method: 'POST' })
-    else refreshing.value = true
+    if (initial) loading.value = !restoreRef('/api/v1/community/membership/check', membership, { method: 'POST' }, 60_000)
+    refreshing.value = true
+    liveReady.value = false
     error.value = null
     try {
       const next = await api.checkCommunityMembership()
       if (!current() || next.user.id !== owner) return
       membership.value = next
+      liveReady.value = true
       if (sessionStore.session) sessionStore.updateSession({ ...sessionStore.session, user: next.user })
     } catch (caught) {
       if (current()) error.value = localizedError(caught, 'community.errorDescription')
@@ -43,7 +46,7 @@ export function useCommunityMembership() {
 
   async function join(space: CommunitySpace): Promise<void> {
     const owner = sessionStore.user?.id
-    if (disposed || !owner || joining.value.includes(space)) return
+    if (disposed || !owner || !liveReady.value || refreshing.value || !membership.value?.activeCombo || joining.value.includes(space)) return
     const revision = ownerRevision
     const current = () => !disposed && revision === ownerRevision && sessionStore.user?.id === owner
     joining.value = [...joining.value, space]
@@ -68,6 +71,7 @@ export function useCommunityMembership() {
     error.value = null
     loading.value = Boolean(owner)
     refreshing.value = false
+    liveReady.value = false
     joining.value = []
     if (mounted && owner) void load(true)
   }, { flush: 'sync' })
@@ -87,6 +91,7 @@ export function useCommunityMembership() {
     membership: readonly(membership),
     loading: readonly(loading),
     refreshing: readonly(refreshing),
+    liveReady: readonly(liveReady),
     joining: readonly(joining),
     error: readonly(error),
     load,

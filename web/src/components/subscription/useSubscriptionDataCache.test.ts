@@ -92,10 +92,43 @@ describe('optional member display snapshots', () => {
     expect(state.error.value).toBeNull()
   })
 
+  it('clears a confirmed display and its timer synchronously before fresh same-user identity recovery', async () => {
+    const fresh = deferred<PAYGView>()
+    const signals: AbortSignal[] = []
+    const fetcher = vi.fn((signal: AbortSignal) => {
+      signals.push(signal)
+      return signals.length === 1 ? Promise.resolve(snapshot('250')) : fresh.promise
+    })
+    writeResponseCache(key, snapshot('100'), cacheGeneration())
+    const { state } = controller(fetcher, path)
+    await flushPromises()
+    expect(state.liveReady.value).toBe(true)
+    setCacheSession('member:one:admin')
+    expect(state.value.value).toBeNull()
+    expect(state.hasData.value).toBe(false)
+    expect(state.liveReady.value).toBe(false)
+    expect(state.error.value).toBeNull()
+    expect(state.loading.value).toBe(true)
+    expect(state.refreshing.value).toBe(false)
+    expect(signals[0]!.aborted).toBe(true)
+    expect(fetcher).toHaveBeenCalledTimes(1)
+    await flushPromises()
+    expect(fetcher).toHaveBeenCalledTimes(2)
+    expect(state.value.value).toBeNull()
+    expect(state.refreshing.value).toBe(true)
+    await vi.advanceTimersByTimeAsync(60_001)
+    expect(fetcher).toHaveBeenCalledTimes(2)
+    fresh.resolve(snapshot('900'))
+    await flushPromises()
+    expect(state.value.value?.balance.minor).toBe('900')
+    expect(state.liveReady.value).toBe(true)
+  })
+
   it.each(['success', 'failure'] as const)('ignores a late %s after identity replacement without restarting the old poller', async outcome => {
     const old = deferred<PAYGView>(), oldFetcher = vi.fn(() => old.promise)
     const obsolete = controller(oldFetcher, path)
     setCacheSession('member:two')
+    obsolete.wrapper.unmount()
     const current = controller(async () => snapshot('900'), path)
     await flushPromises()
     expect(current.state.value.value?.balance.minor).toBe('900')

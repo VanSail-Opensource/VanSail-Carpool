@@ -7,31 +7,6 @@
     border-top: 1px solid var(--line);
   }
 
-  .side-rail__member {
-    min-width: 0;
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: center;
-    gap: 0.55rem;
-    padding: 0.55rem;
-    border-radius: var(--radius-control);
-    color: var(--text-muted);
-    background: var(--surface);
-  }
-
-  .side-rail__member > svg { width: 1.35rem; height: 1.35rem; color: var(--accent); }
-  .side-rail__member div { min-width: 0; display: grid; gap: 0.1rem; }
-
-  .side-rail__member strong,
-  .side-rail__member span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .side-rail__member strong { color: var(--text); font-size: 0.72rem; }
-  .side-rail__member span { color: var(--text-faint); font-size: 0.63rem; }
-  .side-rail__footer .language-control { width: 100%; justify-content: flex-start; }
   .page--statistics,
   .page--activity,
   .page--emby { max-width: 1180px; }

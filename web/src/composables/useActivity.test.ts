@@ -1,8 +1,9 @@
 import { defineComponent, h } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { ActivityResult } from '@/api/features'
+import type { ActivityOverview, ActivityResult } from '@/api/features'
+import { setCacheSession } from '@/api/cache/session'
 import { useActivity } from './useActivity'
 
 const mocks = vi.hoisted(() => ({
@@ -12,11 +13,12 @@ const mocks = vi.hoisted(() => ({
   placeBet: vi.fn(),
   createUuid: vi.fn(),
   notifyHaptic: vi.fn(),
+  restoreRef: vi.fn(),
 }))
 vi.mock('@/api/features', () => ({
   featuresApi: { getActivity: mocks.getActivity, drawLuckyPrize: mocks.drawLuckyPrize, checkIn: mocks.checkIn, placeBet: mocks.placeBet },
 }))
-vi.mock('@/api/cache/restore', () => ({ restoreRef: () => false }))
+vi.mock('@/api/cache/restore', () => ({ restoreRef: mocks.restoreRef }))
 vi.mock('@/i18n', () => ({ localizedError: () => 'Draw failed' }))
 vi.mock('@/utils/browserCompatibility', () => ({ createUuid: mocks.createUuid }))
 vi.mock('@/utils/telegram', () => ({
@@ -30,7 +32,15 @@ const result: ActivityResult = {
   createdAt: '2026-09-25T00:00:00Z',
 }
 
-afterEach(() => vi.clearAllMocks())
+beforeEach(() => { mocks.restoreRef.mockReset(); mocks.restoreRef.mockReturnValue(false) })
+afterEach(() => { vi.clearAllMocks(); setCacheSession(null) })
+
+const overview: ActivityOverview = {
+  groupBoost: { state: 'boosted', count: 2, boostUrl: null }, balance: result.balanceAfter,
+  timeZone: 'Asia/Shanghai', checkedInToday: false, dailyRewardMinTxbMinor: '100', dailyRewardMaxTxbMinor: '200',
+  games: [], draws: [], recentResults: [],
+  groupMessageReward: { enabled: true, localDate: '2026-11-14', messageCount: 1, threshold: 10, rewardMinor: '100', rewarded: false },
+}
 
 function mountActivity() {
   let activity!: ReturnType<typeof useActivity>
@@ -44,6 +54,72 @@ function mountActivity() {
 }
 
 describe('lucky draw submission', () => {
+  it('renders a cached overview but blocks every mutation until a fresh read succeeds', async () => {
+    mocks.restoreRef.mockImplementationOnce((_path, target) => { target.value = overview; return true })
+    let resolve!: (value: ActivityOverview) => void
+    mocks.getActivity.mockReturnValueOnce(new Promise(done => { resolve = done }))
+    const { activity, wrapper } = mountActivity()
+    expect(activity.loading.value).toBe(false)
+    expect(activity.overview.value).toEqual(overview)
+    expect(activity.actionsDisabled.value).toBe(true)
+    await activity.checkIn()
+    await activity.placeBet({ gameId: 'game-1', stakeTxbMinor: '100' })
+    await expect(activity.draw('draw-1')).rejects.toThrow()
+    expect(mocks.checkIn).not.toHaveBeenCalled()
+    expect(mocks.placeBet).not.toHaveBeenCalled()
+    expect(mocks.drawLuckyPrize).not.toHaveBeenCalled()
+    resolve(overview)
+    await flushPromises()
+    expect(activity.actionsDisabled.value).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('keeps cached actions disabled after a failed refresh', async () => {
+    mocks.restoreRef.mockImplementationOnce((_path, target) => { target.value = overview; return true })
+    mocks.getActivity.mockRejectedValueOnce(new Error('offline'))
+    const { activity, wrapper } = mountActivity()
+    await flushPromises()
+    expect(activity.loading.value).toBe(false)
+    expect(activity.actionsDisabled.value).toBe(true)
+    expect(activity.overview.value?.groupBoost.state).toBe('unavailable')
+    wrapper.unmount()
+  })
+
+  it('ignores an activity reply after the account identity changes', async () => {
+    setCacheSession('activity:first')
+    let resolve!: (value: ActivityOverview) => void
+    mocks.getActivity.mockReturnValueOnce(new Promise(done => { resolve = done }))
+    const { activity, wrapper } = mountActivity()
+    setCacheSession('activity:second')
+    resolve(overview)
+    await flushPromises()
+    expect(activity.overview.value).toBeNull()
+    await activity.checkIn()
+    expect(mocks.checkIn).not.toHaveBeenCalled()
+    expect(activity.actionsDisabled.value).toBe(true)
+    mocks.getActivity.mockResolvedValueOnce(overview)
+    await activity.load()
+    expect(activity.overview.value).toEqual(overview)
+    expect(activity.actionsDisabled.value).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('synchronously clears a previously enabled view when its account identity changes', async () => {
+    setCacheSession('activity:ready')
+    mocks.getActivity.mockResolvedValueOnce(overview)
+    const { activity, wrapper } = mountActivity()
+    await flushPromises()
+    expect(activity.actionsDisabled.value).toBe(false)
+    expect(activity.overview.value).toEqual(overview)
+    setCacheSession('activity:replacement')
+    expect(activity.overview.value).toBeNull()
+    expect(activity.result.value).toBeNull()
+    expect(activity.actionsDisabled.value).toBe(true)
+    await activity.checkIn()
+    expect(mocks.checkIn).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
   it.each(['check-in', 'bet', 'draw'] as const)('retires %s replies and refreshes when its view unmounts', async kind => {
     mocks.getActivity.mockResolvedValue({ draws: [], recentResults: [] })
     mocks.createUuid.mockReturnValue('retired-key')

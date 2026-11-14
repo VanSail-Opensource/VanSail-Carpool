@@ -10,7 +10,7 @@ export type RationalMinor = DeepReadonly<components['schemas']['RationalMinor']>
 export const usageBreakdownApi = {
   get: async (signal?: AbortSignal): Promise<UsageBreakdown> => {
     const path = '/api/v1/usage/breakdown'
-    const value = await request<UsageBreakdown>(path, { signal, cache: 'no-store' })
+    const value = await request<UsageBreakdown>(path, { signal, cache: 'no-cache' })
     if (!isResponseCompatible(path, 'GET', value) || !hasValidUsageUnits(value)) {
       throw new ApiError(502, { code: 'API_RESPONSE_INCOMPATIBLE', message: 'API_RESPONSE_INCOMPATIBLE' })
     }

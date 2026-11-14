@@ -19,9 +19,8 @@ const mobileNavigation: readonly MobileNavigationItem[] = [
 
 
 
-// A new user has no server-confirmed access yet, so the only useful member
-// routes are Home and Explore. The allow-list is authoritative so the result
-// cannot leak Settings, Activity or Around TX through stale preference flags.
+// A new user keeps a small primary tab bar; education remains available from
+// Home and the desktop Around TX group without granting paid tool access.
 // Administrators never count as new users because their one-use console
 // entrance lives in Settings.
 export function mobileNavigationItems(_isAdmin: boolean, showActivity = false, isNewUser = false): MobileNavigationItem[] {
@@ -31,10 +30,12 @@ export function mobileNavigationItems(_isAdmin: boolean, showActivity = false, i
 }
 
 export function desktopNavigationItems(t: Translate, _isAdmin: boolean, showAroundTX = false, showActivity = false, showIPLookup = false, showSubscription = true, isNewUser = false): NavigationMenuItem[] {
+  const knowledge = { value: 'knowledgebase', label: t('knowledge.title'), to: '/knowledgebase', icon: 'i-ph-book-open-text-bold' }
   if (isNewUser) {
     return [
       { value: 'home', label: t('nav.home'), to: '/home', icon: 'i-ph-house', exactQuery: true },
       { value: 'explore', label: t('nav.explore'), to: '/catalog', icon: 'i-ph-compass' },
+      { value: 'around-tx', label: t('nav.aroundTx'), icon: 'i-ph-sparkle', type: 'trigger', defaultOpen: true, children: [knowledge] },
     ]
   }
   const subscriptionChildren = showSubscription
@@ -53,10 +54,10 @@ export function desktopNavigationItems(t: Translate, _isAdmin: boolean, showArou
     ...(showActivity ? [{ value: 'activity', label: t('nav.activity'), to: '/activity', icon: 'i-ph-game-controller' }] : []),
     { value: 'settings', label: t('settings.title'), to: '/settings', icon: 'i-ph-gear' },
   ]
-  if (showAroundTX || showIPLookup) {
-    items.splice(1, 0, {
+  items.splice(1, 0, {
       value: 'around-tx', label: t('nav.aroundTx'), icon: 'i-ph-sparkle', type: 'trigger', defaultOpen: true, popover: true,
       children: [
+        knowledge,
         ...(showIPLookup ? [{ value: 'ip-lookup', label: t('ipLookup.title'), to: '/ip-lookup', icon: 'i-ph-globe-hemisphere-west' }] : []),
         ...(showAroundTX ? [
         { value: 'affiliates', label: t('affiliates.title'), to: '/affiliates', icon: 'i-ph-users-three' },
@@ -64,7 +65,6 @@ export function desktopNavigationItems(t: Translate, _isAdmin: boolean, showArou
         { value: 'emby', label: t('nav.emby'), to: '/emby', icon: 'i-ph-monitor-play' },
         ] : []),
       ],
-    })
-  }
+  })
   return items
 }

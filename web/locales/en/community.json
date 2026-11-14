@@ -63,6 +63,14 @@
     "ready": "Ready to join",
     "readyDescription": "Access is ready.",
     "join": "Join",
-    "joining": "Opening"
+    "joining": "Opening",
+    "telegramHint": "Invites open in Telegram. Return here to confirm your membership.",
+    "exploreAccess": "Explore access",
+    "topics": {
+      "group0": "Member conversations",
+      "group1": "Setup tips",
+      "channel0": "Service notices",
+      "channel1": "Project updates"
+    }
   }
 }

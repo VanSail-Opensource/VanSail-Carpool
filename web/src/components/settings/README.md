@@ -16,7 +16,8 @@ Language and currency share the same flat settings-row rhythm;
 the group tag save action sits beside its input.
 
 `SettingsPage.vue` composes existing language, currency and member access controls.
-It is the sole member navigation entrance to `/settings/diy`; the existing DIY
+On mobile it provides the DIY Center and administrator-only Admin access
+entrances; desktop moves those shortcuts into the sidebar footer. The existing DIY
 route and in-memory drafts remain owned by the DIY module. Mini App entrances
 navigate through the Vue router instead of emitting anchors, because Telegram's
 WebView treats host-level URL navigation separately from in-app history.
@@ -36,7 +37,7 @@ disposal. Tag reads cannot supersede a pending save and strand its busy state.
 `SettingsPAYGControls.vue` composes the master and sparse per-group preference switches with existing controlled rows. Its owner-scoped PAYG loader supplies squad names, exact balance, and loading/error states; switches are disabled when balance is nonpositive or unavailable. Confirmed preferences remain visible and unchanged, including subordinate choices, while a balance notice explains the subscription restriction. The server independently checks activation requests.
 `SettingsPAYGControls.test.ts` covers balance transitions, failed refreshes, and preservation of the displayed choices.
 
-`SettingsNavigationRow.vue` supplies flat full-width DIY/admin entrances with localized labels, existing icons and router-only navigation. Admin visibility and one-use console access remain owned by the session and AdminAccessPanel.
+`SettingsNavigationRow.vue` supplies compact icon-led DIY/admin entrances with localized labels, active-route feedback and router-only navigation. The same component supports mobile Settings and a denser desktop sidebar variant. Admin visibility and one-use console access remain owned by the session and AdminAccessPanel.
 
 Administrator links retire synchronously on owner, privilege or destination
 changes. Link creation and clipboard feedback are generation-scoped; expired or
@@ -59,3 +60,10 @@ requests cannot silently enable it. Changed rates expose a review action here;
 turning off remains possible if new purchases become unavailable. Legacy-blocked
 accounts do not receive these hourly controls. EN/ZH copy reuses the hourly
 locale contract. `SettingsHourlyControls.test.ts` covers these boundaries.
+
+Member Settings data and its route code are preloaded after onboarding. Preferences,
+group tags, internal squad controls and PAYG rows restore 60-second session display
+snapshots while fresh reads run. The preference store, `useSettings.ts`,
+`useComboControls.ts` and `SettingsPAYGControls.vue` gate writes on live authority;
+cached values cannot enable mutations or optional navigation. No administrator
+console code, one-use link or payment capability is preloaded.

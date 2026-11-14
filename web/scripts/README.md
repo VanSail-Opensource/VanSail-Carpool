@@ -118,6 +118,18 @@ It opts individual scenarios into normal motion; other recovery suites keep
 their reduced-motion preference. Paused captures finish finite CSS transitions
 while asserting that the illustrative clock and pointer pose stay fixed.
 
+`browser-knowledgebase.mjs` exercises all eight cards through the shared player
+in desktop/mobile English and Chinese. It checks chapter selection, localized
+source details, reduced motion, keyboard seek/pause/replay, dialog focus return,
+and new-member Home/sidebar access. The constructed full-shell fixture records
+all mocked API calls and refuses unexpected network access, proving lesson
+playback has no real or mocked member actions. Assertions wait for the initial
+preferences, access, balance, currency and availability reads to finish before
+recording the baseline. Each locale and viewport retains a top-of-page overview
+and clean wallet/gas and exchange-fee payment frames before source details open.
+The `knowledgebase` scope follows
+the feature, its locales, shared player/clock changes and member-shell changes.
+
 `browser-member-design.mjs` captures every member route and both Explore modes,
 all DIY categories, public subscription and payment results in desktop/mobile
 Chromium. Narrow 320px Chinese captures check the densest member layouts and

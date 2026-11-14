@@ -1,4 +1,8 @@
 import enUserPrices from '../../locales/en/user-prices.json'
+import enKnowledge from '../../locales/en/knowledge.json'
+import zhKnowledge from '../../locales/zh-CN/knowledge.json'
+import enKnowledgeLessons from '../../locales/en/knowledge-lessons.json'
+import zhKnowledgeLessons from '../../locales/zh-CN/knowledge-lessons.json'
 import enAdminEndpoints from '../../locales/en/admin-endpoints.json'
 import zhAdminEndpoints from '../../locales/zh-CN/admin-endpoints.json'
 import zhUserPrices from '../../locales/zh-CN/user-prices.json'
@@ -98,6 +102,7 @@ import zhStatistics from '../../locales/zh-CN/statistics.json'
 import zhSettings from '../../locales/zh-CN/settings.json'
 
 const en = {
+  ...enKnowledge, ...enKnowledgeLessons,
  ...enUserPrices,
   ...enPredictions,
   ...enCharts,
@@ -115,6 +120,7 @@ const en = {
   ...enAdminActivity, ...enAdminDraw, ...enAdminCommunity, ...enAdminCatalog, ...enAdminOperations, ...enAdminWorkflows, ...enSquadProfile, ...enStatistics,
 }
 const zhCN: typeof en = {
+  ...zhKnowledge, ...zhKnowledgeLessons,
  ...zhUserPrices,
   ...zhPredictions,
   ...zhCharts,

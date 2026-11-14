@@ -95,7 +95,8 @@ export async function memberRecoveryScenarios(scenario, size) {
     assert.equal(await page.getByRole('button', { name: 'Join', exact: true }).count(), 2)
   })
   await scenario(size, 'community-error', 'community-audit.html?error', async page => {
-    await page.getByText('We could not refresh community access right now.', { exact: true }).waitFor()
+    await page.locator('.community-page__empty').waitFor()
+    assert.match(await page.locator('.community-page__empty').innerText(), /We could not refresh community access right now\./)
     assert.equal(await page.getByRole('button', { name: 'Join', exact: true }).count(), 0)
     assert.equal(await page.getByRole('button', { name: 'Refresh', exact: true }).isEnabled(), true)
   })

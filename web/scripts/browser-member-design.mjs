@@ -10,7 +10,7 @@ const pages = [
   ['connections', 'member-connections-audit.html', '.connections-page__workspace'],
   ['settings', 'settings-audit.html', '.settings-page'],
   ['diy', 'routing-audit.html?diy&populated&split&local-preview', '.diy-tabs'],
-  ['community', 'community-audit.html?joined', '.community-page__workspace'],
+  ['community', 'community-audit.html?joined', '.community-rows'],
   ['activity', 'lucky-audit.html?bet&progress', '.page--activity .page-toolbar'],
   ['ip-lookup', 'ip-lookup-audit.html', '.ip-lookup-empty'],
   ['onboarding', 'onboarding-audit.html', '.agreement-callout'],
@@ -87,11 +87,18 @@ export async function memberDesignScenarios(scenario, size) {
   for (const [name, path, selector] of pages) {
     await scenario(size, `design-${name}`, path, async (page, capture) => {
       await settled(page, selector)
+      if (name === 'home') {
+        assert.equal(await page.locator('.subscription-entrance').isVisible(), size.name === 'mobile', 'Home subscription shortcut visibility differs from the sidebar layout')
+        assert.equal(await page.locator('.side-rail__member').count(), 0, 'desktop member identity remained visible')
+        if (size.name === 'desktop') assert.equal(await page.locator('.side-rail a[href="/subscription"]').isVisible(), true)
+      }
+      if (name === 'explore-traffic') assert.equal(await page.locator('.payg-summary').count(), 0, 'traffic page repeated account totals')
       if (name === 'activity') await inspectBetLabel(page)
       if (name === 'subscription') await inspectHostName(page)
       if (name === 'explore-hourly') {
         await page.getByRole('button', { name: 'Charge by hour', exact: true }).click()
         await settled(page, '.hourly-page__squads')
+        assert.equal(await page.locator('.hourly-summary__wallet').count(), 0, 'hourly page repeated the wallet balance')
       }
       if (name === 'diy') {
         await inspectSaveContrast(page)

@@ -12,6 +12,7 @@ import { gameIcon } from './gameIcons'
 const props = defineProps<{
   games: readonly BetGame[]
   busy: boolean
+  disabled?: boolean
 }>()
 const emit = defineEmits<{ bet: [payload: { gameId: string; stakeTxbMinor: string }] }>()
 const { reducedMotion, offset } = useMotionPreferences()
@@ -22,7 +23,7 @@ const stake = shallowRef('')
 const selected = computed(() => props.games.find((game) => game.id === selectedId.value))
 const stakeMinor = computed(() => displayInputToTXBMinor(stake.value))
 const canBet = computed(() => {
-  if (props.busy || !selected.value?.enabled || !stakeMinor.value) return false
+  if (props.disabled || props.busy || !selected.value?.enabled || !stakeMinor.value) return false
   try {
     const amount = BigInt(stakeMinor.value)
     return amount >= BigInt(selected.value.minimumStakeMinor)
@@ -59,7 +60,7 @@ function submit(): void {
 }
 
 function selectGame(id: string): void {
-  if (props.busy || selectedId.value === id || !props.games.some(game => game.id === id && game.enabled)) return
+  if (props.disabled || props.busy || selectedId.value === id || !props.games.some(game => game.id === id && game.enabled)) return
   selectedId.value = id
   selectionHaptic()
 }
@@ -79,7 +80,7 @@ function selectGame(id: string): void {
             :class="{ 'bet-option--selected': game.id === selectedId }"
             color="neutral"
             variant="ghost"
-            :disabled="!game.enabled || busy"
+            :disabled="!game.enabled || busy || disabled"
             :aria-pressed="game.id === selectedId"
             @click="selectGame(game.id)"
           >

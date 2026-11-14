@@ -3,11 +3,33 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { restoreCached, restoreItems, restoreRef } from './restore'
 import { cacheGeneration, readResponseCache, setCacheSession, writeResponseCache } from './session'
 import { responseCacheKey } from './policy'
+import { usageBreakdownFixture } from '../../../fixtures/usage-breakdown-data'
 
 beforeEach(() => { setCacheSession(null); setCacheSession('restore:member') })
 afterEach(() => setCacheSession(null))
 
 describe('compatible rendering snapshots', () => {
+  it('rejects incompatible usage accounting units from background preloads', () => {
+    const path = '/api/v1/usage/breakdown'
+    const key = responseCacheKey(path)!
+    const value = usageBreakdownFixture()
+    value.cost.knownTotalMinor.denominator = '0'
+    writeResponseCache(key, value, cacheGeneration())
+    const apply = vi.fn()
+    expect(restoreCached(path, apply, {}, 60_000)).toBe(false)
+    expect(apply).not.toHaveBeenCalled()
+    expect(readResponseCache(key)).toBeUndefined()
+  })
+
+  it('restores exact usage units for display without changing large integer fields', () => {
+    const path = '/api/v1/usage/breakdown'
+    const value = usageBreakdownFixture(new URLSearchParams('large'))
+    writeResponseCache(responseCacheKey(path)!, value, cacheGeneration())
+    const target = shallowRef<typeof value | null>(null)
+    expect(restoreRef(path, target, {}, 60_000)).toBe(true)
+    expect(target.value).toEqual(value)
+  })
+
   it('discards outdated nested statistics without invoking the loader callback', () => {
     const key = responseCacheKey('/api/v1/admin/statistics')!
     writeResponseCache(key, { database: null }, cacheGeneration())

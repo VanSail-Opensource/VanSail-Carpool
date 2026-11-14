@@ -45,12 +45,12 @@ describe('Usage Breakdown numeric response boundary', () => {
     hidden.coverage.truncated = false; request.mockResolvedValue(hidden)
     await expect(usageBreakdownApi.get()).rejects.toMatchObject({ code: 'API_RESPONSE_INCOMPATIBLE' })
   })
-  it('accepts exact large/fractional fields through the owner-only no-store read', async () => {
+  it('accepts exact large/fractional fields through the revalidated owner-only read', async () => {
     const value = usageBreakdownFixture(new URLSearchParams('large'))
     request.mockResolvedValue(value)
     const controller = new AbortController()
     expect(await usageBreakdownApi.get(controller.signal)).toBe(value)
-    expect(request).toHaveBeenCalledWith('/api/v1/usage/breakdown', { signal: controller.signal, cache: 'no-store' })
+    expect(request).toHaveBeenCalledWith('/api/v1/usage/breakdown', { signal: controller.signal, cache: 'no-cache' })
   })
   it.each([
     ['zero denominator', (value: ReturnType<typeof usageBreakdownFixture>) => { value.cost.knownTotalMinor.denominator = '0' }],

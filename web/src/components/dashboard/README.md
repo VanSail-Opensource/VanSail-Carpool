@@ -9,11 +9,11 @@ facts without purchase entrances; legacy Home add-on query links redirect to
 Settings. This keeps dashboard actions separate from subscription settings.
 
 - `UserHome.vue` composes Home in one balance-first flow. Ordered active squad labels arrive in its owner-scoped dashboard response, and usage summaries carry node labels and country metadata. Home no longer fetches the full Explore catalog or persists duplicate squad data. Retired traffic multiplier metadata remains constant 1 only for API compatibility and is not displayed.
-- `BalanceHero.vue` opens the real funding sheet from Home and refetches a provider-returned reissue order before prepopulating it; `SubscriptionPanel.vue` is reused on Subscription for the active URL and mobile Connections/Revoke actions, with desktop actions in the sidebar. Home exposes the subscription entrance only when the account has a positive balance or a server-confirmed active combo; otherwise `AddBalanceGuide.vue` shows a localized animated icon guide that opens the same funding sheet, and `BalanceHero` hides its own action so the guide owns the only Add Balance button. The guide's two billing-mode rows animate in with a staggered reveal and a looping icon pulse/ring, state their advantage (no commitment for Charge by traffic; stop anytime for Charge by hour), and fall back to static rows under reduced motion. The sidebar's Subscription/Connections/Revoke children follow the same access gate.
+- `BalanceHero.vue` opens the real funding sheet from Home and refetches a provider-returned reissue order before prepopulating it; `SubscriptionPanel.vue` is reused on Subscription for the active URL and mobile Connections/Revoke actions, with desktop actions in the sidebar. Mobile Home exposes the subscription entrance only when the account has a positive balance or a server-confirmed active combo; otherwise `AddBalanceGuide.vue` shows a localized animated icon guide that opens the same funding sheet, and `BalanceHero` hides its own action so the guide owns the only Add Balance button. The guide's two billing-mode rows animate in with a staggered reveal and a looping icon pulse/ring, state their advantage (no commitment for Charge by traffic; stop anytime for Charge by hour), and fall back to static rows under reduced motion. The sidebar's Subscription/Connections/Revoke children follow the same access gate.
 
 `UsagePanel.vue` retains the legacy quota meter and stale-data disclosure. The old per-node breakdown bar and reset controls are retired; detailed traffic belongs to Usage Breakdown.
 - `HomePreferences.vue` is the compact new-user preferences strip on Home, rendered only for a non-administrator member without combo access or a positive balance: a centered inline `LanguageControl.vue` · `CurrencyControl.vue` group without the Settings row labels, placed below `AddBalanceGuide.vue`. It exposes a localized group name for assistive technology, keeps 44px controls that wrap at 390px, and removes its short fade under reduced motion. Members with access keep the labelled rows in Settings.
-- `ComingSoonLinks.vue` preserves mobile Around TX actions through Vue Router without native document links and renders the section only for an opted-in entrance preference and a server-confirmed valid combo; the desktop sidebar carries the same gated entry points.
+- `ComingSoonLinks.vue` preserves mobile Around TX actions through Vue Router without native document links. Knowledgebase is always available; paid community tools require an opted-in entrance preference and a server-confirmed valid combo. The desktop sidebar carries the same entry rules.
 - `ComingSoonLinks.test.ts` verifies every member-tool action reaches its route while keeping the launch document URL unchanged. The retired member TX Statistics action is absent; administrator statistics stay in the browser console.
 - `UsagePanel.test.ts` verifies stale upstream data disclosure.
 - `EntitlementSummary.test.ts` covers active, queued, and absent combos.
@@ -26,10 +26,10 @@ Dashboard controls distinguish copy, open, navigation, retry, confirmation, and 
 
 Language and currency controls appear on Settings for members with access. New
 users without access configure them from the compact Home strip
-(`HomePreferences.vue`) below the add-balance guide. Mobile Around TX
-additionally requires the persisted entrance preference.
+(`HomePreferences.vue`) below the add-balance guide. Paid tools in mobile Around TX
+additionally require the persisted entrance preference; Knowledgebase stays available.
 
-The IP Lookup entrance in `ComingSoonLinks.vue` remains available to members with positive balance or an active combo when the feature is enabled; only its item bypasses the existing combo/preference gates.
+The IP Lookup entrance in `ComingSoonLinks.vue` remains available to members with positive balance or an active combo when the feature is enabled; it uses its own availability gate rather than the paid community preference.
 
 `MemberLiveMetrics.vue` polls owner-scoped, memory-only metrics every five seconds while visible, with incomplete coverage and localized limitation reasons.
 
@@ -54,14 +54,15 @@ Active purchase controls: `AutoRenewalControl.vue`, `PurchaseActions.vue` and `R
 
 `UserHome.vue` composes `UsageBreakdownPanel.vue` only after the member has a
 positive balance or a server-confirmed active combo; a member with neither sees
-the add-balance guide instead of Subscription, live usage, usage breakdown,
-entitlement and Around TX sections. The limit-based `UsagePanel.vue` meter is
+the add-balance guide and Knowledgebase invitation instead of Subscription, live usage,
+usage breakdown and entitlement sections. Around TX retains Knowledgebase. The limit-based `UsagePanel.vue` meter is
 narrower still: it renders only for an active fixed-term combo whose
 `trafficLimitBytes` is positive, because a pay-as-you-go-only account has no
 meaningful limit percentage. The existing no-statistics empty state stays for
 combo holders who have not received a statistics snapshot yet. The panel reuses the visibility-aware
-`useSubscriptionData` lifecycle for the owner-only no-store
-`GET /api/v1/usage/breakdown`. It retains an existing snapshot on read failure and
+`useSubscriptionData` lifecycle for the owner-only
+`GET /api/v1/usage/breakdown`. It may restore a validated session snapshot up to
+60 seconds old while a no-cache read revalidates it. It retains an existing snapshot on read failure and
 shows only the chart, totals, metric tabs and stale warning; descriptive coverage,
 gap, truncation and cost-provenance prose was removed at the member's request.
 
@@ -149,3 +150,10 @@ removed after verifying no source references remain.
 
 `SubscriptionPanel.test.ts` covers replacement of a subscription credential:
 old asynchronous copy feedback and open revoke consent are retired together.
+
+Home and its statically imported components share the preloaded route chunk graph.
+`UsageBreakdownPanel.vue` restores a one-minute, account-scoped display snapshot
+with exact-unit validation, then always fetches fresh data; refresh/error indicators
+remain visible. `MemberLiveMetrics.vue` retains live polling and expiry checks so
+preloading never revives an expired online status. Funding-sheet capabilities are
+loaded only when requested and are excluded from session snapshots.

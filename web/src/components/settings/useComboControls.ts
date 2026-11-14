@@ -1,6 +1,7 @@
 import { computed, onMounted, onScopeDispose, readonly, shallowRef, watch } from 'vue'
 import { comboControlsApi } from '@/api/comboControls'
 import { clearResponseCache } from '@/api/cache/session'
+import { restoreRef } from '@/api/cache/restore'
 import type { ComboControls, EarlyActivationQuote } from '@/api/types'
 import { useDurableCommand } from '@/composables/useDurableCommand'
 import { localizedError } from '@/i18n'
@@ -26,6 +27,7 @@ export function useComboControls() {
     if (disposed || !session.user?.id) return
     if (blockedTimer) globalThis.clearTimeout(blockedTimer)
     const token = latest.begin()
+    if (!value.value) restoreRef('/api/v1/me/internal-squads', value, {}, 60_000)
     loading.value = value.value === null
     refreshing.value = true
     loadError.value = null

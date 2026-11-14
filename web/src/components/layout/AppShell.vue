@@ -15,7 +15,7 @@ import { isTelegramWebAppDetected, telegramFullscreenState } from '@/utils/teleg
 import { usePreferencesStore } from '@/stores/preferences'
 import { useTelegramSettingsButton } from '@/composables/useTelegramSettingsButton'
 import MobileNavigation from './MobileNavigation.vue'
-import SidebarMember from './SidebarMember.vue'
+import SettingsNavigationRow from '@/components/settings/SettingsNavigationRow.vue'
 import { desktopNavigationItems } from './navigation'
 import { usePageTransition } from './usePageTransition'
 import { useNavigationExpansion } from './useNavigationExpansion'
@@ -113,8 +113,9 @@ watch(() => route.path, (_next, previous) => {
           </nav>
         </template>
         <template #footer>
-          <footer class="side-rail__footer">
-            <SidebarMember />
+          <footer v-if="!isNewUser" class="side-rail__footer">
+            <SettingsNavigationRow icon="i-ph-sliders-horizontal-bold" :label="$t('diy.title')" path="/settings/diy" compact />
+            <SettingsNavigationRow v-if="sessionStore.isAdmin" icon="i-ph-shield-check-bold" :label="$t('browser.adminAccess')" path="/settings/admin-access" compact />
           </footer>
         </template>
       </UDashboardSidebar>

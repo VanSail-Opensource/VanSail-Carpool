@@ -25,6 +25,7 @@ const router = createRouter({
     { path: '/settings/admin-access', name: 'admin-access', component: () => import('@/components/settings/AdminAccessPanel.vue') },
     { path: '/connections', name: 'connections', component: memberViews['/connections'] },
     { path: '/catalog', name: 'catalog', component: memberViews['/catalog'] },
+    { path: '/knowledgebase', name: 'knowledgebase', component: memberViews['/knowledgebase'] },
     { path: '/payment-result', name: 'payment-result', component: () => import('@/views/PaymentResultView.vue'), meta: { immersive: true, browserPublic: true } },
     { path: '/balance', redirect: { name: 'home', query: { topUp: '1' } } },
     { path: '/activity', name: 'activity', component: memberViews['/activity'] },

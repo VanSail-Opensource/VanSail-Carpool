@@ -134,3 +134,8 @@ bounded backoff. Terminal, stopped and disposed tracking never restarts from a
 visibility event. `usePollingVisibility.test.ts` and `usePaymentReturn.test.ts`
 exercise these lifecycles in hosted CI; no provider operation is replayed by a
 status read.
+
+`useActivity.ts` restores 60-second display snapshots while withholding action
+eligibility until a successful live read. Pending replies are identity-fenced; identity changes synchronously clear Activity display, results and eligibility, with explicit reload available for the new context.
+`useCommunityMembership.ts` uses the same bounded display/fresh join distinction.
+`useDashboard.ts` bounds Home snapshot restoration to one minute.

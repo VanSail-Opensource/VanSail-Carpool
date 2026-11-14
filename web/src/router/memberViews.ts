@@ -9,6 +9,7 @@ export const memberViews = {
   '/activity': () => import('@/views/ActivityView.vue'),
   '/affiliates': () => import('@/views/AffiliatesView.vue'),
   '/community': () => import('@/views/CommunityView.vue'),
+  '/knowledgebase': () => import('@/views/KnowledgebaseView.vue'),
   '/emby': () => import('@/views/EmbyView.vue'),
 } as const
 
@@ -56,7 +57,7 @@ export function preloadMemberViews(): void {
   if (saveData()) return
   const current = generation
   // Settings/admin-access is deliberately absent: only member code is warmed.
-  const queue: MemberPath[] = ['/home', '/catalog', '/subscription', '/settings/diy', '/connections', '/affiliates', '/community', '/emby']
+  const queue: MemberPath[] = ['/home', '/catalog', '/subscription', '/activity', '/settings', '/knowledgebase', '/settings/diy', '/connections', '/affiliates', '/community', '/emby']
   function schedule(): void {
     if (generation !== current || !queue.length) return
     const work = () => {

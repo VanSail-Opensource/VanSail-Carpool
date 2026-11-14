@@ -68,8 +68,9 @@ All byte math stays in `BigInt`.
 
 ## Accounting status
 
-The member summary does not render reserved-credit, unconfirmed-usage or approved
-price-ceiling prose. All underlying accounting fields and balances remain intact;
+The member summary does not repeat the account wallet balance or render
+reserved-credit, unconfirmed-usage or approved price-ceiling prose.
+All underlying accounting fields and balances remain intact;
 only the member presentation is quieter. Historical-only evidence still cannot
 make the summary appear. `HourlyAccountingStatus.vue` remains the browser-admin
 presentation, where current/historical holds are available for inspection.

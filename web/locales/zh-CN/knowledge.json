@@ -1,0 +1,142 @@
+{
+  "knowledge": {
+    "title": "知识库",
+    "subtitle": "看懂原理，用得顺手。",
+    "watch": "播放指南",
+    "loadingGuide": "正在加载《{title}》…",
+    "loadFailed": "此指南暂时无法加载。请重试；若仍无法打开，可重新加载页面。",
+    "start": "从这里开始",
+    "homeTitle": "一分钟，认识 TX",
+    "homeNote": "选对网络，安心付款，轻松连接。",
+    "homeEyebrow": "初次使用 TX？",
+    "sources": "参考资料",
+    "details": "阅读详细说明",
+    "duration": "{seconds}秒",
+    "topicCount": "{count} 个动画指南",
+    "more": "查看全部指南",
+    "topics": {
+      "networks": {
+        "title": "三种网络，各有所长",
+        "subtitle": "中国优化、国际网络与宽带",
+        "points": { "first": "中国方向优质入口", "second": "跨地区互联", "third": "选择当地运营商出口" }
+      },
+      "payment": {
+        "title": "稳定币，正确到账",
+        "subtitle": "币种、手续费与精确金额",
+        "points": { "first": "币种与网络一致", "second": "核对实际到账金额", "third": "预留网络手续费" }
+      },
+      "sharing": {
+        "title": "有边界的宽带共享",
+        "subtitle": "了解人数与使用规范如何发挥作用",
+        "points": { "first": "共享 IP 很常见", "second": "节点独立公网 IP", "third": "限定人数，规范使用" }
+      },
+      "rules": {
+        "title": "共同维护好线路",
+        "subtitle": "欢迎日常使用，拒绝资源滥用。",
+        "points": { "first": "浏览、影音、办公、创作", "second": "禁止爬虫、BT 与转借", "third": "协议识别与连接数限制" }
+      },
+      "why": {
+        "title": "为什么选择 TX？",
+        "subtitle": "灵活使用，服务背后有人负责。",
+        "points": { "first": "按小时或流量付费", "second": "自主研发与持续维护", "third": "重视隐私，直接支持" }
+      },
+      "hourly": {
+        "title": "按小时付费",
+        "subtitle": "直观看懂小时计费",
+        "points": { "first": "选择车队", "second": "了解费用如何产生", "third": "自主控制使用" }
+      },
+      "traffic": {
+        "title": "按流量付费",
+        "subtitle": "跟随数据，看懂流量计费",
+        "points": { "first": "选择出口", "second": "了解流量如何计算", "third": "看懂流量额度" }
+      },
+      "routing": {
+        "title": "构建自己的路由",
+        "subtitle": "动态演示入口、规则与出口",
+        "points": { "first": "选择入口", "second": "匹配路由规则", "third": "选择合适出口" }
+      }
+    },
+    "labels": {
+      "you": "你",
+      "china": "中国",
+      "optimized": "中国优化",
+      "international": "国际网络",
+      "broadband": "宽带",
+      "service": "服务",
+      "carriers": "CTG / CUG / CMI",
+      "globalReach": "全球互联",
+      "localIsp": "当地运营商",
+      "entry": "入口",
+      "exit": "出口",
+      "route": "线路速度",
+      "reputation": "IP 信誉",
+      "invoice": "订单",
+      "wallet": "钱包",
+      "networkFee": "网络手续费",
+      "recipient": "TX 到账",
+      "exactAmount": "精确金额",
+      "fee": "手续费",
+      "withdrawal": "提现金额",
+      "received": "到账金额",
+      "network": "网络",
+      "token": "币种",
+      "address": "地址",
+      "confirmations": "已确认",
+      "bot": "私信机器人",
+      "txid": "交易哈希",
+      "example": "仅作演示",
+      "gasSeparate": "Gas 另行支付",
+      "crowd": "大量用户",
+      "publicIp": "一个公网 IP",
+      "dedicatedIp": "节点公网 IP",
+      "members": "限定人数",
+      "controlled": "规范使用",
+      "serviceChecks": "平台检查",
+      "device": "设备",
+      "behavior": "行为",
+      "noGuarantee": "任何 IP 均无法保证免风控",
+      "normalUse": "日常使用",
+      "abuse": "滥用",
+      "browsing": "浏览",
+      "streaming": "影音",
+      "ai": "AI",
+      "work": "办公",
+      "crawler": "爬虫",
+      "resharing": "转借转售",
+      "sharing": "转借转售",
+      "registration": "批量注册",
+      "torrent": "BT / PT",
+      "spam": "垃圾信息",
+      "attacks": "网络攻击",
+      "protocol": "协议识别",
+      "connections": "连接数限制",
+      "allowed": "欢迎使用",
+      "prohibited": "禁止使用",
+      "blocked": "已拦截",
+      "hourly": "按小时",
+      "traffic": "按流量",
+      "maintained": "自主研发",
+      "code": "自主代码",
+      "quality": "品质承诺",
+      "privacy": "隐私",
+      "support": "直接支持"
+    },
+    "sourcesLabels": {
+      "telecom": "中国电信 · CN2 国际传输",
+      "unicom": "中国联通 · 优质互联网接入",
+      "mobile": "中国移动 · 全球互联",
+      "maxmind": "MaxMind · IP 与代理分类",
+      "ethereum": "以太坊 · Gas 与手续费",
+      "tron": "TRON · 带宽与能量",
+      "solana": "Solana · 交易手续费",
+      "aptos": "Aptos · Gas 与存储费",
+      "circle": "Circle · 转账与提现手续费",
+      "kraken": "Kraken · 选择正确网络",
+      "cgnat": "Cloudflare · 一个 IP，多位用户",
+      "ietf": "IETF · 地址共享的影响",
+      "detection": "Cloudflare · 平台检查的依据",
+      "project": "VanSail Carpool · 项目源码",
+      "privacy": "VanSail Carpool · 连接隐私"
+    }
+  }
+}

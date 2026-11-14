@@ -1,5 +1,7 @@
 # Route views
 
+- `KnowledgebaseView.vue` delegates to the shared, localized visual lesson catalog.
+
 - `ActivityView.vue` delegates to games, check-in, draws, and activity history.
 - `AdminView.vue` resolves and lazy-loads the selected administrative section.
 - `AdminUserView.vue` is the thin browser aggregate-profile route entrance and returns to the user list.

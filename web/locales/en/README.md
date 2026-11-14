@@ -1,5 +1,8 @@
 # English messages
 
+- `knowledge.json` owns Knowledgebase cards, entrances, scene labels and sources.
+- `knowledge-lessons.json` owns short film captions and expanded explanations.
+
 - `admin-endpoints.json` owns administrator endpoint field labels, protocol
   context, draft validation, hopping controls and client compatibility.
 

@@ -38,7 +38,7 @@ export const featuresApi = {
   saveAdminAffiliates: (expectedVersion: number, tiers: AffiliateTier[]) => featureRequest<AdminAffiliateView>('/api/v1/admin/affiliates', {
     method: 'PUT', body: { expectedVersion, tiers },
   }),
-  getActivity: () => featureRequest<ActivityOverview>('/api/v1/activity'),
+  getActivity: () => featureRequest<ActivityOverview>('/api/v1/activity', { cache: 'no-cache' }),
   checkIn: (idempotencyKey: string) => featureRequest<ActivityResult>('/api/v1/activity/check-ins', { method: 'POST', headers: { 'Idempotency-Key': idempotencyKey } }),
   placeBet: (gameId: string, stakeTxbMinor: string, idempotencyKey: string) => featureRequest<ActivityResult>('/api/v1/activity/bets', {
     method: 'POST', body: { gameId, stakeTxbMinor }, headers: { 'Idempotency-Key': idempotencyKey },

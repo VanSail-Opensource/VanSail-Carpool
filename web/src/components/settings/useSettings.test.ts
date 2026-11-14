@@ -3,8 +3,9 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { GroupMemberTag } from '@/api/preferences'
 
-const mocks = vi.hoisted(() => ({ getTag: vi.fn(), updateTag: vi.fn() }))
+const mocks = vi.hoisted(() => ({ getTag: vi.fn(), updateTag: vi.fn(), restoreRef: vi.fn() }))
 vi.mock('@/api/preferences', () => ({ preferencesApi: mocks }))
+vi.mock('@/api/cache/restore', () => ({ restoreRef: mocks.restoreRef }))
 const account = reactive<{ user: { id: string } | null }>({ user: { id: 'first' } })
 vi.mock('@/stores/session', () => ({ useSessionStore: () => account }))
 import { useSettings } from './useSettings'
@@ -15,6 +16,23 @@ const tag = (value: string): GroupMemberTag => ({ groupJoined: true, editable: t
 beforeEach(() => { vi.resetAllMocks(); account.user = { id: 'first' }; mocks.getTag.mockResolvedValue(tag('First')) })
 
 describe('settings tag owner and mutation recovery', () => {
+  it('shows cached tags but blocks editing until a fresh eligibility read succeeds', async () => {
+    mocks.restoreRef.mockImplementationOnce((_path, target) => { target.value = tag('Cached'); return true })
+    let resolve!: (value: GroupMemberTag) => void
+    mocks.getTag.mockReturnValueOnce(new Promise(done => { resolve = done }))
+    const wrapper = mount(Harness)
+    expect(state.tagLoading.value).toBe(false)
+    expect(state.tag.value?.tag).toBe('Cached')
+    expect(state.tagBlocked.value).toBe(true)
+    await state.saveTag('Too soon')
+    expect(mocks.updateTag).not.toHaveBeenCalled()
+    resolve(tag('Fresh'))
+    await flushPromises()
+    expect(state.tag.value?.tag).toBe('Fresh')
+    expect(state.tagBlocked.value).toBe(false)
+    wrapper.unmount()
+  })
+
   it('clears the tag immediately and ignores prior-owner reads', async () => {
     let resolve!: (value: GroupMemberTag) => void
     mocks.getTag.mockReturnValueOnce(new Promise(done => { resolve = done }))

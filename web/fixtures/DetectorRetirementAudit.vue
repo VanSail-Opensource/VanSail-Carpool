@@ -6,13 +6,11 @@ import BrowserConsole from '@/browser/BrowserConsole.vue'
 import AdminUserAccountContext from '@/components/admin/users/AdminUserAccountContext.vue'
 import ComingSoonLinks from '@/components/dashboard/ComingSoonLinks.vue'
 import { desktopNavigationItems } from '@/components/layout/navigation'
-import { usePreferencesStore } from '@/stores/preferences'
 import { useI18n } from '@/i18n'
 
 const { t, locale } = useI18n()
 const params = new globalThis.URLSearchParams(globalThis.location.search)
 const member = params.has('member')
-usePreferencesStore().value = { activeCombo: true, showAroundTx: true, showActivity: false, includeNodePrices: true, showReferralUsername: true, notifications: { combos: true, traffic: true, money: true, activity: true, account: true } }
 const loading = shallowRef(true)
 const failed = shallowRef(false)
 let attempts = 0

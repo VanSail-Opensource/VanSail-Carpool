@@ -22,10 +22,11 @@ export const browserRecoverySuites = Object.freeze({
   'xnode-availability': suite('browser-xnode-availability', 'xnodeAvailabilityScenarios'),
   'xnode-creation': suite('browser-xnode-creation', 'xnodeCreationScenarios'),
   demonstrations: suite('browser-demonstrations', 'demonstrationScenarios'),
+  knowledgebase: suite('browser-knowledgebase', 'knowledgebaseScenarios'),
   'member-design': suite('browser-member-design', 'memberDesignScenarios'),
 })
 export const allBrowserScopes = Object.keys(browserRecoverySuites)
-export const memberBrowserScopes = ['currency', 'checkout', 'member', 'operation', 'purchase', 'activity', 'receipt', 'hourly', 'ip', 'settings', 'charts', 'demonstrations', 'member-design']
+export const memberBrowserScopes = ['currency', 'checkout', 'member', 'operation', 'purchase', 'activity', 'receipt', 'hourly', 'ip', 'settings', 'charts', 'demonstrations', 'knowledgebase', 'member-design']
 export const adminBrowserScopes = ['auth', 'operation', 'ip', 'charts', 'admin-settings', 'backups', 'admin-activity', 'admin-coupons', 'admin-database', 'pm', 'xnode-availability', 'xnode-creation']
 
 // No implicit universal fallback: the PR planning job must provide a reviewed scope.
