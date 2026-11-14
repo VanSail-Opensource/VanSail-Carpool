@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick, shallowRef, useTemplateRef, watch } from 'vue'
 import { useI18n } from '@/i18n'
+import LoadingPlaceholder from '@/components/common/LoadingPlaceholder.vue'
 import { useXNodeLogs } from './useXNodeLogs'
 
 const open = defineModel<boolean>('open', { required: true })
@@ -21,7 +22,7 @@ function scroll() { const element = viewport.value; if (element) following.value
           <UBadge v-if="state.snapshot.value" :color="state.snapshot.value.stale ? 'warning' : 'success'" variant="subtle">{{ t(state.snapshot.value.stale ? 'xnode.stale' : 'xnode.online') }}</UBadge>
           <div class="flex items-center gap-2"><USwitch v-model="state.paused.value" :label="t('xnode.pauseLogs')" /><UButton variant="ghost" color="neutral" icon="i-ph-arrow-clockwise" :aria-label="t('common.refresh')" :loading="state.loading.value" @click="state.refresh" /></div>
         </div>
-        <UProgress v-if="state.loading.value && !state.snapshot.value" />
+        <LoadingPlaceholder v-if="state.loading.value && !state.snapshot.value" :rows="5" />
         <UAlert v-if="state.error.value" color="warning" :title="state.error.value" />
         <p v-if="state.snapshot.value?.dropped !== '0' && state.snapshot.value" class="text-xs text-muted">{{ t('xnode.droppedLogs', { count: state.snapshot.value.dropped }) }}</p>
         <pre v-if="state.text.value" ref="viewport" class="node-logs" tabindex="0" :aria-label="t('xnode.logs')" @scroll.passive="scroll">{{ state.text.value }}</pre>

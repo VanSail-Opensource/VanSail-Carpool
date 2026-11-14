@@ -37,7 +37,6 @@
 .session-loading__replacement { font-weight: 400; }
 .session-loading__letter { position: relative; display: inline-block; font-family: inherit; }
 .session-loading__status { max-width: 440px; margin: 24px 0 0; color: var(--text-muted); font-size: 1rem; line-height: 1.5; }
-.session-loading .loading-track { margin-top: 16px; }
 .session-loading--animate .session-loading__letter {
   color: transparent;
   -webkit-text-stroke: 1px var(--text);

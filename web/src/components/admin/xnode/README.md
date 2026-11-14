@@ -410,3 +410,11 @@ is claimed for the audit reconstruction.
 `XNodeNodes.test.ts` also covers immutable node-save payloads and local pending
 locks when a workspace mutation runner defers dispatch. Node fields and native
 modal closing stay disabled until that reviewed save settles.
+
+Content reads use the shared `LoadingPlaceholder.vue`, composed from Nuxt UI
+`USkeleton`, for settings, node/service editors, templates, firewall results,
+automatic leases and live logs. Existing visible drafts/lists use its compact
+variant while refreshing; initial or replacement content uses form/list layouts.
+The original read/error/retry and write guards remain authoritative. Pinned-core
+configuration validation uses a compact result placeholder and retains its
+validation/error messages and save guards.

@@ -3,6 +3,7 @@ import { computed, onMounted, onScopeDispose, ref, shallowRef } from 'vue'
 import { xnodeApi } from '@/api/xnode'
 import type { components } from '@/api/generated'
 import { localizedError, useI18n } from '@/i18n'
+import LoadingPlaceholder from '@/components/common/LoadingPlaceholder.vue'
 import { createUuid } from '@/utils/browserCompatibility'
 
 type Config = components['schemas']['XNodeRoutingTemplateConfig']
@@ -38,7 +39,7 @@ onScopeDispose(() => { disposed = true; generation++; reader?.abort() })
     <div class="flex items-center justify-between gap-3"><h3>{{ t('managedRouting.templatesTitle') }}</h3><UButton variant="ghost" color="neutral" icon="i-ph-arrow-clockwise" :aria-label="t('common.refresh')" :loading="loading" :disabled="busy" @click="load" /></div>
     <p class="text-sm text-muted">{{ t('managedRouting.templateDescription') }}</p>
     <UAlert v-if="error" color="warning" :title="error" />
-    <UProgress v-if="loading" />
+    <LoadingPlaceholder v-if="loading" variant="form" :rows="6" />
     <UButton v-else-if="!loaded" class="justify-self-start" variant="outline" :label="t('common.tryAgain')" @click="load" />
     <form v-if="loaded && config" class="grid gap-5" @submit.prevent="save">
       <fieldset v-for="(item, index) in config.templates" :key="item.id" :disabled="busy" class="grid gap-3 min-w-0 border-b border-default pb-5">

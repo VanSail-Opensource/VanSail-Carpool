@@ -2,6 +2,7 @@
 import { onMounted, onScopeDispose, shallowRef, toRaw } from 'vue'
 import { xnodeApi, type NamedService, type NamedServiceWrite, type XNode, type XNodeGroup } from '@/api/xnode'
 import { localizedError, useI18n } from '@/i18n'
+import LoadingPlaceholder from '@/components/common/LoadingPlaceholder.vue'
 import { cloneForEditing } from '@/utils/browserCompatibility'
 import { formatDateTime } from '@/utils/format'
 import { createLatestRequest } from '@/utils/latestRequest'
@@ -91,7 +92,7 @@ onScopeDispose(() => { active = false; reads.dispose(); writes.dispose(); link.v
   <div class="grid gap-4 min-w-0">
     <div class="flex justify-between gap-3"><p class="text-sm text-muted">{{ t('namedServices.description') }}</p><div class="flex gap-1"><UButton variant="ghost" color="neutral" icon="i-ph-arrow-clockwise" :aria-label="t('common.refresh')" :disabled="busy" :loading="loading" @click="load" /><UButton icon="i-ph-plus-bold" :label="t('namedServices.add')" :disabled="busy || !groups.length" @click="edit(null)" /></div></div>
     <UAlert v-if="error" color="warning" :title="error" />
-    <UProgress v-if="loading" />
+    <LoadingPlaceholder v-if="loading" :variant="items.length ? 'compact' : 'list'" />
     <div v-else-if="!items.length && !error" class="flex items-center justify-between gap-3"><p class="text-muted">{{ t('namedServices.empty') }}</p><UButton variant="ghost" :label="t('common.refresh')" @click="load" /></div>
     <div v-for="item in items" :key="item.identity.proxyUserId" class="flex flex-wrap justify-between items-center gap-3 py-3 border-b border-default">
       <div><strong>{{ item.identity.serviceName }}</strong><p class="text-xs text-muted">{{ formatDateTime(item.access.expiresAt) }} · {{ t(item.access.disabled ? 'namedServices.disabled' : 'common.enabled') }}</p></div>

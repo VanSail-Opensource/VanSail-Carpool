@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LoadingPlaceholder from '@/components/common/LoadingPlaceholder.vue'
 import { computed, onScopeDispose, reactive, shallowRef, toRaw, useId, watch } from 'vue'
 import { xnodeApi, type XNodeConfiguration, type XNodeSnippet } from '@/api/xnode'
 import { useI18n } from '@/i18n'
@@ -97,7 +98,7 @@ async function removeConfiguration(item: XNodeConfiguration): Promise<void> {
           <UFormField v-else :label="t('xnode.sharedSnippets')"><USelectMenu v-model="draft.snippetIds" :disabled="blocked" value-key="value" multiple :items="snippetOptions" class="w-full" /></UFormField>
           <XNodeJsonEditor v-model="document" :disabled="blocked" :label="t('xnode.document')" :rows="20" @valid="valid = $event" />
           <p v-if="mode === 'configuration'" class="text-xs text-muted">{{ t('xnode.userMarkersHint') }}</p>
-          <UProgress v-if="validating" />
+          <LoadingPlaceholder v-if="validating" variant="compact" />
           <div v-if="validationError" class="grid gap-2"><p>{{ validationError }}</p><UButton variant="ghost" :label="t('common.tryAgain')" :disabled="blocked" @click="!blocked && validationNonce++" /></div>
           <pre v-if="validation?.detail" class="text-xs whitespace-pre-wrap break-words">{{ validation.detail }}</pre>
           <UAlert v-if="validation" :color="validation.valid ? 'success' : 'warning'" variant="soft" :title="t(validation.valid ? validation.needsAgentValidation ? 'xnode.nodeValidationRequired' : 'xnode.configurationValid' : 'xnode.configurationInvalid')" />

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LoadingPlaceholder from '@/components/common/LoadingPlaceholder.vue'
 import { computed } from 'vue'
 import { xnodeMemberApi } from '@/api/xnodeMember'
 import { useI18n } from '@/i18n'
@@ -20,7 +21,7 @@ const hasContent = computed(() => {
 
 <template>
   <section v-if="hasContent" class="section-block grid gap-3">
-    <UProgress v-if="loading" />
+    <LoadingPlaceholder v-if="loading" :rows="2" />
     <p v-if="value?.active && !Object.values(value.formats).some(Boolean)" class="text-sm text-muted">{{ t('memberNodes.noFormats') }}</p>
     <p v-if="value?.incomplete" class="text-xs text-muted">{{ t('memberNodes.incomplete') }}</p>
     <SubscriptionFormatDiagnostics :diagnostics="value?.formatDiagnostics" />

@@ -2,6 +2,7 @@
 import { computed, onMounted, onScopeDispose, ref, shallowRef, toRaw } from 'vue'
 import { xnodeApi, type SubscriptionTemplate, type SubscriptionTemplateConfig } from '@/api/xnode'
 import { localizedError, useI18n } from '@/i18n'
+import LoadingPlaceholder from '@/components/common/LoadingPlaceholder.vue'
 import XNodeSubscriptionTemplateEditor from './XNodeSubscriptionTemplateEditor.vue'
 import XNodeSubscriptionRules from './XNodeSubscriptionRules.vue'
 import { templateFormats, subscriptionFormats, subscriptionPreset } from './subscriptionTemplatePresets'
@@ -55,7 +56,7 @@ onScopeDispose(() => { active = false; generation++; controller?.abort() })
     <div class="flex justify-between gap-3"><h3>{{ t('nodeTemplates.title') }}</h3><div class="flex gap-2"><UButton icon="i-ph-arrow-clockwise" variant="ghost" color="neutral" :aria-label="t('common.refresh')" :disabled="busy" :loading="loading" @click="load" /><UButton icon="i-ph-plus-bold" :label="t('nodeTemplates.add')" :disabled="!loaded || busy || loading" @click="add" /></div></div>
     <UAlert v-if="error" color="warning" :title="error" />
     <p v-if="saved" role="status" class="text-sm text-success">{{ t('nodeTemplates.saved') }}</p>
-    <UProgress v-if="loading" />
+    <LoadingPlaceholder v-if="loading" variant="form" :rows="6" />
     <template v-if="config && loaded && !loading">
       <p class="text-sm text-muted">{{ t('nodeTemplates.description') }}</p>
       <p v-if="!config.templates.length" class="text-muted">{{ t('nodeTemplates.empty') }}</p>

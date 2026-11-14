@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LoadingPlaceholder from '@/components/common/LoadingPlaceholder.vue'
 import { computed, shallowRef, watch } from 'vue'
 import { selectionHaptic } from '@/utils/telegramHaptics'
 import { useI18n } from '@/i18n'
@@ -33,7 +34,7 @@ const routingError = computed(() => state.errors.value.routing ? t(`managedRouti
         <UButton icon="i-ph-arrow-clockwise" variant="ghost" color="neutral" data-haptic="refresh" :aria-label="t('common.refresh')" :loading="state.loading.value" :disabled="state.submitting.value" @click="state.load(true)" />
       </div>
     </header>
-    <UProgress v-if="state.loading.value || state.view.value?.inventoryPending" />
+    <LoadingPlaceholder v-if="state.loading.value || state.view.value?.inventoryPending" :variant="state.view.value ? 'compact' : 'form'" :rows="6" />
     <UAlert v-if="state.error.value" color="warning" :title="state.error.value" />
     <UButton v-if="state.error.value && !state.view.value" class="justify-self-start" variant="outline" :label="t('common.tryAgain')" @click="state.load(true)" />
     <template v-if="state.view.value">
@@ -56,7 +57,7 @@ const routingError = computed(() => state.errors.value.routing ? t(`managedRouti
         <span v-if="scrolling.before.value" class="diy-overflow diy-overflow--before" aria-hidden="true"><UIcon name="i-ph-caret-left-bold" /></span>
         <span v-if="scrolling.after.value" class="diy-overflow diy-overflow--after" aria-hidden="true"><UIcon name="i-ph-caret-right-bold" /></span>
       </div>
-      <UProgress v-if="state.autoPreview.pending.value" />
+      <LoadingPlaceholder v-if="state.autoPreview.pending.value" variant="compact" />
       <UAlert v-if="state.autoPreview.error.value" color="warning" :title="state.autoPreview.error.value" />
       <OperationStatusNotice :receipt="state.tracker.receipt.value" :error="state.tracker.error.value" :checking="state.tracker.checking.value" @refresh="state.tracker.refresh" />
       <Transition name="diy-feedback"><p v-if="state.saved.value" role="status" class="diy-saved text-sm text-success"><UIcon :name="routePending ? 'i-ph-clock-countdown' : 'i-ph-check-circle'" aria-hidden="true" />{{ t(routePending ? 'diy.routingPending' : 'diy.saved') }}</p></Transition>

@@ -36,7 +36,7 @@ watch(() => reducedMotion.value || !props.animate, stop => { if (stop) animateOn
       <p class="session-loading__status" role="status" aria-live="polite" aria-atomic="true">
         {{ $t(slow ? 'auth.loadingAccountSlow' : 'auth.loadingAccount') }}
       </p>
-      <div class="loading-track" aria-hidden="true" />
+      <div class="startup-placeholder" aria-hidden="true"><USkeleton class="h-3 w-full rounded-full motion-reduce:animate-none" /><USkeleton class="h-3 w-2/3 rounded-full motion-reduce:animate-none" /></div>
     </div>
   </main>
 </template>

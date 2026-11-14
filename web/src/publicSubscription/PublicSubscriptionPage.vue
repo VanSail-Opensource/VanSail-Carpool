@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LoadingPlaceholder from '@/components/common/LoadingPlaceholder.vue'
 import SubscriptionFormatDiagnostics from '@/components/subscription/SubscriptionFormatDiagnostics.vue'
 import SubscriptionTuningDiagnostics from '@/components/subscription/SubscriptionTuningDiagnostics.vue'
 import { computed, onScopeDispose, shallowRef, watch } from 'vue'
@@ -38,7 +39,7 @@ onScopeDispose(() => latest.dispose())
       <header class="subscription-header"><strong>{{ t('app.name') }}</strong><USelect :model-value="locale" :items="languages" :aria-label="t('app.language')" @update:model-value="setLocale" /></header>
       <section class="subscription-content">
         <h1>{{ t('publicSubscription.title') }}</h1>
-        <div v-if="subscription.loading.value" class="grid gap-4" role="status" :aria-label="t('common.loading')"><USkeleton class="h-16 w-full" /><USkeleton class="h-12 w-full" /><UProgress /></div>
+        <LoadingPlaceholder v-if="subscription.loading.value" variant="form" :rows="4" />
         <UAlert v-else-if="subscription.failed.value && !subscription.metadata.value" color="warning" variant="soft" :title="t('publicSubscription.unavailable')" :description="t('publicSubscription.unavailableHint')" :actions="[{ label: t('common.tryAgain'), onClick: subscription.load }]" />
         <div v-else-if="subscription.metadata.value" class="grid gap-5 min-w-0">
           <UAlert v-if="subscription.failed.value" color="warning" variant="soft" :title="t('publicSubscription.refreshFailed')" :actions="[{ label: t('common.tryAgain'), onClick: subscription.load }]" />

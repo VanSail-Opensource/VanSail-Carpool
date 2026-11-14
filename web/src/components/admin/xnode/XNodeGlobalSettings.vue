@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { shallowRef } from 'vue'
 import { useI18n } from '@/i18n'
+import LoadingPlaceholder from '@/components/common/LoadingPlaceholder.vue'
 import XNodeGlobalPolicies from './XNodeGlobalPolicies.vue'
 import XNodeGlobalDetection from './XNodeGlobalDetection.vue'
 import XNodeDNSProviders from './XNodeDNSProviders.vue'
@@ -11,7 +12,7 @@ const validPolicies = shallowRef(true)
 </script>
 
 <template>
-  <UProgress v-if="loading" />
+  <LoadingPlaceholder v-if="loading" :variant="draft ? 'compact' : 'form'" :rows="6" />
   <UAlert v-if="error" color="warning" variant="soft" :title="error" />
   <UButton v-if="!loading && !canSave && !busy" class="justify-self-start" variant="outline" color="neutral" :label="t('common.tryAgain')" @click="load" />
   <form v-if="draft" class="global-settings" @submit.prevent="save">

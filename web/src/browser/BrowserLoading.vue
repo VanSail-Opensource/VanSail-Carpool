@@ -24,7 +24,7 @@ watch(() => reducedMotion.value || !!props.error, stop => { if (stop) animate.va
         </template>
         <p v-else>{{ status ?? t(slow ? 'browser.loadingWorkspaceSlow' : 'browser.loadingWorkspace') }}</p>
       </div>
-      <div v-if="!error" class="loading-track" aria-hidden="true" />
+      <div v-if="!error" class="startup-placeholder" aria-hidden="true"><USkeleton class="h-3 w-full rounded-full motion-reduce:animate-none" /><USkeleton class="h-3 w-2/3 rounded-full motion-reduce:animate-none" /></div>
       <div v-else class="browser-entry__actions"><slot /></div>
     </div>
   </main>
