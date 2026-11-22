@@ -50,6 +50,14 @@ let order: FeaturePaymentOrder = {
   actualCryptoCurrency: null, expiresAt: new Date(Date.now() + 3600000).toISOString(), paidAt: null,
   refundedAt: null, cancelledAt: null, cancelReason: '', providerCancelStatus: '', createdAt: now, updatedAt: now,
 }
+if (params.has('stablecoin') && methods.length) {
+  const method: FeaturePaymentMethod = { ...methods[0]!, id: 'builtin_usdt:usdt.erc20', provider: 'builtin_usdt',
+    rail: 'usdt.erc20', currency: 'USD', cryptoCurrency: 'USDT', network: 'ethereum', networkName: 'ERC20' }
+  methods[0] = method
+  order = { ...order, methodId: method.id, provider: method.provider, providerRail: method.rail,
+    payableAmount: '2.001', payableCurrency: 'USDT', actualCryptoAmount: '2.001', actualCryptoCurrency: 'USDT',
+    qrPayload: null, paymentUrl: null, receivingAddress: '0x1111111111111111111111111111111111111111' }
+}
 const receipt = (status: OperationReceipt['status']): OperationReceipt => ({
   id: 'audit-cancel', kind: 'payment_cancel', status, createdAt: now, updatedAt: now,
 })
