@@ -35,6 +35,7 @@ func (s *Store) RecordFirewallEvents(ctx context.Context, node, namespace string
 		// SQL retries must start from committed memory, just as their event cursor
 		// and ban writes start from committed rows. Failed attempts publish none.
 		clear(staged)
+		audience := firewallAudienceSnapshot{}
 		var before uint64
 		if err := tx.QueryRowContext(ctx, `SELECT version FROM xnode_firewall_clock WHERE singleton=1`).Scan(&before); err != nil {
 			return err
@@ -82,7 +83,7 @@ func (s *Store) RecordFirewallEvents(ctx context.Context, node, namespace string
 							if e != nil {
 								return e
 							}
-							if err = authorizeDetectionTx(ctx, tx, prefix.String(), ip, aggregated, policy, now); err != nil {
+							if err = authorizeDetectionTx(ctx, tx, prefix.String(), ip, aggregated, policy, now, &audience); err != nil {
 								return err
 							}
 						}
@@ -90,14 +91,14 @@ func (s *Store) RecordFirewallEvents(ctx context.Context, node, namespace string
 				}
 			case "expired":
 				if ordinal != 0 {
-					err = expireFirewallParticipant(ctx, tx, "xnode_firewall_bans", event.Prefix, event.Generation, ordinal)
+					err = expireFirewallParticipant(ctx, tx, "xnode_firewall_bans", event.Prefix, event.Generation, ordinal, &audience)
 				}
 				if err != nil {
 					return err
 				}
 			case "source_expired":
 				if ordinal != 0 {
-					err = expireFirewallParticipant(ctx, tx, "xnode_firewall_sources", event.Rule, event.Generation, ordinal)
+					err = expireFirewallParticipant(ctx, tx, "xnode_firewall_sources", event.Rule, event.Generation, ordinal, &audience)
 				}
 				if err != nil {
 					return err
@@ -132,7 +133,7 @@ func (s *Store) RecordFirewallEvents(ctx context.Context, node, namespace string
 	}
 	return result
 }
-func authorizeDetectionTx(ctx context.Context, tx *sql.Tx, prefix, ip string, event wire.FirewallEvent, policy wire.FirewallPolicy, now time.Time) error {
+func authorizeDetectionTx(ctx context.Context, tx *sql.Tx, prefix, ip string, event wire.FirewallEvent, policy wire.FirewallPolicy, now time.Time, audience *firewallAudienceSnapshot) error {
 	var active int
 	if err := tx.QueryRowContext(ctx, `SELECT active_bans FROM xnode_firewall_clock WHERE singleton=1`).Scan(&active); err != nil {
 		return err
@@ -158,14 +159,13 @@ func authorizeDetectionTx(ctx context.Context, tx *sql.Tx, prefix, ip string, ev
 			return err
 		}
 	}
-	audience, err := firewallAudience(ctx, tx)
-	if err != nil {
+	if err = audience.load(ctx, tx); err != nil {
 		return err
 	}
 	empty, err := roaring.New().ToBytes()
 	if err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_firewall_bans(generation,prefix,ip,rule,detected_count,detected_at,until_at,refresh_seconds,issued_version,participants,expired) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, generation, prefix, ip, event.Rule, fmt.Sprint(event.Count), stamp(event.Time), stamp(now.Add(policy.BanDuration())), int(policy.BanDuration()/time.Second), version, audience, empty)
+	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_firewall_bans(generation,prefix,ip,rule,detected_count,detected_at,until_at,refresh_seconds,issued_version,participants,expired) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, generation, prefix, ip, event.Rule, fmt.Sprint(event.Count), stamp(event.Time), stamp(now.Add(policy.BanDuration())), int(policy.BanDuration()/time.Second), version, audience.raw, empty)
 	return err
 }

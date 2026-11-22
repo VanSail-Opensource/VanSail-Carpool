@@ -131,7 +131,8 @@ func (m *Master) receiveFirewallEvents(ctx context.Context, peer *agentPeer, mes
 	for i, e := range report.Events {
 		ids[i] = e.ID
 	}
-	m.NotifyFirewallChanged()
+	// Desired changes already enqueue delivery in the journal transaction. Waking
+	// fleet reconciliation for every expiry/replay bypasses its recovery cadence.
 	if err = peer.send(ctx, wire.New("firewall.events.ack", "", 0, wire.FirewallEventAck{IDs: ids})); err != nil {
 		return firewallEventFailure("XNODE_FIREWALL_EVENT_ACK_FAILED", err)
 	}

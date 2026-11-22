@@ -65,6 +65,10 @@ func (s *Store) SweepFirewall(ctx context.Context, now time.Time) error {
 	err := s.firewallWrite(ctx, func(tx *sql.Tx) error {
 		// Retry the same page if this transaction loses a serialization race.
 		s.firewallSweepCursor = cursor
+		var before uint64
+		if err := tx.QueryRowContext(ctx, `SELECT version FROM xnode_firewall_clock WHERE singleton=1`).Scan(&before); err != nil {
+			return err
+		}
 		var count int
 		if err := s.sweepRetiredFirewallTx(ctx, tx); err != nil {
 			return err
@@ -90,6 +94,13 @@ func (s *Store) SweepFirewall(ctx context.Context, now time.Time) error {
 					return err
 				}
 			}
+		}
+		var after uint64
+		if err := tx.QueryRowContext(ctx, `SELECT version FROM xnode_firewall_clock WHERE singleton=1`).Scan(&after); err != nil {
+			return err
+		}
+		if before != after {
+			return queueFirewallFleetTx(ctx, tx, now)
 		}
 		return nil
 	})

@@ -26,6 +26,7 @@ func queueFirewallMembersTx(ctx context.Context, tx *sql.Tx, node string, now ti
  (m.force_sync<>0 OR m.source_applied<c.source_version)
  FROM xnode_firewall_members m CROSS JOIN xnode_firewall_clock c
  WHERE m.active=1 AND ($1='' OR m.node_id=$2)
+ AND EXISTS(SELECT 1 FROM xnode_nodes n WHERE n.id=m.node_id AND n.retired_at IS NULL)
  AND (m.force_sync<>0 OR m.applied<c.version OR m.source_applied<c.source_version)
  ORDER BY m.node_id`, node, node)
 	if err != nil {

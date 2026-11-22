@@ -18,14 +18,9 @@ func firewallSeekFixture(t *testing.T) *Store {
 	t.Helper()
 	s := newTestStore(t)
 	ctx := context.Background()
-	if err := s.ReconcileFirewallMember(ctx, "retired", true, true, 0); err != nil {
-		t.Fatal(err)
-	}
-	if err := s.ReconcileFirewallMember(ctx, "retired", false, false, 0); err != nil {
-		t.Fatal(err)
-	}
+	// Keep an inactive historical ordinal after its node has been removed.
 	var ordinal uint32
-	if err := s.db.QueryRowContext(ctx, `SELECT ordinal FROM xnode_firewall_members WHERE node_id='retired'`).Scan(&ordinal); err != nil {
+	if err := s.db.QueryRowContext(ctx, `INSERT INTO xnode_firewall_members(node_id,active) VALUES('retired',0) RETURNING ordinal`).Scan(&ordinal); err != nil {
 		t.Fatal(err)
 	}
 	participants, err := roaring.BitmapOf(ordinal).ToBytes()

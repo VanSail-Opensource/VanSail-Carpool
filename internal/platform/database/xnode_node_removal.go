@@ -117,6 +117,13 @@ func (s *Store) FinishXNodeRemoval(ctx context.Context, id string, version int64
 	if err != nil {
 		return false, err
 	}
+	if historical {
+		// Retained node rows bypass the physical-delete trigger. End their
+		// audience participation atomically with completed historical removal.
+		if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_members SET active=0 WHERE node_id=$1 AND active<>0`, id); err != nil {
+			return false, err
+		}
+	}
 	detail := fmt.Sprintf(`{"retired":%t,"historicalAccounting":"retained"}`, historical)
 	if err = insertAuditTx(ctx, tx, "node-removal:"+operation, &actor, "xnode.node_removed", "xnode_node", id, detail, now); err != nil {
 		return false, err

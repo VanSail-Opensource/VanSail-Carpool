@@ -10,6 +10,18 @@ import (
 
 func (s *Store) ReconcileFirewallMember(ctx context.Context, node string, active, reconnect bool, observed uint64) error {
 	return s.firewallWrite(ctx, func(tx *sql.Tx) error {
+		if active {
+			// Final removal locks the node before its member. A stale positive
+			// reconciliation must not recreate membership or advance its clocks.
+			var retained bool
+			err := tx.QueryRowContext(ctx, `SELECT retired_at IS NULL FROM xnode_nodes WHERE id=$1 FOR SHARE`, node).Scan(&retained)
+			if errors.Is(err, sql.ErrNoRows) || err == nil && !retained {
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+		}
 		var ordinal uint32
 		var previous int
 		err := tx.QueryRowContext(ctx, `SELECT ordinal,active FROM xnode_firewall_members WHERE node_id=$1`, node).Scan(&ordinal, &previous)

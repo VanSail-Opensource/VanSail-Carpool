@@ -102,3 +102,57 @@ func TestFirewallReconciliationPreservesPendingRetryAndReconnectsBothBanks(t *te
 		t.Fatal("reconciliation erased retry delay or missed reconnect bank", count, err)
 	}
 }
+
+func TestFirewallExpiryQueuesFinalReleaseWithoutAnotherReconciliation(t *testing.T) {
+	s, _, _ := xnodeTrafficFixture(t)
+	ctx, now := context.Background(), time.Now().UTC()
+	if err := s.SaveXNodeNode(ctx, xnode.Node{ID: "other", Name: "Other", ConfigID: "config", SettingsCipher: "encrypted", Enabled: true, MultiplierFP: 1000000}); err != nil {
+		t.Fatal(err)
+	}
+	for _, node := range []string{"node", "other"} {
+		if err := s.ReconcileFirewallMember(ctx, node, true, true, 0); err != nil {
+			t.Fatal(err)
+		}
+	}
+	policy := wire.FirewallPolicy{Enabled: true, Protect: true}
+	detected := wire.FirewallEvent{ID: fmt.Sprintf("queued-%020d", 1), Kind: "detected", IP: "8.8.8.8", Rule: "xray_tcp_probe", Count: 3, FirstSeen: now, Time: now}
+	if err := s.RecordFirewallEvents(ctx, "node", "queued", []wire.FirewallEvent{detected}, policy, now); err != nil {
+		t.Fatal(err)
+	}
+	bans, err := s.FirewallBans(ctx, 10)
+	if err != nil || len(bans) != 1 {
+		t.Fatal("missing queued ban", bans, err)
+	}
+	for _, node := range []string{"node", "other"} {
+		member, err := s.FirewallMember(ctx, node)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, sources := range []bool{false, true} {
+			version := member.Version
+			if sources {
+				version = member.SourceVersion
+			}
+			if err := s.MarkFirewallDelivered(ctx, node, version, sources, true, member.Epoch); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	if _, err := s.db.ExecContext(ctx, `DELETE FROM outbox_jobs WHERE kind=$1`, xnode.FirewallJob); err != nil {
+		t.Fatal(err)
+	}
+	for i, node := range []string{"node", "node", "other"} {
+		expiry := wire.FirewallEvent{ID: fmt.Sprintf("queued-%020d", i+2), Kind: "expired", Prefix: bans[0].Prefix, Generation: bans[0].Generation, Time: now}
+		if err := s.RecordFirewallEvents(ctx, node, "queued", []wire.FirewallEvent{expiry}, policy, now); err != nil {
+			t.Fatal(err)
+		}
+		want := 0
+		if node == "other" {
+			want = 2 // Final release must queue the dynamic bank for both active members.
+		}
+		var dynamic, total int
+		if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FILTER(WHERE payload::jsonb->>'bank'='dynamic'),COUNT(*) FROM outbox_jobs WHERE kind=$1 AND status='pending'`, xnode.FirewallJob).Scan(&dynamic, &total); err != nil || dynamic != want || total != want {
+			t.Fatal("expiry queued unrelated work or lost its final release", i, dynamic, total, err)
+		}
+	}
+}
