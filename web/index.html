@@ -10,6 +10,14 @@
   </head>
   <body>
     <div id="app" class="isolate"></div>
+    <template id="member-startup">
+      <main class="session-loading">
+        <div class="session-loading__content">
+          <div class="session-loading__signal" aria-hidden="true"></div>
+          <p class="session-loading__status" role="status"></p>
+        </div>
+      </main>
+    </template>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

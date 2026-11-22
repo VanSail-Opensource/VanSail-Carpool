@@ -26,6 +26,22 @@ describe('session readiness', () => {
     view.unmount()
   })
 
+  it('shows one accessible status on retry and releases the recovery screen again on error', async () => {
+    const view = mount(SessionEntrance, {
+      props: { status: 'error' },
+      slots: { default: () => h('button', 'Retry') },
+    })
+    expect(view.get('button').text()).toBe('Retry')
+    await view.setProps({ status: 'loading' })
+    expect(view.find('button').exists()).toBe(false)
+    expect(view.findAll('[role="status"]')).toHaveLength(1)
+    expect(view.get('.session-loading__signal').attributes('aria-hidden')).toBe('true')
+    await view.setProps({ status: 'error' })
+    expect(view.get('button').text()).toBe('Retry')
+    expect(view.find('[role="status"]').exists()).toBe(false)
+    view.unmount()
+  })
+
   it('preserves the mounted destination and draft during an authenticated refresh', async () => {
     const view = mount(SessionEntrance, { props: { status: 'ready', authenticated: true }, slots: { default: () => h('input', { 'aria-label': 'Draft' }) } })
     await view.get('input').setValue('Unsaved draft')

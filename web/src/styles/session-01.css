@@ -1,80 +1,10 @@
-.session-loading {
-  display: grid;
-  place-items: center;
-  min-height: var(--tg-viewport-stable-height, 100dvh);
-  padding: max(24px, var(--app-safe-top)) max(24px, var(--app-safe-right)) max(24px, var(--app-safe-bottom)) max(24px, var(--app-safe-left));
-  background: var(--canvas);
-  color: var(--text);
-  text-align: center;
-}
-.session-loading__content { display: flex; flex-direction: column; align-items: center; width: min(90vw, 100%); }
-.session-loading__brand {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.08em;
-  max-width: 100%;
-  font-family: var(--font-sans);
-  font-size: clamp(4.5rem, 23vw, 7rem);
-  font-weight: 500;
-  line-height: 1.2;
-  letter-spacing: -0.055em;
-}
-.session-loading__prefix, .session-loading__original { display: inline-flex; }
-.session-loading__prefix { padding-inline-end: 0.055em; }
-.session-loading__words {
-  display: grid;
-  align-items: baseline;
-  width: 4.2em;
-  max-width: 100%;
-  padding: 0.12em 0.05em;
-  color: var(--text-muted);
-  font-size: min(0.58em, 12vw);
-  letter-spacing: -0.035em;
-}
-.session-loading__original, .session-loading__replacement { grid-area: 1 / 1; justify-self: center; white-space: nowrap; }
-.session-loading__original { letter-spacing: 0; opacity: 0; visibility: hidden; }
-.session-loading__replacement { font-weight: 400; }
-.session-loading__letter { position: relative; display: inline-block; font-family: inherit; }
-.session-loading__status { max-width: 440px; margin: 24px 0 0; color: var(--text-muted); font-size: 1rem; line-height: 1.5; }
-.session-loading--animate .session-loading__letter {
-  color: transparent;
-  -webkit-text-stroke: 1px var(--text);
-  animation: session-letter-in 500ms var(--letter-delay) cubic-bezier(.23, 1, .32, 1) both;
-}
-.session-loading--animate .session-loading__letter::after {
-  content: attr(data-letter);
-  position: absolute;
-  inset: 0;
-  color: var(--text);
-  -webkit-text-stroke: 0;
-  animation: session-letter-fill 340ms calc(var(--letter-delay) + 160ms) ease-out both;
-}
-.session-loading--animate .session-loading__original .session-loading__letter { -webkit-text-stroke-color: var(--text-muted); }
-.session-loading--animate .session-loading__original .session-loading__letter::after { color: var(--text-muted); }
-.session-loading--animate .session-loading__original { visibility: visible; animation: session-word-out 450ms 760ms cubic-bezier(.76, 0, .24, 1) both; }
-.session-loading--animate .session-loading__replacement { animation: session-word-in 450ms 760ms cubic-bezier(.76, 0, .24, 1) both; }
 .session-entrance, .session-entrance__page { min-height: var(--tg-viewport-stable-height, 100dvh); }
 .session-entrance__page--arriving { animation: session-page-in 500ms cubic-bezier(.23, 1, .32, 1); }
 .session-entrance__cover { position: fixed; inset: 0; z-index: 90; overflow: auto; }
 .session-cover-leave-active { pointer-events: none; transition: opacity 160ms ease-out; }
-.session-cover-leave-active *, .session-cover-leave-active *::after { animation: none !important; }
 .session-cover-leave-to { opacity: 0; }
-@keyframes session-letter-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-@keyframes session-letter-fill { from { opacity: 0; } to { opacity: 1; } }
-@keyframes session-word-out { from { opacity: 1; transform: none; } 45%, to { opacity: 0; transform: translateY(-8px); visibility: hidden; } }
-@keyframes session-word-in { from, 50% { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes session-page-in { from { opacity: 0.85; } to { opacity: 1; } }
-@media (min-width: 768px) {
-  .session-loading__brand { flex-direction: row; align-items: baseline; gap: 0.16em; font-size: clamp(4.5rem, 8vw, 7.5rem); }
-  .session-loading__words { width: 3.5em; font-size: 1em; }
-  .session-loading__original { position: relative; top: -0.095em; font-size: 0.78em; }
-}
 @media (prefers-reduced-motion: reduce) {
-  .session-loading--animate .session-loading__letter, .session-loading--animate .session-loading__letter::after,
-  .session-loading--animate .session-loading__original, .session-loading--animate .session-loading__replacement,
   .session-entrance__page--arriving { animation: none; }
-  .session-loading--animate .session-loading__original { visibility: hidden; }
-  .session-loading__letter { color: var(--text); -webkit-text-stroke: 0; }
   .session-cover-leave-active { transition: none; }
 }

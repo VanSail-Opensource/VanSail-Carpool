@@ -6,7 +6,7 @@ import LoadingScreen from './LoadingScreen.vue'
 import { useLoadingSequence } from './useLoadingSequence'
 
 const props = withDefaults(defineProps<{ status: SessionStatus; authenticated?: boolean; routeReady?: boolean }>(), { routeReady: true })
-const { showing, introducing } = useLoadingSequence(() => props.status, () => props.authenticated === true, () => props.routeReady)
+const showing = useLoadingSequence(() => props.status, () => props.authenticated === true, () => props.routeReady)
 const { reducedMotion } = useMotionPreferences()
 const arriving = shallowRef(false)
 watch(showing, (active, previous) => {
@@ -24,9 +24,9 @@ function releaseCover(element: globalThis.Element): void {
     <div v-if="!showing" class="session-entrance__page" :class="{ 'session-entrance__page--arriving': arriving }">
       <slot />
     </div>
-    <Transition name="session-cover" :css="!reducedMotion" @before-leave="releaseCover">
+    <Transition name="session-cover" :css="!reducedMotion && status === 'ready'" @before-leave="releaseCover">
       <div v-if="showing" class="session-entrance__cover">
-        <LoadingScreen :animate="introducing" />
+        <LoadingScreen />
       </div>
     </Transition>
   </div>

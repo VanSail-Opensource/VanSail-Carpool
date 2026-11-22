@@ -6,6 +6,20 @@ function recoveryCopy() {
   return languages.some((language) => language.toLowerCase().startsWith('zh')) ? zhCN.recovery : en.recovery
 }
 
+export function showMemberStartup(): void {
+  const root = document.querySelector('#app')
+  const template = document.querySelector<HTMLTemplateElement>('#member-startup')
+  if (!root || !template?.content) return
+  const content = template.content.cloneNode(true) as DocumentFragment
+  const status = content.querySelector<HTMLElement>('[role="status"]')
+  root.appendChild(content)
+  if (status) {
+    const copy = recoveryCopy()
+    status.lang = copy === zhCN.recovery ? 'zh-CN' : 'en'
+    status.textContent = copy.openingMiniApp
+  }
+}
+
 export function showBootstrapFailure(): void {
   const root = document.querySelector<HTMLElement>('#app')
   if (!root) return

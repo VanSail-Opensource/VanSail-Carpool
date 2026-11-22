@@ -1,4 +1,5 @@
-import { showBootstrapFailure } from './utils/bootstrapFallback'
+import './styles/member-startup.css'
+import { showBootstrapFailure, showMemberStartup } from './utils/bootstrapFallback'
 import { detectTelegramWebApp, hasTelegramLaunchContext } from './utils/telegramContext'
 import { setExperience } from './utils/experience'
 
@@ -31,6 +32,7 @@ async function bootstrap(): Promise<void> {
     await import('./browser/main')
     return
   }
+  showMemberStartup()
   if (!window.Telegram?.WebApp) await new Promise<void>((resolve, reject) => {
     const script = document.createElement('script')
     const timer = setTimeout(() => reject(new Error('SDK_TIMEOUT')), 10_000)
