@@ -61,11 +61,13 @@ const {
   maximumMinor: () => props.maximumMinor ?? '10000000000',
 })
 
-const description = computed(() => stage.value === 'configure'
-  ? t('payment.configureHint')
-  : stage.value === 'cancelled'
-    ? t('payment.cancelledHint')
-    : t('payment.providerHint'))
+const description = computed(() => {
+  if (couponRedemption.value) return t('payment.couponApplied')
+  if (stage.value === 'paid') return t('cryptoPayment.walletCredit')
+  if (stage.value === 'configure') return t('payment.configureHint')
+  if (stage.value === 'cancelled') return t('payment.cancelledHint')
+  return t('payment.providerHint')
+})
 
 let preparation = 0
 async function prepareOrder(): Promise<void> {
@@ -113,7 +115,7 @@ onScopeDispose(() => { preparation++ })
   >
     <template #actions>
       <UButton
-        v-if="paymentStep === 'channel' && (stage === 'configure' || stage === 'creating')"
+        v-if="!couponRedemption && paymentStep === 'channel' && (stage === 'configure' || stage === 'creating')"
         class="payment-sheet-header-back"
         color="neutral"
         variant="ghost"
