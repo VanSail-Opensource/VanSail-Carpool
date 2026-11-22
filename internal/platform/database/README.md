@@ -1,5 +1,7 @@
 # Application store
 
+`usage_breakdown_hourly_accrual.go` prorates new paid intervals across the requested usage window and retains legacy ledger-time attribution. `usage_breakdown_hourly_minimum_test.go` covers early stops, rolling boundaries, renewal rounding and legacy precision.
+
 `UpdateCommunityMembership` atomically writes only the observed group or channel
 fact and returns that committed user snapshot. A single-space Telegram refresh
 cannot overwrite a newer fact for the other space from its stale request user.

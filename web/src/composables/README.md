@@ -1,5 +1,7 @@
 # Composables
 
+`usePaymentConfirmation.ts` observes server-confirmed pending → paid transitions and advances credit feedback only while the sheet is visible and focused. `usePaymentConfirmation.test.ts` covers visibility, old receipts and deduplication.
+
 - `usePurchaseValidity.ts` owns a boundary timer and focus/visibility revalidation for member and browser-admin purchase displays. Consumers pass raw purchases and an optional error-handling refresh callback; the returned status/current helpers derive UI validity without changing settlement state. Timers/listeners are disposed with their consumer.
 - `usePurchaseValidity.test.ts` covers offline boundary expiry, focus refresh and timer/listener disposal in hosted CI.
 

@@ -1,5 +1,7 @@
 # Dashboard components
 
+`MemberMetricValue.vue` transitions a changed live value in place without estimating intermediate usage. `MemberMetricValue.test.ts` covers motion eligibility; `MemberLiveValues.test.ts` covers how fresh and unavailable readings are displayed.
+
 `EntitlementSummary.vue` labels retained purchases as grandfathered fixed-term
 benefits and keeps their existing renewal and paid-successor controls reachable.
 
