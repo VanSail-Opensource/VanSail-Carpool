@@ -867,6 +867,15 @@ covers alternating combinations, shared memory bounds, source invalidation,
 concurrent refresh, retry isolation and deadlines. No member authorization or
 complete downloaded asset is cached. `routing_peers.go` bounds public endpoint
 DNS caching and gates maintenance by the existing compile epoch.
+Public literal IPv4/IPv6 destinations retain the same address validation and
+canonicalization without creating five-minute compile deadlines. Their bounded
+origin cache retains its lifetime and remains available to protect prior DDNS
+addresses; only DNS-driven compile/maintenance deadlines exclude literal keys.
+Authenticated node-specific DDNS origins still take precedence;
+hostnames retain queued resolution, expiry and failed-refresh behavior.
+`routing_peer_literals_test.go`, `routing_peer_origins_test.go` and
+`compile_literal_deadline_test.go` protect these boundaries and unchanged
+compiled-inventory reuse in hosted regressions.
 `routing_reconcile.go` revalidates dependency changes outside the socket reader.
 Dependency drift is re-prepared as a new durable generation instead of disabling
 the plan; only durable access loss and node removal are terminal. One member's
