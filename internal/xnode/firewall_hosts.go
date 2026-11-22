@@ -58,6 +58,18 @@ func (m *Master) refreshHostOrigins(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	// Only enabled hostname endpoints consume configured DDNS trust below.
+	// Select them before reading trust: configured addresses can be its sole source.
+	hostnameNodes := map[string]bool{}
+	for _, endpoint := range endpoints {
+		if !endpoint.Enabled {
+			continue
+		}
+		host := strings.ToLower(strings.TrimSuffix(endpoint.Address, "."))
+		if _, err := netip.ParseAddr(host); err != nil {
+			hostnameNodes[endpoint.NodeID] = true
+		}
+	}
 	trusted := map[string][]string{}
 	m.mu.RLock()
 	for id, ips := range m.managedNodeIPs {
@@ -68,6 +80,9 @@ func (m *Master) refreshHostOrigins(ctx context.Context) error {
 	}
 	m.mu.RUnlock()
 	for _, node := range nodes {
+		if !hostnameNodes[node.ID] {
+			continue
+		}
 		_, settings, err := m.service.Node(ctx, node.ID)
 		if err != nil {
 			return err

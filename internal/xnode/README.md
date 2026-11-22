@@ -1102,6 +1102,10 @@ queue. Its bounded volatile cache accepts only exact answers corroborated by the
 associated authenticated node or explicit DDNS addresses, so shared CDN edges
 cannot become exemptions through endpoint DNS. `firewall_hosts_test.go` checks
 mixed-family answers, mapped addresses, CDN answers and removal of origin proof.
+Each refresh reads configured DDNS trust only for nodes with enabled hostname
+endpoints. Literal-only and disabled endpoints need no settings projection;
+hostname trust remains fresh, and removing the last hostname still clears its
+cached protection. The host-origin read and refresh regressions cover these paths.
 
 `diy_document.go` reads versioned encrypted desired state and legacy bare client
 overrides. `whitelist_policy.go` validates exact public IPs, preserves insertion
