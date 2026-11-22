@@ -15,7 +15,7 @@ export const billingDemoSteps = {
     { id: 'review', icon: 'i-ph-chart-line-bold', points: ['i-ph-hard-drives-bold', 'i-ph-chart-bar-bold', 'i-ph-magnifying-glass-bold'] },
   ],
   hourly: [
-    { id: 'eligibility', icon: 'i-ph-wallet-bold', points: ['i-ph-wallet-bold', 'i-ph-coins-bold', 'i-ph-lock-open-bold'] },
+    { id: 'reviewEnable', icon: 'i-ph-wallet-bold', points: ['i-ph-clock-bold', 'i-ph-coins-bold', 'i-ph-check-circle-bold'] },
     { id: 'enable', icon: 'i-ph-play-circle-bold', points: ['i-ph-play-circle-bold', 'i-ph-clock-bold', 'i-ph-coins-bold'] },
     { id: 'renew', icon: 'i-ph-clock-clockwise-bold', points: ['i-ph-moon-bold', 'i-ph-hard-drives-bold', 'i-ph-stop-circle-bold'] },
     { id: 'pool', icon: 'i-ph-circles-three-bold', points: ['i-ph-users-three-bold', 'i-ph-lightning-bold', 'i-ph-shield-check-bold'] },
@@ -37,16 +37,16 @@ export const trafficDemoFrames = [
 ] as const
 
 export const hourlyDemoFrames = [
-  { time: '12:30', balance: '10.00', debit: '0.00', remaining: 100 },
-  { time: '12:30', balance: '9.50', debit: '0.50', remaining: 100 },
-  { time: '13:00', balance: '8.50', debit: '1.00', remaining: 100 },
-  { time: '13:10', balance: '8.50', debit: '0.00', remaining: 50 },
-  { time: '13:20', balance: '8.50', debit: '0.00', remaining: 0 },
-  { time: '13:20', balance: '8.50', debit: '0.00', remaining: 0 },
-  { time: '13:25', balance: '8.30', debit: '0.20', remaining: 100 },
-  { time: '13:30', balance: '8.30', debit: '0.00', remaining: 60 },
-  { time: '13:40', balance: '8.30', debit: '0.00', remaining: 60 },
-  { time: '00:00', balance: '8.30', debit: '0.00', remaining: 100 },
+  { time: '12:00', balance: '10.00', debit: '0.00', remaining: 100 },
+  { time: '12:00', balance: '8.00', debit: '2.00', remaining: 100 },
+  { time: '14:00', balance: '7.00', debit: '1.00', remaining: 100 },
+  { time: '14:10', balance: '7.00', debit: '0.00', remaining: 50 },
+  { time: '14:20', balance: '7.00', debit: '0.00', remaining: 0 },
+  { time: '14:20', balance: '7.00', debit: '0.00', remaining: 0 },
+  { time: '14:25', balance: '6.80', debit: '0.20', remaining: 100 },
+  { time: '14:30', balance: '6.80', debit: '0.00', remaining: 60 },
+  { time: '14:40', balance: '6.80', debit: '0.00', remaining: 60 },
+  { time: '00:00', balance: '6.80', debit: '0.00', remaining: 100 },
 ] as const
 
 /** Usage moves continuously; the wallet changes only at block boundaries. */
@@ -65,7 +65,7 @@ export function trafficDemoState(step: number, phase: number) {
   }
 }
 
-/** Eligibility, consent and funding are three separate observable states. */
+/** Reviewed minimum, upfront payment and extra-traffic consent stay distinct. */
 export function hourlyDemoState(step: number, phase: number) {
   const current = hourlyDemoFrames[step] ?? hourlyDemoFrames[0]
   const previous = hourlyDemoFrames[Math.max(0, step - 1)] ?? hourlyDemoFrames[0]
@@ -85,7 +85,7 @@ export function hourlyDemoState(step: number, phase: number) {
   return {
     remaining, balance, enabled, autoBuy, extra, reset,
     debit: charging && acted ? current.debit : '0.00',
-    time: step === 2 && !acted ? '12:59' : step === 9 && !reset ? '23:59' : current.time,
+    time: step === 2 && !acted ? '13:59' : step === 9 && !reset ? '23:59' : current.time,
     reduced: enabled && remaining <= 0,
   }
 }

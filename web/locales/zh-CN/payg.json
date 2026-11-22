@@ -86,14 +86,14 @@
         "reviewPoints": { "first": "选择车队", "second": "流量或花费", "third": "使用前先查看" }
       },
       "hourly": {
-        "eligibility": "查余额，不冻结",
-        "eligibilityDetail": "启用门槛仅用于检查资格。",
-        "eligibilityPoints": { "first": "所需余额", "second": "尚未扣款", "third": "不预留资金" },
-        "enable": "半小时，只付半价",
-        "enableDetail": "示例 1 TXB/小时，12:30 UTC 启用收 0.50 TXB。",
-        "enablePoints": { "first": "启用车队", "second": "仅付本小时余时", "third": "支付 0.50 TXB" },
+        "reviewEnable": "先确认最低启用时长",
+        "reviewEnableDetail": "示例：最低启用 2 小时，每小时 1 TXB，一次预付 2 TXB。",
+        "reviewEnablePoints": { "first": "最低时长", "second": "完整预付费用", "third": "确认后才启用" },
+        "enable": "预付最低启用时段",
+        "enableDetail": "UTC 12:00 访问准备就绪，扣除 2 TXB，支付至 14:00 的 2 小时。",
+        "enablePoints": { "first": "确认并启用", "second": "预付 2 小时", "third": "提前停用不退款" },
         "renew": "保持启用，按小时续费",
-        "renewDetail": "下一 UTC 小时的费用可能提前扣取。",
+        "renewDetail": "预付的最低时段结束后，每次续费一小时；下一小时的费用可能在到期前提前扣取。",
         "renewPoints": { "first": "空闲也续费", "second": "各启用车队计费", "third": "不足则到期停止" },
         "pool": "每日额度，全车队共享",
         "poolDetail": "每个已启用车队仍分别收取小时费。",
@@ -111,8 +111,8 @@
         "optOutDetail": "关闭自动加购仍保留当天已购流量。",
         "optOutPoints": { "first": "关闭加购", "second": "不再购买新块", "third": "已购余量保留" },
         "disable": "立即停用车队",
-        "disableDetail": "主动停用后，该车队立即停止接入。",
-        "disablePoints": { "first": "小时费不退", "second": "再次启用有冷却", "third": "其他车队保留余量" },
+        "disableDetail": "访问立即停止，包括尚未结束的最低启用时段在内，未使用的预付时长均不退款。",
+        "disablePoints": { "first": "预付时长不退款", "second": "再次启用有冷却", "third": "其他车队保留余量" },
         "midnight": "00:00 UTC，额度重置",
         "midnightDetail": "未用加购流量到期，不退款。",
         "midnightPoints": { "first": "每日额度刷新", "second": "额外流量到期", "third": "已停用不重启" }
@@ -138,11 +138,12 @@
       "noExpiryCharge": "到期不扣款",
       "notEnabled": "未启用",
       "fullSpeed": "全速",
-      "eligibilityCheck": "余额检查 ≠ 扣款或冻结",
+      "enableQuote": "最低启用 2 小时 · 预付 2.00 TXB",
+      "noPrepaidRefund": "提前停用，未使用的预付时长不退款",
       "paidCreditKept": "关闭加购，已购余量保留",
       "perSquadFee": "每个启用车队分别收取小时费",
-      "firstHalf": "12:30 → 13:00 · 0.50 TXB",
-      "nextHour": "13:00 → 14:00 · 1.00 TXB"
+      "minimumPeriod": "12:00 → 14:00 · 2.00 TXB",
+      "nextHour": "14:00 → 15:00 · 1.00 TXB"
     }
   }
 }

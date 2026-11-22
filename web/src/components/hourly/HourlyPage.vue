@@ -8,7 +8,7 @@ import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
 import SquadActivationDialog from '@/components/catalog/SquadActivationDialog.vue'
 import { localizedError, useI18n } from '@/i18n'
 import { txbInputFromMinor } from '@/utils/format'
-import { hourlyRequiredHours } from './hourlyHours'
+import { hourlyActivationQuote, hourlyRequiredHours } from './hourlyHours'
 import HourlyLegacyBlock from './HourlyLegacyBlock.vue'
 import HourlySummary from './HourlySummary.vue'
 import HourlySquadCard from './HourlySquadCard.vue'
@@ -22,9 +22,15 @@ const { value: data, loading, error, liveReady, busy, actionError } = hourly
 const disabling = shallowRef<HourlySquad | null>(null)
 const activating = shallowRef<HourlySquad | null>(null)
 const codeOpen = shallowRef(false)
+const activationQuote = shallowRef<ReturnType<typeof hourlyActivationQuote>>(null)
 const reviewedPolicyVersion = shallowRef<string | null>(null)
 const consentError = shallowRef<string | null>(null)
 const disableOpen = computed({ get: () => disabling.value !== null, set: value => { if (!value) disabling.value = null } })
+const enableOpen = computed({ get: () => activating.value !== null && !codeOpen.value, set: value => { if (!value) activating.value = null } })
+const enableDescription = computed(() => activationQuote.value ? t('hourly.enableWarning', {
+  name: activating.value?.squad.name ?? '', hours: activationQuote.value.hours,
+  price: txbInputFromMinor(activationQuote.value.minor), rate: txbInputFromMinor(activationQuote.value.rateMinor),
+}) : '')
 const cooldownHours = computed(() => String((data.value?.policy.policy.cooldownSeconds ?? 86400) / 3600))
 const hasHourlyHistory = computed(() => {
   const snapshot = data.value
@@ -68,6 +74,10 @@ function consentCurrent(): boolean {
   if (activating.value) {
     const target = current.squads.find(item => item.offer.groupId === activating.value?.offer.groupId)
     if (!target?.ready || !target.offer.enabled || !current.policy.policy.salesEnabled || target.offer.revision !== activating.value.offer.revision) return false
+    if (target.enrollment && ['active', 'preparing'].includes(target.enrollment.status)) return false
+    const quote = hourlyActivationQuote(target, current.policy.policy.activationHours)
+    if (!quote || quote.hours !== activationQuote.value?.hours || quote.minor !== activationQuote.value.minor ||
+      quote.rateMinor !== activationQuote.value.rateMinor || target.squad.activationRequired !== activating.value.squad.activationRequired) return false
   }
   if (disabling.value) {
     const target = current.squads.find(item => item.offer.groupId === disabling.value?.offer.groupId)
@@ -78,19 +88,25 @@ function consentCurrent(): boolean {
 // Refreshes cannot silently replace the policy, paid enrollment, or gated offer
 // that the member reviewed before opening a destructive/billing dialog.
 watch([data, liveReady], () => {
-  if ((!codeOpen.value && !disabling.value) || consentCurrent()) return
+  if ((!activating.value && !disabling.value) || consentCurrent()) return
   codeOpen.value = false
   activating.value = null
   disabling.value = null
   if (!hourly.submitting.value) consentError.value = t('hourly.conflict')
 }, { flush: 'sync' })
-async function activate(item: HourlySquad): Promise<void> {
+function activate(item: HourlySquad): void {
   if (!beginConsent()) return
-  if (item.squad.activationRequired) { activating.value = item; codeOpen.value = true }
-  else await hourly.activate(item)
+  activationQuote.value = hourlyActivationQuote(item, data.value!.policy.policy.activationHours)
+  activating.value = item
+  if (!consentCurrent()) { activating.value = null; consentError.value = t('hourly.conflict') }
+}
+async function confirmEnable(): Promise<void> {
+  if (busy.value || !enableOpen.value || !consentCurrent() || !activating.value) return
+  if (activating.value.squad.activationRequired) codeOpen.value = true
+  else if (await hourly.activate(activating.value)) activating.value = null
 }
 async function submitCode(code: string): Promise<void> {
-  if (!codeOpen.value || !consentCurrent()) return
+  if (busy.value || !codeOpen.value || !consentCurrent()) return
   if (activating.value && await hourly.activate(activating.value, code)) { codeOpen.value = false; activating.value = null }
 }
 function requestDisable(item: HourlySquad): void {
@@ -118,6 +134,7 @@ async function disable(): Promise<void> {
     </template>
     <InlineNotice v-if="actionError || consentError || extra.error.value" tone="warning">{{ actionError || consentError || extra.error.value }}</InlineNotice>
     <OperationStatusNotice :receipt="hourly.operation.receipt.value" :error="hourly.operation.error.value" :checking="hourly.operation.checking.value" :message="operationMessage" @refresh="hourly.operation.refresh" />
+    <ConfirmDialog v-model:open="enableOpen" :title="t('hourly.enableTitle')" :description="enableDescription" :confirm-label="t('hourly.enableConfirm')" :busy="hourly.submitting.value" :error="actionError" @confirm="confirmEnable" />
     <SquadActivationDialog v-model:open="codeOpen" :squad="activating?.squad ?? null" :busy="hourly.submitting.value" :error="actionError" @submit="submitCode" @cancel="activating = null" />
     <ConfirmDialog v-model:open="disableOpen" :title="t('hourly.disableTitle')" :description="t('hourly.disableWarning', { hours: cooldownHours })" :confirm-label="t('hourly.disable')" :busy="hourly.submitting.value" :error="actionError" danger @confirm="disable" />
     <ConfirmDialog v-model:open="extra.open.value" :title="t('hourly.extraTitle')" :description="t('hourly.extraWarning', { price: txbInputFromMinor(data?.policy.policy.extraGBPriceTXBMinor ?? '0') })" :confirm-label="t('hourly.extraConfirm')" :busy="hourly.submitting.value" :error="extra.error.value" @confirm="extra.confirm" />

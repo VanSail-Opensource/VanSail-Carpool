@@ -7,22 +7,24 @@ import HourlyDemoAllowanceGraph from './HourlyDemoAllowanceGraph.vue'
 
 const props = defineProps<{ step: number; phase: number; reducedMotion: boolean }>()
 const { t } = useI18n()
-const frame = computed(() => hourlyDemoState(props.step, props.phase))
+const scenePhase = computed(() => props.reducedMotion ? 1 : props.phase)
+const frame = computed(() => hourlyDemoState(props.step, scenePhase.value))
 const emphasizeExtra = computed(() => props.step >= 5 && props.step <= 7)
-const timeline = computed(() => props.step === 0 ? 0 : props.step === 1 ? .5 * ease(between(props.phase, .1, .7)) : props.step === 2 ? .5 + .5 * ease(between(props.phase, .1, .62)) : 1)
-const note = computed(() => props.step === 0 ? 'eligibilityCheck' : props.step === 2 ? 'idleRenewal' : props.step === 7 ? 'paidCreditKept' : props.step === 8 ? 'cooldown' : props.step === 9 ? 'reset' : 'perSquadFee')
+const timeline = computed(() => props.step === 0 ? 0 : props.step === 1 ? .5 * ease(between(scenePhase.value, .1, .7)) : props.step === 2 ? .5 + .5 * ease(between(scenePhase.value, .1, .62)) : 1)
+const note = computed(() => props.step === 0 ? 'enableQuote' : props.step === 2 ? 'idleRenewal' : props.step === 7 ? 'paidCreditKept' : props.step === 8 ? 'noPrepaidRefund' : props.step === 9 ? 'reset' : 'perSquadFee')
 </script>
 
 <template>
   <div class="hourly-scene" aria-hidden="true" data-demo-visual="hourly" :data-demo-frame="`${step}:${phase.toFixed(3)}`" :data-demo-balance="frame.balance" :data-demo-enabled="frame.enabled" :data-demo-auto-buy="frame.autoBuy">
     <div class="hourly-scene__top"><span><UIcon name="i-ph-clock-bold" />{{ t('payg.demo.hourlyRate') }}</span><span><UIcon name="i-ph-wallet-bold" /><strong>{{ t('payg.demo.txb', { value: frame.balance }) }}</strong></span></div>
-    <div class="hourly-scene__squad"><UIcon name="i-ph-hard-drives-bold" /><span>{{ t('payg.demo.squad') }}</span><span class="hourly-scene__toggle" :class="{ 'is-on': frame.enabled }"><i><UIcon :name="frame.enabled ? 'i-ph-check-bold' : 'i-ph-minus-bold'" /></i></span></div>
+    <div class="hourly-scene__squad"><UIcon name="i-ph-hard-drives-bold" /><span>{{ t('payg.demo.squad') }}</span><span class="hourly-scene__state">{{ t(frame.enabled ? 'hourly.status.active' : 'payg.demo.notEnabled') }}</span><span class="hourly-scene__toggle" :class="{ 'is-on': frame.enabled }"><i><UIcon :name="frame.enabled ? 'i-ph-check-bold' : 'i-ph-minus-bold'" /></i></span></div>
+    <div v-if="step <= 1" class="hourly-scene__terms"><strong>{{ t('payg.demo.enableQuote') }}</strong><span>{{ t('payg.demo.noPrepaidRefund') }}</span></div>
     <div class="hourly-scene__receipt">
       <div class="hourly-scene__clock-row"><UIcon :name="step === 2 ? 'i-ph-moon-bold' : step === 9 ? 'i-ph-calendar-check-bold' : 'i-ph-clock-bold'" /><strong>{{ frame.time }}<small>{{ t('payg.demo.utc') }}</small></strong><span :class="{ 'is-charging': frame.debit !== '0.00' }"><UIcon :name="frame.debit !== '0.00' ? 'i-ph-coins-bold' : 'i-ph-shield-check-bold'" />{{ t('payg.demo.debit', { value: frame.debit }) }}</span></div>
       <div class="hourly-scene__timeline"><i :style="{ transform: `scaleX(${timeline})` }" /><b v-for="index in 3" :key="index" /></div>
-      <div class="hourly-scene__ticks"><span>{{ t('payg.demo.firstHalf') }}</span><span>{{ t('payg.demo.nextHour') }}</span></div>
+      <div class="hourly-scene__ticks"><span>{{ t('payg.demo.minimumPeriod') }}</span><span>{{ t('payg.demo.nextHour') }}</span></div>
     </div>
-    <HourlyDemoAllowanceGraph :remaining="frame.remaining" :enabled="frame.enabled" :extra="frame.extra" :reduced="frame.reduced" :phase="phase" :moving="[3, 4, 6, 7].includes(step)" :reduced-motion="reducedMotion" />
+    <HourlyDemoAllowanceGraph :remaining="frame.remaining" :enabled="frame.enabled" :extra="frame.extra" :reduced="frame.reduced" :phase="scenePhase" :moving="[3, 4, 6, 7].includes(step)" :reduced-motion="reducedMotion" />
     <div class="hourly-scene__extra" :class="{ 'is-emphasized': emphasizeExtra }"><UIcon name="i-ph-rocket-launch-bold" /><span>{{ t('payg.demo.autoBuy') }}</span><span class="hourly-scene__toggle" :class="{ 'is-on': frame.autoBuy }"><i><UIcon :name="frame.autoBuy ? 'i-ph-check-bold' : 'i-ph-minus-bold'" /></i></span></div>
     <div class="hourly-scene__note"><UIcon :name="step === 8 ? 'i-ph-hourglass-bold' : 'i-ph-info-bold'" /><span>{{ t(`payg.demo.${note}`) }}</span></div>
   </div>
@@ -35,6 +37,10 @@ const note = computed(() => props.step === 0 ? 'eligibilityCheck' : props.step =
 .hourly-scene__top strong { color: var(--text); font-weight: 500; }
 .hourly-scene__squad, .hourly-scene__extra { display: flex; align-items: center; gap: .5rem; min-width: 0; padding: .65rem .8rem; background: var(--surface-raised); border: 1px solid var(--line); border-radius: var(--radius-control); color: var(--text); font-size: .75rem; }
 .hourly-scene__squad > .iconify, .hourly-scene__extra > .iconify { flex: none; color: var(--accent); font-size: 1.15rem; }
+.hourly-scene__state { margin-inline-start: auto; color: var(--text-muted); font-size: .65rem; }
+.hourly-scene__squad .hourly-scene__toggle { margin-inline-start: 0; }
+.hourly-scene__terms { display: grid; gap: .25rem; color: var(--text-muted); font-size: .65rem; line-height: 1.5; }
+.hourly-scene__terms strong { color: var(--text); font-weight: 500; }
 .hourly-scene__toggle { display: flex; flex: none; align-items: center; width: 2.6rem; height: 1.5rem; padding: .15rem; border-radius: 1rem; margin-inline-start: auto; background: var(--line); }
 .hourly-scene__toggle i { display: grid; place-items: center; width: 1.2rem; height: 1.2rem; border-radius: 50%; background: var(--surface); color: var(--text-faint); font-size: .75rem; }
 .hourly-scene__toggle.is-on { background: var(--accent); }

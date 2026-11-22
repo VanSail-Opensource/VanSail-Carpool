@@ -174,8 +174,9 @@ their meaning (`admin`, `light`, `zh`, `slow`, `error`, `empty`, `paused`,
   use → reduced-rate meter immediately.
 - `extra-off`: combine with `extra` to keep automatic purchases off while the
   synthetic account still carries existing purchased credit.
-- `offer-hours`: per-offer required hours (24, 72, inherit 168) with matching
-  required balances.
+- `offer-hours`: per-offer minimum enable hours (24, 72, inherit 168) with matching
+  upfront debits. Before activation, members review the exact TXB amount and
+  nonrefundable duration, then supply an activation code if required.
 - `capacity`: all shared seats used and every card refused for `capacity`.
 - `capacity-preparing`: same stock state with a preparing enrollment on the first
   squad to exercise next-hour continuity copy.

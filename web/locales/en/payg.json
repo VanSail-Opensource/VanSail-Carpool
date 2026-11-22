@@ -86,14 +86,14 @@
         "reviewPoints": { "first": "Choose a squad", "second": "Traffic or cost", "third": "Review before using" }
       },
       "hourly": {
-        "eligibility": "Check balance. Nothing held.",
-        "eligibilityDetail": "The activation requirement checks eligibility only.",
-        "eligibilityPoints": { "first": "Required balance", "second": "No debit yet", "third": "No reserved funds" },
-        "enable": "Half an hour? Half the fee.",
-        "enableDetail": "At 1 TXB/hour, 12:30 UTC starts at 0.50 TXB.",
-        "enablePoints": { "first": "Enable squad", "second": "Remaining time only", "third": "Pay 0.50 TXB" },
+        "reviewEnable": "Review the minimum period",
+        "reviewEnableDetail": "Example: a 2-hour minimum at 1 TXB/hour costs 2 TXB upfront.",
+        "reviewEnablePoints": { "first": "Minimum duration", "second": "Full upfront cost", "third": "Confirm before enabling" },
+        "enable": "Prepay the minimum period",
+        "enableDetail": "Access ready at 12:00 UTC: debit 2 TXB for 2 hours, through 14:00.",
+        "enablePoints": { "first": "Confirm and enable", "second": "2 hours prepaid", "third": "No early-disable refund" },
         "renew": "Enabled → hourly renewal",
-        "renewDetail": "The next UTC hour may be funded shortly before its boundary.",
+        "renewDetail": "After the prepaid minimum, renew one hour at a time. The next hour may be funded shortly before expiry.",
         "renewPoints": { "first": "Renews while idle", "second": "Each enabled squad", "third": "Unfunded → stops at expiry" },
         "pool": "One shared daily pool",
         "poolDetail": "Each enabled squad still pays its own hourly fee.",
@@ -111,8 +111,8 @@
         "optOutDetail": "Turning off auto-buy retains today’s purchased credit.",
         "optOutPoints": { "first": "Auto-buy off", "second": "No new extras", "third": "Paid remainder stays" },
         "disable": "Stop the squad now",
-        "disableDetail": "Voluntary disable ends access immediately.",
-        "disablePoints": { "first": "No paid-hour refund", "second": "Reactivation cooldown", "third": "Other squads keep credit" },
+        "disableDetail": "Access ends immediately. Unused prepaid time is not refunded, including an unfinished minimum period.",
+        "disablePoints": { "first": "No prepaid-time refund", "second": "Reactivation cooldown", "third": "Other squads keep credit" },
         "midnight": "00:00 UTC → new allowance",
         "midnightDetail": "Unused extras expire without refund.",
         "midnightPoints": { "first": "Daily pool resets", "second": "Extras expire", "third": "Disabled stays off" }
@@ -138,11 +138,12 @@
       "noExpiryCharge": "No charge at expiry",
       "notEnabled": "Not enabled",
       "fullSpeed": "Full speed",
-      "eligibilityCheck": "Balance check ≠ payment or hold",
+      "enableQuote": "Minimum 2 hours · 2.00 TXB upfront",
+      "noPrepaidRefund": "Disable early: unused prepaid time is not refunded",
       "paidCreditKept": "Auto-buy off · paid credit stays",
       "perSquadFee": "Each enabled squad has its own hourly fee",
-      "firstHalf": "12:30 → 13:00 · 0.50 TXB",
-      "nextHour": "13:00 → 14:00 · 1.00 TXB"
+      "minimumPeriod": "12:00 → 14:00 · 2.00 TXB",
+      "nextHour": "14:00 → 15:00 · 1.00 TXB"
     }
   }
 }

@@ -5,12 +5,12 @@ import SquadPricingCard from '@/components/catalog/SquadPricingCard.vue'
 import { useI18n } from '@/i18n'
 import { formatMemberMoney } from '@/utils/displayCurrency'
 import { formatDateTime } from '@/utils/format'
+import { hourlyActivationQuote } from './hourlyHours'
 const props = defineProps<{ item: HourlySquad; busy: boolean; salesEnabled: boolean; hours: number }>()
 defineEmits<{ activate: []; disable: [] }>()
 const { t } = useI18n()
 const enrolled = computed(() => props.item.enrollment?.status === 'active' || props.item.enrollment?.status === 'preparing')
-const canActivate = computed(() => !enrolled.value && props.salesEnabled && props.item.ready && props.item.offer.enabled)
-const blocked = computed(() => !enrolled.value && !canActivate.value)
+const canActivate = computed(() => !enrolled.value && props.salesEnabled && props.item.ready && props.item.offer.enabled && hourlyActivationQuote(props.item, props.hours) !== null)
 // A preparing enrollment can coexist with a full stock limit: the paid hour
 // continues while only new activations are refused.
 const capacityContinues = computed(() => enrolled.value && props.item.reasonCode === 'capacity')
@@ -31,19 +31,17 @@ const reason = computed(() => {
       <span v-if="!enrolled && item.requiredBalance"><UIcon name="i-ph-wallet" aria-hidden="true" />{{ t('hourly.requiredBalance', { price: formatMemberMoney(item.requiredBalance), hours }) }}</span>
       <span v-if="capacityContinues" class="hourly-squad__reason"><UIcon name="i-ph-info" aria-hidden="true" />{{ t('hourly.capacityContinuity') }}</span>
       <span v-else-if="!enrolled && !canActivate" class="hourly-squad__reason"><UIcon name="i-ph-info" aria-hidden="true" />{{ reason }}</span>
-      <UButton
-        size="sm"
-        square
+      <USwitch
+        size="lg"
         class="hourly-squad__toggle"
-        :class="{ 'hourly-squad__toggle--blocked': blocked }"
-        :color="enrolled ? 'error' : blocked ? 'neutral' : 'success'"
-        variant="soft"
-        :icon="enrolled ? 'i-ph-stop-circle' : blocked ? 'i-ph-prohibit' : 'i-ph-play-circle'"
+        color="success"
+        :model-value="enrolled"
+        :label="enrolled ? t('hourly.disable') : t('hourly.activate')"
+        :ui="{ root: 'items-center', thumb: 'motion-reduce:transition-none', base: 'motion-reduce:transition-none' }"
         :disabled="busy || (!enrolled && !canActivate)"
-        :aria-label="enrolled ? t('hourly.disable') : t('hourly.activate')"
-        :title="enrolled ? t('hourly.disable') : t('hourly.activate')"
+        :aria-label="t('hourly.toggleFor', { name: item.squad.name })"
         :data-haptic="enrolled ? 'open' : 'confirm'"
-        @click="enrolled ? $emit('disable') : $emit('activate')"
+        @update:model-value="enrolled ? $emit('disable') : $emit('activate')"
       />
     </div>
   </SquadPricingCard>
@@ -59,7 +57,5 @@ const reason = computed(() => {
 .hourly-squad__facts > span .iconify { flex: 0 0 auto; color: var(--text-faint); font-size: 0.85rem; }
 .hourly-squad__reason { color: var(--warning); }
 .hourly-squad__reason .iconify { color: inherit; }
-.hourly-squad__toggle { flex: 0 0 auto; margin-inline-start: auto; width: 2.75rem; min-width: 2.75rem; height: 2.75rem; min-height: 2.75rem; padding: 0; }
-.hourly-squad__toggle--blocked { color: var(--text-faint); background: color-mix(in srgb, var(--text-faint) 12%, transparent); }
-.hourly-squad__toggle--blocked:disabled { opacity: 0.85; }
+.hourly-squad__toggle { flex: 0 0 auto; margin-inline-start: auto; min-height: 2.75rem; }
 </style>

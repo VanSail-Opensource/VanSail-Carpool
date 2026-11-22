@@ -20,7 +20,7 @@ const effectiveHours = computed(() => {
   const value = Number(state.requiredHours)
   return Number.isInteger(value) && value >= 1 && value <= maximumHours ? value : props.activationHours
 })
-const requiredBalance = computed(() => {
+const upfrontCost = computed(() => {
   const minor = moneyFromTxbInput(state.price)
   if (minor === '' || effectiveHours.value < 1) return ''
   return formatMoney({ currency: 'TXB', minor: (BigInt(minor) * BigInt(effectiveHours.value)).toString(), display: '' })
@@ -42,7 +42,7 @@ function save(): void { if (blocked.value) return; emit('save', props.squad.grou
     <div class="hourly-offer-form__name"><strong>{{ squad.name }}</strong><small>{{ squad.groupId }}</small></div>
     <USwitch v-model="state.enabled" :label="t('hourly.admin.offerEnabled')" :aria-label="t('hourly.admin.offerFor', { name: squad.name })" :disabled="blocked" />
     <UFormField name="price" :label="t('hourly.admin.hourlyPrice')" required><UInput v-model="state.price" inputmode="decimal" :disabled="blocked" class="w-full" /></UFormField>
-    <UFormField name="requiredHours" :label="t('hourly.admin.requiredHours')" :hint="requiredBalance ? t('hourly.admin.requiredHoursHint', { hours: effectiveHours, amount: requiredBalance }) : undefined" required><UInput v-model.trim="state.requiredHours" inputmode="numeric" :disabled="blocked" class="w-full" /></UFormField>
+    <UFormField name="requiredHours" :label="t('hourly.admin.requiredHours')" :description="upfrontCost ? t('hourly.admin.requiredHoursHint', { hours: effectiveHours, amount: upfrontCost }) : undefined" required><UInput v-model.trim="state.requiredHours" inputmode="numeric" :disabled="blocked" class="w-full" /></UFormField>
     <UButton type="submit" color="neutral" variant="outline" :loading="busy" :disabled="blocked" :label="t('common.save')" :aria-label="t('hourly.admin.saveOffer', { name: squad.name })" />
   </UForm>
 </template>

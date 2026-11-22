@@ -71,6 +71,11 @@ describe('hourly consent and access controls', () => {
     const wrapper = setup('activation')
     wrapper.findComponent(HourlySquadCard).vm.$emit('activate')
     await flushPromises()
+    const terms = wrapper.get('[data-confirm]').text()
+    expect(terms).toContain('8.40 TXB')
+    expect(terms).toContain('168 hours')
+    expect(terms).toContain('not refunded')
+    await wrapper.get('[data-confirm] button').trigger('click')
     expect(wrapper.find('[data-code]').exists()).toBe(true)
     const current = state.value.value!
     snapshot.value = { ...current, squads: current.squads.map((item, index) => index === 0 ? { ...item, offer: { ...item.offer, revision: '2' } } : item) }
@@ -112,7 +117,7 @@ describe('hourly consent and access controls', () => {
     setDisplayCurrency({ currency: 'USD', rates: { usdTxbPerUnit: '10', cnyTxbPerUnit: '2' } })
     const wrapper = setup('active')
     expect(wrapper.text()).not.toContain('Your approved price ceiling')
-    expect(wrapper.find('u-switch-stub').exists()).toBe(false)
+    expect(wrapper.findComponent(HourlySquadCard).exists()).toBe(true)
     wrapper.findComponent(HourlySummary).vm.$emit('extra', true)
     await flushPromises()
     expect(wrapper.get('[data-confirm]').text()).toContain('1.25 TXB')
@@ -134,7 +139,7 @@ describe('hourly consent and access controls', () => {
   it('blocks legacy accounts while leaving the grandfathered renewal explanation visible', () => {
     const wrapper = setup('legacy')
     expect(wrapper.text()).toContain(t('hourly.legacyBlocked'))
-    expect(wrapper.findAll('button').filter(button => button.attributes('aria-label') === t('hourly.activate')).every(button => button.attributes('disabled') !== undefined)).toBe(true)
+    expect(wrapper.findComponent(HourlySquadCard).exists()).toBe(false)
     expect(state.activate).not.toHaveBeenCalled()
     wrapper.unmount()
   })
@@ -143,6 +148,8 @@ describe('hourly consent and access controls', () => {
     wrapper.findComponent(HourlySquadCard).vm.$emit('activate')
     await flushPromises()
     expect(state.activate).not.toHaveBeenCalled()
+    expect(wrapper.find('[data-code]').exists()).toBe(false)
+    await wrapper.get('[data-confirm] button').trigger('click')
     await wrapper.get('[data-code]').trigger('click')
     expect(state.activate).toHaveBeenCalledWith(state.value.value!.squads[0], 'secret-code')
     wrapper.unmount()
