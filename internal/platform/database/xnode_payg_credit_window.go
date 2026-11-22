@@ -17,6 +17,7 @@ func paygWindowStamp(at time.Time) string {
 // PAYG windows retain only sampled raw counters required for rolling admission
 // and unbilled usage. Lifetime usage and financial charges live independently.
 func recordPAYGWindowTx(ctx context.Context, tx *sql.Tx, a *xnode.PAYGAccount, through time.Time, bytes int64, now time.Time) error {
+	priorCredit, priorPurchased := a.CreditBytes, a.PurchasedBytes
 	if !a.HasCredit(through) {
 		a.CreditBytes = 0
 	}
@@ -40,6 +41,11 @@ func recordPAYGWindowTx(ctx context.Context, tx *sql.Tx, a *xnode.PAYGAccount, t
 	}
 	if err := settlePAYGWindowTx(ctx, tx, a, through, true, now); err != nil {
 		return err
+	}
+	// Settlement writes the post-purchase remainder itself. Otherwise only
+	// persist an actual consumption or expiry, not an identical row version.
+	if a.PurchasedBytes != priorPurchased || a.CreditBytes == priorCredit {
+		return nil
 	}
 	_, err := tx.ExecContext(ctx, `UPDATE xnode_payg_accounts SET credit_bytes=$1 WHERE proxy_user_id=$2`, a.CreditBytes, a.ProxyUserID)
 	return err
@@ -68,7 +74,7 @@ func settlePAYGWindowTx(ctx context.Context, tx *sql.Tx, a *xnode.PAYGAccount, t
 		if _, err := tx.ExecContext(ctx, `UPDATE xnode_payg_accounts SET credit_bytes=$1 WHERE proxy_user_id=$2`, a.CreditBytes, a.ProxyUserID); err != nil {
 			return err
 		}
-		if _, err := tx.ExecContext(ctx, `UPDATE xnode_payg_windows SET unbilled_bytes=0 WHERE proxy_user_id=$1 AND through>$2 AND through<=$3`, a.ProxyUserID, from, to); err != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE xnode_payg_windows SET unbilled_bytes=0 WHERE proxy_user_id=$1 AND through>$2 AND through<=$3 AND unbilled_bytes<>0`, a.ProxyUserID, from, to); err != nil {
 			return err
 		}
 	}

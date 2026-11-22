@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
@@ -12,13 +13,27 @@ const paygFundingPredicate = ` WHERE a.node_id=$1 AND b.txb_minor>=0
 // XNodePAYGFunding reads current authorization inputs without scanning periods.
 // The account's validated period FK preserves existence; no counters are exposed.
 func (s *Store) XNodePAYGFunding(ctx context.Context, node string) ([]xnode.PAYGFunding, error) {
-	accounts, err := s.xnodePAYGAccounts(ctx, paygFundingSelect+paygFundingPredicate, []any{node})
+	rows, err := s.db.QueryContext(ctx, paygFundingSelect+paygFundingPredicate+` ORDER BY a.user_id,a.proxy_user_id`, node)
 	if err != nil {
 		return nil, err
 	}
-	out := make([]xnode.PAYGFunding, 0, len(accounts))
-	for _, account := range accounts {
-		out = append(out, account.Funding())
+	defer rows.Close()
+	out := []xnode.PAYGFunding{}
+	for rows.Next() {
+		item := xnode.PAYGFunding{NodeID: node}
+		var started sql.NullString
+		if err = rows.Scan(&item.ProxyUserID, &item.GroupID, &item.UnitPriceMinor, &item.BalanceMinor, &item.CreditBytes, &started, &item.Disabled); err != nil {
+			return nil, err
+		}
+		if started.Valid {
+			if item.CreditStartedAt, err = parseStamp(started.String); err != nil {
+				return nil, err
+			}
+		}
+		out = append(out, item)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
 	}
 	return out, nil
 }

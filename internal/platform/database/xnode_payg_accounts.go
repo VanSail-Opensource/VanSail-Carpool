@@ -18,9 +18,9 @@ const paygFundingJoins = ` FROM xnode_payg_accounts a JOIN balances b ON b.user_
  LEFT JOIN pricing_product_settings pricing ON pricing.product_type='payg' AND pricing.product_id=a.group_id`
 const paygSelect = paygSelectHead + `a.purchased_bytes,p.used_bytes,` + paygFundingFields + paygFundingJoins + ` JOIN xnode_periods p ON p.id=a.period_id`
 
-// Zero counter slots reuse the private scanner/price resolver. Only Funding()
-// escapes this projection; public accounting reads always use paygSelect.
-const paygFundingSelect = paygSelectHead + `0,0,` + paygFundingFields + paygFundingJoins
+// The renewal path needs neither historical counters nor owner/period IDs.
+// Keep the authorization expressions shared with the accounting projection.
+const paygFundingSelect = `SELECT a.proxy_user_id,a.group_id,` + paygFundingFields + paygFundingJoins
 
 func scanPAYG(row rowScanner) (xnode.PAYGAccount, error) {
 	var a xnode.PAYGAccount

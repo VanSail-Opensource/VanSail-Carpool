@@ -131,18 +131,18 @@ func (s *Store) retryAttempt_ObserveXNodePAYGConnections(ctx context.Context, no
 	}
 	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
 	for _, id := range ids {
-		a, e := scanPAYG(tx.QueryRowContext(ctx, paygSelect+` WHERE a.proxy_user_id=$1 AND a.node_id=$2`, id, node))
-		if errors.Is(e, xnode.ErrNotFound) {
+		// Take the period lock first. Read the full funding projection only
+		// after acquiring it, so a waiter sees the committed counters.
+		var locked string
+		e := tx.QueryRowContext(ctx, `SELECT p.id FROM xnode_payg_accounts a JOIN xnode_periods p ON p.id=a.period_id
+ WHERE a.proxy_user_id=$1 AND a.node_id=$2 FOR UPDATE OF p`, id, node).Scan(&locked)
+		if errors.Is(e, sql.ErrNoRows) {
 			continue
 		}
 		if e != nil {
 			return e
 		}
-		var locked string
-		if e = tx.QueryRowContext(ctx, `SELECT id FROM xnode_periods WHERE id=$1 FOR UPDATE`, a.PeriodID).Scan(&locked); e != nil {
-			return e
-		}
-		a, e = scanPAYG(tx.QueryRowContext(ctx, paygSelect+` WHERE a.proxy_user_id=$1`, id))
+		a, e := scanPAYG(tx.QueryRowContext(ctx, paygSelect+` WHERE a.proxy_user_id=$1 AND a.node_id=$2`, id, node))
 		if e != nil {
 			return e
 		}
@@ -163,7 +163,7 @@ func (s *Store) retryAttempt_ObserveXNodePAYGConnections(ctx context.Context, no
 			continue
 		}
 		a.UnitPriceMinor = price
-		if _, e = tx.ExecContext(ctx, `UPDATE xnode_payg_accounts SET unit_price_minor=$1 WHERE proxy_user_id=$2`, price, a.ProxyUserID); e != nil {
+		if _, e = tx.ExecContext(ctx, `UPDATE xnode_payg_accounts SET unit_price_minor=$1 WHERE proxy_user_id=$2 AND unit_price_minor<>$1`, price, a.ProxyUserID); e != nil {
 			return e
 		}
 		if _, e = tx.ExecContext(ctx, "SAVEPOINT pricing_payg_offer"); e != nil {
