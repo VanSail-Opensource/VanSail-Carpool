@@ -6,6 +6,8 @@ import (
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
 
+const replayStateMessageID = "state-replay"
+
 // Replaying an already applied baseline does not reactivate native state. The
 // evidence belongs to this connection; reconnects and unknown outcomes advance.
 func (m *Master) canReplayAppliedState(peer *agentPeer, revision uint64, reportSeconds int) bool {
@@ -21,7 +23,7 @@ func (m *Master) canReplayAppliedState(peer *agentPeer, revision uint64, reportS
 // Leave first-sync evidence and durable period tracking untouched: an ACK-only
 // replay neither activates users nor creates evidence of a new activation.
 func (m *Master) replayAppliedState(ctx context.Context, peer *agentPeer, config wire.Config, revision uint64) (bool, error) {
-	if err := peer.send(ctx, wire.New("state.sync", "", revision, config)); err != nil {
+	if err := peer.send(ctx, wire.New("state.sync", replayStateMessageID, revision, config)); err != nil {
 		peer.mu.Lock()
 		peer.digest = ""
 		peer.mu.Unlock()
