@@ -5,7 +5,7 @@ import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
 import { useCommunityMembership } from '@/composables/useCommunityMembership'
 import CommunityMembershipRows from './CommunityMembershipRows.vue'
 
-const { membership, loading, refreshing, liveReady, joining, error, load, join } = useCommunityMembership()
+const { membership, loading, refreshing, liveReady, joining, error, join } = useCommunityMembership()
 const joinedCount = computed(() => Number(membership.value?.groupJoined ?? false) + Number(membership.value?.channelJoined ?? false))
 </script>
 
@@ -17,12 +17,6 @@ const joinedCount = computed(() => Number(membership.value?.groupJoined ?? false
         <h1>{{ $t('community.title') }}</h1>
         <p>{{ $t('community.subtitle') }}</p>
       </div>
-      <UButton
-        color="neutral" variant="outline" icon="i-ph-arrows-clockwise-bold"
-        class="community-page__refresh" :loading="refreshing" :disabled="loading || refreshing"
-        :label="$t('common.refresh')" :aria-label="$t('common.refresh')"
-        data-haptic="refresh" @click="load()"
-      />
     </header>
 
     <section v-if="loading" class="community-page__loading" role="status" aria-live="polite">
@@ -60,7 +54,6 @@ const joinedCount = computed(() => Number(membership.value?.groupJoined ?? false
 .community-page__header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 0; }
 .community-page__header-copy { min-width: 0; }
 .community-page__header-copy p:last-child { margin: .45rem 0 0; color: var(--text-muted); }
-.community-page__refresh { flex: 0 0 auto; min-height: 44px; border-radius: var(--radius-control); }
 .community-page__loading, .community-page__skeletons { display: grid; gap: 1rem; }
 .community-page__loading > span { color: var(--text-muted); font-size: .8rem; }
 .community-page__status { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .65rem 1rem; font-size: .74rem; color: var(--text-muted); }
@@ -77,8 +70,6 @@ const joinedCount = computed(() => Number(membership.value?.groupJoined ?? false
 @media (min-width: 700px) { .community-page__skeletons { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 520px) {
   .community-page__header { align-items: start; }
-  .community-page__refresh { width: 44px; padding-inline: 0; justify-content: center; }
-  .community-page__refresh :deep([data-slot='label']) { display: none; }
   .community-page__footer { align-items: stretch; flex-direction: column; }
   .community-page__footer > :last-child { justify-content: center; }
 }

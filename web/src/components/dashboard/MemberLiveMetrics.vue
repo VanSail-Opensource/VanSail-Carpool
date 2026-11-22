@@ -3,13 +3,13 @@ import { computed, onMounted, onScopeDispose, shallowRef, watch } from 'vue'
 import { xnodeMemberApi } from '@/api/xnodeMember'
 import { useSubscriptionData } from '@/components/subscription/useSubscriptionData'
 import { useI18n } from '@/i18n'
-import { formatBytes } from '@/utils/format'
 import { activityDeadline, memberActivity, type ActivityStatus } from './memberActivity'
+import MemberLiveValues from './MemberLiveValues.vue'
 
 const emit = defineEmits<{ activity: [value: ActivityStatus] }>()
 
 const { t } = useI18n()
-const { value: observation, loading, error, refresh } = useSubscriptionData(async (signal) => {
+const { value: observation, loading, refreshing, error, refresh } = useSubscriptionData(async (signal) => {
   const startedAt = globalThis.performance.now()
   const metrics = await xnodeMemberApi.metrics(signal)
   return { metrics, deadline: activityDeadline(metrics, startedAt) }
@@ -42,37 +42,32 @@ const reasons = computed(() => [...new Set(value.value?.reasons.map(item => {
   const key = `memberNodes.reasons.${item.reason}`
   return t(key) === key ? t('memberNodes.reasons.unknown') : t(key)
 }) ?? [])])
-const rate = (bytes: number) => t('statistics.perSecond', { value: formatBytes(Number.isFinite(bytes) ? bytes : 0) })
-const connectionCounts = computed(() => ({ active: value.value?.connections ?? 0, total: value.value?.totalConnections ?? t('common.notAvailable') }))
+const statusLabel = computed(() => loading.value && !value.value ? t('common.loading') : t(`dashboard.${activity.value === 'unavailable' ? 'activityUnavailable' : activity.value}`))
 </script>
 
 <template>
-  <section class="section-block member-live-metrics" aria-live="polite">
-    <div class="section-heading"><h2>{{ t('memberNodes.live') }}</h2><UButton variant="ghost" color="neutral" icon="i-ph-arrow-clockwise" :loading="loading" :aria-label="t('common.refresh')" @click="refresh()" /></div>
-    <p v-if="loading && !value" class="text-muted">{{ t('common.loading') }}</p>
-    <template v-if="value && activity !== 'unavailable'">
-      <dl class="member-live-metrics__values text-sm">
-        <div :title="t('memberNodes.connectionsHint')"><dt class="text-muted">{{ t('xnode.connections') }}</dt><dd class="tabular-nums" :aria-label="t('memberNodes.connectionsLabel', connectionCounts)">{{ t('memberNodes.connectionCounts', connectionCounts) }}</dd></div>
-        <div><dt class="text-muted">{{ t('xnode.upload') }}</dt><dd>{{ rate(value.uploadBytesPerSecond) }}</dd></div>
-        <div><dt class="text-muted">{{ t('xnode.download') }}</dt><dd>{{ rate(value.downloadBytesPerSecond) }}</dd></div>
-      </dl>
-      <p v-for="reason in reasons" :key="reason" class="text-sm text-warning mt-2">{{ reason }}</p>
-      <p v-if="value.incomplete" class="text-xs text-muted mt-2">{{ t('memberNodes.incomplete') }}</p>
-    </template>
-    <p v-else-if="value && !error" class="text-xs text-muted">{{ t('memberNodes.incomplete') }}</p>
-    <p v-if="error" role="status" class="text-sm text-muted">{{ error }}</p>
+  <section class="section-block member-live-metrics" :aria-label="t('memberNodes.live')">
+    <div class="section-heading member-live-metrics__heading">
+      <div><h2>{{ t('memberNodes.live') }}</h2><p class="member-live-metrics__status" :data-activity="activity" role="status">{{ statusLabel }}</p></div>
+      <UButton class="member-live-metrics__refresh" variant="ghost" color="neutral" icon="i-ph-arrow-clockwise" :disabled="loading || refreshing" :aria-label="t('common.refresh')" @click="refresh()" />
+    </div>
+    <MemberLiveValues :metrics="activity !== 'unavailable' ? value : null" />
+    <div class="member-live-metrics__notices" aria-live="polite">
+      <p v-if="error" class="text-sm text-muted">{{ error }}</p>
+      <template v-if="value && activity !== 'unavailable'">
+        <p v-for="reason in reasons" :key="reason" class="text-sm text-warning">{{ reason }}</p>
+        <p v-if="value.incomplete" class="text-xs text-muted">{{ t('memberNodes.incomplete') }}</p>
+      </template>
+    </div>
   </section>
 </template>
 
 <style scoped>
-.member-live-metrics { container: member-live / inline-size; }
-.member-live-metrics__values { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin: 0; }
-.member-live-metrics__values > div { min-width: 0; }
-.member-live-metrics__values :is(dt, dd) { overflow-wrap: anywhere; }
-.member-live-metrics__values dd { margin: 0; }
-.member-live-metrics__values > div:first-child { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .25rem .75rem; }
-@container member-live (min-width: 20rem) {
-  .member-live-metrics__values { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .member-live-metrics__values > div:first-child { grid-column: auto; display: block; }
-}
+.member-live-metrics { min-width: 0; }
+.member-live-metrics__heading { align-items: start; gap: .75rem; }
+.member-live-metrics__heading > div { min-width: 0; }
+.member-live-metrics__status { margin: .35rem 0 0; color: var(--text-muted); font-size: .72rem; overflow-wrap: anywhere; }
+.member-live-metrics__status[data-activity='online'] { color: var(--accent); }
+.member-live-metrics__refresh { flex: 0 0 auto; min-width: 44px; min-height: 44px; }
+.member-live-metrics__notices p { margin: .75rem 0 0; }
 </style>

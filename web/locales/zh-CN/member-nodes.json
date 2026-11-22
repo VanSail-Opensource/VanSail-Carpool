@@ -1,6 +1,9 @@
 {
   "memberNodes": {
     "live": "实时用量",
+    "activeConnections": "有流量活动的连接",
+    "openConnections": "已建立连接",
+    "activeConnectionsHint": "连接限制仅计算有流量活动的连接。",
     "connectionCounts": "{active} / {total}",
     "connectionsLabel": "{active} 个有流量活动的连接 / {total} 个已建立连接",
     "connectionsHint": "有流量活动的连接 / 已建立连接总数。连接限制仅计算有流量活动的连接。",

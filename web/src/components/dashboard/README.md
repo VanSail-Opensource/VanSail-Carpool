@@ -33,14 +33,11 @@ The IP Lookup entrance in `ComingSoonLinks.vue` remains available to members wit
 
 `MemberLiveMetrics.vue` polls owner-scoped, memory-only metrics every five seconds while visible, with incomplete coverage and localized limitation reasons.
 
-Its metric grid responds to the panel's available width: narrow panels give
-Connections a full row above Upload and Download, and panels at least 20rem
-wide place all three side by side. Labels and exact counts can wrap without
-crossing into neighboring metrics; older WebViews retain the narrow layout.
-
-Its Connections value is traffic-active / total open client flows. The localized
-accessible label and native tooltip explain the counts and the unchanged
-traffic-active limit. Total counts are decimal strings; missing totals from older
+`MemberLiveValues.vue` groups upload and download rates above separate traffic-active
+and open connection counts. Each changed numeric text node settles with a short
+native animation; first observations, hidden pages and reduced motion stay static.
+Labels and counts wrap on narrow panels. The localized hint explains why the
+traffic-active count can differ from open connections. Total counts are decimal strings; missing totals from older
 or unavailable agents remain unknown. `memberActivity.ts` projects the server's
 expiring status: a fresh open flow is online even with zero sampled activity;
 offline requires complete fresh coverage reporting no open flows.

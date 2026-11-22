@@ -48,16 +48,18 @@ describe('CommunityPage', () => {
     const rows = wrapper.get('[data-testid="rows"]')
     expect(rows.attributes('data-group')).toBe('true')
     expect(rows.attributes('data-active')).toBe('true')
+    expect(wrapper.find('.community-page__header button').exists()).toBe(false)
     wrapper.unmount()
   })
 
-  it('keeps a localized error and refresh fallback when loading fails', async () => {
+  it('keeps a localized failure state without a refresh button', async () => {
     api.checkCommunityMembership.mockRejectedValue(new Error('offline'))
     const wrapper = mountPage()
     await flushPromises()
 
     expect(wrapper.text()).toContain('refresh community access')
-    expect(wrapper.get('.community-page__refresh').text()).toBe('common.refresh')
+    expect(wrapper.find('.community-page__refresh').exists()).toBe(false)
+    expect(wrapper.find('.community-page__empty').exists()).toBe(true)
     wrapper.unmount()
   })
 })

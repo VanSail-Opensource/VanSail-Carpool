@@ -1,21 +1,92 @@
 import { defineComponent } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setCacheSession } from '@/api/cache/session'
 import { useSubscriptionData } from './useSubscriptionData'
 
-afterEach(() => { setCacheSession(null); vi.useRealTimers() })
+const hiddenDescriptor = Object.getOwnPropertyDescriptor(document, 'hidden')
+beforeEach(() => { Object.defineProperty(document, 'hidden', { configurable: true, value: false }) })
+afterEach(() => {
+  setCacheSession(null); vi.useRealTimers()
+  if (hiddenDescriptor) Object.defineProperty(document, 'hidden', hiddenDescriptor)
+  else Reflect.deleteProperty(document, 'hidden')
+})
 
-function mountController<T>(fetcher: (signal: AbortSignal) => Promise<T>) {
+function mountController<T>(fetcher: (signal: AbortSignal) => Promise<T>, interval = 60_000) {
   let controls!: ReturnType<typeof useSubscriptionData<T>>
   const wrapper = mount(defineComponent({ setup() {
-    controls = useSubscriptionData(fetcher)
+    controls = useSubscriptionData(fetcher, interval)
     return () => null
   } }))
   return { wrapper, controls }
 }
 
 describe('live subscription lifecycle', () => {
+  it('waits for visibility before its initial read and coalesces resume focus events', async () => {
+    vi.useFakeTimers()
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true })
+    let finish!: (value: string) => void
+    const fetcher = vi.fn(() => new Promise<string>(resolve => { finish = resolve }))
+    const { wrapper, controls } = mountController(fetcher, 5000)
+    await controls.refresh()
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(fetcher).not.toHaveBeenCalled()
+    Object.defineProperty(document, 'hidden', { configurable: true, value: false })
+    document.dispatchEvent(new Event('visibilitychange'))
+    window.dispatchEvent(new Event('focus'))
+    window.dispatchEvent(new Event('focus'))
+    expect(fetcher).toHaveBeenCalledOnce()
+    expect(controls.refreshing.value).toBe(true)
+    finish('current')
+    await flushPromises()
+    expect(controls.value.value).toBe('current')
+    wrapper.unmount()
+  })
+
+  it('keeps forced clearing effective while hidden and retires the old in-flight read', async () => {
+    const calls: { signal: AbortSignal; resolve: (value: string) => void }[] = []
+    const { wrapper, controls } = mountController(signal => new Promise<string>(resolve => calls.push({ signal, resolve })))
+    calls[0]!.resolve('revoked-key')
+    await flushPromises()
+    const obsolete = controls.refresh()
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true })
+    await controls.refresh(true)
+    expect(controls.value.value).toBeNull()
+    expect(controls.liveReady.value).toBe(false)
+    expect(controls.refreshing.value).toBe(false)
+    expect(calls).toHaveLength(2)
+    expect(calls[1]!.signal.aborted).toBe(true)
+    calls[1]!.resolve('obsolete-key')
+    await obsolete
+    expect(controls.value.value).toBeNull()
+    Object.defineProperty(document, 'hidden', { configurable: true, value: false })
+    document.dispatchEvent(new Event('visibilitychange'))
+    expect(calls).toHaveLength(3)
+    calls[2]!.resolve('rotated-key')
+    await flushPromises()
+    expect(controls.value.value).toBe('rotated-key')
+    wrapper.unmount()
+  })
+
+  it('waits five seconds after completion and never overlaps a slow periodic read', async () => {
+    vi.useFakeTimers()
+    const calls: { signal: AbortSignal; resolve: (value: string) => void }[] = []
+    const { wrapper } = mountController(signal => new Promise<string>(resolve => calls.push({ signal, resolve })), 5000)
+    await vi.advanceTimersByTimeAsync(15_000)
+    expect(calls).toHaveLength(1)
+    expect(calls[0]!.signal.aborted).toBe(false)
+    calls[0]!.resolve('first')
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(4999)
+    expect(calls).toHaveLength(1)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(calls).toHaveLength(2)
+    await vi.advanceTimersByTimeAsync(15_000)
+    expect(calls).toHaveLength(2)
+    expect(calls[1]!.signal.aborted).toBe(false)
+    wrapper.unmount()
+  })
+
   it('clears revoked keys, ignores obsolete responses and disposes private state', async () => {
     type Value = { key: string }
     const calls: { signal: AbortSignal; resolve: (value: Value) => void }[] = []

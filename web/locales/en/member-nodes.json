@@ -1,6 +1,9 @@
 {
   "memberNodes": {
     "live": "Live usage",
+    "activeConnections": "Traffic-active connections",
+    "openConnections": "Open connections",
+    "activeConnectionsHint": "Only traffic-active connections count toward your connection limit.",
     "connectionCounts": "{active} / {total}",
     "connectionsLabel": "{active} traffic-active connections / {total} open connections",
     "connectionsHint": "Traffic-active / total open connections. Only traffic-active connections count toward the limit.",

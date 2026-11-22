@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { publicSubscriptionMetadata } from './xnodeMember'
+import { publicSubscriptionMetadata, xnodeMemberApi } from './xnodeMember'
 
 const token = 'a'.repeat(43)
 const metadata = {
@@ -10,6 +10,27 @@ afterEach(() => {
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
   vi.useRealTimers()
+})
+
+describe('live member metrics transport', () => {
+  it.each(['transport', 'body'])('bounds a stalled %s read at ten seconds', async stage => {
+    vi.useFakeTimers()
+    const response = new Response('{}', { headers: { 'Content-Type': 'application/json' } })
+    vi.spyOn(response, 'json').mockImplementation(() => new Promise(() => undefined))
+    const fetch = vi.fn<typeof globalThis.fetch>().mockImplementation(() => stage === 'transport'
+      ? new Promise<Response>(() => undefined) : Promise.resolve(response))
+    vi.stubGlobal('fetch', fetch)
+    const pending = xnodeMemberApi.metrics()
+    const rejected = expect(pending).rejects.toMatchObject({ name: 'TimeoutError' })
+    await vi.advanceTimersByTimeAsync(9999)
+    expect(fetch).toHaveBeenCalledOnce()
+    expect(fetch.mock.calls[0]![0]).toBe('/api/v1/xnode/metrics')
+    expect(fetch.mock.calls[0]![1]?.signal?.aborted).toBe(false)
+    await vi.advanceTimersByTimeAsync(1)
+    await rejected
+    expect(fetch.mock.calls[0]![1]?.signal?.aborted).toBe(true)
+    expect(vi.getTimerCount()).toBe(0)
+  })
 })
 
 describe('public subscription metadata transport', () => {

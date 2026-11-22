@@ -29,14 +29,15 @@ export function useSubscriptionData<T>(fetcher: (signal: AbortSignal) => Promise
     if (disposed || !identityReady) return
     if (timer) clearTimeout(timer)
     controller?.abort()
-    controller = new AbortController()
-    const signal = controller.signal
     const token = latest.begin()
-    const identity = cacheIdentityGeneration()
     if (clear) { value.value = null; liveReady.value = false }
     loading.value = value.value == null
-    refreshing.value = true
     error.value = null
+    if (document.hidden) { refreshing.value = false; return }
+    controller = new AbortController()
+    const signal = controller.signal
+    const identity = cacheIdentityGeneration()
+    refreshing.value = true
     try {
       const result = await fetcher(signal)
       if (latest.isCurrent(token) && !disposed && identity === cacheIdentityGeneration()) { value.value = result; liveReady.value = true }
@@ -55,7 +56,7 @@ export function useSubscriptionData<T>(fetcher: (signal: AbortSignal) => Promise
     if (document.hidden) { if (timer) clearTimeout(timer); controller?.abort(); latest.begin(); refreshing.value = false }
     else void refresh()
   }
-  function focused(): void { if (!document.hidden) void refresh() }
+  function focused(): void { if (!document.hidden && !refreshing.value) void refresh() }
 
   watch(cacheIdentityGeneration, identity => {
     identityReady = false
