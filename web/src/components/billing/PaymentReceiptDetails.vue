@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 
 import type { FeaturePaymentOrder, FeaturePaymentReturnStatus } from '@/api/features'
+import { usePaymentConfirmation } from '@/composables/usePaymentConfirmation'
 import type { PaymentReturnState } from '@/composables/usePaymentReturn'
 import { useI18n } from '@/i18n'
+import { isBrowserExperience } from '@/utils/experience'
 import { formatDateTime, formatMoney } from '@/utils/format'
 import { paymentChannelLabel } from './paymentOptions'
+import WalletPaymentSuccess from './WalletPaymentSuccess.vue'
 
 type PaymentReceipt = FeaturePaymentOrder | FeaturePaymentReturnStatus
 type ReceiptColor = 'neutral' | 'success' | 'warning' | 'error'
@@ -24,7 +27,14 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const status = computed(() => props.details?.status ?? null)
+const receipt = computed(() => props.state === 'missing' || props.state === 'unavailable' ? null : props.details)
+const { phase, progress, confirm } = usePaymentConfirmation(receipt, isBrowserExperience() ? () => {} : undefined)
+watch([receipt, () => props.state], ([details, state]) => {
+  if (state === 'confirmed' && details?.status === 'paid') confirm()
+}, { immediate: true })
+const showWalletAnimation = computed(() => props.state === 'confirmed' &&
+  (phase.value === 'waiting' || phase.value === 'coins' || phase.value === 'check'))
+const status = computed(() => receipt.value?.status ?? null)
 const stateColors: Record<PaymentReturnState, ReceiptColor> = {
   checking: 'warning',
   pending: 'warning',
@@ -43,15 +53,16 @@ const statusIcon = computed(() => ({
   unavailable: 'i-ph-warning-circle',
 }[props.state]))
 const statusLabel = computed(() => status.value ? localized(`payment.status.${status.value}`, status.value) : props.title)
-const balanceAmount = computed(() => props.details ? formatMoney(props.details.txb) : t('common.notAvailable'))
+const balanceAmount = computed(() => receipt.value ? formatMoney(receipt.value.txb) : t('common.notAvailable'))
 const balanceLabel = computed(() => t(status.value === 'paid' ? 'payment.balanceCredited' : 'payment.balanceAmount'))
-const paymentAmount = computed(() => props.details ? `${props.details.payableAmount} ${props.details.payableCurrency}` : t('common.notAvailable'))
-const cryptoAmount = computed(() => props.details?.actualCryptoAmount && props.details.actualCryptoCurrency
-  ? `${props.details.actualCryptoAmount} ${props.details.actualCryptoCurrency}`
+const paymentAmount = computed(() => receipt.value ? `${receipt.value.payableAmount} ${receipt.value.payableCurrency}` : t('common.notAvailable'))
+const cryptoAmount = computed(() => receipt.value?.actualCryptoAmount && receipt.value.actualCryptoCurrency
+  ? `${receipt.value.actualCryptoAmount} ${receipt.value.actualCryptoCurrency}`
   : null)
+const showReceipt = computed(() => Boolean(receipt.value) || props.state === 'checking' || props.state === 'pending')
 
 const receiptFields = computed(() => {
-  const details = props.details
+  const details = receipt.value
   if (!details) return []
   return [
     { key: 'id', label: t('payment.paymentId'), value: details.id, icon: 'i-ph-hash', mono: true },
@@ -91,18 +102,21 @@ function localized(key: string, fallback: string): string {
             :description="description"
           />
 
-          <section v-if="details || state === 'checking' || state === 'pending'" class="payment-receipt__amount" :aria-label="balanceLabel">
+          <section v-if="showReceipt" class="payment-receipt__amount" :class="{ 'payment-receipt__amount--animated': showWalletAnimation }" :aria-label="balanceLabel">
+            <WalletPaymentSuccess v-if="showWalletAnimation && receipt" :amount="receipt.txb" :phase="phase" :progress="progress" hide-done />
             <div>
-              <span class="payment-receipt__label">{{ balanceLabel }}</span>
-              <strong>{{ balanceAmount }}</strong>
+              <template v-if="!showWalletAnimation">
+                <span class="payment-receipt__label">{{ balanceLabel }}</span>
+                <strong>{{ balanceAmount }}</strong>
+              </template>
               <span class="payment-receipt__secondary">{{ $t('payment.paymentAmountValue', { amount: paymentAmount }) }}</span>
             </div>
-            <UIcon name="i-ph-wallet" class="payment-receipt__amount-icon" aria-hidden="true" />
+            <UIcon v-if="!showWalletAnimation" name="i-ph-wallet" class="payment-receipt__amount-icon" aria-hidden="true" />
           </section>
 
-          <USeparator v-if="details || state === 'checking' || state === 'pending'" />
+          <USeparator v-if="showReceipt" />
 
-          <section v-if="details || state === 'checking' || state === 'pending'" class="payment-receipt__details" :aria-labelledby="'payment-details-heading'">
+          <section v-if="showReceipt" class="payment-receipt__details" aria-labelledby="payment-details-heading">
             <div class="payment-receipt__section-heading">
               <div>
                 <p class="payment-receipt__eyebrow">{{ $t('payment.receiptLabel') }}</p>
@@ -152,6 +166,7 @@ function localized(key: string, fallback: string): string {
 .payment-receipt__avatar { flex: 0 0 auto; }
 .payment-receipt__alert :deep([data-slot="description"]) { line-height: 1.5; }
 .payment-receipt__amount { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.1rem; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--accent-soft); }
+.payment-receipt__amount--animated { display: grid; justify-content: stretch; text-align: center; }
 .payment-receipt__amount > div { display: grid; gap: 0.35rem; min-width: 0; }
 .payment-receipt__label, .payment-receipt__secondary, .payment-receipt__field dt, .payment-receipt__settled span { color: var(--text-muted); font-size: 0.72rem; }
 .payment-receipt__amount strong { color: var(--accent-strong); font-family: var(--font-mono); font-size: 2rem; letter-spacing: 0; line-height: 1.1; overflow-wrap: anywhere; }
