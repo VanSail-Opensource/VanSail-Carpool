@@ -211,6 +211,24 @@ and independent. `payg_leases.go` applies the bounded authenticated clock offset
 to both renewable leases and prepaid expiry caps. No upstream protocol changes
 or persisted connection state are required. Hosted continuity regressions cover
 the byte boundary, prepaid clock cap and observation failure ordering.
+`payg_sync_priority.go` orders existing fleet workers by approaching published
+PAYG deadlines before ordinary compiles. Only fresh, ready peers on the same
+connection receive priority, with one priority attempt per 20-second renewal
+interval; failed attempts retain the ordinary round-robin path. The timestamp
+is only a scheduling hint: funding, native freshness, current configuration and
+the unchanged 60-second maximum lease are checked again before publication.
+Forced node synchronization coalesces reconnect routing wakes into the existing
+post-renewal maintenance phase, including when the routing dependency epoch is
+unchanged. A stalled routing wake therefore cannot prevent forced renewals, and
+failed wakes remain pending for the next joined pass. A bounded reservation of
+the existing pass budget lets routing recovery run after a partial fleet pass;
+optional connection observations are skipped for that pass. Journal failures
+advance a per-connection recovery fence; a completed flush cannot overwrite a newer
+failure with `paygReady=true`. Hosted regressions in `payg_sync_priority_test.go`,
+`payg_recovery_fence_test.go`, `payg_sync_budget_test.go` and
+`master_sync_priority_test.go` cover deadline ordering, fairness after failed
+attempts, clock offsets, partial-pass recovery, forced-sync ordering, cached
+routing wakes and stale recovery completion.
 During a quiet reporting gap the panel leaves unchanged, already published PAYG
 leases alone on the same socket, bounded by their original `valid_until` and
 current funding. It never republishes or renews a lease using stale reports. If
@@ -1400,6 +1418,13 @@ matches the current open period and material before recording proof. Delayed
 acknowledgments cannot confirm a replacement lifecycle or same-period credential
 rotation. Purge/material retirement and native credential replacement clear old
 readiness; ordinary saves and subscription-token-only rotation preserve it.
+
+Compiled proof candidates omit already-proven owners. Material/lifecycle resets
+clear their durable readiness and invalidate compilation, so replacement
+credentials require fresh captured proof. Empty candidates and duplicate, stale
+or expired ACKs do not wake a full fleet pass; newly usable proof still wakes
+the joined reconciler immediately. `subscription_proof_efficiency_test.go`
+covers ready-owner suppression, reset provenance and acknowledgment wakeups.
 
 Migration 00049 conservatively clears existing member proof once because older
 evidence did not bind those sources. Master restart/reconnect publishes a fresh

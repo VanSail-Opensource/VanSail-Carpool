@@ -45,6 +45,7 @@ func (m *Master) receiveTraffic(ctx context.Context, peer *agentPeer, message wi
 	if err != nil {
 		peer.trafficRetry.reject(m.service.now(), message.ID, fingerprint)
 		peer.paygReady = false
+		peer.paygFailureVersion++
 		// Keep an existing durable recovery coalesced across journal retries.
 		// overlayPAYG already bounds retries of interrupted recovery attempts.
 	} else {

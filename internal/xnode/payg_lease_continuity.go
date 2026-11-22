@@ -38,6 +38,7 @@ func (m *Master) prepareAuthorizationWire(peer *agentPeer, config wire.Config, c
 
 func (peer *agentPeer) rememberPublishedPAYG(users []wire.User) {
 	peer.paygPublished = nil
+	var until time.Time
 	for _, user := range users {
 		if user.ValidUntil == nil || !isPAYGPeriod(user.AccountingPeriod) {
 			continue
@@ -46,5 +47,11 @@ func (peer *agentPeer) rememberPublishedPAYG(users []wire.User) {
 			peer.paygPublished = make(map[int]publishedPAYGLease)
 		}
 		peer.paygPublished[user.ID] = publishedPAYGLease{period: user.AccountingPeriod, until: *user.ValidUntil}
+		if until.IsZero() || user.ValidUntil.Before(until) {
+			until = *user.ValidUntil
+		}
 	}
+	peer.mu.Lock()
+	peer.paygPublishedUntil = until
+	peer.mu.Unlock()
 }

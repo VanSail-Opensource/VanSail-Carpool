@@ -9,8 +9,21 @@ import (
 	"time"
 )
 
+// Preserve a bounded part of the existing pass deadline for durable reconnect
+// wakes even when slow peers consume the fleet budget. No work outlives ctx.
+func syncPassContext(ctx context.Context) (context.Context, context.CancelFunc) {
+	if deadline, ok := ctx.Deadline(); ok {
+		remaining := time.Until(deadline)
+		if remaining > 0 {
+			reserve := min(time.Second, remaining/5)
+			return context.WithDeadline(ctx, deadline.Add(-reserve))
+		}
+	}
+	return context.WithCancel(ctx)
+}
+
 // Two joined consumers share the existing reconciler, not another durable queue.
-func (m *Master) syncPeers(ctx context.Context, peers []*agentPeer, now time.Time) error {
+func (m *Master) syncPeers(ctx context.Context, peers []*agentPeer, now time.Time, reportSeconds ...int) error {
 	slices.SortFunc(peers, func(a, b *agentPeer) int { return strings.Compare(a.nodeID, b.nodeID) })
 	if len(peers) == 0 {
 		return nil
@@ -18,9 +31,13 @@ func (m *Master) syncPeers(ctx context.Context, peers []*agentPeer, now time.Tim
 	m.mu.Lock()
 	start := m.syncCursor % len(peers)
 	m.mu.Unlock()
-	jobs := make(chan int, len(peers))
-	for i := range peers {
-		jobs <- i
+	cadence := 0
+	if len(reportSeconds) > 0 {
+		cadence = reportSeconds[0]
+	}
+	jobs := make(chan peerSyncJob, len(peers))
+	for _, job := range m.peerSyncOrder(peers, start, now, cadence) {
+		jobs <- job
 	}
 	close(jobs)
 	// Each index has one consumer. Read attempts only after both workers join,
@@ -31,12 +48,18 @@ func (m *Master) syncPeers(ctx context.Context, peers []*agentPeer, now time.Tim
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for offset := range jobs {
+			for job := range jobs {
 				if ctx.Err() != nil {
 					return
 				}
-				attempted[offset] = true
-				m.syncPeer(ctx, peers[(start+offset)%len(peers)], now)
+				attempted[job.offset] = true
+				peer := peers[(start+job.offset)%len(peers)]
+				if job.priority {
+					peer.mu.Lock()
+					peer.paygPriorityAt = now
+					peer.mu.Unlock()
+				}
+				m.syncPeer(ctx, peer, now)
 			}
 		}()
 	}
@@ -72,15 +95,12 @@ func (m *Master) syncPeer(ctx context.Context, peer *agentPeer, now time.Time) {
 	child, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	started := time.Now()
-	var err error
 	if force {
-		if repo, ok := m.service.routingRepository(); ok {
-			err = repo.WakeXNodeRouting(child, now)
-		}
+		// Reconnect evidence must wake durable routing work, but that SQL work
+		// cannot precede a short authorization lease. The joined pass coalesces it.
+		m.routingWakePending.Store(true)
 	}
-	if err == nil {
-		err = m.confirmFirstSync(child, peer)
-	}
+	err := m.confirmFirstSync(child, peer)
 	if err == nil {
 		// Queued prerequisites keep the ordinary reconciliation cadence; only
 		// explicit Sync callers require proof that publication has happened.

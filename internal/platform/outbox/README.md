@@ -16,6 +16,13 @@ native executor limits still bound actual execution. It is not a separate queue.
 
 `executor_test.go` checks independent completion and cancellation joins without relying on timing sleeps.
 
+`completion.go` retries only fenced outcome persistence up to three times within
+the existing five-second detached completion budget. The handler is never
+replayed by these retries, including when a database commit succeeded but its
+response was lost. Exhausted persistence attempts are reported and remain
+recoverable by the existing durable lease recovery. `completion_test.go` covers
+pre-commit failure, ambiguous successful commit and bounded retry exhaustion.
+
 Admission reserves a lane slot and joins the lifecycle before the database
 claim, then releases the lifecycle mutex while PostgreSQL responds. A slow
 ordinary claim cannot stall urgent/compute claims or shutdown cancellation.
@@ -25,6 +32,11 @@ covered by `claim_isolation_test.go`.
 
 `claim.go` requires durable generation-aware completion and renewal. PostgreSQL claims serialize only resource
 admission, lock candidates with SKIP LOCKED, then release locks before providers.
+
+Database admission checks the eligible candidate batch before loading processing
+resources. Empty ordinary, urgent or compute lanes avoid decoding every active
+job and repeating its owner lookups. The same advisory lock, resource ordering,
+claim-generation fencing and cross-page predecessor reservations still apply.
 
 - `compute.go`: Independent compute execution lane using the existing durable job infrastructure.
 

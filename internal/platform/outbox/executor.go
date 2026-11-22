@@ -131,9 +131,7 @@ func (e *executor) execute(job model.OutboxJob) {
 	if errors.Is(jobErr, ErrDeferred) {
 		return
 	} // Native executor owns its own heartbeat.
-	completionCtx, stop := context.WithTimeout(context.WithoutCancel(e.ctx), 5*time.Second)
-	defer stop()
-	if err := CompleteClaim(completionCtx, e.worker.repository, job, jobErr, e.worker.now().UTC()); err != nil && e.report != nil {
+	if err := e.complete(job, jobErr); err != nil && e.report != nil {
 		e.report(fmt.Errorf("complete outbox attempt %s: %w", job.ID, err))
 	}
 }

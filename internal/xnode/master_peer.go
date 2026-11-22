@@ -21,6 +21,9 @@ type agentPeer struct {
 	trafficRetry          trafficRetry               // mu; bounded retries for an unchanged rejected journal head
 	paygRecoveryAt        time.Time                  // mu; bounded recovery requeue after interrupted attempts
 	paygReady             bool                       // mu; true only after a committed journal barrier
+	paygFailureVersion    uint64                     // mu; journal failures fence in-flight recovery
+	paygPublishedUntil    time.Time                  // mu; earliest sent PAYG deadline, scheduling only
+	paygPriorityAt        time.Time                  // mu; last urgent scheduling attempt
 	paygRecoveryQueued    bool                       // mu; durable recovery is coalesced per boot
 	paygOverlayKey        string                     // syncMu; disposable authorization projection
 	paygPublished         map[int]publishedPAYGLease // syncMu; last sent full baseline on this socket

@@ -16,10 +16,12 @@ import (
 )
 
 const maxPAYGAgentClockOffset = 2 * time.Minute
+const paygRenewalInterval = 20 * time.Second
+const paygLeaseLifetime = time.Minute
 
 func paygLeaseUntil(now time.Time, live liveSnapshot) time.Time {
 	base := paygAgentTime(now, live)
-	return time.Unix(base.Unix()/20*20+60, 0).UTC()
+	return base.Truncate(paygRenewalInterval).Add(paygLeaseLifetime).UTC()
 }
 
 func paygAgentTime(at time.Time, live liveSnapshot) time.Time {
@@ -157,16 +159,27 @@ func (m *Master) recoverPAYG(ctx context.Context, job model.OutboxJob) error {
 	if err := m.WaitApplied(ctx, input.NodeID); err != nil {
 		return err
 	}
+	peer.mu.Lock()
+	failureVersion := peer.paygFailureVersion
+	peer.mu.Unlock()
 	if _, err := m.Flush(ctx, input.NodeID, 0, false); err != nil {
 		return err
 	}
+	return m.completePAYGRecovery(peer, failureVersion)
+}
+
+func (m *Master) completePAYGRecovery(peer *agentPeer, failureVersion uint64) error {
 	m.mu.RLock()
-	same := m.peers[input.NodeID] == peer
+	same := m.peers[peer.nodeID] == peer
 	m.mu.RUnlock()
 	if !same {
 		return nil
 	}
 	peer.mu.Lock()
+	if peer.paygFailureVersion != failureVersion {
+		peer.mu.Unlock()
+		return ErrUnavailable
+	}
 	peer.paygReady = true
 	peer.paygRecoveryQueued = false
 	peer.mu.Unlock()

@@ -13,7 +13,7 @@ import (
 // a member's routing. Only durable access loss (a committed access prune) or
 // node removal disables a plan. Unprovable dependencies are retried on the next
 // reconcile so transient configuration, asset or inventory gaps recover.
-func (s *Service) reconcileRoutingPlans(ctx context.Context) (result error) {
+func (s *Service) reconcileRoutingPlans(ctx context.Context, forceWake ...bool) (result error) {
 	repo, ok := s.routingRepository()
 	if !ok {
 		return nil
@@ -23,6 +23,9 @@ func (s *Service) reconcileRoutingPlans(ctx context.Context) (result error) {
 		return err
 	}
 	if finish == nil {
+		if len(forceWake) > 0 && forceWake[0] {
+			return repo.WakeXNodeRouting(ctx, s.now())
+		}
 		return nil
 	}
 	defer func() { finish(result == nil) }()

@@ -45,6 +45,9 @@ type appliedMemberConfig struct {
 }
 
 func firstSyncCandidates(config wire.Config, revision uint64, now time.Time, subjects map[int64]FirstSyncSubject) *appliedMemberConfig {
+	if len(subjects) == 0 {
+		return nil
+	}
 	evidence := &appliedMemberConfig{revision: revision, validUntil: map[int64]time.Time{}}
 	for _, user := range config.Users {
 		if user.ID > 0 && user.AccountingPeriod != "" && !user.BlockNew && len(user.InboundTags) > 0 && len(user.Credentials) > 0 && (user.ValidUntil == nil || user.ValidUntil.After(now)) {
@@ -58,6 +61,9 @@ func firstSyncCandidates(config wire.Config, revision uint64, now time.Time, sub
 			}
 		}
 	}
+	if len(evidence.principals) == 0 {
+		return nil
+	}
 	return evidence
 }
 
@@ -70,6 +76,7 @@ func (m *Master) recordFirstSyncAck(peer *agentPeer, revision uint64) {
 		return
 	}
 	peer.mu.Lock()
+	confirmed := false
 	if evidence := peer.firstSync; evidence != nil && evidence.revision == revision && peer.revision == revision && evidence.appliedAt.IsZero() {
 		evidence.appliedAt = m.service.Now()
 		eligible := make([]FirstSyncSubject, 0, len(evidence.principals))
@@ -79,9 +86,13 @@ func (m *Master) recordFirstSyncAck(peer *agentPeer, revision uint64) {
 			}
 		}
 		evidence.principals = eligible
+		confirmed = len(eligible) > 0
 	}
 	peer.mu.Unlock()
 	m.mu.RUnlock()
+	if !confirmed {
+		return
+	}
 	select {
 	case m.stateWake <- struct{}{}:
 	default:

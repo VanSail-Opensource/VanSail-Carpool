@@ -94,6 +94,7 @@ func expireFirewallSnapshot(ctx context.Context, tx *sql.Tx, table, key, generat
 	if ordinal != 0 && !p.Contains(ordinal) {
 		return nil
 	}
+	before := e.GetCardinality()
 	if ordinal != 0 {
 		e.Add(ordinal)
 	}
@@ -107,10 +108,12 @@ func expireFirewallSnapshot(ctx context.Context, tx *sql.Tx, table, key, generat
 			return err
 		}
 	}
-	before := e.GetCardinality()
 	e.Or(roaring.AndNot(p, active))
 	p.And(active)
-	if ordinal == 0 && before == e.GetCardinality() && !roaring.AndNot(p, e).IsEmpty() {
+	// Distinct journal events can repeat an already-expired participant after
+	// reapplication/reconnect. The bitmap only grows; unchanged cardinality
+	// needs no write unless the final outstanding participant can be released.
+	if before == e.GetCardinality() && !roaring.AndNot(p, e).IsEmpty() {
 		return nil
 	}
 	raw, err := e.ToBytes()
