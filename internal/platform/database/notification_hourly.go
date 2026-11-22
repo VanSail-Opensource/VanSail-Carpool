@@ -17,15 +17,15 @@ const hourlyFundingWarningLimit = 200
 
 // EnqueueHourlyFundingWarnings queues at most one warning per enrolled squad and
 // paid-through boundary. It only warns owners whose active enrollment ends
-// within the next hour and whose balance cannot fund the next hourly price, so
-// a top-up before the boundary keeps the squad running.
+// within the next hour and whose balance cannot fund the next billing interval.
+// The warning reports the offer rate, not the prorated interval charge.
 func (s *Store) EnqueueHourlyFundingWarnings(ctx context.Context, now time.Time) (int, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	rows, err := tx.QueryContext(ctx, `SELECT e.id,e.owner_id,e.paid_through,(`+hourlyRenewalPriceSQL+`)::bigint,
+	rows, err := tx.QueryContext(ctx, `SELECT e.id,e.owner_id,e.paid_through,o.hourly_price_minor,
 		COALESCE(b.txb_minor,0),COALESCE(NULLIF(g.name,''),e.group_id)
 		FROM hourly_enrollments e
 		JOIN users u ON u.id=e.owner_id AND u.account_status='active' AND u.account_generation=e.account_generation

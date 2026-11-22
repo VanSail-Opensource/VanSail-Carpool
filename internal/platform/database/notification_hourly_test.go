@@ -150,7 +150,7 @@ func TestHourlyFundingWarningRetainsFinalNanosecond(t *testing.T) {
 	if _, err := s.DB().Exec(`UPDATE hourly_enrollments SET paid_through=$1 WHERE id=$2`, boundary, e.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.DB().Exec(`UPDATE balances SET txb_minor=50 WHERE user_id=$1`, input.OwnerID); err != nil {
+	if _, err := s.DB().Exec(`UPDATE balances SET txb_minor=0 WHERE user_id=$1`, input.OwnerID); err != nil {
 		t.Fatal(err)
 	}
 	if count, err := s.EnqueueHourlyFundingWarnings(ctx, boundary.Add(-time.Nanosecond)); err != nil || count != 1 {
