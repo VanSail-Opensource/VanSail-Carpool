@@ -55,7 +55,7 @@ func (s *Store) retryAttempt_firewallWrite(ctx context.Context, fn func(*sql.Tx)
 	}
 	return tx.Commit()
 }
-func expireFirewallParticipant(ctx context.Context, tx *sql.Tx, table, key, generation string, ordinal uint32) error {
+func expireFirewallParticipant(ctx context.Context, tx *sql.Tx, table, key, generation string, ordinal uint32, audience *firewallAudienceSnapshot) error {
 	if table != "xnode_firewall_bans" && table != "xnode_firewall_sources" {
 		return errors.New("invalid firewall table")
 	}
@@ -71,11 +71,14 @@ func expireFirewallParticipant(ctx context.Context, tx *sql.Tx, table, key, gene
 	if err != nil {
 		return err
 	}
-	return expireFirewallSnapshot(ctx, tx, table, key, generation, ordinal, participants, expired, nil)
+	if err = audience.load(ctx, tx); err != nil {
+		return err
+	}
+	return expireFirewallSnapshot(ctx, tx, table, key, generation, ordinal, participants, expired, audience.active)
 }
 
-// A sweep shares one immutable audience from its serializable transaction.
-// Ordinary agent events still read that audience after checking their generation.
+// Sweeps and journal batches share one immutable audience from their respective
+// serializable transactions. Participant and expiry bitmaps remain per generation.
 func expireFirewallSnapshot(ctx context.Context, tx *sql.Tx, table, key, generation string, ordinal uint32, participants, expired []byte, active *roaring.Bitmap) error {
 	field := "prefix"
 	if table == "xnode_firewall_sources" {
@@ -97,16 +100,6 @@ func expireFirewallSnapshot(ctx context.Context, tx *sql.Tx, table, key, generat
 	before := e.GetCardinality()
 	if ordinal != 0 {
 		e.Add(ordinal)
-	}
-	if active == nil {
-		activeRaw, err := firewallAudience(ctx, tx)
-		if err != nil {
-			return err
-		}
-		active, err = firewallBitmap(activeRaw)
-		if err != nil {
-			return err
-		}
 	}
 	e.Or(roaring.AndNot(p, active))
 	p.And(active)

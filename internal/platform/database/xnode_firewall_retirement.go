@@ -6,6 +6,22 @@ import (
 	"strings"
 )
 
+const firewallMemberRetirementBatch = 256
+
+// Historical removals can retain their node row. Repair old membership flags
+// from that permanent lifecycle fence, never from connection or enabled state.
+func retireRemovedFirewallMembersTx(ctx context.Context, tx *sql.Tx) (bool, error) {
+	result, err := tx.ExecContext(ctx, `UPDATE xnode_firewall_members SET active=0 WHERE ordinal IN (
+ SELECT m.ordinal FROM xnode_firewall_members m WHERE m.active=1
+ AND NOT EXISTS(SELECT 1 FROM xnode_nodes n WHERE n.id=m.node_id AND n.retired_at IS NULL)
+ ORDER BY m.ordinal LIMIT $1)`, firewallMemberRetirementBatch)
+	if err != nil {
+		return false, err
+	}
+	changed, err := result.RowsAffected()
+	return changed > 0, err
+}
+
 // Limit each bank before merging: the existing C-collated primary keys can seek
 // directly to this page instead of sorting every active generation on each pass.
 const firewallSweepPageQuery = `SELECT key,kind,target,generation,participants,expired FROM (
@@ -26,6 +42,14 @@ func firewallSweepRange(bank, cursor string) (string, bool) {
 }
 
 func (s *Store) sweepRetiredFirewallTx(ctx context.Context, tx *sql.Tx) error {
+	changed, err := retireRemovedFirewallMembersTx(ctx, tx)
+	if err != nil {
+		return err
+	}
+	if changed {
+		// Revisit earlier generations against the newly repaired audience.
+		s.firewallSweepCursor = ""
+	}
 	var retired int
 	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM xnode_firewall_members WHERE active=0`).Scan(&retired); err != nil {
 		return err

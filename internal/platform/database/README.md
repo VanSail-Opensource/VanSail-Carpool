@@ -196,10 +196,30 @@ Repeated participant expiry events also skip unchanged bitmap writes while
 preserving journal cursor progress. Final-participant expiry still publishes its
 release version and source clock. `xnode_firewall_expiry_noop_test.go` checks both
 ban and source generations, including distinct event sequences and final release.
+Journal batches also lazily reuse one immutable active-member audience for
+detections and expiries. `xnode_firewall_audience.go` scopes that snapshot to one
+serializable transaction attempt; retries and later frames read membership again.
+Each expiry still reads its exact active generation in event order, preserving
+same-frame changes and final-participant/source-clock rules.
+`xnode_firewall_audience_test.go` covers mixed ban/source batches, repeated expiry
+and membership retirement between transactions; `xnode_firewall_audience_retry_test.go`
+changes membership between a failed attempt and its retry to fence stale reuse.
 `xnode_firewall_retirement.go` seeks the existing C-collated generation/source
 primary keys and limits each bank to 256 candidates before merging one 256-row
 page. The strict composite cursor still orders bans before sources; empty keys,
 released generations and bank transitions preserve the original projection.
+Before loading that audience, the sweep repairs at most 256 active membership
+flags whose node is absent or permanently retired. Ordinals and delivery receipts
+remain intact. Enabled offline nodes and unretired disabled/removing nodes retain
+their existing enforcement-confirmation dependencies. A repaired audience restarts
+the bounded generation scan; actual final releases advance their clocks and enqueue
+eligible fleet delivery in the same transaction. Positive member reconciliation
+locks the retained node before its member and ignores removed-node requests before
+using an observed version. Historical `FinishXNodeRemoval` deactivates membership
+atomically with permanent retirement. `xnode_firewall_lifecycle_test.go` and
+`xnode_firewall_lifecycle_batch_test.go` cover legacy repair, exact clocks, retained
+participants, stale reactivation, queue eligibility and bounded progress;
+`xnode_node_removal_test.go` covers preparation, rollback and final retirement.
 Every cycle wraps to the beginning, including startup/recovery; errors restore
 the cursor through `SweepFirewall`'s existing whole-transaction retry boundary.
 No admission cache, schema change, expiry shortcut or delivery-lane change is

@@ -511,6 +511,12 @@ journal, independently of synchronized telemetry. Retired/disabled nodes can
 drain durable events; they cannot authorize new bans. ACKs follow committed
 cursors, and this socket path never waits for a command result.
 `firewall_journal_socket_test.go` covers event ACKs before synchronized telemetry.
+Committed journal changes enqueue their required delivery atomically. Event
+frames do not additionally wake fleet reconciliation: replay/expiry backlogs
+must not replace its five-second recovery cadence with one full pass per frame.
+Explicit protection/DDNS changes retain their wakes. `firewall_event_wake_test.go`
+covers committed, replayed and failed journals, including lost ACKs and unrelated
+protection wakes already waiting in the channel.
 `frame_diagnostics.go` supplies allowlisted rejection/reconciliation causes;
 raw database errors, source addresses and frame contents never enter logs.
 `frame_diagnostics_test.go` checks wrapped errors and private-detail redaction.
@@ -1475,6 +1481,10 @@ Enrolled and historical nodes use the queued removal operation below. Database
 foreign keys, endpoint dependencies, lifecycle state and concurrent first bind.
 
 Node removal runs node.remove as an existing durable operation, never a wire command. It fences encrypted routing reads with the compile revision, prunes squad/service bindings and routing choices, fences new admission, waits for apply and committed quiescent traffic barriers, seals per-period evidence, then revokes the exact drained peer. Offline participants and accounting gaps remain explicit resumable dependencies. Historical nodes retain evidence behind retired_at; never-enrolled unreferenced nodes are deleted.
+Final retirement also deactivates firewall membership in the same transaction.
+The periodic firewall sweep repairs legacy flags for absent or permanently retired
+nodes in bounded batches. Temporary disconnection and disabled/removing state alone
+do not remove the outstanding enforcement-confirmation dependency.
 
 `member_connection_types.go` defines private transport; `member_connection_leases_test.go` checks grants and isolation. `node_removal.go` runs queued removal. `subscription_readiness_test.go` checks exact-peer applied proof.
 
