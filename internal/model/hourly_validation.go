@@ -16,7 +16,7 @@ const MaxHourlyRequiredHours int64 = 2562047
 // ValidateHourlyPolicy validates the same exact units for administration and
 // wallet transactions. Unconfigured defaults cannot authorize a sale.
 func ValidateHourlyPolicy(policy HourlyPolicy) error {
-	if policy.DailyAllowanceBytes < 0 || policy.ReducedRateBytesPerSecond > 1_000_000_000_000 || policy.SalesEnabled && policy.ReducedRateBytesPerSecond == 0 || policy.ExtraGBPriceTXBMinor < 0 || policy.ActivationHours <= 0 || policy.ActivationHours > int64(time.Duration(math.MaxInt64)/time.Hour) || policy.CooldownSeconds < 0 || policy.CooldownSeconds > int64(time.Duration(math.MaxInt64)/time.Second) {
+	if policy.DailyAllowanceBytes < 0 || policy.ReducedRateBytesPerSecond > 1_000_000_000_000 || policy.SalesEnabled && policy.ReducedRateBytesPerSecond == 0 || policy.ExtraGBPriceTXBMinor < 0 || policy.ActivationHours <= 0 || policy.ActivationHours > int64(time.Duration(math.MaxInt64)/time.Hour) {
 		return ErrHourlyPolicyInvalid
 	}
 	return nil

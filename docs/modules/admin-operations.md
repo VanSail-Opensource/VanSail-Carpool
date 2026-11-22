@@ -129,9 +129,9 @@ fingerprint returns the original purchase; a changed fingerprint conflicts.
 `policy`, `balance`, `extraPreference`, current UTC-day `usage`, and every
 enrollment for the owner's current account generation (including `disabled` and
 `closed`). Each squad row has its live group name and offer price, offer
-enabled flag, status, `enrollmentId`, `paidThrough`, `cooldownUntil`, `activatedAt`,
+enabled flag, status, `enrollmentId`, `paidThrough`, `activatedAt`,
 `disabledAt`, and `createdAt`. The safe enrollment ID is the target for the
-disable endpoint. The projection never exposes credentials, proxy
+disable endpoint. The deprecated `cooldownUntil` field is always null. The projection never exposes credentials, proxy
 or period references, account generations, activation keys, or fingerprints,
 and reads never create allowance rows.
 

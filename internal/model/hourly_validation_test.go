@@ -28,8 +28,8 @@ func TestHourlyPolicyDefaultsAndExplicitUnitBounds(t *testing.T) {
 		{"unavailable extras", func(p *HourlyPolicy) { p.ExtraGBPriceTXBMinor = 0 }, true},
 		{"negative extra price", func(p *HourlyPolicy) { p.ExtraGBPriceTXBMinor = -1 }, false},
 		{"zero cooldown", func(p *HourlyPolicy) { p.CooldownSeconds = 0 }, true},
-		{"negative cooldown", func(p *HourlyPolicy) { p.CooldownSeconds = -1 }, false},
-		{"cooldown duration overflow", func(p *HourlyPolicy) { p.CooldownSeconds = int64(time.Duration(math.MaxInt64)/time.Second) + 1 }, false},
+		{"negative cooldown", func(p *HourlyPolicy) { p.CooldownSeconds = -1 }, true},
+		{"cooldown duration overflow", func(p *HourlyPolicy) { p.CooldownSeconds = int64(time.Duration(math.MaxInt64)/time.Second) + 1 }, true},
 		{"activation duration overflow", func(p *HourlyPolicy) { p.ActivationHours = int64(time.Duration(math.MaxInt64)/time.Hour) + 1 }, false},
 	} {
 		t.Run(test.name, func(t *testing.T) {

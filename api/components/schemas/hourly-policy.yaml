@@ -34,8 +34,7 @@ HourlyPolicy: {
         "deprecated": true,
         "description": "Ignored on write; always zero on read. Hourly changes have no cooldown.",
         "type": "integer",
-        "minimum": 0,
-        "maximum": 9223372036
+        "format": "int64"
       }
     },
     "description": "UTC account-wide ingress policy. Byte counts and TXB hundredths are exact decimal strings. Sales admission is disabled until all participating agents support hourly enforcement."

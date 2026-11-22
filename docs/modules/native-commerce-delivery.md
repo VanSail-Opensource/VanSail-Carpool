@@ -54,7 +54,7 @@ selected snippets and use the pinned Xray validator.
 The administrator hourly workspace reads one owner-scoped projection of policy,
 wallet, extra-traffic preference, current UTC-day accounting usage, and every
 enrollment for the current account generation. It exposes live group names,
-prices, offer availability, status, paid-through, cooldown, activation, disable,
+prices, offer availability, status, paid-through, activation, disable,
 and creation timestamps only; credentials, proxy and period references, account
 generations, activation keys, and fingerprints never cross the API. This
 projection is read-only and creates no allowance or accounting rows.
