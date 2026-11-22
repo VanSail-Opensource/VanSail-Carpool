@@ -25,7 +25,7 @@ func (s *Store) EnqueueHourlyFundingWarnings(ctx context.Context, now time.Time)
 		return 0, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	rows, err := tx.QueryContext(ctx, `SELECT e.id,e.owner_id,e.paid_through,o.hourly_price_minor,
+	rows, err := tx.QueryContext(ctx, `SELECT e.id,e.owner_id,e.paid_through,(`+hourlyRenewalPriceSQL+`)::bigint,
 		COALESCE(b.txb_minor,0),COALESCE(NULLIF(g.name,''),e.group_id)
 		FROM hourly_enrollments e
 		JOIN users u ON u.id=e.owner_id AND u.account_status='active' AND u.account_generation=e.account_generation

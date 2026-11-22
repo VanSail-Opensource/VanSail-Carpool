@@ -6,7 +6,7 @@ import type { XNodeUserMetrics } from '@/api/xnodeMember'
 import MemberLiveMetrics from './MemberLiveMetrics.vue'
 import MemberLiveValues from './MemberLiveValues.vue'
 
-const initial = () => ({
+const initial = (): { metrics: XNodeUserMetrics; deadline: number } => ({
   metrics: {
     activityStatus: 'online', activityExpiresAt: '2026-10-19T00:00:15Z', fetchedAt: '2026-10-19T00:00:00Z',
     connections: 1, totalConnections: '1', uploadBytesPerSecond: 0, downloadBytesPerSecond: 0,

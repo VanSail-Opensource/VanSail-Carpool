@@ -6,15 +6,15 @@ import { useI18n } from '@/i18n'
 const props = defineProps<{ value: string | null; unit?: string }>()
 const { t } = useI18n()
 const { reducedMotion } = useMotionPreferences()
-const number = useTemplateRef<HTMLSpanElement>('number')
-let animation: Animation | undefined
+const number = useTemplateRef<InstanceType<typeof globalThis.HTMLSpanElement>>('number')
+let animation: ReturnType<NonNullable<typeof number.value>['animate']> | undefined
 
 // Keep the current text in one DOM node: no counted-up estimates, duplicate
 // screen-reader values, remounts, timers, or animation on the first observation.
 watch([() => props.value, reducedMotion], ([value, reduced], [previous]) => {
   animation?.cancel()
   animation = undefined
-  if (reduced || value == null || previous == null || value === previous || document.hidden) return
+  if (reduced || value == null || previous == null || value === previous || globalThis.document.hidden) return
   animation = number.value?.animate?.([
     { opacity: 0.55, transform: 'translateY(2px)' },
     { opacity: 1, transform: 'translateY(0)' },
