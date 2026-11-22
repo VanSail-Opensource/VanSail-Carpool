@@ -42,18 +42,18 @@ describe('AppShell accessibility', () => {
     const wrapper = mount(AppShell, {
       props: { authorized: false },
       global: { plugins: [pinia, router] },
-      slots: { pending: '<p role="status">Pending</p>', default: '<input aria-label="Draft" />' },
+      slots: { pending: '<p role="status">Pending</p>', default: '<h1>Private content</h1>' },
     })
     const viewport = wrapper.get('.app-route-viewport').element
     expect(wrapper.findAll('main [role="status"]')).toHaveLength(1)
-    expect(wrapper.find('.side-rail, .bottom-nav, input').exists()).toBe(false)
+    expect(wrapper.find('.side-rail, .bottom-nav, h1').exists()).toBe(false)
     expect(api.getCommunityAccess).not.toHaveBeenCalled()
     expect(api.getBalance).not.toHaveBeenCalled()
 
     await wrapper.setProps({ authorized: true })
     expect(wrapper.get('.app-route-viewport').element).toBe(viewport)
     expect(wrapper.find('[role="status"]').exists()).toBe(false)
-    expect(wrapper.get('input').attributes('aria-label')).toBe('Draft')
+    expect(wrapper.get('h1').text()).toBe('Private content')
     expect(api.getCommunityAccess).toHaveBeenCalledOnce()
     wrapper.unmount()
   })
