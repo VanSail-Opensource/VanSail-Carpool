@@ -55,10 +55,21 @@ func (m *Master) overlayPAYG(ctx context.Context, peer *agentPeer, config wire.C
 		return config, nil
 	}
 	now := m.service.now()
+	m.mu.RLock()
+	live := m.live[peer.nodeID]
+	current := m.peers[peer.nodeID] == peer
+	m.mu.RUnlock()
+	peer.mu.Lock()
+	ready := peer.paygReady
+	queued := peer.paygRecoveryQueued && now.Sub(peer.paygRecoveryAt) < 30*time.Second
+	peer.mu.Unlock()
+	usable := current && paygCapabilities(caps) && live.report.Ready && live.report.Synchronized && live.firewallPending == ""
+	healthy := usable && freshSnapshot(live, now, config.Telemetry.ReportSeconds)
+	hold := usable && !healthy && !live.receivedAt.IsZero()
 	byID := map[int]PAYGFunding{}
 	admissions := map[string]bool{}
 	for _, a := range accounts {
-		if !a.HasCredit(now) {
+		if healthy && ready && !a.HasCredit(now) {
 			if admission, ok := r.(interface {
 				PricingPAYGAdmission(context.Context, string, string, time.Time) (bool, error)
 			}); ok {
@@ -78,17 +89,6 @@ func (m *Master) overlayPAYG(ctx context.Context, peer *agentPeer, config wire.C
 		}
 		byID[int(a.ProxyUserID)] = a
 	}
-	m.mu.RLock()
-	live := m.live[peer.nodeID]
-	current := m.peers[peer.nodeID] == peer
-	m.mu.RUnlock()
-	peer.mu.Lock()
-	ready := peer.paygReady
-	queued := peer.paygRecoveryQueued && now.Sub(peer.paygRecoveryAt) < 30*time.Second
-	peer.mu.Unlock()
-	usable := current && paygCapabilities(caps) && live.report.Ready && live.report.Synchronized && live.firewallPending == ""
-	healthy := usable && freshSnapshot(live, now, config.Telemetry.ReportSeconds)
-	hold := usable && !healthy && !live.receivedAt.IsZero()
 	if healthy && !ready && !queued {
 		raw, _ := json.Marshal(map[string]string{"nodeId": peer.nodeID, "bootId": peer.bootID})
 		if err = r.EnqueueOutbox(ctx, PAYGRecoveryJob, string(raw), now); err != nil {
