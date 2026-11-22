@@ -25,11 +25,20 @@ A worker records intent before starting a provider scan or drop. A scan-start in
 
 The active purchase card obtains server-owned refund quotes. Refund commands retain their idempotency keys until accepted, then poll the owner-scoped receipt. An eligible Refund action replaces automatic renewal; all other states keep the existing renewal control. `pending_review` and `partial` receipts block further member mutations and explicitly forbid retry while an administrator reconciles the provider outcome. Historical reset receipts remain owner-readable without restoring a reset action.
 
-## Hourly funding notices
+## Hourly activation, renewals, and usage cost
 
-Hourly squad renewal is funded an hour at a time from the member wallet. The
-scheduler prepays the next whole UTC hour inside a bounded one-minute lead
-window, charging from the current hour-aligned `paid_through`, so the
+Each new hourly activation prepays its minimum enable period from the member's
+wallet. The offer's `requiredHours` sets the minimum; `0` inherits
+`policy.activationHours`. Preparation is unpaid. Once native access is ready, the
+activation commits a debit equal to `requiredBalance` (minimum hours times the
+accepted hourly price) and sets `paid_through` to the activation instant plus
+those hours. No hourly renewal charges for time already covered. Disabling stops
+access immediately without refunding unused prepayment; restarting after the
+cooldown requires a new activation and minimum debit.
+
+The scheduler prepays the next interval inside a bounded one-minute lead window,
+starting at `paid_through`. The first renewal after an off-hour minimum boundary
+covers only the remainder of that UTC hour; later renewals cover whole hours. The
 compiled-native `ValidUntil` is extended before the previous paid boundary denies
 access. A duplicate or concurrent settlement still yields exactly one receipt per
 `(enrollment, hour_start)` and at most one settled hour forward; the wallet debit
@@ -42,17 +51,22 @@ suspended early. At and after the boundary the existing late path decides; when
 the wallet cannot fund the interval, the same transaction that changes the
 enrollment to `funding_suspended` writes the definitive
 `hourly_funding_suspended` notice. Before a paid hour ends, the existing
-five-minute notification scan queues a `hourly_funding_warning` when the squad's
-current hourly price exceeds the balance; owners are not warned when the balance
-still covers the next hour. A successful prepayment advances `paid_through`, so
-the warning event key moves to the new boundary instead of repeating. Both
+five-minute notification scan queues a `hourly_funding_warning` when the next
+renewal costs more than the balance, including proration at an off-hour boundary.
+A successful prepayment advances `paid_through`, so the warning event key moves
+to the new boundary instead of repeating. Both
 notices are durable user events with per-enrollment/per-boundary event keys,
 localized EN and zh-CN copy, and facts limited to the squad name, hourly price,
 balance and time. A suspended enrollment cannot resume itself; the member must
-top up and start a new activation. Each offer also owns a `requiredHours` funding
-threshold (`0` inherits `policy.activationHours`), which the member view uses for
-`requiredBalance` and the activation minimum. The value is stored by migration
-`00047_hourly_offer_required_hours.sql`; older offers remain at zero.
+top up and start a new activation.
+
+The rolling 72-hour usage breakdown allocates new hourly receipts to elapsed
+paid time inside the window, ending at disable if it comes first. It does not
+show future coverage or unused prepayment as usage cost. Allocation uses the
+original debit and rounds cumulative cost down to whole TXB minor units, then
+subtracts the cumulative cost before the window so adjacent windows add up.
+Historical unmarked receipts still count at their original ledger timestamp.
+Wallet history shows the full actual debit at transaction time in all cases.
 
 ## Verification
 

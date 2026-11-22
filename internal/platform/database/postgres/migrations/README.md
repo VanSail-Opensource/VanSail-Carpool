@@ -180,3 +180,14 @@ INSERT retries, no-op updates and retention DELETE do not. Summary publication
 and source-only compaction use a nonblocking exclusive gate. A database guard
 forbids changing sealed metrics, reopening a sealed group, or clearing its stale
 flag. Hosted upgrade and concurrency cases cover this forward-only contract.
+
+[`00051_hourly_minimum_enable.sql`](00051_hourly_minimum_enable.sql) preserves
+`hourly_offers.required_hours` and its zero-value policy inheritance. It replaces
+single-hour settlement checks to support an immutable minimum prepayment and adds
+nullable `hourly_settlements.minimum_hours` without backfilling existing receipts.
+`NULL` retains the legacy UTC-receipt shape and ledger-time cost attribution;
+explicit `0` marks a new metered renewal, and a positive value records the
+activation duration prepaid at the accepted hourly price. The usage breakdown
+accrues only elapsed, enabled coverage for marked receipts. No historical debit,
+paid boundary, or principal is changed; no existing enrollment is retroactively
+charged.

@@ -4,7 +4,7 @@
 and supplies `HourlyPolicy(context.Context)` to the native service composition.
 Decryption and `model.ValidateHourlyPolicy` run outside the database. Missing
 configuration returns `model.DefaultHourlyPolicy`: sales off, no invented traffic
-or extra prices, a 168-hour eligibility threshold, and a 24-hour cooldown.
+or extra prices, a 168-hour minimum enable period, and a 24-hour cooldown.
 An existing unreadable, incomplete, unknown-field, or invalid document fails
 closed; it does not receive the absent-document defaults.
 
@@ -27,8 +27,9 @@ The `SalesEnabled` switch controls new activation. It does not hide the terms
 needed to enforce paid access or renew existing hourly enrollments. Daily
 allowance and reduced rate use bytes and bytes per second; extra pricing uses
 minor TXB per decimal GB (1,000,000,000 bytes). Zero extra price means extras are
-unavailable. The activation threshold is checked with
-`model.HourlyActivationMinimum`; it is never a debit or a reservation.
+unavailable. `model.HourlyActivationMinimum` multiplies the effective minimum
+hours by the accepted hourly price. Preparation does not reserve funds; a
+successful activation debits that exact amount atomically with paid access.
 
 `internal/admin/hourly_offers.go` lists and validates separate squad offers.
 `internal/platform/database/hourly_offers.go` reads only explicit configured

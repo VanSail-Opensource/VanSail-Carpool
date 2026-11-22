@@ -29,7 +29,7 @@ UsageBreakdownNode:
 UsageBreakdownHourlySquad:
   type: object
   additionalProperties: false
-  description: Authoritatively attributed hourly enrollment traffic and recorded charges, grouped by squad identity. No historical repricing or estimated allocation.
+  description: Hourly enrollment traffic and cost grouped by squad. New receipts recognize only elapsed paid coverage within the report window and before disable; older receipts retain their original ledger-time attribution. This cost is not wallet spend.
   required: [groupId, name, uploadBytes, downloadBytes, costMinor]
   properties:
     groupId: {type: string}
@@ -75,7 +75,7 @@ UsageBreakdownCost:
   additionalProperties: false
   required: [actualMinor, legacy, knownTotalMinor, unallocatedMinor]
   properties:
-    actualMinor: {type: string, pattern: '^[0-9]+$', maxLength: 1024, description: Exact actual rolling-window traffic, hourly and extra-credit charges.}
+    actualMinor: {type: string, pattern: '^[0-9]+$', maxLength: 1024, description: 'Exact rolling-window traffic charges, recognized hourly cost, and extra-credit charges. May differ from wallet debits.'}
     legacy: {$ref: '#/UsageLegacyEstimate'}
     knownTotalMinor: {$ref: '#/RationalMinor', description: Actual charges plus the available fixed-term estimate; an unknown original term is explicitly excluded.}
     unallocatedMinor: {$ref: '#/RationalMinor', description: Charges without authoritative node or squad attribution, shared extra-credit charges, and the fixed-term estimate when its purchase has no recorded traffic.}
