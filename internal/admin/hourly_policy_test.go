@@ -71,6 +71,30 @@ func TestHourlyPolicyEncryptedCASAndPausedSalesKeepEnforcementTerms(t *testing.T
 	}
 }
 
+func TestLegacyHourlyCooldownDoesNotChangeReviewedPolicyVersion(t *testing.T) {
+	ctx := context.Background()
+	repo := &hourlyPolicyTestRepository{adminSettingsRepository: newAdminSettingsRepository()}
+	settings := NewSettingsService(repo, testVault(t))
+	legacy := model.DefaultHourlyPolicy()
+	legacy.CooldownSeconds = 86400
+	raw, err := json.Marshal(legacy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ciphertext, err := settings.vault.Encrypt(database.HourlyPolicySettingKey, string(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	record, err := repo.CompareAndSwapHourlyPolicy(ctx, "admin", "", ciphertext)
+	if err != nil {
+		t.Fatal(err)
+	}
+	snapshot, err := settings.HourlyPolicy(ctx)
+	if err != nil || snapshot.Policy != model.DefaultHourlyPolicy() || snapshot.Version != record.Version || repo.record != record {
+		t.Fatal("read must retire only the wait without rewriting saved terms", err)
+	}
+}
+
 func TestHourlyPolicyInvalidWritesAndStoredDocumentsFailClosed(t *testing.T) {
 	ctx := context.Background()
 	repo := &hourlyPolicyTestRepository{adminSettingsRepository: newAdminSettingsRepository()}
