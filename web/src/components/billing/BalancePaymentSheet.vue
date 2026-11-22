@@ -23,6 +23,7 @@ const { t } = useI18n()
 const methods = computed(() => props.methods)
 const externalMethods = computed(() => methods.value.filter((method) => method.mode === 'order'))
 const couponRedemption = shallowRef<CouponRedemption | null>(null)
+const couponCreditsWallet = computed(() => Number(couponRedemption.value?.balanceDeltaMinor) > 0)
 const paymentStep = shallowRef<'provider' | 'channel'>('provider')
 
 const {
@@ -80,7 +81,7 @@ async function prepareOrder(): Promise<void> {
 function redeemed(receipt: CouponRedemption): void {
   if (!open.value) return
   couponRedemption.value = receipt
-  confirmRedemption(receipt.id, receipt.replayed)
+  if (couponCreditsWallet.value) confirmRedemption(receipt.id, receipt.replayed)
 }
 
 function closeSheet(): void {
@@ -176,11 +177,15 @@ onScopeDispose(() => { preparation++ })
       </template>
 
       <WalletPaymentSuccess
-        v-else-if="couponRedemption" :amount="{ currency: 'TXB', minor: couponRedemption.balanceDeltaMinor, display: '' }"
+        v-else-if="couponRedemption && couponCreditsWallet" :amount="{ currency: 'TXB', minor: couponRedemption.balanceDeltaMinor, display: '' }"
         :phase="confirmationPhase" :progress="confirmationProgress" @done="closeSheet"
       >
         <small>{{ $t('payment.balanceAfter', { amount: formatMoney({ currency: 'TXB', minor: couponRedemption.balanceAfterMinor, display: '' }) }) }}</small>
       </WalletPaymentSuccess>
+      <div v-else-if="couponRedemption" class="payment-success" role="status">
+        <h2>{{ $t('payment.couponApplied') }}</h2>
+        <UButton block :label="$t('common.close')" @click="closeSheet" />
+      </div>
       <div v-else-if="stage === 'cancelled'" class="payment-success payment-success--cancelled" role="status">
         <UIcon name="i-ph-x-circle-fill" class="payment-success__error-icon" aria-hidden="true" />
         <h2>{{ $t('payment.cancelled') }}</h2>

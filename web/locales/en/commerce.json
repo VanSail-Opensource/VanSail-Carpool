@@ -99,6 +99,7 @@
     "providerHint": "Choose a secure payment channel.",
     "couponCode": "Coupon code",
     "redeemCoupon": "Redeem coupon",
+    "couponApplied": "Coupon redeemed",
     "couponGain": "Balance gained",
     "balanceAfter": "Balance after redemption: {amount}",
     "amount": "Amount",

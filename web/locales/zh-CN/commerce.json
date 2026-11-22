@@ -158,6 +158,7 @@
     "returnCheckingAction": "正在核对付款",
     "couponCode": "优惠券代码",
     "redeemCoupon": "兑换优惠券",
+    "couponApplied": "兑换成功",
     "couponGain": "余额增加",
     "balanceAfter": "兑换后余额：{amount}"
   }
