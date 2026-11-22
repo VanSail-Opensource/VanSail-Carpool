@@ -383,6 +383,25 @@ peers cannot overwrite current telemetry/log snapshots. Shutdown cancels workers
 and waits for their active context-aware work. Hosted saturation regressions
 hold accounting blocked while requiring fresh telemetry and command delivery.
 
+`stream_diagnostics.go` records one terminal diagnostic when an authenticated
+reader fails: socket/frame stage, fixed cause, receiving lane for queue failures,
+numeric WebSocket close code and age of the last accepted telemetry. Missing or
+replaced peer evidence uses age `-1`. Raw errors, close text, frame types and
+payloads are excluded. `stream_diagnostics_test.go` and
+`stream_diagnostics_socket_test.go` cover transport/protocol/queue distinctions,
+redaction and actual socket closure; diagnostics do not relax admission or retry
+the failed frame.
+
+The joined reconciliation pass renews node authorization and processes fresh
+PAYG observations before routing maintenance. A routing refresh cannot consume
+the shared deadline before fleet lease publication; observation errors still
+permit routing maintenance, and DDNS protection remains a prerequisite.
+`master_sync_workers.go` resumes a timed-out pass at its first unattempted peer,
+counting occupied-peer skips but not jobs merely queued. Two workers and the
+existing per-peer deadlines remain bounded. `master_sync_priority_test.go` and
+`master_sync_fairness_test.go` cover real lease publication before a routing
+deadline and fair progression through cancelled fleet passes.
+
 `payg_squad_state_test.go` verifies hidden squads retain credentials and access,
 unavailable squads lose PAYG authorization, and normal restores the same period.
 Member PAYG status uses the configured telemetry reporting window, matching the
