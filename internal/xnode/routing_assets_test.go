@@ -54,10 +54,10 @@ func TestSelectedGeoSiteFailuresAndStaleCache(t *testing.T) {
 				}
 				return
 			}
-			key, _ := json.Marshal([]any{config.GeoSiteURL, config.GeoSiteHash, []string{"geosite:google"}, config.GeodataIntervalHours, config.GeodataCron})
-			s.routingAssets.key = string(key)
-			s.routingAssets.data = routingAssetResult{hash: "previous", domains: map[string][]string{"geosite:google": {"domain:google.com"}}}
-			s.routingAssets.next = time.Now().Add(-time.Minute)
+			source, key := routingAssetKeys(config, []string{"geosite:google"})
+			s.routingAssets.retain(key, &routingAssetEntry{source: source,
+				data: routingAssetResult{hash: "previous", domains: map[string][]string{"geosite:google": {"domain:google.com"}}},
+				next: time.Now().Add(-time.Minute)})
 			domains, hash, err := s.routingExpansion(ctx, templates)
 			if err != nil || hash != "previous" || len(domains["geosite:google"]) != 1 {
 				t.Fatal("refresh discarded stale verified data", err)

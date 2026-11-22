@@ -40,7 +40,7 @@ func TestHourlyColdZeroHintCannotRestartCompletedScan(t *testing.T) {
 	}
 	*now = now.Add(time.Second)
 	m.requestHourlyCredit(peer, []wire.HourlyDemand{zero})
-	if state.hints[zero.Owner].demand.PendingBytes != 0 || !hourlyCreditHasDemand(state, *now) {
+	if state.hints[zero.Owner].demand.PendingBytes != 0 || !hourlyCreditRefillDue(state, *now) {
 		t.Fatal("existing zero update erased recent confirmed/pending activity")
 	}
 	// Nil reconnect/financial reconciliation must remain able to create cold

@@ -3,6 +3,7 @@ package xnode
 import (
 	"context"
 	"errors"
+	"math"
 	"sort"
 	"time"
 
@@ -44,7 +45,7 @@ func (m *Master) hourlyCreditOwners(peer *agentPeer, limit int) []wire.HourlyOwn
 			c.hintCount--
 			continue
 		}
-		if !state.retire[owner] && hourlyCreditHintDemanding(hint, now) {
+		if !state.retire[owner] && !hint.checkAfter.After(now) && hourlyCreditHintDemanding(hint, now) {
 			owners = append(owners, owner)
 		}
 	}
@@ -79,6 +80,12 @@ func (m *Master) replenishHourlyOwner(ctx context.Context, peer *agentPeer, repo
 		c.mu.Unlock()
 		return ErrUnavailable
 	}
+	if hint, ok := state.hints[owner]; ok {
+		// Fresh demand/progress received after this point clears this deadline;
+		// untouched owners remain due and drain under the existing fair budget.
+		hint.checkAfter = m.service.now().Add(hourlyCreditPollInterval)
+		state.hints[owner] = hint
+	}
 	request, hasIntent := state.intents[owner]
 	c.mu.Unlock()
 	if hasIntent {
@@ -89,6 +96,11 @@ func (m *Master) replenishHourlyOwner(ctx context.Context, peer *agentPeer, repo
 	held, err := repo.HourlyCreditHeldBytes(ctx, scope)
 	if err != nil {
 		return err
+	}
+	// The exact pool can only lower this target. Ample current-day credit
+	// needs no funding transaction; low-water attempts still lock/read the day.
+	if held > m.hourlyCreditTarget(peer, owner, math.MaxInt64)/2 {
+		return nil
 	}
 	day, err := repo.EnsureHourlyCreditDay(ctx, owner.ID, int64(owner.Generation), dayUTC, policy.DailyAllowanceBytes)
 	if err != nil {

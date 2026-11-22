@@ -28,6 +28,13 @@ func (m *Master) produceHourlyCredits(peer *agentPeer) error {
 	defer cancel()
 	changes, err := m.resolveHourlyCreditIntents(ctx, peer, repo)
 	if err != nil || changes >= maxHourlyCreditChangesPerPass {
+		if changes >= maxHourlyCreditChangesPerPass {
+			c.mu.Lock()
+			if state := c.peers[peer]; state != nil {
+				state.work = true
+			}
+			c.mu.Unlock()
+		}
 		return err
 	}
 	rows, err := repo.UnfinalizedHourlyCredits(ctx, peer.nodeID, peer.agentID, after, wire.MaxHourlyItems)
@@ -65,8 +72,10 @@ func (m *Master) produceHourlyCredits(peer *agentPeer) error {
 	if visited == len(rows) && len(rows) < wire.MaxHourlyItems {
 		state.scanIssue = 0
 		state.scanned = true
+		state.pollAt = m.service.now().Add(hourlyCreditPollInterval)
+	} else {
+		state.work = true
 	}
-	state.work = len(rows) > 0
 	ready := state.scanned
 	c.mu.Unlock()
 	if ready && changes < maxHourlyCreditChangesPerPass {

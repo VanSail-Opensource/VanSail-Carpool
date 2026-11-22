@@ -1,5 +1,30 @@
 # X-Node control plane
 
+## Request inventory projection
+
+`inventory_projection.go` owns the disposable read inputs used by one
+`memberInventory` or `metricNodeScope` call. Combo, PAYG and hourly projections
+share the group/endpoint inventory, node lookups and expanded native inbound
+documents within that call. Saved node/tag bindings filter unrelated endpoints
+before client projection. Credentials are reused only for the exact identity
+scope and ciphertext, while each client receives independent mutable account,
+stream and group fields. Nothing is retained on `Service`, across requests or
+across subscription read retries.
+
+Member eligibility, restrictions, purchases, periods and PAYG funding reads keep
+their existing authoritative paths. Combo endpoint selection reuses the access
+already checked for that inventory call rather than repeating those queries for
+every endpoint. Endpoint ACLs and client compatibility still run on each
+candidate; credential and storage failures remain errors. Existing subscription
+epoch/owner fences and routing admission checks remain the publication boundary.
+
+Hosted regressions in `inventory_projection_test.go` exercise member metrics and
+mixed PAYG/hourly inventories with shared endpoints, bounded topology reads,
+credential isolation, revocation, node changes, ACL changes and read failures.
+`inventory_projection_combo_test.go` covers Combo/PAYG precedence, quota
+exhaustion, disabled groups and unprepared paid successors. No fleet identity
+scan or persistent projection cache is introduced.
+
 `master_enrollment_lock.go` serializes enrollment rotation, registration and
 deletion per node with cancellable, reference-counted gates. PostgreSQL waits
 never hold the fleet mutex used for live status and command delivery. Handshakes
@@ -782,9 +807,23 @@ responses; graph labels resolve returned rule IDs to preset names.
 
 `routing_geosite.go` streams the pinned protobuf format with bounded records and
 AND attribute filtering. `routing_geosite_download.go` fetches only through
-`upstreamqueue`; `routing_assets.go` retains the last valid memory-only generation
-with completion scheduling and bounded failure retries. `routing_peers.go` bounds
-public endpoint DNS caching and gates maintenance by the existing compile epoch.
+`upstreamqueue`. `routing_assets.go` selects only requested categories;
+`routing_assets_cache.go` retains verified expansions for up to 32 exact
+source/pin/schedule/selection keys. `routing_assets_storage.go` shares immutable
+domain slices by source/content hash/selector and limits retained data plus
+estimated entry, map and slice overhead to 16 MiB. LRU eviction bounds both data
+and generation metadata. Oversized projections return their complete validated
+result while retaining only a key/hash/refresh fence; they are reloaded on use.
+One serialized queued loader coalesces concurrent same-key refreshes. A changed
+source generation invalidates its other selections and advances the compile
+epoch; different selections of unchanged data do neither. Initial failures use
+bounded 1/5/15-minute retries without borrowing another key's verified data, and
+caller cancellation is never retained. Existing same-key stale fallback and
+completion-based refresh schedules remain intact. `routing_assets_*_test.go`
+covers alternating combinations, shared memory bounds, source invalidation,
+concurrent refresh, retry isolation and deadlines. No member authorization or
+complete downloaded asset is cached. `routing_peers.go` bounds public endpoint
+DNS caching and gates maintenance by the existing compile epoch.
 `routing_reconcile.go` revalidates dependency changes outside the socket reader.
 Dependency drift is re-prepared as a new durable generation instead of disabling
 the plan; only durable access loss and node removal are terminal. One member's
