@@ -26,7 +26,6 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
   const localError = shallowRef<string | null>(null)
   const canReissue = shallowRef(false)
   const canRecreate = shallowRef(false)
-  let closeTimer: ReturnType<typeof setTimeout> | undefined
   const latest = createLatestRequest()
   const configuration = usePaymentConfiguration(options, stage)
   const target = usePaymentTarget({ onPaid: handlePaid, onTerminal: handleOrderTerminal })
@@ -38,8 +37,6 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
   function suspend(): void {
     latest.invalidate()
     confirmation.reset()
-    if (closeTimer !== undefined) clearTimeout(closeTimer)
-    closeTimer = undefined
     operations.reset()
     target.stop()
   }
@@ -197,23 +194,18 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
     target.stop()
     canRecreate.value = false
     stage.value = 'paid'
-    if (target.order.value && ['builtin_usdt', 'bepusdt'].includes(target.order.value.provider)) {
-      confirmation.confirm()
-      return
-    }
-    notifyHaptic('success')
-    closeTimer = setTimeout(options.onPaid, 700)
+    confirmation.confirm()
   }
 
   function finishConfirmation(): void {
     const current = target.order.value
     if (stage.value !== 'paid' || !current || current.status !== 'paid'
-      || !['builtin_usdt', 'bepusdt'].includes(current.provider) || reportedPaymentId === current.id) return
+      || reportedPaymentId === current.id) return
     reportedPaymentId = current.id
     options.onPaid()
   }
 
-  onScopeDispose(() => { latest.dispose(); if (closeTimer !== undefined) clearTimeout(closeTimer) })
+  onScopeDispose(() => latest.dispose())
   return {
     amount: configuration.amount,
     selectedMethodId: readonly(configuration.selectedMethodId),
@@ -229,6 +221,7 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
     confirmationPhase: confirmation.phase,
     confirmationProgress: confirmation.progress,
     finishConfirmation,
+    confirmRedemption: confirmation.confirmRedemption,
     reset,
     hydrateReissueOrder,
     hydratePendingOrder,

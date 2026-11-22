@@ -6,7 +6,7 @@ import { useMotionPreferences } from './useMotionPreferences'
 
 export type PaymentConfirmationPhase = 'idle' | 'waiting' | 'coins' | 'check' | 'complete'
 
-export function usePaymentConfirmation(order: Readonly<Ref<FeaturePaymentOrder | null>>) {
+export function usePaymentConfirmation(order: Readonly<Ref<Pick<FeaturePaymentOrder, 'id' | 'status'> | null>>, onSuccess = () => notifyHaptic('success')) {
   const { reducedMotion } = useMotionPreferences()
   const phase = shallowRef<PaymentConfirmationPhase>('idle')
   const elapsed = shallowRef(0)
@@ -43,7 +43,7 @@ export function usePaymentConfirmation(order: Readonly<Ref<FeaturePaymentOrder |
     phase.value = elapsed.value < 1050 ? 'coins' : elapsed.value < 1500 ? 'check' : 'complete'
     if (phase.value !== 'coins' && !notified) {
       notified = true
-      notifyHaptic('success')
+      onSuccess()
     }
     if (phase.value !== 'complete') frame = requestAnimationFrame(tick)
     else stopFrame()
@@ -65,20 +65,21 @@ export function usePaymentConfirmation(order: Readonly<Ref<FeaturePaymentOrder |
   // may start feedback. A receipt success, countdown or copy action cannot do so.
   watch(() => [order.value?.id, order.value?.status] as const, ([id, status], previous) => {
     if (id !== previous?.[0] || (status !== 'pending' && status !== 'paid')) reset()
-    if (status === 'pending' && id && !presented.has(id)) pendingId = id
+    if (status === 'pending' && id && !presented.has(`order:${id}`)) pendingId = id
     else if (status !== 'paid') pendingId = null
   }, { flush: 'sync', immediate: true })
 
   function confirm(): void {
     const current = order.value
-    if (!current || current.status !== 'paid'
-      || !['builtin_usdt', 'bepusdt'].includes(current.provider)) return
-    if (presented.has(current.id)) {
+    if (current?.status === 'paid') presentCredit(`order:${current.id}`, pendingId === current.id)
+  }
+
+  function presentCredit(key: string, newlyConfirmed: boolean): void {
+    if (presented.has(key)) {
       if (phase.value === 'idle') { elapsed.value = 1500; phase.value = 'complete' }
       return
     }
-    presented.add(current.id)
-    const newlyConfirmed = pendingId === current.id
+    presented.add(key)
     stopFrame()
     elapsed.value = newlyConfirmed ? 0 : 1500
     phase.value = newlyConfirmed ? 'waiting' : 'complete'
@@ -96,5 +97,5 @@ export function usePaymentConfirmation(order: Readonly<Ref<FeaturePaymentOrder |
     window.removeEventListener('focus', resume)
     window.removeEventListener('blur', stopFrame)
   })
-  return { phase: readonly(phase), progress, confirm, reset }
+  return { phase: readonly(phase), progress, confirm, confirmRedemption: (id: string, replayed: boolean) => presentCredit(`coupon:${id}`, !replayed), reset }
 }

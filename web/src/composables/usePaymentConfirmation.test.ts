@@ -7,10 +7,10 @@ const motion = ref(false)
 vi.mock('./useMotionPreferences', () => ({ useMotionPreferences: () => ({ reducedMotion: motion }) }))
 vi.mock('@/utils/telegram', () => ({ notifyHaptic: vi.fn() }))
 
-// This composable observes only the identity, provider, and authoritative status.
-const receipt = (status: 'pending' | 'paid') => ({ id: 'credit', provider: 'builtin_usdt', status }) as FeaturePaymentOrder
+// This composable observes only the identity and authoritative status.
+const receipt = (status: 'pending' | 'paid') => ({ id: 'credit', status }) as FeaturePaymentOrder
 
-describe('stablecoin confirmation', () => {
+describe('wallet confirmation', () => {
   afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); motion.value = false })
 
   it('requires a newly paid order and advances only in the foreground', () => {

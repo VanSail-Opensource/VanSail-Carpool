@@ -3,7 +3,7 @@ import { computed, onScopeDispose, shallowRef, watch } from 'vue'
 import type { CouponRedemption, FeaturePaymentMethod, FeaturePaymentOrder } from '@/api/features'
 import BalancePaymentConfiguration from '@/components/billing/BalancePaymentConfiguration.vue'
 import CryptoPaymentInstructions from '@/components/billing/CryptoPaymentInstructions.vue'
-import CryptoPaymentSuccess from '@/components/billing/CryptoPaymentSuccess.vue'
+import WalletPaymentSuccess from '@/components/billing/WalletPaymentSuccess.vue'
 import { usePaymentOrder } from '@/composables/usePaymentOrder'
 import { useTelegramBackButton } from '@/composables/useTelegramBackButton'
 import { useI18n } from '@/i18n'
@@ -50,6 +50,7 @@ const {
   confirmationPhase,
   confirmationProgress,
   finishConfirmation,
+  confirmRedemption,
 } = usePaymentOrder({
   onPaid: () => {
     open.value = false
@@ -74,6 +75,12 @@ async function prepareOrder(): Promise<void> {
   if (props.pendingOrder && await hydratePendingOrder(props.pendingOrder, externalMethods.value)) return
   if (ticket !== preparation || !open.value) return
   if (props.reissueOrder) hydrateReissueOrder(props.reissueOrder, externalMethods.value)
+}
+
+function redeemed(receipt: CouponRedemption): void {
+  if (!open.value) return
+  couponRedemption.value = receipt
+  confirmRedemption(receipt.id, receipt.replayed)
 }
 
 function closeSheet(): void {
@@ -135,7 +142,7 @@ onScopeDispose(() => { preparation++ })
           @choose-method="chooseMethod"
           @create-order="createOrder"
           @retry-operation="retryOperation"
-          @coupon-redeemed="couponRedemption = $event"
+          @coupon-redeemed="redeemed"
         />
       </template>
 
@@ -168,16 +175,12 @@ onScopeDispose(() => { preparation++ })
         </template>
       </template>
 
-      <div v-else-if="couponRedemption" class="payment-success payment-success--coupon" role="status">
-        <UIcon name="i-ph-check-circle-fill" class="payment-success__coupon-icon" aria-hidden="true" />
-        <h2>{{ $t('payment.added') }}</h2>
-        <div class="payment-amount">
-          <span>{{ $t('payment.couponGain') }}</span>
-          <strong>{{ formatMoney({ currency: 'TXB', minor: couponRedemption.balanceDeltaMinor, display: '' }) }}</strong>
-          <small>{{ $t('payment.balanceAfter', { amount: formatMoney({ currency: 'TXB', minor: couponRedemption.balanceAfterMinor, display: '' }) }) }}</small>
-        </div>
-        <UButton block :label="$t('common.close')" data-haptic="dismiss" @click="closeSheet" />
-      </div>
+      <WalletPaymentSuccess
+        v-else-if="couponRedemption" :amount="{ currency: 'TXB', minor: couponRedemption.balanceDeltaMinor, display: '' }"
+        :phase="confirmationPhase" :progress="confirmationProgress" @done="closeSheet"
+      >
+        <small>{{ $t('payment.balanceAfter', { amount: formatMoney({ currency: 'TXB', minor: couponRedemption.balanceAfterMinor, display: '' }) }) }}</small>
+      </WalletPaymentSuccess>
       <div v-else-if="stage === 'cancelled'" class="payment-success payment-success--cancelled" role="status">
         <UIcon name="i-ph-x-circle-fill" class="payment-success__error-icon" aria-hidden="true" />
         <h2>{{ $t('payment.cancelled') }}</h2>
@@ -191,19 +194,15 @@ onScopeDispose(() => { preparation++ })
         <UAlert v-if="error" color="warning" variant="soft" :description="error" />
         <UButton block color="neutral" variant="outline" :label="$t('common.close')" data-haptic="dismiss" @click="closeSheet" />
       </div>
-      <CryptoPaymentSuccess
-        v-else-if="stage === 'paid' && order && (order.provider === 'builtin_usdt' || order.provider === 'bepusdt')"
-        :order="order" :phase="confirmationPhase" :progress="confirmationProgress" @done="closeSheet"
+      <WalletPaymentSuccess
+        v-else-if="stage === 'paid' && order"
+        :amount="order.txb" :phase="confirmationPhase" :progress="confirmationProgress" @done="closeSheet"
       />
-      <div v-else-if="stage === 'paid'" class="payment-success" role="status"><UIcon name="i-ph-check-circle-fill" /><h2>{{ $t('payment.added') }}</h2><p>{{ $t('payment.ready') }}</p></div>
     </template>
   </UModal>
 </template>
 
 <style scoped>
 .payment-sheet-header-back { order: -1; margin-inline-start: -0.65rem; }
-.payment-success--coupon { gap: 0.8rem; }
-.payment-success--coupon > .payment-amount { width: 100%; }
-.payment-success__coupon-icon { width: 5rem; height: 5rem; color: var(--success); font-size: 5rem; }
 .payment-success__error-icon { width: 5rem; height: 5rem; color: var(--danger); font-size: 5rem; }
 </style>
