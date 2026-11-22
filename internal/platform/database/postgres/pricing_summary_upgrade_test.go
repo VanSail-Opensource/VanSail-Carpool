@@ -64,9 +64,6 @@ func TestPricingSummaryUpgradePreservesCompactedEvidence(t *testing.T) {
 	if err != nil || before.Hash != after.Hash {
 		t.Fatal("summary repair changed source or financial evidence", err)
 	}
-	if err := VerifySchema(ctx, db); err != nil {
-		t.Fatal(err)
-	}
 	for _, table := range []string{"pricing_calibration_daily", "pricing_model_validation_daily"} {
 		var samples int
 		var sealed, stale, dirty bool
@@ -100,6 +97,9 @@ func TestPricingSummaryUpgradePreservesCompactedEvidence(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := Migrate(ctx, db); err != nil {
+		t.Fatal(err)
+	}
+	if err := VerifySchema(ctx, db); err != nil {
 		t.Fatal(err)
 	}
 	var retained int
