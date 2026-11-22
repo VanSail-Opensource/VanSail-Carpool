@@ -8,14 +8,14 @@ import (
 func readAgentFrame(socket *websocket.Conn, decoders ...*wire.ReportDecoder) (wire.Message, error) {
 	kind, reader, err := socket.NextReader()
 	if err != nil {
-		return wire.Message{}, err
+		return wire.Message{}, agentReadFailure{"socket_read", err}
 	}
 	var decoder *wire.ReportDecoder
 	if len(decoders) > 0 {
 		decoder = decoders[0]
 	}
 	if kind != websocket.TextMessage && (kind != websocket.BinaryMessage || decoder == nil) {
-		return wire.Message{}, ErrInvalid
+		return wire.Message{}, agentReadFailure{"frame_kind", ErrInvalid}
 	}
 	var data []byte
 	if kind == websocket.BinaryMessage {
@@ -24,14 +24,14 @@ func readAgentFrame(socket *websocket.Conn, decoders ...*wire.ReportDecoder) (wi
 		data, err = wire.ReadMessagePayload(reader)
 	}
 	if err != nil {
-		return wire.Message{}, err
+		return wire.Message{}, agentReadFailure{"frame_payload", err}
 	}
 	message, err := wire.Parse(data)
 	if err != nil {
-		return wire.Message{}, err
+		return wire.Message{}, agentReadFailure{"frame_envelope", err}
 	}
 	if kind == websocket.BinaryMessage && !wire.IsReport(message.Type) || kind == websocket.TextMessage && decoder != nil && wire.IsReport(message.Type) {
-		return wire.Message{}, ErrInvalid
+		return wire.Message{}, agentReadFailure{"report_format", ErrInvalid}
 	}
 	return message, nil
 }

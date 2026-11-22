@@ -17,27 +17,44 @@ func (m *Master) syncPeers(ctx context.Context, peers []*agentPeer, now time.Tim
 	}
 	m.mu.Lock()
 	start := m.syncCursor % len(peers)
-	m.syncCursor = (start + 1) % len(peers)
 	m.mu.Unlock()
-	jobs := make(chan *agentPeer, len(peers))
+	jobs := make(chan int, len(peers))
 	for i := range peers {
-		jobs <- peers[(start+i)%len(peers)]
+		jobs <- i
 	}
 	close(jobs)
+	// Each index has one consumer. Read attempts only after both workers join,
+	// so queued peers cannot be mistaken for work performed before cancellation.
+	attempted := make([]bool, len(peers))
 	var wg sync.WaitGroup
 	for range min(2, len(peers)) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for peer := range jobs {
+			for offset := range jobs {
 				if ctx.Err() != nil {
 					return
 				}
-				m.syncPeer(ctx, peer, now)
+				attempted[offset] = true
+				m.syncPeer(ctx, peers[(start+offset)%len(peers)], now)
 			}
 		}()
 	}
 	wg.Wait()
+	// Resume at the first unattempted peer. Advancing by one after a partial
+	// fleet pass repeatedly revisits the same slow peers and starves later leases.
+	// A complete pass keeps rotating the starting peer, including occupied peers
+	// whose TryLock attempt returned immediately.
+	next := (start + 1) % len(peers)
+	for offset, tried := range attempted {
+		if !tried {
+			next = (start + offset) % len(peers)
+			break
+		}
+	}
+	m.mu.Lock()
+	m.syncCursor = next
+	m.mu.Unlock()
 	return ctx.Err()
 }
 

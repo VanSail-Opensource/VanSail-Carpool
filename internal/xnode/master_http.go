@@ -151,6 +151,7 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err = socket.SetReadDeadline(time.Now().Add(90 * time.Second)); err != nil {
+		m.recordAgentDisconnect(peer, "read_deadline", "", err)
 		return
 	}
 	socket.SetPongHandler(func(payload string) error {
@@ -167,12 +168,15 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for {
 		message, err = readAgentFrame(socket, peer.reportDecoder)
 		if err != nil {
+			m.recordAgentDisconnect(peer, "socket_read", "", err)
 			return
 		}
 		if err = socket.SetReadDeadline(time.Now().Add(90 * time.Second)); err != nil {
+			m.recordAgentDisconnect(peer, "read_deadline", "", err)
 			return
 		}
 		if err = receivers.offer(message); err != nil {
+			m.recordAgentDisconnect(peer, "inbound_queue", inboundLaneName(message.Type), err)
 			return
 		}
 	}
