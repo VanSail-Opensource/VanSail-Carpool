@@ -12,7 +12,7 @@
 - `onboarding-01.css` styles onboarding structure and progress.
 - `onboarding-02.css` styles onboarding forms and agreements.
 - `onboarding-03.css` styles onboarding completion and supporting states.
-- `member-startup.css` styles the pre-mount Telegram member screen, the Vue account-loading screen and the native reload fallback. The route SVG is inlined in production and doesn't need an image request.
+- `member-startup.css` provides the member canvas background before Vue mounts and styles the localized native reload fallback. It contains no splash artwork or transition.
 - `session-01.css` owns the member session cover and its optional 160ms success fade. Readiness never waits for the fade.
 - `member-fonts.css` loads the self-hosted Space Grotesk variable face for the member experience, preserves Chinese/system fallbacks, and fences its stack from browser-only fixture imports.
 - `member-surfaces.css` unifies member heading sizes, numerical alignment, card edge lighting, keyboard focus feedback, navigation geometry and utility-page spacing. Filled controls have explicit inverse colors for readable contrast before host theme initialization. Cards use a single 650ms edge sweep on hover, focus or selection, with static touch/keyboard borders; decorative overlays never intercept input. Card travel is limited to selectable surfaces on fine pointers. Reduced motion removes travel and sweeps, and forced colors removes decoration.

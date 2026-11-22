@@ -34,7 +34,7 @@
     "tryAgain": "重试",
     "securingRide": "正在保护你的行程",
     "loadingAccount": "正在准备你的账户…",
-    "loadingAccountSlow": "仍在准备你的账户…",
+    "loadingPage": "正在打开页面…",
     "authenticationFailed": "身份验证未完成。",
     "accountRecoveryPending": "账户恢复待审核",
     "browserUnsupportedTitle": "请更新 Telegram 后继续。",

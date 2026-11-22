@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, watch } from 'vue'
+import { computed, onMounted, onUnmounted, shallowRef, watch } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import { en, zh_cn } from '@nuxt/ui/locale'
 
 import AppShell from '@/components/layout/AppShell.vue'
 import AuthGate from '@/components/session/AuthGate.vue'
 import CaptchaGate from '@/components/session/CaptchaGate.vue'
-import SessionEntrance from '@/components/session/SessionEntrance.vue'
+import MemberSessionStatus from '@/components/session/MemberSessionStatus.vue'
 import AppErrorBoundary from '@/components/session/AppErrorBoundary.vue'
 import { useSessionStore } from '@/stores/session'
 import { usePreferencesStore } from '@/stores/preferences'
@@ -24,12 +24,34 @@ const immersive = computed(() => route.meta.immersive === true)
 const browserPublic = computed(() => route.meta.browserPublic === true && !isTelegramWebAppDetected())
 const { locale } = useI18n()
 const uiLocale = computed(() => locale.value === 'zh-CN' ? zh_cn : en)
-watch(() => sessionStore.onboardingComplete ? sessionStore.user?.id ?? null : null, id => preferences.bind(id), { immediate: true })
+const retryingRoute = shallowRef(false)
+const routeReady = computed(() => sessionStore.isAuthenticated && !retryingRoute.value && route.matched.length > 0)
+const captcha = computed(() => sessionStore.session?.captcha?.required ? sessionStore.session.captcha : undefined)
+const activeMember = computed(() => routeReady.value && !captcha.value ? sessionStore.user?.id : undefined)
+const shellRevision = shallowRef(0)
+watch(() => sessionStore.user?.id, (_id, previous) => {
+  if (previous) shellRevision.value++
+}, { flush: 'sync' })
+watch(() => sessionStore.onboardingComplete ? activeMember.value ?? null : null, id => preferences.bind(id), { immediate: true })
 
-watch(() => sessionStore.user?.id, (userID) => {
-  displayCurrency.hydrate(sessionStore.user?.displayCurrency)
+watch(activeMember, userID => {
+  displayCurrency.hydrate(userID ? sessionStore.user?.displayCurrency : undefined)
   if (userID) void displayCurrency.refresh()
 }, { immediate: true })
+
+async function retrySession(): Promise<void> {
+  const destination = router.options.history.location || '/'
+  retryingRoute.value = true
+  try {
+    await sessionStore.bootstrap(true)
+    if (sessionStore.isAuthenticated) {
+      const target = router.resolve(destination)
+      await router.replace({ path: target.path, query: target.query, hash: target.hash, force: true })
+    }
+  } finally {
+    retryingRoute.value = false
+  }
+}
 
 let refreshingOnboarding = false
 async function refreshRequiredOnboarding(): Promise<void> {
@@ -59,25 +81,22 @@ onUnmounted(() => globalThis.removeEventListener(onboardingRequiredEvent, onOnbo
       <RouterView v-if="browserPublic" v-slot="{ Component, route: currentRoute }">
         <component :is="Component" :key="currentRoute.fullPath" />
       </RouterView>
-      <SessionEntrance v-else :status="sessionStore.status" :authenticated="sessionStore.isAuthenticated" :route-ready="route.matched.length > 0 || sessionStore.session?.captcha?.required === true">
-        <AuthGate
-          v-if="sessionStore.status === 'error'"
-          :message="sessionStore.error ?? $t('auth.authenticationFailed')"
-          :code="sessionStore.errorCode ?? undefined"
-          @retry="sessionStore.bootstrap(true)"
-        />
-        <CaptchaGate v-else-if="sessionStore.session?.captcha?.required" :key="sessionStore.user?.id" :challenge="sessionStore.session.captcha" @verified="sessionStore.updateSession" />
-        <template v-else>
-          <RouterView v-if="immersive" v-slot="{ Component, route: currentRoute }">
-            <component :is="Component" :key="`${sessionStore.user?.id ?? ''}:${currentRoute.fullPath}`" />
-          </RouterView>
-          <AppShell v-else :key="sessionStore.user?.id">
-            <RouterView v-slot="{ Component, route: currentRoute }">
-              <component :is="Component" :key="currentRoute.fullPath" />
-            </RouterView>
-          </AppShell>
-        </template>
-      </SessionEntrance>
+      <AuthGate
+        v-else-if="sessionStore.status === 'error'"
+        :message="sessionStore.error ?? $t('auth.authenticationFailed')"
+        :code="sessionStore.errorCode ?? undefined"
+        @retry="retrySession"
+      />
+      <CaptchaGate v-else-if="captcha" :key="sessionStore.user?.id" :challenge="captcha" @verified="sessionStore.updateSession" />
+      <RouterView v-else-if="routeReady && immersive" v-slot="{ Component, route: currentRoute }">
+        <component :is="Component" :key="`${sessionStore.user?.id ?? ''}:${currentRoute.fullPath}`" />
+      </RouterView>
+      <AppShell v-else :key="shellRevision" :authorized="routeReady">
+        <template #pending><MemberSessionStatus :authenticated="sessionStore.isAuthenticated" /></template>
+        <RouterView v-slot="{ Component, route: currentRoute }">
+          <component :is="Component" :key="currentRoute.fullPath" />
+        </RouterView>
+      </AppShell>
     </AppErrorBoundary>
   </UApp>
 </template>

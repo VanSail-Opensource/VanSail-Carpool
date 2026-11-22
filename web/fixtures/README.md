@@ -120,7 +120,7 @@ not the history; `mode=home&inactive` with its default positive balance or
 `AuthGate` against a synthetic `409 ACCOUNT_RECOVERY_PENDING`; add `zh` for
 Chinese. Retry repeats only the synthetic exchange (`__browserAuthAudit.exchanges`)
 and creates no session, benefit, refund or upstream request.
-`recoveryslow=1500` exposes the actual `SessionEntrance` loading state before the
+`recoveryslow=1500` exposes the localized `MemberSessionStatus` before the
 recovery error; retry follows the same session-driven transition as the Mini App.
 
 `HourlyAudit.vue`, `hourly-audit.ts`, `hourly-data.ts` and `hourly-audit.html`

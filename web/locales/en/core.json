@@ -34,7 +34,7 @@
     "tryAgain": "Try again",
     "securingRide": "Securing your ride",
     "loadingAccount": "Preparing your account…",
-    "loadingAccountSlow": "Still preparing your account…",
+    "loadingPage": "Opening this page…",
     "authenticationFailed": "Authentication could not be completed.",
     "accountRecoveryPending": "Account recovery is pending",
     "browserUnsupportedTitle": "Update Telegram to continue.",

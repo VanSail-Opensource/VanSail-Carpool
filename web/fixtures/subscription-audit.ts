@@ -106,7 +106,7 @@ preferencesApi.get = async () => {
 displayCurrencyApi.get = async () => ({ currency: 'TXB', rates: null }) as never
 ;(window as Window & { __subscriptionAuditSetup?: () => void }).__subscriptionAuditSetup?.()
 usePreferencesStore(pinia).bind('audit-member')
-const router = shell ? (await import('@/router')).default : createRouter({ history: createWebHistory(), routes: [
+const router = shell ? (await import('@/router')).createMemberRouter() : createRouter({ history: createWebHistory(), routes: [
   { path: '/fixtures/subscription-audit.html', component: SubscriptionAudit },
   { path: '/subscription', name: 'subscription', component: SubscriptionAudit },
   { path: '/connections', component: SubscriptionAudit },

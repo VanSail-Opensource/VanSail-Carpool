@@ -14,8 +14,8 @@ function browserRoute(): string {
   return `${url.pathname}${query ? `?${query}` : ''}${hash}`
 }
 
-export function createAppHistory(): RouterHistory {
-  if (!isTelegramWebAppDetected()) return createWebHistory()
+export function createAppHistory(telegram = isTelegramWebAppDetected()): RouterHistory {
+  if (!telegram) return createWebHistory()
 
   const history = createMemoryHistory()
   const initialRoute = pendingRouteRecoveryPath() ?? browserRoute()

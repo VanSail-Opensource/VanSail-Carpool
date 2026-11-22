@@ -4,7 +4,7 @@ import { RouterView } from 'vue-router'
 import { en, zh_cn } from '@nuxt/ui/locale'
 import AppShell from '@/components/layout/AppShell.vue'
 import AuthGate from '@/components/session/AuthGate.vue'
-import SessionEntrance from '@/components/session/SessionEntrance.vue'
+import MemberSessionStatus from '@/components/session/MemberSessionStatus.vue'
 import type { SessionStatus } from '@/stores/session'
 import { useI18n } from '@/i18n'
 
@@ -16,9 +16,10 @@ const uiLocale = computed(() => locale.value === 'zh-CN' ? zh_cn : en)
 
 <template>
   <UApp :locale="uiLocale">
-    <SessionEntrance v-if="page === 'entry'" :status="phase" :authenticated="false">
-      <AuthGate :message="message" :code="code" @retry="$emit('retry')" />
-    </SessionEntrance>
+    <AuthGate v-if="page === 'entry' && phase === 'error'" :message="message" :code="code" @retry="$emit('retry')" />
+    <AppShell v-else-if="page === 'entry'" :authorized="false">
+      <template #pending><MemberSessionStatus :authenticated="false" /></template>
+    </AppShell>
     <AppShell v-else><RouterView /></AppShell>
   </UApp>
 </template>

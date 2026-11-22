@@ -2,6 +2,6 @@
 
 - `App.vue` composes the application shell and mounts the active route immediately, so cached content is not delayed by exit or entry transitions. Private shell and immersive routes are also keyed by authenticated owner, retiring the prior member's dashboards, dialogs and request lifecycles on identity replacement.
 - `env.d.ts` declares Vite and Vue build-time types.
-- `main.ts` selects browser or member Mini App. The member branch mounts the inert-template contents from `index.html` into `#app` before waiting for the Telegram SDK. It uses the small recovery locale modules and startup styles, with no Vue dependency. Vue's mount replaces the early screen; bootstrap errors replace it with the existing localized reload action. Browser and public branches never insert the member screen.
-- `miniapp.ts` installs member WebView compatibility, Telegram host behavior, and member application plugins.
+- `main.ts` selects the member Mini App, browser console, or public subscription entry. The member SDK and entry module load in parallel. There is no pre-mount splash; fatal bootstrap errors retain the localized native reload action.
+- `miniapp.ts` installs compatibility, starts the existing cookie session probe as soon as its Pinia store loads, and prepares the real shell in parallel. The same store waits for host readiness before Telegram login and route access.
 - `browser/` owns the independent public entrance and desktop-first admin console.

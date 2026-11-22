@@ -30,6 +30,34 @@ describe('AppShell accessibility', () => {
     document.body.innerHTML = ''
   })
 
+  it('keeps the frame mounted without private controls, reads, or content until authorized', async () => {
+    vi.clearAllMocks()
+    const pinia = createPinia()
+    useSessionStore(pinia).session = session()
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/home', component: { template: '<div />' } }],
+    })
+    await router.push('/home')
+    const wrapper = mount(AppShell, {
+      props: { authorized: false },
+      global: { plugins: [pinia, router] },
+      slots: { pending: '<p role="status">Pending</p>', default: '<input aria-label="Draft" />' },
+    })
+    const viewport = wrapper.get('.app-route-viewport').element
+    expect(wrapper.findAll('main [role="status"]')).toHaveLength(1)
+    expect(wrapper.find('.side-rail, .bottom-nav, input').exists()).toBe(false)
+    expect(api.getCommunityAccess).not.toHaveBeenCalled()
+    expect(api.getBalance).not.toHaveBeenCalled()
+
+    await wrapper.setProps({ authorized: true })
+    expect(wrapper.get('.app-route-viewport').element).toBe(viewport)
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
+    expect(wrapper.get('input').attributes('aria-label')).toBe('Draft')
+    expect(api.getCommunityAccess).toHaveBeenCalledOnce()
+    wrapper.unmount()
+  })
+
   it('restores focus after routing and drives Telegram BackButton', async () => {
     const show = vi.fn()
     const hide = vi.fn()

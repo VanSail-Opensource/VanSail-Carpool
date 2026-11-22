@@ -1,5 +1,5 @@
 import './styles/member-startup.css'
-import { showBootstrapFailure, showMemberStartup } from './utils/bootstrapFallback'
+import { showBootstrapFailure } from './utils/bootstrapFallback'
 import { detectTelegramWebApp, hasTelegramLaunchContext } from './utils/telegramContext'
 import { setExperience } from './utils/experience'
 
@@ -32,14 +32,34 @@ async function bootstrap(): Promise<void> {
     await import('./browser/main')
     return
   }
-  showMemberStartup()
-  if (!window.Telegram?.WebApp) await new Promise<void>((resolve, reject) => {
+  const sdkReady = loadTelegramSDK()
+  // Handle an SDK rejection that precedes module loading. The member entry
+  // still receives the original promise and owns its startup error handoff.
+  void sdkReady.catch(() => undefined)
+  const { mountMiniApp } = await import('./miniapp')
+  await mountMiniApp(sdkReady)
+}
+
+function loadTelegramSDK(): Promise<void> {
+  if (window.Telegram?.WebApp) return Promise.resolve()
+
+  return new Promise((resolve, reject) => {
     const script = document.createElement('script')
-    const timer = setTimeout(() => reject(new Error('SDK_TIMEOUT')), 10_000)
+    const finish = (error?: string) => {
+      clearTimeout(timer)
+      script.onload = null
+      script.onerror = null
+      if (error) {
+        script.remove()
+        reject(new Error(error))
+      } else {
+        resolve()
+      }
+    }
+    const timer = setTimeout(() => finish('SDK_TIMEOUT'), 10_000)
     script.src = 'https://telegram.org/js/telegram-web-app.js?63'
-    script.onload = () => { clearTimeout(timer); resolve() }
-    script.onerror = () => { clearTimeout(timer); reject(new Error('SDK_UNAVAILABLE')) }
+    script.onload = () => finish(window.Telegram?.WebApp ? undefined : 'SDK_UNAVAILABLE')
+    script.onerror = () => finish('SDK_UNAVAILABLE')
     document.head.append(script)
   })
-  await import('./miniapp')
 }

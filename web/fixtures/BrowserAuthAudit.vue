@@ -5,7 +5,7 @@ import BrowserAccess from '@/browser/BrowserAccess.vue'
 import BrowserConsole from '@/browser/BrowserConsole.vue'
 import AdminAccessPanel from '@/components/settings/AdminAccessPanel.vue'
 import AuthGate from '@/components/session/AuthGate.vue'
-import SessionEntrance from '@/components/session/SessionEntrance.vue'
+import MemberSessionStatus from '@/components/session/MemberSessionStatus.vue'
 import { useBrowserSession } from '@/browser/session'
 import { useSessionStore } from '@/stores/session'
 
@@ -20,9 +20,10 @@ onMounted(() => {
 
 <template>
   <UApp>
-    <SessionEntrance v-if="params.has('recovery')" :status="member.status" :authenticated="member.isAuthenticated">
+    <template v-if="params.has('recovery')">
       <AuthGate v-if="member.status === 'error'" :message="member.error ?? ''" :code="member.errorCode ?? undefined" @retry="member.bootstrap(true)" />
-    </SessionEntrance>
+      <MemberSessionStatus v-else-if="!member.isAuthenticated" :authenticated="false" />
+    </template>
     <AdminAccessPanel v-else-if="params.has('link')" />
     <BrowserAccess v-else-if="params.has('exchange')" />
     <BrowserConsole v-else-if="params.has('console')"><p>{{ $t('browser.console') }}</p></BrowserConsole>

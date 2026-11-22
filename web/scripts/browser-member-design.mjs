@@ -154,7 +154,9 @@ export async function memberDesignScenarios(scenario, size) {
     await page.getByRole('button', { name: 'Try again', exact: true }).waitFor()
   })
   await scenario(size, 'design-entry-loading', 'member-utility-audit.html?page=entry&loading', async page => {
-    await settled(page, '.session-loading')
+    await settled(page, '.app-main .member-session-status')
+    assert.equal(await page.locator('.app-main [role="status"]').count(), 1)
+    assert.equal(await page.locator('.side-rail, .bottom-nav, .app-main button, .app-main a').count(), 0)
   })
   await scenario(size, 'design-emby-setup', 'member-utility-audit.html?page=emby&empty', async page => {
     await settled(page, '.emby-form h2')

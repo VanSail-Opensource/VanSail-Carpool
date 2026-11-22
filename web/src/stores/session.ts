@@ -24,18 +24,18 @@ export const useSessionStore = defineStore('session', () => {
   const isAdmin = computed(() => user.value?.role === 'admin')
   const onboardingComplete = computed(() => user.value?.onboardingState === 'complete')
 
-  function bootstrap(force = false): Promise<void> {
+  function bootstrap(force = false, hostReady?: Promise<unknown>): Promise<void> {
     if (!force && pending) return pending
     if (!force && status.value === 'ready') return Promise.resolve()
     const current = ++revision
     status.value = 'loading'
     error.value = null
     errorCode.value = null
-    pending = loadSession(current)
+    pending = loadSession(current, hostReady)
     return pending
   }
 
-  async function loadSession(current: number): Promise<void> {
+  async function loadSession(current: number, hostReady?: Promise<unknown>): Promise<void> {
     try {
       let next: Session
       try {
@@ -44,6 +44,8 @@ export const useSessionStore = defineStore('session', () => {
         if (current !== revision) return
         if (!(caught instanceof ApiError) || caught.status !== 401) throw caught
         if (isBrowserExperience()) throw caught
+        if (hostReady) await hostReady
+        if (current !== revision) return
         const { getTelegramInitData, isTelegramWebAppDetected } = await import('@/utils/telegram')
         const initData = await getTelegramInitData()
         if (current !== revision) return
@@ -52,8 +54,14 @@ export const useSessionStore = defineStore('session', () => {
         }
         next = await api.authTelegram(initData)
       }
+      // Do not publish the verified member or start optional preloads before
+      // the host has been initialized, even when the cookie probe was faster.
+      if (hostReady) await hostReady
       if (current === revision) updateSession(next)
     } catch (caught) {
+      if (hostReady) {
+        try { await hostReady } catch { return } // Bootstrap handles fatal SDK errors.
+      }
       if (current !== revision) return
       stopSessionPreload()
       stopMemberViewPreload()

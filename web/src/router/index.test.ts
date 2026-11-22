@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import router from './index'
+import { createMemberRouter } from './index'
+
+const router = createMemberRouter()
 
 describe('member routes', () => {
   it('registers the Community route without adding primary navigation state', () => {

@@ -36,4 +36,4 @@ has a separate Home introduction for new users.
 
 For members with access, enabled IP Lookup appears in Around TX regardless of combo access or the optional entrance preference. Other optional Around TX tools retain their existing gates. Availability is account-scoped and refreshed after navigation/admin saves.
 
-AppShell mounts its first permitted content with a 500ms, 8px entrance; navigation remains outside the transformed group. Reduced motion uses immediate final states. Ordinary route transitions retain their existing lifecycle.
+AppShell can mount its stable content viewport before member verification. Its `pending` slot contains the localized account or page status while member navigation and its data are disabled. First permitted content paints without an entrance; ordinary route transitions retain their existing lifecycle.

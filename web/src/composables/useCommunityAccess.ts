@@ -21,7 +21,7 @@ function positive(minor: string | undefined): boolean {
   }
 }
 
-function createCommunityAccess(): CommunityAccessContext {
+function createCommunityAccess(eligible: () => boolean): CommunityAccessContext {
   const session = useSessionStore()
   const activeCombo = shallowRef(false)
   const positiveBalance = shallowRef(false)
@@ -33,7 +33,7 @@ function createCommunityAccess(): CommunityAccessContext {
 
   function refresh(): Promise<void> {
     const owner = session.user?.id
-    if (disposed || !owner) return Promise.resolve()
+    if (disposed || !owner || !eligible()) return Promise.resolve()
     if (pending) return pending
     const current = revision
     const valid = () => !disposed && current === revision && session.user?.id === owner
@@ -69,7 +69,7 @@ function createCommunityAccess(): CommunityAccessContext {
     positiveBalance.value = false
     loading.value = false
   }
-  watch(() => session.user?.id ?? null, owner => {
+  watch(() => eligible() ? session.user?.id ?? null : null, owner => {
     clear()
     if (owner) { loading.value = true; void refresh() }
   }, { immediate: true, flush: 'sync' })
@@ -78,10 +78,10 @@ function createCommunityAccess(): CommunityAccessContext {
   return { activeCombo: readonly(activeCombo), positiveBalance: readonly(positiveBalance), hasAccess, loading: readonly(loading), refresh }
 }
 
-export function useCommunityAccess(): CommunityAccessContext {
+export function useCommunityAccess(eligible: () => boolean = () => true): CommunityAccessContext {
   const provided = inject(communityAccessKey, null)
   if (provided) return provided
-  const context = createCommunityAccess()
+  const context = createCommunityAccess(eligible)
   provide(communityAccessKey, context)
   return context
 }

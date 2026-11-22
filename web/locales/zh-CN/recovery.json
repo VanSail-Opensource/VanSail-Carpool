@@ -1,6 +1,5 @@
 {
   "recovery": {
-    "openingMiniApp": "正在打开小程序…",
     "title": "VanSail Carpool 无法打开",
     "description": "请重新加载小程序以恢复正常会话。",
     "reload": "重新加载"

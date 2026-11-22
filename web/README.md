@@ -52,7 +52,7 @@ MCP browser inspection. The build output goes to `../internal/webui/dist` for Go
 ## Application boundaries
 
 - `src/App.vue` provides Nuxt UI's `UApp` context and locale binding.
-- `src/main.ts` bootstraps compatibility before loading the app bundle, then either mounts a localized capability gate or initializes Telegram, Pinia, Vue Router, Nuxt UI, Motion for Vue, and global styles.
+- `src/main.ts` dispatches independent member, browser and public entries. Member startup downloads the Telegram SDK and shell together, starts the cookie-session probe while they load, and places its pending status in the real shell rather than a splash.
 - `src/router/` lazy-loads member and administrator views and enforces onboarding/role access.
 - `src/stores/` holds only session-wide authenticated identity state.
 - `src/api/` contains generated OpenAPI types, focused contracts, and one same-origin transport. Authenticated calls use the companion request key to sign the exact method, path/query, timestamp, nonce, and body bytes, including a secure HMAC fallback when Web Crypto is unavailable.
