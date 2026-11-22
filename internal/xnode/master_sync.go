@@ -70,18 +70,27 @@ func (m *Master) reconcile(ctx context.Context) error {
 	}
 	m.globalBlocks = blocks
 	m.mu.Unlock()
-	if err = m.syncPeers(ctx, peers, now); err != nil {
-		return err
+	syncCtx, cancelSync := syncPassContext(ctx)
+	err = m.syncPeers(syncCtx, peers, now, global.Telemetry.ReportSeconds)
+	cancelSync()
+	if ctx.Err() != nil {
+		return ctx.Err()
 	}
 	// Renew authorization before connection observations can consume the deadline
 	// or fail. Delivered traffic settles independently in the journal transaction.
-	peers = slices.DeleteFunc(peers, func(peer *agentPeer) bool { return !native[peer.nodeID] })
-	err = m.observePAYG(ctx, peers, global.Telemetry.ReportSeconds, global.Telemetry.SampleSeconds)
+	if err == nil {
+		peers = slices.DeleteFunc(peers, func(peer *agentPeer) bool { return !native[peer.nodeID] })
+		err = m.observePAYG(ctx, peers, global.Telemetry.ReportSeconds, global.Telemetry.SampleSeconds)
+	}
 	// Routing maintenance can rebuild member inventories and fetch assets. Keep
 	// it after short authorization renewals so a slow refresh cannot exhaust the
 	// shared pass deadline before any healthy node receives its PAYG lease.
 	// Observation failures must not suppress this independent maintenance work.
-	if routingErr := m.service.reconcileRoutingPlans(ctx); routingErr != nil {
+	wakeRouting := m.routingWakePending.Swap(false)
+	if routingErr := m.service.reconcileRoutingPlans(ctx, wakeRouting); routingErr != nil {
+		if wakeRouting {
+			m.routingWakePending.Store(true)
+		}
 		m.logger.Warn("routing reconciliation deferred", "error_code", "XNODE_ROUTING_RECONCILE_PENDING")
 	}
 	return err

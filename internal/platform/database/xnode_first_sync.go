@@ -34,6 +34,19 @@ func (s *Store) retryAttempt_ConfirmXNodeFirstSync(ctx context.Context, node str
 		owners[index], ownerPrincipals[index], generations[index] = subject.OwnerID, subject.OwnerProxyUserID, subject.AccountGeneration
 		credentials[index], ownerCredentials[index] = hex.EncodeToString(subject.CredentialHash[:]), hex.EncodeToString(subject.OwnerCredentialHash[:])
 	}
+	// A cached compilation can still carry subjects confirmed by an earlier
+	// lease or another node. Skip their no-op proof transaction before taking
+	// material locks. This probe can only skip work; it never grants readiness.
+	// A concurrent material reset remains unproven until fresh captured proof
+	// passes every generation/credential check below.
+	var unproven bool
+	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM xnode_identities
+ WHERE proxy_user_id=ANY($1::bigint[]) AND first_synced_at IS NULL)`, ownerPrincipals).Scan(&unproven); err != nil {
+		return err
+	}
+	if !unproven {
+		return nil
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

@@ -17,10 +17,13 @@ func TestPAYGRenewalPrecedesRoutingMaintenance(t *testing.T) {
 		name           string
 		waitForExpiry  bool
 		observationErr error
+		forceSync      bool
 	}{
 		{name: "routing completes"},
 		{name: "routing exhausts pass deadline", waitForExpiry: true},
 		{name: "observation failure still permits maintenance", observationErr: observationFailure},
+		{name: "forced renewal precedes routing wake", forceSync: true},
+		{name: "forced renewal precedes stalled routing wake", forceSync: true, waitForExpiry: true},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			service, base, _, master := compileCacheFixture(t)
@@ -42,7 +45,7 @@ func TestPAYGRenewalPrecedesRoutingMaintenance(t *testing.T) {
 					Users:     []wire.User{{ID: 8, AccountingPeriod: "payg-renewal"}},
 					Telemetry: DefaultGlobal().Telemetry,
 				}
-				peer := &agentPeer{nodeID: node.ID, revision: 1, paygReady: true, compiled: &compiledState{version: 1, config: config}}
+				peer := &agentPeer{nodeID: node.ID, revision: 1, paygReady: true, forceSync: test.forceSync, compiled: &compiledState{version: 1, config: config}}
 				baseline := config
 				baseline.Users = []wire.User{{ID: 8, AccountingPeriod: "payg-renewal", ValidUntil: &previousUntil}}
 				prepared, err := preparePeerWire(peer, baseline, caps)
@@ -62,6 +65,9 @@ func TestPAYGRenewalPrecedesRoutingMaintenance(t *testing.T) {
 			}
 			if test.waitForExpiry && !errors.Is(ctx.Err(), context.DeadlineExceeded) {
 				t.Fatal("routing did not consume the shared pass deadline")
+			}
+			if master.routingWakePending.Load() != (test.forceSync && test.waitForExpiry) {
+				t.Fatal("routing wake was lost or retained after successful maintenance")
 			}
 			if repo.routingCalls != 1 || repo.priorRenewals != 2 || repo.fundingReads.Load() != 2 || base.reads != 0 || repo.observations == 0 {
 				t.Fatalf("renewal/maintenance ordering changed: routes=%d prior renewals=%d funding reads=%d compiles=%d observations=%d", repo.routingCalls, repo.priorRenewals, repo.fundingReads.Load(), base.reads, repo.observations)
@@ -86,5 +92,20 @@ func TestPAYGRenewalPrecedesRoutingMaintenance(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestForcedRoutingWakePreservesCachedPlanReconciliation(t *testing.T) {
+	service, base, _, _ := compileCacheFixture(t)
+	repo := &renewalBeforeRoutingRepository{paygLeaseRepository: &paygLeaseRepository{cacheTestRepository: base}}
+	service.repo = repo
+	ctx := context.Background()
+	for _, force := range []bool{false, false, true} {
+		if err := service.reconcileRoutingPlans(ctx, force); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if repo.routingCalls != 2 || repo.planReads != 1 {
+		t.Fatalf("reconnect wake lost or unnecessarily rescanned plans: wakes=%d reads=%d", repo.routingCalls, repo.planReads)
 	}
 }

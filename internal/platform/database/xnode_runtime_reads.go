@@ -7,7 +7,11 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
+// Every effective price is positive by the account/override constraints. Reject
+// empty wallets without prepaid bytes before the optional pricing/policy joins;
+// the exact current price predicate below remains authoritative.
 const paygFundingPredicate = ` WHERE a.node_id=$1 AND b.txb_minor>=0
+ AND (b.txb_minor>0 OR a.credit_bytes>0)
  AND (b.txb_minor>=` + paygFundingPrice + ` OR a.credit_bytes>0)`
 
 // XNodePAYGFunding reads current authorization inputs without scanning periods.

@@ -12,20 +12,7 @@ import (
 // mutating unrelated jobs. Resource keys are derived from existing durable facts.
 func claimableOutboxTx(ctx context.Context, tx *sql.Tx, now time.Time, priority bool, computeOnly ...bool) (*model.OutboxJob, error) {
 	isCompute := len(computeOnly) > 0 && computeOnly[0]
-	active, err := outboxBatchTx(ctx, tx, outboxSelect+` WHERE status='processing'`)
-	if err != nil {
-		return nil, err
-	}
-	occupied := map[string]bool{}
-	for _, job := range active {
-		keys, err := outboxResourcesTx(ctx, tx, job)
-		if err != nil {
-			return nil, err
-		}
-		for _, key := range keys {
-			occupied[key] = true
-		}
-	}
+	var occupied map[string]bool
 	const batchSize = 64
 	for offset := 0; ; offset += batchSize {
 		// The reserved claim path handles dynamic bans every second. Ordinary
@@ -38,6 +25,18 @@ func claimableOutboxTx(ctx context.Context, tx *sql.Tx, now time.Time, priority 
    ORDER BY CASE WHEN `+priorityOutboxFilter+` THEN 1 ELSE 0 END,`+purchaseTimestampOrderSQL("available_at")+`,`+purchaseTimestampOrderSQL("created_at")+`,record_order LIMIT $5 OFFSET $6 FOR UPDATE SKIP LOCKED`, retentionCandidateUpperBound(now), boolInt(isCompute), boolInt(isCompute), boolInt(priority), batchSize, offset, purchaseTimestampOrder(now))
 		if err != nil {
 			return nil, err
+		}
+		if len(jobs) == 0 {
+			return nil, nil
+		}
+		// Empty lanes do not need the processing inventory or its per-resource
+		// queries. Load it only after finding a candidate, under the same
+		// admission lock, and retain blocked predecessors across every batch.
+		if occupied == nil {
+			occupied, err = occupiedOutboxResourcesTx(ctx, tx)
+			if err != nil {
+				return nil, err
+			}
 		}
 		for _, job := range jobs {
 			keys, err := outboxResourcesTx(ctx, tx, job)
@@ -62,6 +61,24 @@ func claimableOutboxTx(ctx context.Context, tx *sql.Tx, now time.Time, priority 
 			return nil, nil
 		}
 	}
+}
+
+func occupiedOutboxResourcesTx(ctx context.Context, tx *sql.Tx) (map[string]bool, error) {
+	active, err := outboxBatchTx(ctx, tx, outboxSelect+` WHERE status='processing'`)
+	if err != nil {
+		return nil, err
+	}
+	occupied := map[string]bool{}
+	for _, job := range active {
+		keys, err := outboxResourcesTx(ctx, tx, job)
+		if err != nil {
+			return nil, err
+		}
+		for _, key := range keys {
+			occupied[key] = true
+		}
+	}
+	return occupied, nil
 }
 
 func outboxBatchTx(ctx context.Context, tx *sql.Tx, query string, args ...any) ([]model.OutboxJob, error) {

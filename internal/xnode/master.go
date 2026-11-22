@@ -23,6 +23,7 @@ type Master struct {
 	automaticFreshness     atomic.Int64
 	automaticWake          chan struct{}
 	syncCursor             int
+	routingWakePending     atomic.Bool
 	compute                *computePool
 	trafficMetrics         trafficObservations
 	trafficBatcher         *trafficBatcher

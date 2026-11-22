@@ -38,12 +38,16 @@ PostgreSQL fails startup; no file import, conversion or swap runs at bootstrap.
 30 seconds without SQL, payload or user labels. `postgres_bootstrap_test.go`
 rehearses verified activation, health and refusal of a second hosted application.
 
-`scheduler_priority.go` runs `runOutboxAdmission` once per second for both dynamic
-firewall and ordinary jobs while maintenance or entitlement scans wait. Reserved
+`scheduler_priority.go` runs independent, joined admission loops once per second
+for dynamic firewall and ordinary jobs while maintenance or entitlement scans
+wait. A stalled claim in one loop cannot delay polling in the other; claims
+still share the short database admission lock for resource ordering. Reserved
 and ordinary claims share the existing outbox, executor, handlers and fenced
 leases. The pump is cancelled/joined with the scheduler before storage closes.
 `scheduler_admission_test.go` verifies ordinary member work starts without a
 scheduled drain, with cancellation and executor shutdown joined in hosted CI.
+`scheduler_admission_isolation_test.go` blocks either database claim and verifies
+the other lane progresses, then verifies cancellation joins both claims.
 
 
 `xnode_scan_test.go` exercises real native scan nonce allocation with a panel identity and no legacy account. Both adapter scan entry points allocate the minimum accepted 128-bit nonce.

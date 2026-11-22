@@ -79,15 +79,18 @@ func (s *scanner) scanEVM(ctx context.Context, cursor Cursor, addresses []string
 	if err != nil || last > tip {
 		return Batch{}, ErrProof
 	}
+	if last == tip {
+		if head.Hash != cursor.Hash {
+			return Batch{}, ErrProof
+		}
+		return Batch{Cursor: cursor, CaughtUp: true}, nil
+	}
 	var prior evmBlock
 	if err := c.rpc(ctx, "eth_getBlockByNumber", []any{toHex(last), false}, &prior); err != nil {
 		return Batch{}, err
 	}
 	if prior.Hash != cursor.Hash {
 		return Batch{}, ErrProof
-	}
-	if last == tip {
-		return Batch{Cursor: cursor, CaughtUp: true}, nil
 	}
 	if s.span == 0 {
 		s.span = 256

@@ -45,6 +45,26 @@ single shared concurrent-request limit. Failed requests do not create persisted
 cooldowns or consume a daily or minute budget. The queue retains a bounded backlog;
 provider errors are retried by the normal scanner failover loop.
 
+`monitor_endpoints.go` retains the last successful endpoint at the front of a
+rail's failover order. A dead preferred endpoint is therefore paid for once,
+instead of adding its timeout before every healthy fallback scan. A subsequent
+failure tries the remaining configured endpoints against the same durable
+cursor. Configuration reload restores administrator endpoint order; cancellation
+stops failover immediately. `monitor_endpoints_test.go` exercises recovery,
+all-endpoint failure, cancellation and finalized-hash disagreement with queued
+HTTP fixtures. An unchanged EVM finalized head supplies its own canonical hash,
+so idle scans need one head request rather than fetching the same block twice.
+
+These changes remove collector overhead, not chain finality requirements.
+[Arbitrum's finality reference](https://docs.arbitrum.io/how-arbitrum-works/reference/finality-and-reorgs)
+defines `finalized` as batch publication plus parent-chain finality (roughly
+13 minutes on Ethereum). Its
+[deposit integration checklist](https://docs.arbitrum.io/launch-arbitrum-chain/integrations/exchange-integration-checklist)
+recommends finalized evidence before irreversible credit. The collector retains
+that policy: sequencer receipts, `latest`, and a fixed number of L2 blocks do not
+authorize settlement. Operational latency analysis must distinguish transfer-to-
+finality, finalized-history scanning, and persisted-evidence-to-ledger time.
+
 HTTP responses decode from a bounded reader into typed destinations inside the
 shared queue slot; RPC/GraphQL envelopes borrow their result bytes rather than
 retaining a second raw payload. HTTP documents and WS messages share a 2 MiB

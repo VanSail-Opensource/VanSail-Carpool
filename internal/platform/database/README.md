@@ -192,6 +192,10 @@ prunes seven-day operational history at most once per minute. Active expiries
 still run on every sweep; paid exemption evidence is retained.
 `xnode_firewall_sweep_test.go` verifies shared-audience isolation, immediate
 retirement between cleanup intervals and bounded history pruning on PostgreSQL.
+Repeated participant expiry events also skip unchanged bitmap writes while
+preserving journal cursor progress. Final-participant expiry still publishes its
+release version and source clock. `xnode_firewall_expiry_noop_test.go` checks both
+ban and source generations, including distinct event sequences and final release.
 `xnode_firewall_retirement.go` seeks the existing C-collated generation/source
 primary keys and limits each bank to 256 candidates before merging one 256-row
 page. The strict composite cursor still orders bans before sources; empty keys,
@@ -329,6 +333,13 @@ heartbeats, duplicate completion and recovery generations.
 `outbox_completion_retry_generated.go` retains bounded whole-operation retry;
 `outbox_completion_test.go` exercises contention and stale completion in hosted
 PostgreSQL without requiring serialization retries for claim completion.
+
+`outbox_admission.go` loads processing-resource ownership only after a lane has
+an eligible candidate. Empty polls avoid repeated per-job lookups; candidate
+selection remains inside the same serialized admission transaction with
+generation-fenced claims. `outbox_admission_batches_test.go` verifies unrelated
+jobs advance past a full blocked batch while multi-resource successors retain
+their predecessor ordering across pages.
 
 `outbox_retry_policy.go` keeps desired-state routing/DIY retries between five
 and thirty seconds while preserving the existing firewall and external-command
@@ -1842,6 +1853,16 @@ retry repeats all checks after serialization conflicts. `xnode_first_sync_test.g
 and `xnode_first_sync_lifecycle_test.go` cover replay, fake proof, material rotation,
 concurrent child rotation and lifecycle replacement. Purge/material retirement and
 credential upserts invalidate proof; token-only rotation preserves it.
+An authoritative readiness probe skips the locking transaction when every
+captured owner is already proven. It never grants readiness and does not bypass
+generation, period or credential checks for an unproven owner. This also handles
+old subjects retained by a cached compilation after another node confirms them.
+`xnode_first_sync_efficiency_test.go` verifies redundant ACKs complete while
+unrelated account/material locks remain held and preserve the original proof.
+For an explicit operational repair that clears only `first_synced_at` on a live
+panel, increment `xnode_compile_revision.revision` for `singleton=1` in the same
+transaction (or restart the panel afterward). Normal credential/lifecycle reset
+methods already invalidate compilation; proof confirmation does not.
 
 `xnode_node_delete.go` restricts direct cleanup to disabled, never-enrolled nodes
 without published revisions, lifecycle transitions, endpoints or retained history.
@@ -2317,3 +2338,14 @@ behavior and two queries for 257 purchases. Unused `ListAllPurchases`,
 `PruneTransientRecords`, direct `RecordGroupMessageFact` and the descriptive
 `ListProviderOperationItems` alias have been removed; production callers use the
 existing page, backup-gated cleanup, buffered ingestion and canonical item APIs.
+
+### PAYG funding candidate reduction
+
+`xnode_runtime_reads.go` excludes empty wallets with no prepaid bytes before
+optional pricing and preference joins. Account prices are strictly positive;
+zero product overrides fall back to that positive account price. The final
+effective-price predicate remains in the same statement, including dynamic
+pricing, nonnegative balances, prepaid bytes and all disablement fields. This
+does not retain balances or authorization decisions across reads.
+`payg_funding_boundaries_test.go` covers small fixed prices, dynamic account
+prices, insufficient funds, zero-balance prepaid access and debt exclusion.

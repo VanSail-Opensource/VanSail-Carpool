@@ -71,59 +71,48 @@ func (s *Service) monitor(ctx context.Context, spec NetworkSpec, n NetworkConfig
 			s.state(spec.Rail, "error", "", ErrorCode(err))
 			continue
 		}
-		completed := false
-		for _, reader := range readers {
-			batch, err := reader.scan(ctx, cursor, addresses)
-			if err != nil {
-				reader.closeSubscription()
-				code := ErrorCode(err)
-				s.state(spec.Rail, "error", cursor.Value, code)
-				continue
-			}
-			closeInactiveSubscriptions(readers, reader)
-			if err := s.repository.SaveUSDTBatch(ctx, spec.Rail, batch); err != nil {
-				s.state(spec.Rail, "error", cursor.Value, ErrorCode(err))
-				break
-			}
-			state := "catching_up"
-			if batch.CaughtUp {
-				state = "ready"
-			}
-			s.state(spec.Rail, state, batch.Cursor.Value, "")
-			completed = true
-			if err := s.drain(ctx); err != nil {
-				s.report(err)
-			}
-			if !batch.CaughtUp {
-				delay = time.Second
-			}
-			if reader.client.endpoint.UseWS {
-				keys := addresses
-				if spec.Family == "solana" {
-					var c solCursor
-					if json.Unmarshal([]byte(batch.Cursor.Value), &c) == nil {
-						keys = []string{}
-						for account, h := range c.Accounts {
-							if containsAddress(addresses, h.Owner) {
-								keys = append(keys, account)
-							}
-						}
-						sort.Strings(keys)
-					}
-				}
-				reader.refreshSubscription(ctx, keys)
-				if reader.subscription != "" {
-					s.mu.Lock()
-					status := s.states[spec.Rail]
-					status.Connection = "websocket"
-					s.states[spec.Rail] = status
-					s.mu.Unlock()
-				}
-			}
-			break
+		batch, reader, err := scanEndpoints(ctx, readers, cursor, addresses)
+		if err != nil {
+			s.state(spec.Rail, "error", cursor.Value, ErrorCode(err))
+			continue
 		}
-		if !completed {
-			delay = 15 * time.Second
+		if err := s.repository.SaveUSDTBatch(ctx, spec.Rail, batch); err != nil {
+			s.state(spec.Rail, "error", cursor.Value, ErrorCode(err))
+			continue
+		}
+		state := "catching_up"
+		if batch.CaughtUp {
+			state = "ready"
+		}
+		s.state(spec.Rail, state, batch.Cursor.Value, "")
+		if err := s.drain(ctx); err != nil {
+			s.report(err)
+		}
+		if !batch.CaughtUp {
+			delay = time.Second
+		}
+		if reader.client.endpoint.UseWS {
+			keys := addresses
+			if spec.Family == "solana" {
+				var c solCursor
+				if json.Unmarshal([]byte(batch.Cursor.Value), &c) == nil {
+					keys = []string{}
+					for account, h := range c.Accounts {
+						if containsAddress(addresses, h.Owner) {
+							keys = append(keys, account)
+						}
+					}
+					sort.Strings(keys)
+				}
+			}
+			reader.refreshSubscription(ctx, keys)
+			if reader.subscription != "" {
+				s.mu.Lock()
+				status := s.states[spec.Rail]
+				status.Connection = "websocket"
+				s.states[spec.Rail] = status
+				s.mu.Unlock()
+			}
 		}
 	}
 }

@@ -51,6 +51,12 @@ func compiledFirstSyncSubjects(config wire.Config, reads *compileReads) (map[int
 			principal.CredentialsCipher == "" || owner.CredentialsCipher == "" {
 			return nil, ErrConflict
 		}
+		// Readiness is durable for this owner material. Credential rotation and
+		// purge/rejoin clear it and invalidate compilation, so an already-proven
+		// owner does not need another proof on every short PAYG lease revision.
+		if owner.FirstSyncedAt != nil {
+			continue
+		}
 		subjects[int64(user.ID)] = FirstSyncSubject{
 			ProxyUserID:         int64(user.ID),
 			OwnerProxyUserID:    owner.ProxyUserID,
