@@ -1,5 +1,9 @@
 {
   "cryptoPayment": {
+    "confirmed": "Payment confirmed",
+    "walletCredit": "Added to your TXB wallet",
+    "done": "Done",
+    "transferDetails": "Transfer details",
     "gasFeeHint": "Network (gas) fees are extra. The receiving address must receive the exact amount shown.",
     "copyAmount": "Copy exact amount",
     "networkHint": "Send on the selected network and use the exact amount.",

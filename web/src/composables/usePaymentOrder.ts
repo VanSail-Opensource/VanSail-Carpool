@@ -10,6 +10,7 @@ import { isTerminalPaymentStatus, resolveOrderSelection, resolveReissueCandidate
 import { usePaymentConfiguration } from './usePaymentConfiguration'
 import { type PaymentCommand, usePaymentOrderOperations } from './usePaymentOrderOperations'
 import { usePaymentTarget } from './usePaymentTarget'
+import { usePaymentConfirmation } from './usePaymentConfirmation'
 
 export { isTerminalPaymentStatus } from './paymentOrderHelpers'
 export type PaymentStage = 'configure' | 'creating' | 'pending' | 'cancelling' | 'cancelled' | 'paid' | 'review'
@@ -29,11 +30,14 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
   const latest = createLatestRequest()
   const configuration = usePaymentConfiguration(options, stage)
   const target = usePaymentTarget({ onPaid: handlePaid, onTerminal: handleOrderTerminal })
+  const confirmation = usePaymentConfirmation(target.order)
+  let reportedPaymentId: string | undefined
   const operations = usePaymentOrderOperations({ onTerminal: handleOperationTerminal })
   const error = computed(() => operations.error.value ?? localError.value)
 
   function suspend(): void {
     latest.invalidate()
+    confirmation.reset()
     if (closeTimer !== undefined) clearTimeout(closeTimer)
     closeTimer = undefined
     operations.reset()
@@ -193,8 +197,20 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
     target.stop()
     canRecreate.value = false
     stage.value = 'paid'
+    if (target.order.value && ['builtin_usdt', 'bepusdt'].includes(target.order.value.provider)) {
+      confirmation.confirm()
+      return
+    }
     notifyHaptic('success')
     closeTimer = setTimeout(options.onPaid, 700)
+  }
+
+  function finishConfirmation(): void {
+    const current = target.order.value
+    if (stage.value !== 'paid' || !current || current.status !== 'paid'
+      || !['builtin_usdt', 'bepusdt'].includes(current.provider) || reportedPaymentId === current.id) return
+    reportedPaymentId = current.id
+    options.onPaid()
   }
 
   onScopeDispose(() => { latest.dispose(); if (closeTimer !== undefined) clearTimeout(closeTimer) })
@@ -210,6 +226,9 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
     amountMinor: configuration.amountMinor,
     amountValid: configuration.amountValid,
     canCreate: configuration.canCreate,
+    confirmationPhase: confirmation.phase,
+    confirmationProgress: confirmation.progress,
+    finishConfirmation,
     reset,
     hydrateReissueOrder,
     hydratePendingOrder,

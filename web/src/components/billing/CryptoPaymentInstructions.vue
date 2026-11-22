@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import { watch } from 'vue'
 import type { FeaturePaymentOrder } from '@/api/features'
 import type { PaymentStage } from '@/composables/usePaymentOrder'
-import { useClipboard } from '@/composables/useClipboard'
 import { usePaymentCountdown } from '@/composables/usePaymentCountdown'
 import { useI18n } from '@/i18n'
-import { formatMoney } from '@/utils/format'
-import { paymentChannelLabel } from './paymentOptions'
+import CryptoPaymentTransfer from './CryptoPaymentTransfer.vue'
 
 const props = defineProps<{
   order: FeaturePaymentOrder
@@ -17,49 +14,12 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ cancel: []; recreate: []; retry: [] }>()
 const { t } = useI18n()
-const clipboard = useClipboard()
-const amountClipboard = useClipboard()
 const countdown = usePaymentCountdown(() => props.order.expiresAt)
-watch(() => [props.order.id, props.order.receivingAddress], clipboard.reset, { flush: 'sync' })
-watch(() => [props.order.id, props.order.actualCryptoAmount, props.order.actualCryptoCurrency], amountClipboard.reset, { flush: 'sync' })
-
-function copyAddress(): void {
-  if (props.order.receivingAddress) void clipboard.copy(props.order.receivingAddress)
-}
 </script>
 
 <template>
   <div class="crypto-instructions">
-    <div class="payment-amount">
-      <span>{{ t('payment.exactAmount') }}</span>
-      <strong>{{ order.actualCryptoAmount }} {{ order.actualCryptoCurrency }}</strong>
-      <small v-if="order.provider === 'builtin_usdt'">{{ t('cryptoPayment.gasFeeHint') }}</small>
-      <UButton color="neutral" variant="ghost" :icon="amountClipboard.copied.value ? 'i-ph-check-bold' : 'i-ph-copy'" :label="t('cryptoPayment.copyAmount')" @click="order.actualCryptoAmount && amountClipboard.copy(order.actualCryptoAmount)" />
-      <small>{{ paymentChannelLabel(order.providerRail, order.providerRail) }}</small>
-      <small>{{ t('cryptoPayment.networkHint') }}</small>
-      <small>{{ t('payment.creditsAfter', { amount: formatMoney(order.txb) }) }}</small>
-    </div>
-
-    <div v-if="order.receivingAddress" class="qr-frame">
-      <img v-if="qrDataUrl" :src="qrDataUrl" :alt="t('payment.qrAlt')" width="260" height="260" />
-      <USkeleton v-else class="crypto-instructions__qr-skeleton" />
-    </div>
-
-    <div v-if="order.receivingAddress" class="payment-address payment-address--copy">
-      <span>{{ t('payment.receivingAddress') }}</span>
-      <code>{{ order.receivingAddress }}</code>
-      <UTooltip :text="clipboard.copied.value ? t('common.copied') : t('cryptoPayment.copyAddress')">
-        <UButton
-          class="payment-address__copy-button"
-          color="neutral"
-          variant="ghost"
-          :icon="clipboard.copied.value ? 'i-ph-check-bold' : 'i-ph-copy'"
-          :aria-label="clipboard.copied.value ? t('common.copied') : t('cryptoPayment.copyAddress')"
-          data-haptic="action"
-          @click="copyAddress"
-        />
-      </UTooltip>
-    </div>
+    <CryptoPaymentTransfer :order="order" :qr-data-url="qrDataUrl" />
 
     <div class="crypto-countdown" :class="{ 'crypto-countdown--expired': countdown.expired.value }" role="timer">
       <span>{{ countdown.expired.value ? t('cryptoPayment.expired') : t('cryptoPayment.timeRemaining') }}</span>
@@ -84,8 +44,8 @@ function copyAddress(): void {
       data-haptic="confirm"
       @click="emit('recreate')"
     />
-    <div v-else class="payment-waiting" role="status">
-      <span class="payment-waiting__pulse" />
+    <div v-else-if="!countdown.expired.value" class="payment-waiting" role="status">
+      <UIcon name="i-ph-clock" aria-hidden="true" />
       {{ stage === 'cancelling' ? t('payment.cancelling') : t('payment.waiting') }}
     </div>
     <UButton
@@ -112,3 +72,9 @@ function copyAddress(): void {
     <UAlert v-if="error" color="error" variant="soft" :description="error" />
   </div>
 </template>
+
+<style scoped>
+.crypto-instructions { gap: 0.9rem; }
+.crypto-countdown { padding-inline: 0; border-top: 0; }
+.payment-waiting { display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+</style>

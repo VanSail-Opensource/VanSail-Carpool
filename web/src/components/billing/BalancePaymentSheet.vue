@@ -3,6 +3,7 @@ import { computed, onScopeDispose, shallowRef, watch } from 'vue'
 import type { CouponRedemption, FeaturePaymentMethod, FeaturePaymentOrder } from '@/api/features'
 import BalancePaymentConfiguration from '@/components/billing/BalancePaymentConfiguration.vue'
 import CryptoPaymentInstructions from '@/components/billing/CryptoPaymentInstructions.vue'
+import CryptoPaymentSuccess from '@/components/billing/CryptoPaymentSuccess.vue'
 import { usePaymentOrder } from '@/composables/usePaymentOrder'
 import { useTelegramBackButton } from '@/composables/useTelegramBackButton'
 import { useI18n } from '@/i18n'
@@ -46,6 +47,9 @@ const {
   retryOperation,
   openPaymentTarget,
   suspend,
+  confirmationPhase,
+  confirmationProgress,
+  finishConfirmation,
 } = usePaymentOrder({
   onPaid: () => {
     open.value = false
@@ -83,6 +87,7 @@ watch(open, (next, previous) => {
   if (next) void prepareOrder()
   else {
     preparation++
+    finishConfirmation()
     suspend()
     if (previous && couponRedemption.value) emit('paid')
   }
@@ -100,7 +105,7 @@ onScopeDispose(() => { preparation++ })
   >
     <template #actions>
       <UButton
-        v-if="paymentStep === 'channel'"
+        v-if="paymentStep === 'channel' && (stage === 'configure' || stage === 'creating')"
         class="payment-sheet-header-back"
         color="neutral"
         variant="ghost"
@@ -186,7 +191,11 @@ onScopeDispose(() => { preparation++ })
         <UAlert v-if="error" color="warning" variant="soft" :description="error" />
         <UButton block color="neutral" variant="outline" :label="$t('common.close')" data-haptic="dismiss" @click="closeSheet" />
       </div>
-      <div v-else class="payment-success" role="status"><UIcon name="i-ph-check-circle-fill" /><h2>{{ $t('payment.added') }}</h2><p>{{ $t('payment.ready') }}</p></div>
+      <CryptoPaymentSuccess
+        v-else-if="stage === 'paid' && order && (order.provider === 'builtin_usdt' || order.provider === 'bepusdt')"
+        :order="order" :phase="confirmationPhase" :progress="confirmationProgress" @done="closeSheet"
+      />
+      <div v-else-if="stage === 'paid'" class="payment-success" role="status"><UIcon name="i-ph-check-circle-fill" /><h2>{{ $t('payment.added') }}</h2><p>{{ $t('payment.ready') }}</p></div>
     </template>
   </UModal>
 </template>
