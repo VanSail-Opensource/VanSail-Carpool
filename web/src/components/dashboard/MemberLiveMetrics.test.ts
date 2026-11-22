@@ -69,11 +69,13 @@ describe('MemberLiveMetrics', () => {
 
   it('preserves fresh zero and incomplete states and retires activity on unmount', async () => {
     observation.value = { ...initial(), metrics: { ...initial().metrics, activityStatus: 'offline', connections: 0, incomplete: true } }
-    const wrapper = shallowMount(MemberLiveMetrics)
+    const onActivity = vi.fn()
+    const wrapper = shallowMount(MemberLiveMetrics, { props: { onActivity } })
+    expect(onActivity).toHaveBeenLastCalledWith('offline')
     expect(wrapper.getComponent(MemberLiveValues).props('metrics')?.connections).toBe(0)
     expect(wrapper.text()).toContain('memberNodes.incomplete')
     expect(wrapper.get('[role="status"]').text()).toBe('dashboard.offline')
     wrapper.unmount()
-    expect(wrapper.emitted('activity')?.at(-1)).toEqual(['unavailable'])
+    expect(onActivity).toHaveBeenLastCalledWith('unavailable')
   })
 })
