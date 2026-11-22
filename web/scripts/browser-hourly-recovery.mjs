@@ -81,7 +81,10 @@ export async function hourlyRecoveryScenarios(scenario, size) {
     assert.deepEqual(writes[0].body, { enabled: true, policyVersion: 'updated-policy', acceptedPriceTXBMinor: '250' })
   })
   await scenario(size, 'hourly-offer-consent', 'hourly-audit.html?activation', async (page, capture) => {
-    await page.getByRole('button', { name: 'Enable', exact: true }).first().click()
+    await page.getByRole('switch', { name: /^Hourly access for / }).first().click()
+    assert.match(await page.getByRole('dialog').innerText(), /not refunded/)
+    assert.deepEqual(await mutations(page), [])
+    await page.getByRole('button', { name: 'Confirm and enable', exact: true }).click()
     await page.getByLabel('Activation code', { exact: true }).fill('constructed-code')
     await capture('code')
     await page.evaluate(() => {
@@ -90,7 +93,10 @@ export async function hourlyRecoveryScenarios(scenario, size) {
     })
     await page.getByRole('dialog').waitFor({ state: 'hidden' })
     assert.deepEqual(await mutations(page), [])
-    await page.getByRole('button', { name: 'Enable', exact: true }).first().click()
+    await page.getByRole('switch', { name: /^Hourly access for / }).first().click()
+    assert.match(await page.getByRole('dialog').innerText(), /not refunded/)
+    assert.deepEqual(await mutations(page), [])
+    await page.getByRole('button', { name: 'Confirm and enable', exact: true }).click()
     assert.equal(await page.getByLabel('Activation code', { exact: true }).inputValue(), '')
     await page.getByLabel('Activation code', { exact: true }).fill('reviewed-code')
     await page.getByRole('dialog').getByRole('button', { name: 'Continue', exact: true }).click()
@@ -101,7 +107,7 @@ export async function hourlyRecoveryScenarios(scenario, size) {
     assert.equal(writes[0].body.activationCode, 'reviewed-code')
   })
   await scenario(size, 'hourly-enrollment-consent', 'hourly-audit.html?active', async (page, capture) => {
-    await page.getByRole('button', { name: 'Disable', exact: true }).click()
+    await page.getByRole('switch', { name: /^Hourly access for /, checked: true }).click()
     await page.getByRole('dialog').waitFor()
     await capture('reviewed')
     await page.evaluate(() => {
@@ -110,7 +116,7 @@ export async function hourlyRecoveryScenarios(scenario, size) {
     })
     await page.getByRole('dialog').waitFor({ state: 'hidden' })
     assert.deepEqual(await mutations(page), [])
-    await page.getByRole('button', { name: 'Disable', exact: true }).click()
+    await page.getByRole('switch', { name: /^Hourly access for /, checked: true }).click()
     await page.getByRole('dialog').getByRole('button', { name: 'Disable', exact: true }).click()
     await page.waitForFunction(() => globalThis.__hourlyAudit.calls.some(call => call.method === 'POST'))
     const writes = await mutations(page)
