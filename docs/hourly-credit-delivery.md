@@ -24,6 +24,22 @@ fresh demand/confirmed activity wake work; zero/stale/unknown-owner hints do not
 start an idle 100-ms SQL polling loop. Closed-owner financial evidence is still
 accepted independently of that admission filter.
 
+A completed scan containing already delivered reservations is quiet work, not
+an immediate backlog. Quiet obligations and unchanged active owners recheck the
+ledger once per second, retaining periodic eligibility, day and idle retirement
+checks. New positive demand, newly committed consumption, proof ACKs and explicit
+retirement/resume bypass that interval. Owners not yet visited and unfinished
+issue-order pages continue under the existing fair per-pass budget without a
+fixed throughput delay. A wake received while a worker waits on SQL/RPC is kept
+for the next pass. These timestamps control scheduling only; each funding attempt
+still reads and locks the authoritative day/reservation records, and errors retain
+the independent one-second retry backoff.
+After reading current-day held bytes, a conservative maximum target can establish
+that the owner already has ample credit without opening a day-funding transaction.
+The exact pool can only reduce that target. Low-water, depleted and uncertain
+attempts retain the complete locked funding path; this shortcut never grants or
+charges bytes.
+
 `EnsureHourlyCreditDay` keeps the first UTC-day allowance immutable. SQL reserves
 bytes and assigns a persistent AgentID-global sequence before an install can be
 sent. A stable in-memory intent retains the exact request across uncertain SQL

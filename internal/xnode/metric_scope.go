@@ -8,6 +8,7 @@ import (
 // Metrics retain the paid node scope when quota or account policy blocks access,
 // so a denied member still sees an accurate reason instead of an empty zero.
 func (s *Service) metricNodeScope(ctx context.Context, identity Identity) (map[string]bool, []UserLimit, error) {
+	projection := newInventoryProjection(s)
 	nodes := map[string]bool{}
 	reasons := []UserLimit{}
 	purchase, err := s.EffectivePurchase(ctx, identity.UserID)
@@ -21,14 +22,14 @@ func (s *Service) metricNodeScope(ctx context.Context, identity Identity) (map[s
 	if restricted {
 		reasons = append(reasons, UserLimit{Reason: "account_disabled", Scope: "all_connections"})
 	}
-	payg, err := s.paygInventory(ctx, identity.UserID)
+	payg, err := s.paygInventory(ctx, identity.UserID, projection)
 	if err != nil {
 		return nil, nil, err
 	}
 	for _, p := range payg {
 		nodes[p.NodeID] = true
 	}
-	hourly, err := s.hourlyInventory(ctx, identity.UserID)
+	hourly, err := s.hourlyInventory(ctx, identity.UserID, projection)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -70,7 +71,7 @@ func (s *Service) metricNodeScope(ctx context.Context, identity Identity) (map[s
 	if err != nil {
 		return nil, nil, err
 	}
-	groups, err := s.repo.XNodeGroups(ctx)
+	groups, err := projection.readGroups(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -79,18 +80,14 @@ func (s *Service) metricNodeScope(ctx context.Context, identity Identity) (map[s
 			continue
 		}
 		for _, binding := range group.Bindings {
-			node, err := s.repo.XNodeNode(ctx, binding.NodeID)
+			node, err := projection.readNode(ctx, binding.NodeID)
 			if err != nil {
 				return nil, nil, err
 			}
 			if !node.Enabled {
 				continue
 			}
-			owned, err := s.NativeOwner(ctx, node.ID)
-			if err != nil {
-				return nil, nil, err
-			}
-			nodes[node.ID] = owned
+			nodes[node.ID] = node.RetiredAt == nil
 		}
 	}
 	return nodes, reasons, nil

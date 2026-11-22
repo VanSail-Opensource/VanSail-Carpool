@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
+	"slices"
 	"strings"
 )
 
@@ -16,23 +17,30 @@ func (s *Service) endpointProxy(ctx context.Context, identity Identity, endpoint
 }
 
 func (s *Service) endpointProxyCredentials(ctx context.Context, endpoint Endpoint, credentials Credentials) (subscription.Proxy, error) {
-	result := subscription.Proxy{ID: endpoint.ID, NodeID: endpoint.NodeID, InboundTag: endpoint.InboundTag, Name: endpoint.Name, Address: endpoint.Address, Port: endpoint.Port}
 	groups, err := s.Groups(ctx)
 	if err != nil {
-		return result, err
+		return subscription.Proxy{}, err
 	}
+	groupIDs := []string{}
 	for _, group := range groups {
 		for _, binding := range group.Bindings {
 			if binding.NodeID == endpoint.NodeID && binding.InboundTag == endpoint.InboundTag {
-				result.GroupIDs = append(result.GroupIDs, group.ID)
+				groupIDs = append(groupIDs, group.ID)
 				break
 			}
 		}
 	}
 	node, settings, inbound, err := s.endpointInbound(ctx, endpoint.NodeID, endpoint.InboundTag)
 	if err != nil {
-		return result, err
+		return subscription.Proxy{}, err
 	}
+	return projectEndpointProxy(endpoint, credentials, groupIDs, node, settings, inbound)
+}
+
+// Inputs remain read-only. Every client receives independent account, group and
+// stream fields, including when several principals share one native inbound.
+func projectEndpointProxy(endpoint Endpoint, credentials Credentials, groups []string, node Node, settings NodeSettings, inbound map[string]any) (subscription.Proxy, error) {
+	result := subscription.Proxy{ID: endpoint.ID, NodeID: endpoint.NodeID, InboundTag: endpoint.InboundTag, Name: endpoint.Name, Address: endpoint.Address, Port: endpoint.Port, GroupIDs: slices.Clone(groups)}
 	if node.CountryCode != "" {
 		result.Countries = []string{node.CountryCode}
 	}

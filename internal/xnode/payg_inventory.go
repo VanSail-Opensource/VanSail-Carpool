@@ -26,15 +26,16 @@ func (s *Service) memberInventory(ctx context.Context, user string) ([]subscript
 	if parent.AccessDisabled {
 		return []subscription.Proxy{}, false, nil
 	}
-	combo, pending, err := s.comboInventory(ctx, user)
+	projection := newInventoryProjection(s)
+	combo, pending, err := s.comboInventory(ctx, user, projection)
 	if err != nil {
 		return nil, pending, err
 	}
-	payg, err := s.paygInventory(ctx, user)
+	payg, err := s.paygInventory(ctx, user, projection)
 	if err != nil {
 		return nil, pending, err
 	}
-	hourly, err := s.hourlyInventory(ctx, user)
+	hourly, err := s.hourlyInventory(ctx, user, projection)
 	return append(append(combo, payg...), hourly...), pending, err
 }
 
@@ -43,7 +44,7 @@ func paygProxyID(endpoint, group string) string {
 	return "payg-" + hex.EncodeToString(hash[:16])
 }
 
-func (s *Service) paygInventory(ctx context.Context, user string) ([]subscription.Proxy, error) {
+func (s *Service) paygInventory(ctx context.Context, user string, projection *inventoryProjection) ([]subscription.Proxy, error) {
 	out := []subscription.Proxy{}
 	r, ok := s.paygRepository()
 	if !ok {
@@ -61,7 +62,7 @@ func (s *Service) paygInventory(ctx context.Context, user string) ([]subscriptio
 	for _, p := range products {
 		payg[p.GroupID] = p.PAYGAvailable()
 	}
-	groups, err := s.repo.XNodeGroups(ctx)
+	groups, err := projection.readGroups(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +73,7 @@ func (s *Service) paygInventory(ctx context.Context, user string) ([]subscriptio
 	if err != nil {
 		return nil, err
 	}
-	endpoints, err := s.Endpoints(ctx)
+	endpoints, err := projection.readEndpoints(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -88,17 +89,17 @@ func (s *Service) paygInventory(ctx context.Context, user string) ([]subscriptio
 			continue
 		}
 		for _, endpoint := range endpoints {
-			if !endpoint.Enabled || endpoint.NodeID != a.NodeID {
+			if !endpoint.Enabled || endpoint.NodeID != a.NodeID || !slices.Contains(projection.endpointGroups(endpoint), a.GroupID) {
 				continue
 			}
-			node, e := s.repo.XNodeNode(ctx, endpoint.NodeID)
+			node, e := projection.readNode(ctx, endpoint.NodeID)
 			if e != nil {
 				return nil, e
 			}
 			if !node.Enabled {
 				continue
 			}
-			proxy, e := s.endpointProxy(ctx, i, endpoint)
+			proxy, e := projection.proxy(ctx, i, endpoint)
 			if unusableEndpoint(e) {
 				continue
 			}

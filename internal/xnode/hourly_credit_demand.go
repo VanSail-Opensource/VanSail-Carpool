@@ -8,6 +8,7 @@ import (
 
 const hourlyCreditIdleAfter = 10 * time.Second
 const hourlyCreditDemandFreshness = 4 * time.Second
+const hourlyCreditPollInterval = time.Second
 
 // Hints are coalesced wakeups, never authority to buy or refund traffic. A nil
 // batch wakes initial reconnect reconciliation even without an eligible owner.
@@ -71,13 +72,15 @@ func (m *Master) requestObservedHourlyCredit(peer *agentPeer, items []hourlyInbo
 			}
 			c.hintCount++
 		}
-		active := state.hints[item.Owner].activeAt
+		hint := state.hints[item.Owner]
 		if item.PendingBytes > 0 {
-			active = input.latestAt
+			hint.activeAt = input.latestAt
+			hint.checkAfter = time.Time{}
 		}
-		state.hints[item.Owner] = hourlyCreditHint{demand: item, seenAt: input.latestAt, activeAt: active}
+		hint.demand, hint.seenAt = item, input.latestAt
+		state.hints[item.Owner] = hint
 	}
-	if state.work || hourlyCreditHasDemand(state, now) || len(state.pending)+len(state.intents) > 0 {
+	if state.work || hourlyCreditRefillDue(state, now) || len(state.pending)+len(state.intents) > 0 {
 		c.signal()
 	}
 }
@@ -95,12 +98,12 @@ func hourlyCreditHintDemanding(hint hourlyCreditHint, now time.Time) bool {
 	return pending || active
 }
 
-func hourlyCreditHasDemand(state *hourlyCreditPeerState, now time.Time) bool {
+func hourlyCreditRefillDue(state *hourlyCreditPeerState, now time.Time) bool {
 	if state.retireAll {
 		return false
 	}
 	for owner, hint := range state.hints {
-		if !state.retire[owner] && hourlyCreditHintDemanding(hint, now) {
+		if !state.retire[owner] && !hint.checkAfter.After(now) && hourlyCreditHintDemanding(hint, now) {
 			return true
 		}
 	}

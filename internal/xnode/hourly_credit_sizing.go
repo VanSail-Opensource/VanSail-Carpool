@@ -36,6 +36,7 @@ func (m *Master) observeHourlyCreditProgress(peer *agentPeer, rows []model.Hourl
 					c.hintCount++
 				}
 				hint.activeAt = now
+				hint.checkAfter = time.Time{}
 				state.hints[owner] = hint
 			}
 		}

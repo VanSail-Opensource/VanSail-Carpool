@@ -25,12 +25,12 @@ func hourlyInventoryStatus(p HourlyPrincipal) bool {
 
 // Keep an imported hourly host stable during automatic funding suspension;
 // export never derives prepaid eligibility from the member's remaining wallet.
-func (s *Service) hourlyInventory(ctx context.Context, owner string) ([]subscription.Proxy, error) {
+func (s *Service) hourlyInventory(ctx context.Context, owner string, projection *inventoryProjection) ([]subscription.Proxy, error) {
 	principals, err := s.hourlyPrincipals(ctx, owner, "")
 	if err != nil || len(principals) == 0 {
 		return []subscription.Proxy{}, err
 	}
-	groups, err := s.repo.XNodeGroups(ctx)
+	groups, err := projection.readGroups(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func (s *Service) hourlyInventory(ctx context.Context, owner string) ([]subscrip
 	for _, group := range groups {
 		enabled[group.ID] = group.Enabled
 	}
-	endpoints, err := s.Endpoints(ctx)
+	endpoints, err := projection.readEndpoints(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -55,17 +55,17 @@ func (s *Service) hourlyInventory(ctx context.Context, owner string) ([]subscrip
 			continue
 		}
 		for _, endpoint := range endpoints {
-			if !endpoint.Enabled {
+			if !endpoint.Enabled || !slices.Contains(projection.endpointGroups(endpoint), p.GroupID) {
 				continue
 			}
-			node, e := s.repo.XNodeNode(ctx, endpoint.NodeID)
+			node, e := projection.readNode(ctx, endpoint.NodeID)
 			if e != nil {
 				return nil, e
 			}
 			if !node.Enabled || node.RetiredAt != nil || node.RemovingAt != nil {
 				continue
 			}
-			proxy, e := s.endpointProxy(ctx, identity, endpoint)
+			proxy, e := projection.proxy(ctx, identity, endpoint)
 			if unusableEndpoint(e) {
 				continue
 			}

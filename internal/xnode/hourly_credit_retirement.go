@@ -2,6 +2,7 @@ package xnode
 
 import (
 	"context"
+	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
@@ -35,6 +36,10 @@ func (m *Master) ResumeHourlyCreditAdmission(ownerID string, generation int64) e
 	defer c.mu.Unlock()
 	for _, state := range c.peers {
 		delete(state.retire, owner)
+		if hint, ok := state.hints[owner]; ok {
+			hint.checkAfter = time.Time{}
+			state.hints[owner] = hint
+		}
 		state.work = true
 	}
 	c.signal()

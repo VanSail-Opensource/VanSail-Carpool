@@ -2,21 +2,13 @@ package xnode
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"slices"
 	"strings"
-	"sync"
 	"time"
 )
-
-type routingAssets struct {
-	mu       sync.Mutex
-	key      string
-	data     routingAssetResult
-	next     time.Time
-	failures int
-	publish  func()
-}
 
 func (s *Service) routingExpansion(ctx context.Context, templates []RoutingTemplate) (map[string][]string, string, error) {
 	selectors := []string{}
@@ -38,44 +30,30 @@ func (s *Service) routingExpansion(ctx context.Context, templates []RoutingTempl
 	if config.GeoSiteURL == "" {
 		return nil, "", &PolicyError{"XNODE_GEOSITE_REQUIRED", ErrInvalid}
 	}
-	key, _ := json.Marshal([]any{config.GeoSiteURL, config.GeoSiteHash, selectors, config.GeodataIntervalHours, config.GeodataCron})
+	data, err := s.routingAssets.resolve(ctx, config, selectors, s.now, s.downloadRoutingGeoSite)
+	if err != nil {
+		return nil, "", geoSitePolicyFailure(err)
+	}
+	return data.domains, data.hash, nil
+}
+
+func routingAssetKeys(config GlobalConfig, selectors []string) (string, string) {
+	source, _ := json.Marshal([]any{config.GeoSiteURL, config.GeoSiteHash})
+	key, _ := json.Marshal([]any{string(source), selectors, config.GeodataIntervalHours, config.GeodataCron})
+	sourceHash, keyHash := sha256.Sum256(source), sha256.Sum256(key)
+	return hex.EncodeToString(sourceHash[:]), hex.EncodeToString(keyHash[:])
+}
+
+func (s *Service) routingRefreshAt() time.Time {
 	a := s.routingAssets
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	if a.key != string(key) || a.data.hash == "" || !a.next.IsZero() && !s.now().Before(a.next) {
-		data, err := s.downloadRoutingGeoSite(ctx, config, selectors)
-		completed := s.now()
-		next := nextMasterGeodata(config, completed)
-		if err != nil {
-			if a.key != string(key) || a.data.hash == "" {
-				return nil, "", geoSitePolicyFailure(err)
-			}
-			retries := []time.Duration{time.Minute, 5 * time.Minute, 15 * time.Minute}
-			if !next.IsZero() && a.failures < len(retries) {
-				next = completed.Add(retries[a.failures])
-				a.failures++
-			} else {
-				a.failures = 0
-			}
-		} else {
-			changed := a.data.hash != data.hash
-			a.data = data
-			a.key = string(key)
-			a.failures = 0
-			if changed {
-				a.publish()
-			}
+	now := s.now()
+	var next time.Time
+	for _, entry := range a.entries {
+		if now.Before(entry.next) && (next.IsZero() || entry.next.Before(next)) {
+			next = entry.next
 		}
-		a.next = next
-	}
-	return a.data.domains, a.data.hash, nil
-}
-func (s *Service) routingRefreshAt() time.Time {
-	s.routingAssets.mu.Lock()
-	defer s.routingAssets.mu.Unlock()
-	next := s.routingAssets.next
-	if !next.IsZero() && !s.now().Before(next) {
-		return time.Time{}
 	}
 	return next
 }

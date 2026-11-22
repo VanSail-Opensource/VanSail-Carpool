@@ -11,13 +11,13 @@ func (s *Service) MemberProxies(ctx context.Context, userID string) ([]subscript
 	return proxies, err
 }
 
-func (s *Service) comboInventory(ctx context.Context, userID string) ([]subscription.Proxy, bool, error) {
+func (s *Service) comboInventory(ctx context.Context, userID string, projection *inventoryProjection) ([]subscription.Proxy, bool, error) {
 	access, err := s.memberAccess(ctx, userID)
 	if err != nil || !access.allowed {
 		return []subscription.Proxy{}, access.pending, err
 	}
 	identity, purchase := access.identity, access.purchase
-	endpoints, err := s.Endpoints(ctx)
+	endpoints, err := projection.readEndpoints(ctx)
 	if err != nil {
 		return nil, false, err
 	}
@@ -25,33 +25,27 @@ func (s *Service) comboInventory(ctx context.Context, userID string) ([]subscrip
 	if err != nil {
 		return nil, false, err
 	}
+	groups, err := projection.readGroups(ctx)
+	if err != nil {
+		return nil, false, err
+	}
+	allowed := map[string]bool{}
+	for _, group := range groups {
+		allowed[group.ID] = group.Enabled && slices.Contains(purchase.SquadUUIDs, group.ID) && !slices.Contains(disabled, group.ID)
+	}
 	out := []subscription.Proxy{}
 	for _, endpoint := range endpoints {
-		if !endpoint.Enabled {
+		if !endpoint.Enabled || !slices.ContainsFunc(projection.endpointGroups(endpoint), func(group string) bool { return allowed[group] }) {
 			continue
 		}
-		node, err := s.repo.XNodeNode(ctx, endpoint.NodeID)
+		node, err := projection.readNode(ctx, endpoint.NodeID)
 		if err != nil {
 			return nil, false, err
 		}
-		if !node.Enabled {
+		if !node.Enabled || node.RetiredAt != nil {
 			continue
 		}
-		owned, err := s.NativeOwner(ctx, node.ID)
-		if err != nil {
-			return nil, false, err
-		}
-		if !owned {
-			continue
-		}
-		tags, _, err := s.eligibleTags(ctx, userID, node.ID)
-		if err != nil {
-			return nil, false, err
-		}
-		if !slices.Contains(tags, endpoint.InboundTag) {
-			continue
-		}
-		proxy, err := s.endpointProxy(ctx, identity, endpoint)
+		proxy, err := projection.proxy(ctx, identity, endpoint)
 		if unusableEndpoint(err) {
 			continue
 		}

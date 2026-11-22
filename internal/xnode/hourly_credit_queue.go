@@ -14,9 +14,10 @@ const maxHourlyCreditPeerStates = 2048
 const maxHourlyCreditDemandHints = 8192
 
 type hourlyCreditHint struct {
-	demand   wire.HourlyDemand
-	seenAt   time.Time
-	activeAt time.Time
+	demand     wire.HourlyDemand
+	seenAt     time.Time
+	activeAt   time.Time
+	checkAfter time.Time // scheduling only; each attempt rereads the authoritative ledger
 }
 
 type hourlyCreditObserved struct {
@@ -33,6 +34,7 @@ type hourlyCreditPeerState struct {
 	pending      map[string]wire.HourlyCreditAck
 	running      bool
 	retryAt      time.Time
+	pollAt       time.Time
 	hints        map[wire.HourlyOwner]hourlyCreditHint
 	delivered    map[string]int64
 	uncertain    map[string]bool

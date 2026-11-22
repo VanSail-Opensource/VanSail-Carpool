@@ -51,7 +51,8 @@ func (c *hourlyCreditCoordinator) ready(now time.Time) []*agentPeer {
 				c.hintCount--
 			}
 		}
-		if !state.running && (len(state.pending) > 0 || state.work || hourlyCreditHasDemand(state, now) || len(state.intents) > 0) && !state.retryAt.After(now) {
+		periodic := !state.pollAt.After(now) && len(state.delivered)+len(state.uncertain)+len(state.intents) > 0
+		if !state.running && (len(state.pending) > 0 || state.work || hourlyCreditRefillDue(state, now) || periodic) && !state.retryAt.After(now) {
 			peers = append(peers, peer)
 		}
 	}
@@ -68,6 +69,9 @@ func (c *hourlyCreditCoordinator) ready(now time.Time) []*agentPeer {
 			continue
 		}
 		c.peers[peer].running = true
+		// Consume only the selected pass's wake. Work arriving while SQL/RPCs
+		// run stays set and cannot be overwritten by a completed quiet scan.
+		c.peers[peer].work = false
 		c.activeAgents[peer.agentID] = peer
 		selected = append(selected, peer)
 	}
@@ -84,12 +88,13 @@ func (c *hourlyCreditCoordinator) finished(peer *agentPeer, discard, failed bool
 		state.retryAt = time.Time{}
 		if failed {
 			state.retryAt = now.Add(time.Second)
+			state.work = true
 		}
 		c.workers--
 		if c.activeAgents[peer.agentID] == peer {
 			delete(c.activeAgents, peer.agentID)
 		}
-		if discard || len(state.pending)+len(state.hints)+len(state.intents)+len(state.retire) == 0 && !state.retireAll && !state.work {
+		if discard || len(state.pending)+len(state.hints)+len(state.intents)+len(state.retire)+len(state.delivered)+len(state.uncertain) == 0 && !state.retireAll && !state.work {
 			c.hintCount -= len(state.hints)
 			delete(c.peers, peer)
 		}
