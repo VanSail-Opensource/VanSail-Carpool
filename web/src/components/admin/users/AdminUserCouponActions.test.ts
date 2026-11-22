@@ -1,6 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import USelectMenu from '@nuxt/ui/runtime/components/SelectMenu.vue'
 import { adminOperationsApi } from '@/api/adminOperations'
 import { featuresApi, type CouponDefinition } from '@/api/features'
 import { ApiError } from '@/api/http'
@@ -22,7 +21,7 @@ describe('administrator coupon grant recovery', () => {
     })
     await wrapper.findAll('button').find(button => button.text() === t('adminUserProfile.addCoupon'))!.trigger('click')
     await flushPromises()
-    wrapper.getComponent(USelectMenu).vm.$emit('update:modelValue', 'coupon')
+    wrapper.getComponent({ name: 'SelectMenu' }).vm.$emit('update:modelValue', 'coupon')
     await wrapper.get('textarea').setValue('Support correction')
     const submit = async () => {
       await wrapper.findAll('button').find(button => button.text() === t('common.confirm'))!.trigger('click')

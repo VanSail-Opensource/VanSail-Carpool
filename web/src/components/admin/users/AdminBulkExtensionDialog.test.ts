@@ -1,7 +1,6 @@
 import { flushPromises, shallowMount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import UButton from '@nuxt/ui/runtime/components/Button.vue'
-import USelectMenu from '@nuxt/ui/runtime/components/SelectMenu.vue'
 import { adminOperationsApi, type BulkExtensionPreview } from '@/api/adminOperations'
 import { ApiError } from '@/api/http'
 import { t } from '@/i18n'
@@ -19,7 +18,7 @@ async function render() {
   } })
   await wrapper.setProps({ open: true })
   await flushPromises()
-  wrapper.findAllComponents(USelectMenu)[0]!.vm.$emit('update:modelValue', ['first-combo'])
+  wrapper.findAllComponents({ name: 'SelectMenu' })[0]!.vm.$emit('update:modelValue', ['first-combo'])
   await wrapper.vm.$nextTick()
   const button = (label: string) => wrapper.findAllComponents(UButton).find(item => item.props('label') === t(label))!
   return { wrapper, button }
@@ -32,7 +31,7 @@ describe('bulk extension preview and retry identity', () => {
     const { wrapper, button } = await render()
     button('adminBulkExtension.preview').vm.$emit('click')
     await wrapper.vm.$nextTick()
-    wrapper.findAllComponents(USelectMenu)[0]!.vm.$emit('update:modelValue', ['second-combo'])
+    wrapper.findAllComponents({ name: 'SelectMenu' })[0]!.vm.$emit('update:modelValue', ['second-combo'])
     await wrapper.vm.$nextTick()
     finish(preview); await flushPromises()
     expect(wrapper.find('.admin-preview-band').exists()).toBe(false)
