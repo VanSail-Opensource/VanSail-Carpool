@@ -17,7 +17,7 @@ type HourlyDisableInput struct {
 
 // DisableHourlyEnrollment stops authorization without refunding any prepaid
 // interval, including the unused minimum enable duration.
-// An unpaid preparation can be cancelled without imposing a usage cooldown.
+// A new activation may be purchased immediately under the current terms.
 func (s *Store) DisableHourlyEnrollment(ctx context.Context, input HourlyDisableInput,
 	snapshot model.HourlyPolicySnapshot, _ time.Time) (model.HourlyEnrollment, error) {
 	if !validHourlyCreditName(input.OwnerID) || input.AccountGeneration < 0 || input.EnrollmentID == "" {
@@ -46,16 +46,11 @@ func (s *Store) DisableHourlyEnrollment(ctx context.Context, input HourlyDisable
 			return e, err
 		}
 		status := model.HourlyDisabled
-		var cooldown any
-		if e.ActivatedAt != nil {
-			if input.Voluntary {
-				cooldown = now.Add(time.Duration(snapshot.Policy.CooldownSeconds) * time.Second)
-			} else {
-				status = model.HourlyFundingSuspended
-			}
+		if e.ActivatedAt != nil && !input.Voluntary {
+			status = model.HourlyFundingSuspended
 		}
 		e, err = scanHourlyEnrollment(tx.QueryRowContext(ctx, `UPDATE hourly_enrollments SET status=$1,disabled_at=COALESCE(disabled_at,$2),
-			cooldown_until=$3,updated_at=$2 WHERE id=$4 RETURNING `+hourlyEnrollmentColumns, status, now, cooldown, e.ID))
+			updated_at=$2 WHERE id=$3 RETURNING `+hourlyEnrollmentColumns, status, now, e.ID))
 		if err == nil {
 			err = enqueueHourlySyncTx(ctx, tx, e.OwnerID, now)
 		}

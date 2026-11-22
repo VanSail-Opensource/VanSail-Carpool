@@ -50,6 +50,8 @@ AdminHourlySquad:
       type: [string, 'null']
       format: date-time
     cooldownUntil:
+      deprecated: true
+      description: Always null. Hourly changes have no cooldown.
       type: [string, 'null']
       format: date-time
     activatedAt:

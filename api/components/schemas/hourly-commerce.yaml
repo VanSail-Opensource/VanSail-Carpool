@@ -52,6 +52,8 @@ HourlyEnrollment: {
         "format": "date-time"
       },
       "cooldownUntil": {
+        "deprecated": true,
+        "description": "Always null. A fresh activation may be requested immediately.",
         "type": [
           "string",
           "null"

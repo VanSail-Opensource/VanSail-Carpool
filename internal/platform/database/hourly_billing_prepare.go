@@ -112,16 +112,7 @@ func hourlyActivationChecksTx(ctx context.Context, tx *sql.Tx, input HourlyActiv
 	if err != nil {
 		return offer, err
 	}
-	if err = rejectLegacyHourlyActivationTx(ctx, tx, input.OwnerID, now); err != nil {
-		return offer, err
-	}
-	var cooling bool
-	err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM hourly_enrollments WHERE owner_id=$1 AND account_generation=$2
-		AND group_id=$3 AND cooldown_until>$4)`, input.OwnerID, input.AccountGeneration, input.GroupID, now).Scan(&cooling)
-	if err == nil && cooling {
-		err = ErrHourlyCooldown
-	}
-	return offer, err
+	return offer, rejectLegacyHourlyActivationTx(ctx, tx, input.OwnerID, now)
 }
 
 func hourlyActivationGroupTx(ctx context.Context, tx *sql.Tx, group string) error {

@@ -11,7 +11,7 @@ import (
 
 func TestHourlyPolicyDefaultsAndExplicitUnitBounds(t *testing.T) {
 	defaults := DefaultHourlyPolicy()
-	if defaults.SalesEnabled || defaults.ActivationHours != 168 || defaults.CooldownSeconds != 86400 || defaults.DailyAllowanceBytes != 0 || defaults.ExtraGBPriceTXBMinor != 0 || ValidateHourlyPolicy(defaults) != nil {
+	if defaults.SalesEnabled || defaults.ActivationHours != 168 || defaults.CooldownSeconds != 0 || defaults.DailyAllowanceBytes != 0 || defaults.ExtraGBPriceTXBMinor != 0 || ValidateHourlyPolicy(defaults) != nil {
 		t.Fatal("unconfigured defaults enabled a sale or changed contract defaults")
 	}
 	for _, test := range []struct {

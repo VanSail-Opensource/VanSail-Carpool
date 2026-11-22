@@ -43,8 +43,6 @@ func (s *Server) hourlyMemberFailure(w http.ResponseWriter, r *http.Request, err
 		status, code, message = http.StatusNotFound, "HOURLY_ENROLLMENT_NOT_FOUND", "The hourly enrollment could not be found."
 	case errors.Is(err, database.ErrInsufficientBalance):
 		status, code, message = http.StatusConflict, "INSUFFICIENT_BALANCE", "Your balance does not meet the hourly activation requirement."
-	case errors.Is(err, database.ErrHourlyCooldown):
-		status, code, message = http.StatusConflict, "HOURLY_COOLDOWN", "This squad is in its disable cooldown."
 	case errors.Is(err, database.ErrHourlyLegacyConflict):
 		status, code, message = http.StatusConflict, "HOURLY_LEGACY_ACTIVE", "A fixed-term purchase blocks hourly activation."
 	case errors.Is(err, database.ErrStockUnavailable):

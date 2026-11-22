@@ -4,7 +4,7 @@
       "Hourly"
     ],
     "operationId": "disableHourlySquad",
-    "summary": "Stop access immediately and start the disclosed squad cooldown",
+    "summary": "Stop access immediately without refund; a fresh activation can be requested immediately",
     "responses": {
       "202": {
         "description": "Durable operation receipt. Completion requires the expected native deployment.",

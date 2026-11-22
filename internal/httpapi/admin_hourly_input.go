@@ -3,7 +3,7 @@ package httpapi
 import "github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 
 // Presence is part of a complete policy replacement. Missing/null fields must
-// not silently clear prices, disable offers, or remove the reviewed cooldown.
+// not silently clear prices or disable offers. The retired cooldown is optional.
 type adminHourlyPolicyInput struct {
 	Version *string `json:"version"`
 	Policy  *struct {
@@ -19,13 +19,13 @@ type adminHourlyPolicyInput struct {
 func (input adminHourlyPolicyInput) snapshot() (model.HourlyPolicySnapshot, bool) {
 	p := input.Policy
 	if input.Version == nil || p == nil || p.SalesEnabled == nil || p.DailyAllowanceBytes == nil ||
-		p.ReducedRateBytesPerSecond == nil || p.ExtraGBPriceTXBMinor == nil || p.ActivationHours == nil || p.CooldownSeconds == nil {
+		p.ReducedRateBytesPerSecond == nil || p.ExtraGBPriceTXBMinor == nil || p.ActivationHours == nil {
 		return model.HourlyPolicySnapshot{}, false
 	}
 	return model.HourlyPolicySnapshot{Version: *input.Version, Policy: model.HourlyPolicy{
 		SalesEnabled: *p.SalesEnabled, DailyAllowanceBytes: *p.DailyAllowanceBytes,
 		ReducedRateBytesPerSecond: *p.ReducedRateBytesPerSecond, ExtraGBPriceTXBMinor: *p.ExtraGBPriceTXBMinor,
-		ActivationHours: *p.ActivationHours, CooldownSeconds: *p.CooldownSeconds,
+		ActivationHours: *p.ActivationHours,
 	}}, true
 }
 

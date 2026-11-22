@@ -14,7 +14,6 @@ import (
 
 var (
 	ErrHourlySalesDisabled   = errors.New("hourly sales are disabled")
-	ErrHourlyCooldown        = errors.New("hourly squad cooldown is active")
 	ErrHourlyExtraDisabled   = errors.New("hourly extra traffic is not authorized")
 	ErrHourlyNotExhausted    = errors.New("funded hourly traffic is not fully consumed")
 	ErrHourlyDemandStale     = errors.New("hourly funding requires fresh pending payload")

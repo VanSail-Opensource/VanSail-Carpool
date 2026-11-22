@@ -33,8 +33,7 @@ wallet. The offer's `requiredHours` sets the minimum; `0` inherits
 activation commits a debit equal to `requiredBalance` (minimum hours times the
 accepted hourly price) and sets `paid_through` to the activation instant plus
 those hours. No hourly renewal charges for time already covered. Disabling stops
-access immediately without refunding unused prepayment; restarting after the
-cooldown requires a new activation and minimum debit.
+access immediately without refunding unused prepayment; restarting is allowed immediately but requires a new activation and minimum debit.
 
 The scheduler prepays the next interval inside a bounded one-minute lead window,
 starting at `paid_through`. The first renewal after an off-hour minimum boundary

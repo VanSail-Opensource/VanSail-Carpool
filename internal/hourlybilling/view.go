@@ -3,7 +3,6 @@ package hourlybilling
 import (
 	"context"
 	"sort"
-	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
@@ -47,7 +46,7 @@ func (s *Service) View(ctx context.Context, user model.User) (model.HourlyAccoun
 	if err != nil {
 		return view, err
 	}
-	enrollments, err := s.store.HourlyViewEnrollments(ctx, owner.ID, owner.AccountGeneration, now)
+	enrollments, err := s.store.HourlyViewEnrollments(ctx, owner.ID, owner.AccountGeneration)
 	if err != nil {
 		return view, err
 	}
@@ -68,7 +67,10 @@ func (s *Service) View(ctx context.Context, user model.User) (model.HourlyAccoun
 	if err != nil {
 		return view, err
 	}
-	latest, cooldowns := latestHourlyView(enrollments)
+	latest := make(map[string]*model.HourlyEnrollment, len(enrollments))
+	for i := range enrollments {
+		latest[enrollments[i].GroupID] = &enrollments[i]
+	}
 	byOffer, byProduct, byGroup := map[string]model.HourlyOffer{}, map[string]model.SquadProduct{}, map[string]xnode.Group{}
 	for _, offer := range offers {
 		byOffer[offer.GroupID] = offer
@@ -88,7 +90,7 @@ func (s *Service) View(ctx context.Context, user model.User) (model.HourlyAccoun
 		if !offer.Enabled && latest[group] == nil {
 			continue
 		}
-		row := model.HourlySquadView{Offer: offer, Enrollment: latest[group], CooldownUntil: cooldowns[group]}
+		row := model.HourlySquadView{Offer: offer, Enrollment: latest[group]}
 		row.Squad = hourlySquadMetadata(offer, byProduct[group], byGroup[group], topology.Nodes)
 		if remaining, limited := stock[group]; limited {
 			row.Squad.StockRemaining = &remaining
@@ -99,7 +101,7 @@ func (s *Service) View(ctx context.Context, user model.User) (model.HourlyAccoun
 			money := model.TXBMoney(minimum)
 			row.RequiredBalance = &money
 		}
-		row.ReasonCode = s.hourlyViewReason(ctx, owner, view, row, minimum, minimumErr, capacity, now)
+		row.ReasonCode = s.hourlyViewReason(ctx, owner, view, row, minimum, minimumErr, capacity)
 		row.Ready = row.ReasonCode == ""
 		view.Squads = append(view.Squads, row)
 		if err := ctx.Err(); err != nil {
@@ -109,20 +111,6 @@ func (s *Service) View(ctx context.Context, user model.User) (model.HourlyAccoun
 	sort.Slice(view.Squads, func(i, j int) bool { return view.Squads[i].Offer.GroupID < view.Squads[j].Offer.GroupID })
 	_, err = s.currentHourlyOwner(ctx, owner)
 	return view, err
-}
-
-func latestHourlyView(enrollments []model.HourlyEnrollment) (map[string]*model.HourlyEnrollment, map[string]*time.Time) {
-	latest, cooldowns := map[string]*model.HourlyEnrollment{}, map[string]*time.Time{}
-	for _, value := range enrollments {
-		e := value
-		if latest[e.GroupID] == nil || e.CreatedAt.After(latest[e.GroupID].CreatedAt) || e.CreatedAt.Equal(latest[e.GroupID].CreatedAt) && e.ID > latest[e.GroupID].ID {
-			latest[e.GroupID] = &e
-		}
-		if e.CooldownUntil != nil && (cooldowns[e.GroupID] == nil || e.CooldownUntil.After(*cooldowns[e.GroupID])) {
-			cooldowns[e.GroupID] = e.CooldownUntil
-		}
-	}
-	return latest, cooldowns
 }
 
 func hourlySquadMetadata(offer model.HourlyOffer, stored model.SquadProduct, group xnode.Group, nodes []xnode.TopologyNode) model.SquadProduct {
@@ -145,12 +133,9 @@ func hourlySquadMetadata(offer model.HourlyOffer, stored model.SquadProduct, gro
 	return p
 }
 
-func (s *Service) hourlyViewReason(ctx context.Context, owner model.User, view model.HourlyAccountView, row model.HourlySquadView, minimum int64, minimumErr error, capacity bool, now time.Time) string {
+func (s *Service) hourlyViewReason(ctx context.Context, owner model.User, view model.HourlyAccountView, row model.HourlySquadView, minimum int64, minimumErr error, capacity bool) string {
 	if !row.Squad.UpstreamPresent || !row.Offer.Enabled || minimumErr != nil {
 		return "unavailable"
-	}
-	if row.CooldownUntil != nil && row.CooldownUntil.After(now) {
-		return "cooldown"
 	}
 	if view.LegacyBlocked {
 		return "legacy_blocked"

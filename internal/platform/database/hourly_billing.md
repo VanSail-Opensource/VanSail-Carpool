@@ -9,7 +9,7 @@ Migration 43 introduces empty hourly relations; no legacy purchase converts.
 service then attaches its immutable principal and `NO_RESET` period.
 `CommitHourlyActivation` rechecks the exact tuple, reviewed encrypted-policy
 fingerprint, offer revision, existing squad activation code, stock, legacy
-benefits, cooldown and wallet funding before atomically debiting the full minimum
+benefits and wallet funding before atomically debiting the full minimum
 enable duration. One immutable receipt records rate, duration and paid-through;
 replaying the same activation cannot debit the wallet again.
 Activation codes are never stored by this module or included in fingerprints.
@@ -37,8 +37,8 @@ add squads without consuming another account slot. Historical generations do
 not occupy a current place. `hourly_billing_capacity.go` owns this gate and
 `hourly_billing_capacity_test.go` covers its boundary with a small test limit.
 
-`DisableHourlyEnrollment` retains the already-paid charge and adds cooldown only
-for a voluntary stop of a paid activation. `CancelHourlyPreparation` additionally
+`DisableHourlyEnrollment` retains the already-paid charge and allows immediate repurchase
+even for enrollments with a legacy cooldown timestamp. `CancelHourlyPreparation` additionally
 proves there is no paid receipt before cancelling an unpaid intent.
 `DueHourlyOwnersPage` lets the existing scheduler rotate past offline owners.
 Owner-credit retirement must be guarded against a newer paid benefit under the

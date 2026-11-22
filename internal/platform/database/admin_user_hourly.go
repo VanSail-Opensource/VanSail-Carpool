@@ -38,7 +38,7 @@ func (s *Store) ListAdminHourlyEnrollments(ctx context.Context, owner string, ge
 		return nil, ErrConflict
 	}
 	rows, err := s.db.QueryContext(ctx, `SELECT e.id,e.group_id,COALESCE(g.name,''),COALESCE(o.enabled,0),
-		COALESCE(o.hourly_price_minor,0),e.status,e.activated_at,e.paid_through,e.disabled_at,e.cooldown_until,e.created_at
+		COALESCE(o.hourly_price_minor,0),e.status,e.activated_at,e.paid_through,e.disabled_at,e.created_at
 		FROM hourly_enrollments e
 		LEFT JOIN xnode_groups g ON g.id=e.group_id
 		LEFT JOIN hourly_offers o ON o.group_id=e.group_id
@@ -52,14 +52,14 @@ func (s *Store) ListAdminHourlyEnrollments(ctx context.Context, owner string, ge
 	for rows.Next() {
 		var item AdminHourlyEnrollment
 		var enabled int
-		var activated, paid, disabled, cooldown sql.NullTime
+		var activated, paid, disabled sql.NullTime
 		if err := rows.Scan(&item.EnrollmentID, &item.GroupID, &item.Name, &enabled, &item.HourlyPriceTXBMinor, &item.Status,
-			&activated, &paid, &disabled, &cooldown, &item.CreatedAt); err != nil {
+			&activated, &paid, &disabled, &item.CreatedAt); err != nil {
 			return nil, err
 		}
 		item.OfferEnabled = enabled == 1
 		item.ActivatedAt, item.PaidThrough = hourlyTimePointer(activated), hourlyTimePointer(paid)
-		item.DisabledAt, item.CooldownUntil = hourlyTimePointer(disabled), hourlyTimePointer(cooldown)
+		item.DisabledAt = hourlyTimePointer(disabled)
 		item.CreatedAt = item.CreatedAt.UTC()
 		result = append(result, item)
 	}

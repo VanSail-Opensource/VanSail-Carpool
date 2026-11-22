@@ -7,7 +7,7 @@ prepares dormant credentials, obtains bounded native readiness evidence, commits
 exact billing, and checks native application. Known unpaid business failures
 cancel only an unpaid preparation. Uncertain commits or application keep the same
 operation pending; queue retry counts never manufacture a financial outcome.
-`disable.go` retains the paid hour and applies cooldown once, then synchronizes
+`disable.go` retains the nonrefundable prepayment, then synchronizes
 absence and drains only its terminal enrollment. New paid/preparing benefits
 protect owner admission through the native lifecycle's locked target guard.
 
@@ -91,7 +91,7 @@ financial authority: the wallet transaction repeats ownership, current policy,
 paid access, consent and funds checks before any debit.
 
 `view.go` publishes owner-generation-scoped hourly offers, current native display
-metadata, cooldowns, readiness and committed shared-day usage. It computes
+metadata, readiness and committed shared-day usage. It computes
 `requiredBalance` from each offer's `requiredHours` (zero inherits
 `policy.activationHours`), keeping the eligibility contract per squad. Hourly
 visibility is independent of grandfathered catalog visibility. GETs never create

@@ -44,7 +44,7 @@ func (s *SettingsService) HourlyPolicy(ctx context.Context) (model.HourlyPolicyS
 	if json.Unmarshal([]byte(raw), &fields) != nil {
 		return model.HourlyPolicySnapshot{}, ErrHourlyPolicyUnavailable
 	}
-	for _, key := range []string{"salesEnabled", "dailyAllowanceBytes", "reducedRateBytesPerSecond", "extraGBPriceTXBMinor", "activationHours", "cooldownSeconds"} {
+	for _, key := range []string{"salesEnabled", "dailyAllowanceBytes", "reducedRateBytesPerSecond", "extraGBPriceTXBMinor", "activationHours"} {
 		if _, ok := fields[key]; !ok {
 			return model.HourlyPolicySnapshot{}, ErrHourlyPolicyUnavailable
 		}
@@ -55,6 +55,7 @@ func (s *SettingsService) HourlyPolicy(ctx context.Context) (model.HourlyPolicyS
 	if err = decoder.Decode(&policy); err != nil {
 		return model.HourlyPolicySnapshot{}, ErrHourlyPolicyUnavailable
 	}
+	policy.CooldownSeconds = 0 // Retired term in previously encrypted documents.
 	var trailing any
 	if decoder.Decode(&trailing) != io.EOF || model.ValidateHourlyPolicy(policy) != nil {
 		return model.HourlyPolicySnapshot{}, ErrHourlyPolicyUnavailable
@@ -64,6 +65,7 @@ func (s *SettingsService) HourlyPolicy(ctx context.Context) (model.HourlyPolicyS
 
 // SaveHourlyPolicy encrypts a complete validated document before its SQL CAS.
 func (s *SettingsService) SaveHourlyPolicy(ctx context.Context, actor, expectedVersion string, policy model.HourlyPolicy) (model.HourlyPolicySnapshot, error) {
+	policy.CooldownSeconds = 0
 	if err := model.ValidateHourlyPolicy(policy); err != nil {
 		return model.HourlyPolicySnapshot{}, err
 	}

@@ -16,7 +16,7 @@ data as part of this handoff.
   atomically. An insufficient balance leaves the activation unpaid.
 - `enrollment.paidThrough` initially equals `activatedAt + minimum hours`.
   Disabling stops access immediately and refunds none of that prepayment.
-  A later new activation buys a new minimum interval; cooldown rules remain.
+  A later new activation buys a new minimum interval without a waiting period.
 - While covered by that interval, hourly workers do not debit it again. At its
   end, the next purchase covers the remainder of the UTC hour, then renewals
   return to whole UTC hours. Accepted minimum price/duration are immutable.

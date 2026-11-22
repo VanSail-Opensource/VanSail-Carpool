@@ -4,7 +4,8 @@
 and supplies `HourlyPolicy(context.Context)` to the native service composition.
 Decryption and `model.ValidateHourlyPolicy` run outside the database. Missing
 configuration returns `model.DefaultHourlyPolicy`: sales off, no invented traffic
-or extra prices, a 168-hour minimum enable period, and a 24-hour cooldown.
+or extra prices, a 168-hour minimum enable period, and no reactivation wait. Previously stored
+cooldown values are ignored; prior debits and paid-through timestamps are unchanged.
 An existing unreadable, incomplete, unknown-field, or invalid document fails
 closed; it does not receive the absent-document defaults.
 

@@ -123,7 +123,7 @@ func businessFailure(err error) bool {
 	for _, expected := range []error{database.ErrConflict, database.ErrNotFound, database.ErrAccountUnavailable,
 		database.ErrInsufficientBalance, database.ErrStockUnavailable, database.ErrActivationCodeRequired,
 		database.ErrActivationCodeInvalid, database.ErrActivationCodeExtra, database.ErrHourlySalesDisabled,
-		database.ErrHourlyCooldown, database.ErrHourlyLegacyConflict, database.ErrHourlyCapacity, model.ErrHourlyPolicyInvalid} {
+		database.ErrHourlyLegacyConflict, database.ErrHourlyCapacity, model.ErrHourlyPolicyInvalid} {
 		if errors.Is(err, expected) {
 			return true
 		}

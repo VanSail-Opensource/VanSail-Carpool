@@ -343,7 +343,7 @@ member routes do not preload or call browser administrator resources.
 Hosted `member_hourly_fixture_test.go`, `member_hourly_test.go`,
 `member_hourly_preferences_test.go` and `member_hourly_view_test.go` cover signed
 sessions, owner/generation isolation, large integers, malformed units, private
-queued intents, independent offer visibility, cooldowns and opt-out on policy
+queued intents, independent offer visibility and opt-out on policy
 failure. These tests do not claim real native or Telegram device validation.
 
 `admin_hourly_test.go` verifies resource-specific authorization, disabled defaults, explicit integer units, stale policy conflicts, and validation failures.

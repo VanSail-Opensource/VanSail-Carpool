@@ -6,8 +6,7 @@ HourlyPolicy: {
       "dailyAllowanceBytes",
       "reducedRateBytesPerSecond",
       "extraGBPriceTXBMinor",
-      "activationHours",
-      "cooldownSeconds"
+      "activationHours"
     ],
     "properties": {
       "salesEnabled": {
@@ -32,6 +31,8 @@ HourlyPolicy: {
         "description": "Default minimum enable hours, prepaid on activation. Inherited when offer.requiredHours is zero. Existing setting values are retained."
       },
       "cooldownSeconds": {
+        "deprecated": true,
+        "description": "Ignored on write; always zero on read. Hourly changes have no cooldown.",
         "type": "integer",
         "minimum": 0,
         "maximum": 9223372036

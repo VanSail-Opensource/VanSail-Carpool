@@ -14,7 +14,7 @@ type HourlyPolicy struct {
 
 // DefaultHourlyPolicy leaves sales and unconfigured prices disabled.
 func DefaultHourlyPolicy() HourlyPolicy {
-	return HourlyPolicy{ActivationHours: 168, CooldownSeconds: 24 * 60 * 60}
+	return HourlyPolicy{ActivationHours: 168}
 }
 
 // HourlyPolicySnapshot binds a validated policy to its encrypted setting CAS.

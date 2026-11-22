@@ -64,7 +64,7 @@ func TestHourlyAdministrationRequiresNativeScopeAndCurrentTerms(t *testing.T) {
 	if err := json.Unmarshal(call("GET", "hourly-policy", reader, "", http.StatusOK).Body.Bytes(), &initial); err != nil {
 		t.Fatal(err)
 	}
-	if initial.Policy.SalesEnabled || initial.Policy.ActivationHours != 168 || initial.Policy.CooldownSeconds != 86400 {
+	if initial.Policy.SalesEnabled || initial.Policy.ActivationHours != 168 || initial.Policy.CooldownSeconds != 0 {
 		t.Fatal("unconfigured hourly sales are not safely disabled")
 	}
 	initial.Policy.SalesEnabled = true
@@ -96,8 +96,8 @@ func TestHourlyAdministrationRequiresNativeScopeAndCurrentTerms(t *testing.T) {
 	call("PUT", "hourly-offers/missing", writer, `{"revision":"0","enabled":true,"hourlyPriceTXBMinor":"1","requiredHours":2562048}`, http.StatusUnprocessableEntity)
 	call("PUT", "hourly-offers/missing", writer, `{"revision":"0","enabled":true,"hourlyPriceTXBMinor":"1","requiredHours":0}`, http.StatusNotFound)
 	// Complete replacements must distinguish explicit false/zero from omitted
-	// or null values, especially cooldown, offer availability and pricing.
-	for _, field := range []string{"salesEnabled", "dailyAllowanceBytes", "reducedRateBytesPerSecond", "extraGBPriceTXBMinor", "activationHours", "cooldownSeconds"} {
+	// or null values, especially offer availability and pricing.
+	for _, field := range []string{"salesEnabled", "dailyAllowanceBytes", "reducedRateBytesPerSecond", "extraGBPriceTXBMinor", "activationHours"} {
 		for _, null := range []bool{false, true} {
 			policyBody, err := json.Marshal(model.HourlyPolicySnapshot{Version: saved.Version, Policy: initial.Policy})
 			if err != nil {

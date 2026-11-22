@@ -131,8 +131,6 @@ func failureCode(err error) string {
 		return "SQUAD_ACTIVATION_INVALID"
 	case errors.Is(err, database.ErrStockUnavailable):
 		return "SQUAD_STOCK_UNAVAILABLE"
-	case errors.Is(err, database.ErrHourlyCooldown):
-		return "HOURLY_COOLDOWN"
 	case errors.Is(err, database.ErrHourlyLegacyConflict):
 		return "HOURLY_LEGACY_ACTIVE"
 	case errors.Is(err, database.ErrHourlyCapacity):
