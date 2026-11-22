@@ -16,7 +16,7 @@ func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Mess
 	case "compute.claim", "compute.heartbeat", "compute.result", "compute.cancel":
 		return m.receiveCompute(ctx, peer, message)
 	case "state.request":
-		m.requestSync(peer)
+		m.queueSync(peer, false)
 		return nil
 	case "state.accepted", "state.applied":
 		peer.mu.Lock()

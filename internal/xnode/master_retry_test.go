@@ -32,6 +32,7 @@ func TestCommandAndSupersededFailuresCannotCreateResyncStorm(t *testing.T) {
 		t.Fatal(err)
 	}
 	peer.digest = prepared.digest
+	master.peers[peer.nodeID] = peer
 	ctx := context.Background()
 	for _, message := range []wire.Message{wire.New("error", "command", 0, map[string]any{}), wire.New("state.failed", "", 6, map[string]any{})} {
 		if err = master.receive(ctx, peer, message); err != nil || peer.digest != prepared.digest {

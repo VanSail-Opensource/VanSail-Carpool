@@ -49,8 +49,8 @@ func (m *Master) syncPeer(ctx context.Context, peer *agentPeer, now time.Time) {
 	}
 	defer peer.syncMu.Unlock()
 	peer.mu.Lock()
-	force := peer.forceSync
-	peer.forceSync = false
+	force, advance := peer.forceSync, peer.forceAdvance
+	peer.forceSync, peer.forceAdvance = false, false
 	peer.mu.Unlock()
 	child, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
@@ -67,12 +67,13 @@ func (m *Master) syncPeer(ctx context.Context, peer *agentPeer, now time.Time) {
 	if err == nil {
 		// Queued prerequisites keep the ordinary reconciliation cadence; only
 		// explicit Sync callers require proof that publication has happened.
-		_, err = m.syncNodeLocked(child, peer, force)
+		_, err = m.syncNodeLocked(child, peer, force, !advance)
 	}
 	if err != nil {
 		if force {
 			peer.mu.Lock()
 			peer.forceSync = true
+			peer.forceAdvance = peer.forceAdvance || advance
 			peer.mu.Unlock()
 		}
 		if m.logger != nil {

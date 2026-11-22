@@ -170,8 +170,13 @@ func (m *Master) run() {
 // requestSync never compiles or waits on external work in the socket reader.
 // It wakes the existing reconciler rather than adding another execution queue.
 func (m *Master) requestSync(peer *agentPeer) {
+	m.queueSync(peer, true)
+}
+
+func (m *Master) queueSync(peer *agentPeer, advance bool) {
 	peer.mu.Lock()
 	peer.forceSync = true
+	peer.forceAdvance = peer.forceAdvance || advance
 	peer.mu.Unlock()
 	select {
 	case m.stateWake <- struct{}{}:

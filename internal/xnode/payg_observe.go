@@ -2,11 +2,12 @@ package xnode
 
 import (
 	"context"
+	"slices"
 )
 
 // Connection observations stay memory-only. The existing reconciler performs
 // the small idempotent debit; the WebSocket reader never awaits a node command.
-func (m *Master) observePAYG(ctx context.Context, peers []*agentPeer, reportSeconds int) error {
+func (m *Master) observePAYG(ctx context.Context, peers []*agentPeer, reportSeconds int, sampleSeconds ...int) error {
 	r, ok := m.service.paygRepository()
 	if !ok {
 		return nil
@@ -20,8 +21,11 @@ func (m *Master) observePAYG(ctx context.Context, peers []*agentPeer, reportSeco
 		}
 		m.mu.RLock()
 		live := m.live[peer.nodeID]
+		current := m.peers[peer.nodeID] == peer
 		m.mu.RUnlock()
-		if !freshSnapshot(live, m.service.now(), reportSeconds) || !live.report.Synchronized {
+		// Repeated reports do not renew an old activity sample. A replaced
+		// peer's recovery state cannot authorize observations from its successor.
+		if !current || !activityAvailable(live, m.service.now(), reportSeconds, sampleSeconds...) {
 			continue
 		}
 		connected := []int64{}
@@ -51,8 +55,22 @@ func (m *Master) observePAYG(ctx context.Context, peers []*agentPeer, reportSeco
 			}
 			ids = append(ids, a.ProxyUserID)
 		}
+		if len(ids) == 0 {
+			continue
+		}
+		// Account/coverage reads can outlive the activity that justified them.
+		// Recheck the latest authenticated evidence just before the debit.
+		now := m.service.now().UTC()
+		m.mu.RLock()
+		latest := m.live[peer.nodeID]
+		current = m.peers[peer.nodeID] == peer
+		m.mu.RUnlock()
+		if !current || !activityAvailable(latest, now, reportSeconds, sampleSeconds...) {
+			continue
+		}
+		ids = slices.DeleteFunc(ids, func(id int64) bool { return latest.report.Users.Connections[int(id)] <= 0 })
 		if len(ids) > 0 {
-			if err = r.ObserveXNodePAYGConnections(ctx, peer.nodeID, ids, m.service.now().UTC()); err != nil {
+			if err = r.ObserveXNodePAYGConnections(ctx, peer.nodeID, ids, now); err != nil {
 				return err
 			}
 		}

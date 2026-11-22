@@ -8,6 +8,10 @@ import (
 
 func frameErrorDetails(err error) []any {
 	var fields []any
+	var telemetry telemetryFrameFailure
+	if errors.As(err, &telemetry) {
+		fields = append(fields, "telemetry_reason", telemetry.reason)
+	}
 	var report trafficReportFailure
 	if errors.As(err, &report) {
 		fields = append(fields, "report_sequence", report.sequence, "sample_count", report.samples)

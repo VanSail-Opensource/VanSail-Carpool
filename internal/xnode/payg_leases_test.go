@@ -64,6 +64,7 @@ func TestPAYGLeasesExpireIndependentlyAndPreserveNativeCandidate(t *testing.T) {
 	r := &paygLeaseRepository{cacheTestRepository: base, accounts: []PAYGAccount{{ProxyUserID: 4503599627370496, NodeID: "node", PurchasedBytes: PAYGGB, UsedBytes: 1, UnitPriceMinor: 100, CreditBytes: PAYGGB - 1, CreditStartedAt: now}}}
 	service.repo = r
 	peer.paygReady = true
+	master.peers[peer.nodeID] = peer
 	master.live["node"] = liveSnapshot{receivedAt: now, report: wire.TelemetryReport{Ready: true, Synchronized: true}}
 	config := wire.Config{Users: []wire.User{{ID: 7}, {ID: int(r.accounts[0].ProxyUserID), AccountingPeriod: "payg-test"}}}
 	caps := []string{"traffic_periods_v1", "traffic_period_barriers_v1", "volatile_connection_controls_v1", "measured_user_rates", "authorization_expiry", "member_outbound_guards"}

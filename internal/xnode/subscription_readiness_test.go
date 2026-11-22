@@ -94,7 +94,7 @@ func TestFirstSyncRepairCanForceUnchangedConfigurationPublication(t *testing.T) 
 	}
 	peer.digest = prepared.digest
 	ctx := context.Background()
-	published, err := master.syncNodeLocked(ctx, peer, false)
+	published, err := master.syncNodeLocked(ctx, peer, false, false)
 	if err != nil || !published || repo.advances != 0 {
 		t.Fatal("unchanged background configuration did not reuse its revision", published, repo.advances, err)
 	}

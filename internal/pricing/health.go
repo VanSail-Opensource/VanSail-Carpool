@@ -2,7 +2,6 @@ package pricing
 
 import (
 	"context"
-	"math"
 	"sync"
 	"time"
 )
@@ -13,6 +12,7 @@ type Observation struct {
 	At                                                 time.Time
 	ReportedAt                                         time.Time
 	ReceivedAt                                         time.Time
+	ValidUntil                                         time.Time
 	Connected, Ready, Synchronized, Stale, Maintenance bool
 	CPU, Memory                                        float64
 	Complete                                           bool
@@ -29,6 +29,7 @@ type Health struct {
 	Since                                                time.Time `json:"since"`
 	warningAt, criticalAt, peakAt, offlineAt, recoveryAt time.Time
 	receivedAt                                           time.Time
+	validUntil                                           time.Time
 	highSamples                                          int
 }
 
@@ -67,93 +68,13 @@ func (r *HealthRegistry) Remove(node string) {
 	delete(r.capacityUnsafeUntil, node)
 }
 
-func persistent(start *time.Time, active bool, now time.Time, duration time.Duration) bool {
-	if !active {
-		*start = time.Time{}
-		return false
-	}
-	if start.IsZero() {
-		*start = now
-	}
-	return now.Sub(*start) >= duration
-}
-
-// Observe uses mean per-core utilization, sustained thresholds and five-minute recovery.
-func (r *HealthRegistry) Observe(o Observation) Health {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	old := r.nodes[o.NodeID]
-	h := old
-	h.NodeID = o.NodeID
-	if len(r.nodes) >= 4096 && old.NodeID == "" {
-		return Health{NodeID: o.NodeID, State: "TELEMETRY_STALE", At: o.At}
-	}
-	gap := o.At.Sub(old.At)
-	if gap > 2*time.Minute {
-		h.warningAt = time.Time{}
-		h.criticalAt = time.Time{}
-		h.peakAt = time.Time{}
-		h.recoveryAt = time.Time{}
-	}
-	alpha := 1 - math.Exp(-max(1, gap.Seconds())/60)
-	if old.At.IsZero() {
-		alpha = 1
-	}
-	h.CPU = old.CPU + alpha*(o.CPU-old.CPU)
-	h.Memory = o.Memory
-	h.At = o.At
-	h.ReportedAt = o.ReportedAt
-	state := "HEALTHY"
-	sampleAt := o.ReceivedAt
-	if sampleAt.IsZero() {
-		sampleAt = o.ReportedAt
-	}
-	h.receivedAt = sampleAt
-	if !sampleAt.Equal(old.receivedAt) {
-		if o.CPU >= 85 || o.Memory >= 92 {
-			h.highSamples++
-		} else {
-			h.highSamples = 0
-		}
-	}
-	warn := persistent(&h.warningAt, o.CPU >= 85, sampleAt, 3*time.Minute) && h.highSamples >= 3
-	critical := persistent(&h.criticalAt, o.CPU >= 95 || o.Memory >= 92, sampleAt, 2*time.Minute) && h.highSamples >= 3
-	peak := persistent(&h.peakAt, o.CPU >= 99, sampleAt, time.Minute) && h.highSamples >= 3
-	offline := persistent(&h.offlineAt, !o.Connected, o.At, time.Minute)
-	switch {
-	case o.Maintenance:
-		state = "MAINTENANCE"
-	case offline:
-		state = "OFFLINE"
-	case o.Stale || sampleAt.IsZero() || o.At.Sub(sampleAt) > time.Minute:
-		state = "TELEMETRY_STALE"
-	case critical || peak:
-		state = "OVERLOADED"
-	case !o.Complete || !o.Connected || !o.Ready || !o.Synchronized || warn || o.Memory >= 92:
-		state = "DEGRADED"
-	}
-	if state == "HEALTHY" && old.State != "HEALTHY" && old.State != "" {
-		if !persistent(&h.recoveryAt, true, o.At, 5*time.Minute) {
-			state = "RECOVERING"
-		}
-	} else if state != "HEALTHY" {
-		h.recoveryAt = time.Time{}
-	}
-	h.State = state
-	if old.State != state {
-		h.Since = o.At
-	}
-	r.nodes[o.NodeID] = h
-	return h
-}
-
 // Snapshot copies transient projections and treats old observations as unavailable.
 func (r *HealthRegistry) Snapshot(now time.Time) []Health {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	out := make([]Health, 0, len(r.nodes))
 	for _, h := range r.nodes {
-		if now.Sub(h.At) > time.Minute {
+		if now.Sub(h.At) > time.Minute || (h.State != "OFFLINE" && h.State != "MAINTENANCE" && !h.telemetryFresh(now)) {
 			h.State = "TELEMETRY_STALE"
 		}
 		out = append(out, h)
@@ -182,7 +103,7 @@ func (r *HealthRegistry) safe(nodes []string, now time.Time, ignoreCapacity bool
 			return false
 		}
 		h, ok := r.nodes[id]
-		if !ok || h.State != "HEALTHY" || now.Sub(h.At) > time.Minute {
+		if !ok || h.State != "HEALTHY" || now.Sub(h.At) > time.Minute || !h.telemetryFresh(now) {
 			return false
 		}
 	}

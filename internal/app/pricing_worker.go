@@ -17,6 +17,7 @@ func (a *Application) runPricingWorker(ctx context.Context) {
 	lastCleanup := time.Time{}
 	renewalStart := 0
 	paygCursor := ""
+	healthRecorder := &pricingHealthRecorder{}
 	run := func(budget time.Duration, work func(context.Context) error) {
 		bounded, cancel := context.WithTimeout(ctx, budget)
 		defer cancel()
@@ -27,9 +28,9 @@ func (a *Application) runPricingWorker(ctx context.Context) {
 	for {
 		now := time.Now().UTC()
 		run(time.Second, func(work context.Context) error {
-			if err := a.observePricingHealth(work, now); err != nil {
-				return err
-			}
+			return a.observePricingHealth(work, now, healthRecorder)
+		})
+		run(500*time.Millisecond, func(work context.Context) error {
 			return a.store.ObservePricingWorker(work, now)
 		})
 		// Renewal and PAYG preparation receive budgets independent of analytics.

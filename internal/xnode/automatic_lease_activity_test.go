@@ -2,6 +2,7 @@ package xnode
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -29,7 +30,7 @@ func TestAutomaticLeaseAcceptsDisabledFirewallSourcesAndFencesReplacedPeers(t *t
 		t.Fatal("disabled firewall source lost or duplicate report granted again", page)
 	}
 	m.peers[peer.nodeID] = &agentPeer{}
-	if err := m.receiveActivity(peer, makeReport("9.9.9.9", at)); err != ErrConflict || len(m.automaticLeases.leases) != 1 {
+	if err := m.receiveActivity(peer, makeReport("9.9.9.9", at)); !errors.Is(err, ErrConflict) || len(m.automaticLeases.leases) != 1 {
 		t.Fatal("replaced peer created a lease", err)
 	}
 	m.peers[peer.nodeID] = peer

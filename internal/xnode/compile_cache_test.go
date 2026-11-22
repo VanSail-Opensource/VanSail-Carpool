@@ -220,6 +220,7 @@ func BenchmarkXNodeSteadyState(b *testing.B) {
 			peers := make([]*agentPeer, nodes)
 			for i := range peers {
 				peer := &agentPeer{nodeID: fmt.Sprint(i), compiled: &compiledState{version: 1, config: config}}
+				master.peers[peer.nodeID] = peer
 				master.live[peer.nodeID] = liveSnapshot{hello: wire.AgentHello{Capabilities: capabilities}}
 				prepared, err := preparePeerWire(peer, config, capabilities)
 				if err != nil {

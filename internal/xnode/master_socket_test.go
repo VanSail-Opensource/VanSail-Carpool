@@ -80,6 +80,32 @@ func TestEnrollmentReconnectAndReplayUseAuthoritativeRevisions(t *testing.T) {
 	if err != nil || sequence != 1 {
 		t.Fatalf("replayed cursor=%d,error=%v", sequence, err)
 	}
+	observedAt := time.Now().UTC().Truncate(time.Millisecond)
+	telemetry := wire.TelemetryReport{AgentID: fixtureAgent, BootID: fixtureBoot, Time: observedAt, Ready: true, Synchronized: true, ConfigRevision: baseline.Revision}
+	if err = socket.WriteJSON(wire.New("telemetry.report", "", baseline.Revision, telemetry)); err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		nodes, readErr := f.master.MachineMetrics(ctx)
+		if readErr != nil {
+			t.Fatal(readErr)
+		}
+		if len(nodes) == 1 && nodes[0].ReportedAt != nil && nodes[0].ReportedAt.Equal(observedAt) {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("same-session telemetry was not accepted")
+		}
+		time.Sleep(time.Millisecond)
+	}
+	if err = socket.WriteJSON(wire.New("state.request", "", baseline.Revision, map[string]any{})); err != nil {
+		t.Fatal(err)
+	}
+	if replay := readFrame(t, socket, "state.sync"); replay.Revision != baseline.Revision || string(replay.Data) != string(baseline.Data) {
+		t.Fatalf("applied same-session request created a new baseline: revision=%d, want=%d", replay.Revision, baseline.Revision)
+	}
+
 	_ = socket.Close()
 	next := agentSocket(t, server, token, fixtureAgent, baseline.Revision)
 	if err = next.WriteJSON(wire.New("state.request", "", 0, map[string]any{})); err != nil {

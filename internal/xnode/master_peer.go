@@ -17,12 +17,14 @@ type agentPeer struct {
 	hourlySender          *hourlyGrantSender
 	firstSync             *appliedMemberConfig // protected by mu; membership of the exact sent revision
 	logger                *slog.Logger
-	computePool           bool         // immutable, negotiated protocol extension
-	trafficRetry          trafficRetry // mu; bounded retries for an unchanged rejected journal head
-	paygRecoveryAt        time.Time    // mu; bounded recovery requeue after interrupted attempts
-	paygReady             bool         // mu; true only after a committed journal barrier
-	paygRecoveryQueued    bool         // mu; durable recovery is coalesced per boot
-	paygOverlayKey        string       // syncMu; disposable authorization projection
+	computePool           bool                       // immutable, negotiated protocol extension
+	trafficRetry          trafficRetry               // mu; bounded retries for an unchanged rejected journal head
+	paygRecoveryAt        time.Time                  // mu; bounded recovery requeue after interrupted attempts
+	paygReady             bool                       // mu; true only after a committed journal barrier
+	paygRecoveryQueued    bool                       // mu; durable recovery is coalesced per boot
+	paygOverlayKey        string                     // syncMu; disposable authorization projection
+	paygPublished         map[int]publishedPAYGLease // syncMu; last sent full baseline on this socket
+	paygHeld              bool                       // syncMu; unchanged-only projection during a report gap
 	publicIP              string
 	compactTelemetry      bool                // immutable, negotiated upgrade header plus hello capability
 	reportDecoder         *wire.ReportDecoder // owned by the socket reader, nil for legacy peers
@@ -56,6 +58,7 @@ type agentPeer struct {
 	compiled              *compiledState           // protected by syncMu
 	compileFailure        *compileFailure          // protected by syncMu
 	wireState             *preparedWire            // protected by syncMu
+	forceAdvance          bool                     // mu; internal requests require a new baseline
 	forceSync             bool                     // protected by mu; coalesced by the existing reconciler
 	failedDigest          string                   // protected by mu
 	retryAt               time.Time                // protected by mu

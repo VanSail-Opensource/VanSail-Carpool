@@ -186,8 +186,27 @@ and independent. `payg_leases.go` applies the bounded authenticated clock offset
 to both renewable leases and prepaid expiry caps. No upstream protocol changes
 or persisted connection state are required. Hosted continuity regressions cover
 the byte boundary, prepaid clock cap and observation failure ordering.
-`payg_continuity_test.go` covers funded authorization across GiB credit boundaries,
-the bounded agent-clock prepaid cap and synchronization before observation errors.
+During a quiet reporting gap the panel leaves unchanged, already published PAYG
+leases alone on the same socket, bounded by their original `valid_until` and
+current funding. It never republishes or renews a lease using stale reports. If
+funding or authoritative configuration changes require a new baseline, stale
+PAYG users are omitted. On a panel/SQL outage or lost socket the running agent
+may continue previously authorized service only within its local validity and
+other limits; the panel cannot keep a stopped agent serving, extend that window,
+or guarantee an immediate remote revocation without a working connection.
+Reconnect starts with a fresh authoritative revision above the recovered cursor,
+including an explicit empty `users` array if nothing is authorized. A same-socket
+agent request may replay an unchanged revision only as an ACK-only operation
+when fresh telemetry confirms that exact revision is applied. This is not a new
+subscription-readiness proof. Durable traffic, hourly and command receipts are
+not inferred from or replaced by any telemetry report.
+
+Machine health uses authenticated report receipt and cadence. PAYG connection
+observations additionally require a fresh advancing negotiated activity sample
+(or fresh measured legacy activity) from the current ready, synchronized agent.
+Rejected telemetry is logged with a bounded reason code, not payload contents.
+Pricing consumes a raw machine-only projection; repeated identical incident
+states are persisted at most once per minute without throttling live health.
 
 Explicit `Master.Sync` succeeds only when the current target has been published.
 Pending upgrade confirmation, country staging, DDNS protection and activation

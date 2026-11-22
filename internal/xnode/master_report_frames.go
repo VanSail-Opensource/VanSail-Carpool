@@ -39,21 +39,24 @@ func readAgentFrame(socket *websocket.Conn, decoders ...*wire.ReportDecoder) (wi
 func decodeTelemetryFrame(peer *agentPeer, message wire.Message) (wire.TelemetryReport, error) {
 	var report wire.TelemetryReport
 	if message.Type == "telemetry.report" {
-		if wire.Decode(message.Data, &report) != nil || wire.ValidateActivity(report.Users) != nil {
-			return report, ErrInvalid
+		if wire.Decode(message.Data, &report) != nil {
+			return report, rejectTelemetry("legacy_decode", ErrInvalid)
+		}
+		if wire.ValidateActivity(report.Users) != nil {
+			return report, rejectTelemetry("activity_schema", ErrInvalid)
 		}
 		return report, nil
 	}
 	if !peer.compactTelemetry {
-		return report, ErrInvalid
+		return report, rejectTelemetry("compact_not_negotiated", ErrInvalid)
 	}
 	var compact wire.CompactTelemetryReport
 	if wire.Decode(message.Data, &compact) != nil {
-		return report, ErrInvalid
+		return report, rejectTelemetry("compact_decode", ErrInvalid)
 	}
 	report, err := wire.ExpandTelemetry(compact)
 	if err != nil {
-		return report, ErrInvalid
+		return report, rejectTelemetry("compact_schema", ErrInvalid)
 	}
 	return report, nil
 }

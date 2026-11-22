@@ -2,6 +2,7 @@ package xnode
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -52,13 +53,13 @@ func TestActivityFramesRequireNegotiationAndCannotReplaceNewerSamples(t *testing
 		older := at.Add(-time.Second)
 		report.Users.SampledAt = &older
 		report.Users.ActiveIPObservations[0].LastActive = older
-		if err := m.receive(context.Background(), peer, frame()); err != ErrConflict {
+		if err := m.receive(context.Background(), peer, frame()); !errors.Is(err, ErrConflict) {
 			t.Fatal("old activity sample replaced current state", compact, err)
 		}
 		report.Users.SampledAt = &at
 		report.Users.ActiveIPObservations[0].LastActive = at
 		m.peers["node"] = &agentPeer{}
-		if err := m.receive(context.Background(), peer, frame()); err != ErrConflict {
+		if err := m.receive(context.Background(), peer, frame()); !errors.Is(err, ErrConflict) {
 			t.Fatal("replaced peer refreshed activity", compact, err)
 		}
 	}

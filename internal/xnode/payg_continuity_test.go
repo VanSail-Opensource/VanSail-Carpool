@@ -16,6 +16,7 @@ func TestPAYGBlockBoundaryPreservesAuthorization(t *testing.T) {
 	a := PAYGAccount{ProxyUserID: 8, NodeID: peer.nodeID, PeriodID: "payg-continuous", BalanceMinor: 200, UnitPriceMinor: 100, CreditStartedAt: now}
 	r := &paygLeaseRepository{cacheTestRepository: base}
 	service.repo, peer.paygReady = r, true
+	master.peers[peer.nodeID] = peer
 	master.live[peer.nodeID] = liveSnapshot{receivedAt: now, report: wire.TelemetryReport{Ready: true, Synchronized: true}}
 	config := wire.Config{Users: []wire.User{{ID: 8, UUID: "stable-credential", AccountingPeriod: a.PeriodID}}}
 	caps := []string{"traffic_periods_v1", "traffic_period_barriers_v1", "volatile_connection_controls_v1", "measured_user_rates", "authorization_expiry", "member_outbound_guards"}
@@ -58,11 +59,12 @@ func TestPAYGObservationFailureCannotSkipNodeSynchronization(t *testing.T) {
 	service, base, peer, master := compileCacheFixture(t)
 	r := &paygObservationFailure{paygLeaseRepository: &paygLeaseRepository{cacheTestRepository: base}, failure: errors.New("observation unavailable")}
 	// Stop compilation before transport; the node read proves sync was attempted.
+	base.node.Enabled = true
 	base.failure = errors.New("compile deferred")
 	base.beforeRead = func() { r.syncAttempted = true }
 	service.repo, peer.paygReady = r, true
 	master.peers[peer.nodeID] = peer
-	master.live[peer.nodeID] = liveSnapshot{receivedAt: time.Now(), report: wire.TelemetryReport{Synchronized: true, Users: wire.UserMetrics{Connections: map[int]int{8: 1}}}}
+	master.live[peer.nodeID] = liveSnapshot{receivedAt: service.now(), hello: wire.AgentHello{Capabilities: []string{"sampled_activity_v1"}}, report: wire.TelemetryReport{Ready: true, Synchronized: true, Users: wire.UserMetrics{Connections: map[int]int{8: 1}}}}
 	if err := master.reconcile(context.Background()); !errors.Is(err, r.failure) || !r.syncAttempted {
 		t.Fatalf("observation skipped synchronization: attempted=%t error=%v", r.syncAttempted, err)
 	}

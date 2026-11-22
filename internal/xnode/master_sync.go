@@ -2,6 +2,7 @@ package xnode
 
 import (
 	"context"
+	"maps"
 	"slices"
 	"time"
 
@@ -77,13 +78,14 @@ func (m *Master) reconcile(ctx context.Context) error {
 	}
 	// Renew authorization before connection observations can consume the deadline
 	// or fail. Delivered traffic settles independently in the journal transaction.
-	return m.observePAYG(ctx, peers, global.Telemetry.ReportSeconds)
+	peers = slices.DeleteFunc(peers, func(peer *agentPeer) bool { return !native[peer.nodeID] })
+	return m.observePAYG(ctx, peers, global.Telemetry.ReportSeconds, global.Telemetry.SampleSeconds)
 }
 
 func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) error {
 	peer.syncMu.Lock()
 	defer peer.syncMu.Unlock()
-	published, err := m.syncNodeLocked(ctx, peer, force)
+	published, err := m.syncNodeLocked(ctx, peer, force, false)
 	if err != nil {
 		return err
 	}
@@ -95,11 +97,12 @@ func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) erro
 
 // Pending prerequisites are benign for background reconciliation, but explicit
 // callers must not proceed to native barriers before the target is published.
-func (m *Master) syncNodeLocked(ctx context.Context, peer *agentPeer, force bool) (published bool, err error) {
+func (m *Master) syncNodeLocked(ctx context.Context, peer *agentPeer, force, allowReplay bool) (published bool, err error) {
 	m.mu.RLock()
 	hello := m.live[peer.nodeID].hello
+	current := m.peers[peer.nodeID] == peer
 	m.mu.RUnlock()
-	if hello.UpgradePending {
+	if !current || hello.UpgradePending {
 		return false, nil
 	}
 	config, err := m.cachedConfiguration(ctx, peer, force)
@@ -117,9 +120,13 @@ func (m *Master) syncNodeLocked(ctx context.Context, peer *agentPeer, force bool
 	if err != nil {
 		return false, syncFailure("access", err)
 	}
-	prepared, err := preparePeerWire(peer, config, hello.Capabilities)
+	prepared, err := m.prepareAuthorizationWire(peer, config, hello.Capabilities, force)
 	if err != nil {
 		return false, syncFailure("wire", err)
+	}
+	if peer.paygHeld {
+		// This is the unchanged, already-published authorization; send nothing.
+		return true, nil
 	}
 	if ready, err = m.ddnsRouteProtectionReady(ctx, peer, prepared, hello.Capabilities); err != nil || !ready {
 		return false, err
@@ -139,14 +146,17 @@ func (m *Master) syncNodeLocked(ctx context.Context, peer *agentPeer, force bool
 		err = syncFailure("controls", m.syncControls(ctx, peer, controls, oldControls))
 		return err == nil, err
 	}
-	revision, err := m.service.repo.AdvanceXNodeRevision(ctx, peer.nodeID, previous)
-	if err != nil {
-		return false, err
-	}
 	normalized := prepared.config
 	normalized.Users = slices.Clone(prepared.config.Users)
 	for i := range normalized.Users {
 		normalized.Users[i].BlockNew = controls[normalized.Users[i].ID]
+	}
+	if allowReplay && same && maps.Equal(controls, oldControls) && m.canReplayAppliedState(peer, previous, normalized.Telemetry.ReportSeconds) {
+		return m.replayAppliedState(ctx, peer, normalized, previous)
+	}
+	revision, err := m.service.repo.AdvanceXNodeRevision(ctx, peer.nodeID, previous)
+	if err != nil {
+		return false, err
 	}
 	message := wire.New("state.sync", "", revision, normalized)
 	for _, user := range config.Users {
@@ -171,6 +181,7 @@ func (m *Master) syncNodeLocked(ctx context.Context, peer *agentPeer, force bool
 		peer.mu.Unlock()
 		return false, err
 	}
+	peer.rememberPublishedPAYG(normalized.Users)
 	if !config.Firewall.Enabled {
 		m.mu.Lock()
 		snapshot := m.live[peer.nodeID]

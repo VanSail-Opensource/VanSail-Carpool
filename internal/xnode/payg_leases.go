@@ -42,6 +42,7 @@ func paygCapabilities(caps []string) bool {
 // Called under peer.syncMu. Only authorization is copied; the validated native
 // document and its cached parser proof remain unchanged across lease renewals.
 func (m *Master) overlayPAYG(ctx context.Context, peer *agentPeer, config wire.Config, caps []string) (wire.Config, error) {
+	peer.paygHeld = false
 	r, ok := m.service.paygRepository()
 	if !ok {
 		return config, nil
@@ -79,12 +80,15 @@ func (m *Master) overlayPAYG(ctx context.Context, peer *agentPeer, config wire.C
 	}
 	m.mu.RLock()
 	live := m.live[peer.nodeID]
+	current := m.peers[peer.nodeID] == peer
 	m.mu.RUnlock()
 	peer.mu.Lock()
 	ready := peer.paygReady
 	queued := peer.paygRecoveryQueued && now.Sub(peer.paygRecoveryAt) < 30*time.Second
 	peer.mu.Unlock()
-	healthy := paygCapabilities(caps) && freshSnapshot(live, now, config.Telemetry.ReportSeconds) && live.report.Ready && live.report.Synchronized
+	usable := current && paygCapabilities(caps) && live.report.Ready && live.report.Synchronized && live.firewallPending == ""
+	healthy := usable && freshSnapshot(live, now, config.Telemetry.ReportSeconds)
+	hold := usable && !healthy && !live.receivedAt.IsZero()
 	if healthy && !ready && !queued {
 		raw, _ := json.Marshal(map[string]string{"nodeId": peer.nodeID, "bootId": peer.bootID})
 		if err = r.EnqueueOutbox(ctx, PAYGRecoveryJob, string(raw), now); err != nil {
@@ -98,21 +102,28 @@ func (m *Master) overlayPAYG(ctx context.Context, peer *agentPeer, config wire.C
 	until := paygLeaseUntil(now, live)
 	users := make([]wire.User, 0, len(config.Users))
 	hash := sha256.New()
-	_, _ = hash.Write([]byte(strconv.FormatInt(until.Unix(), 10)))
 	for _, u := range config.Users {
 		a, payg := byID[u.ID]
 		if !payg && !isPAYGPeriod(u.AccountingPeriod) {
 			users = append(users, u)
 			continue
 		}
-		if !payg || a.Disabled || !healthy || !ready || !a.Funded(now) {
+		if !payg || a.Disabled || !ready || !a.Funded(now) {
 			continue
 		}
 		validUntil := until
+		if !healthy {
+			lease, exists := peer.paygPublished[u.ID]
+			if !hold || !exists || lease.period != u.AccountingPeriod || !lease.until.After(paygAgentTime(now, live)) {
+				continue
+			}
+			validUntil = lease.until
+		}
 		creditUntil := paygAgentTime(a.CreditStartedAt.Add(PAYGWindow), live)
 		if a.BalanceMinor < a.UnitPriceMinor && a.HasCredit(now) && creditUntil.Before(validUntil) {
 			validUntil = creditUntil
 		}
+		peer.paygHeld = peer.paygHeld || !healthy
 		u.ValidUntil = &validUntil
 		_, _ = hash.Write([]byte("/" + strconv.Itoa(u.ID) + "@" + validUntil.Format(time.RFC3339Nano)))
 		users = append(users, u)

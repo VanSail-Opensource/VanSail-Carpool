@@ -18,10 +18,6 @@ func (m *Master) Metrics(ctx context.Context, summary ...bool) (MetricsSummary, 
 	if err != nil {
 		return MetricsSummary{}, err
 	}
-	native, err := m.service.nativeAvailability(ctx)
-	if err != nil {
-		return MetricsSummary{}, err
-	}
 	now := m.service.now()
 	paid, err := m.service.principalOwners(ctx)
 	if err != nil {
@@ -30,10 +26,11 @@ func (m *Master) Metrics(ctx context.Context, summary ...bool) (MetricsSummary, 
 	result := MetricsSummary{Nodes: []NodeMetrics{}, TotalNodes: len(nodes), FetchedAt: now}
 	var openTotal big.Int
 	openComplete, openNodes := true, 0
-	m.mu.RLock()
+	observations := m.captureNodeObservations(nodes)
 	for _, node := range nodes {
-		snapshot := m.live[node.ID]
-		_, connected := m.peers[node.ID]
+		live := observations[node.ID]
+		snapshot := live.snapshot
+		connected := live.peer != nil
 		// Only fresh, enabled native agents contribute to activity totals.
 		// Disconnected and disabled agents retain their transport metadata.
 		fresh := node.Enabled && connected && freshSnapshot(snapshot, now, global.Telemetry.ReportSeconds)
@@ -41,11 +38,11 @@ func (m *Master) Metrics(ctx context.Context, summary ...bool) (MetricsSummary, 
 		if len(summary) == 0 || !summary[0] {
 			item.Logs = append(item.Logs, snapshot.logs...)
 		}
-		item.Available = fresh && native[node.ID] && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds, global.Telemetry.SampleSeconds)
-		item.TelemetryAvailable = fresh && native[node.ID]
+		item.Available = fresh && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds, global.Telemetry.SampleSeconds)
+		item.TelemetryAvailable = fresh
 		if node.Enabled {
 			openNodes++
-			if item.Available && m.peers[node.ID].openConnections {
+			if item.Available && live.peer.openConnections {
 				var count big.Int
 				for _, value := range snapshot.report.Users.TotalConnections {
 					count.Add(&count, big.NewInt(int64(value)))
@@ -101,7 +98,6 @@ func (m *Master) Metrics(ctx context.Context, summary ...bool) (MetricsSummary, 
 		}
 		result.Nodes = append(result.Nodes, item)
 	}
-	m.mu.RUnlock()
 	if openComplete && openNodes > 0 {
 		value := openTotal.String()
 		result.TotalConnections = &value
