@@ -126,7 +126,7 @@ recovery error; retry follows the same session-driven transition as the Mini App
 `HourlyAudit.vue`, `hourly-audit.ts`, `hourly-data.ts` and `hourly-audit.html`
 mount the actual hourly member/admin components against synthetic API state.
 Open `/fixtures/hourly-audit.html`; add `admin`, `light`, `zh`, `slow=2000`,
-`error`, `empty`, `legacy`, `paused`, `active`, `suspended`, `cooldown`,
+`error`, `empty`, `legacy`, `paused`, `active`, `suspended`,
 `activation`, `incompatible`, `extra`, `price-rise`, `no-extra`, `pending`,
 `conflict`, `queue`, `failed`, `first` or `catalog` to exercise the corresponding
 state. `first` removes enrollment and usage so the never-charged layout shows

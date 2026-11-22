@@ -54,7 +54,6 @@
       "extraBlock": "+1 GB",
       "reduced": "Reduced speed",
       "shared": "Shared across squads",
-      "cooldown": "Cooldown · no refund",
       "reset": "Allowance resets · extras expire",
       "traffic": {
         "fund": "Fund once. Start using.",
@@ -111,8 +110,8 @@
         "optOutDetail": "Turning off auto-buy retains today’s purchased credit.",
         "optOutPoints": { "first": "Auto-buy off", "second": "No new extras", "third": "Paid remainder stays" },
         "disable": "Stop the squad now",
-        "disableDetail": "Access ends immediately. Unused prepaid time is not refunded, including an unfinished minimum period.",
-        "disablePoints": { "first": "No prepaid-time refund", "second": "Reactivation cooldown", "third": "Other squads keep credit" },
+        "disableDetail": "Access ends immediately. Unused prepaid time is not refunded. Re-enable anytime by confirming current terms and prepaying the minimum again.",
+        "disablePoints": { "first": "No prepaid-time refund", "second": "Re-enable · new prepayment", "third": "Other squads keep credit" },
         "midnight": "00:00 UTC → new allowance",
         "midnightDetail": "Unused extras expire without refund.",
         "midnightPoints": { "first": "Daily pool resets", "second": "Extras expire", "third": "Disabled stays off" }

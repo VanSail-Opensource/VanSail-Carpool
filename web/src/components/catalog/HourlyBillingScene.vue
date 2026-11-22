@@ -26,7 +26,7 @@ const note = computed(() => props.step === 0 ? 'enableQuote' : props.step === 2 
     </div>
     <HourlyDemoAllowanceGraph :remaining="frame.remaining" :enabled="frame.enabled" :extra="frame.extra" :reduced="frame.reduced" :phase="scenePhase" :moving="[3, 4, 6, 7].includes(step)" :reduced-motion="reducedMotion" />
     <div class="hourly-scene__extra" :class="{ 'is-emphasized': emphasizeExtra }"><UIcon name="i-ph-rocket-launch-bold" /><span>{{ t('payg.demo.autoBuy') }}</span><span class="hourly-scene__toggle" :class="{ 'is-on': frame.autoBuy }"><i><UIcon :name="frame.autoBuy ? 'i-ph-check-bold' : 'i-ph-minus-bold'" /></i></span></div>
-    <div class="hourly-scene__note"><UIcon :name="step === 8 ? 'i-ph-hourglass-bold' : 'i-ph-info-bold'" /><span>{{ t(`payg.demo.${note}`) }}</span></div>
+    <div class="hourly-scene__note"><UIcon name="i-ph-info-bold" /><span>{{ t(`payg.demo.${note}`) }}</span></div>
   </div>
 </template>
 

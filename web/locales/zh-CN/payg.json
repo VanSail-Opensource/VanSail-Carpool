@@ -54,7 +54,6 @@
       "extraBlock": "+1 GB",
       "reduced": "降速使用",
       "shared": "各车队共享",
-      "cooldown": "冷却中 · 不退款",
       "reset": "额度重置 · 加购到期",
       "traffic": {
         "fund": "充值后，即可使用",
@@ -111,8 +110,8 @@
         "optOutDetail": "关闭自动加购仍保留当天已购流量。",
         "optOutPoints": { "first": "关闭加购", "second": "不再购买新块", "third": "已购余量保留" },
         "disable": "立即停用车队",
-        "disableDetail": "访问立即停止，包括尚未结束的最低启用时段在内，未使用的预付时长均不退款。",
-        "disablePoints": { "first": "预付时长不退款", "second": "再次启用有冷却", "third": "其他车队保留余量" },
+        "disableDetail": "访问立即停止，未使用的预付时长不退款。可随时重新启用，但须确认当前条款并重新预付最低启用时段的费用。",
+        "disablePoints": { "first": "预付时长不退款", "second": "重新启用须再次预付", "third": "其他车队保留余量" },
         "midnight": "00:00 UTC，额度重置",
         "midnightDetail": "未用加购流量到期，不退款。",
         "midnightPoints": { "first": "每日额度刷新", "second": "额外流量到期", "third": "已停用不重启" }

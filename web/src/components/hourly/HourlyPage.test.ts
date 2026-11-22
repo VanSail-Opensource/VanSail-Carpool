@@ -125,12 +125,14 @@ describe('hourly consent and access controls', () => {
     wrapper.unmount()
   })
 
-  it('warns about the paid hour and exact cooldown before voluntary disable', async () => {
+  it('explains no refund and fresh prepayment before voluntary disable', async () => {
     const wrapper = setup('active')
     wrapper.findComponent(HourlySquadCard).vm.$emit('disable')
     await flushPromises()
     expect(state.disable).not.toHaveBeenCalled()
-    expect(wrapper.get('[data-confirm]').text()).toContain('24 hours')
+    expect(wrapper.get('[data-confirm]').text()).toContain('re-enable right away')
+    expect(wrapper.get('[data-confirm]').text()).toContain('confirming the current terms and prepaying')
+    expect(wrapper.get('[data-confirm]').text()).toContain('00:00 UTC')
     expect(wrapper.get('[data-confirm]').text()).toContain('not refunded')
     await wrapper.get('[data-confirm] button').trigger('click')
     expect(state.disable).toHaveBeenCalledWith(state.value.value!.squads[0])

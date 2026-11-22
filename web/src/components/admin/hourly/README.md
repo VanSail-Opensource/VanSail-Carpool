@@ -14,7 +14,8 @@ threshold, matching the server's effective-hours rule. The offers list excludes
 pay-as-you-go squads (`billingMode: "payg"`), because Charge by traffic sells
 independently per GB and never participates in hourly access.
 
-Policy writes carry the exact loaded ciphertext-fingerprint version; offer
+Policy writes omit the deprecated cooldown field and carry the exact loaded
+ciphertext-fingerprint version; offer
 writes carry the exact revision, with zero creating an unconfigured offer.
 Conflicts retain drafts and require a deliberate refresh/review. The API server
 remains authoritative for money bounds, activation eligibility and concurrency.

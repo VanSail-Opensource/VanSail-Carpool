@@ -116,10 +116,10 @@ so no hourly call can fire.
 `HourlySquadCard.vue` reuses the catalog `SquadPricingCard` presentation, so
 Charge by hour squads share the Charge by traffic card geometry, profile facts,
 price treatment and status slot while adding paid-through time, activation
-eligibility, funding suspension and cooldown details. Enable/disable is a compact
+eligibility and funding suspension details. Enable/disable is a compact
 44px icon control sitting at the right of the paid-through/eligibility line
 rather than a footer row; enable is green, disable is red, the active `Enabled`
-and other enrollment badges are omitted, and a blocked enable (cooldown, insufficient balance or other
+and other enrollment badges are omitted, and a blocked enable (insufficient balance or other
 ineligibility) is grey with a prohibit icon.
 
 When `reasonCode === "capacity"` (shared hourly/fixed-term seat stock is full)
@@ -141,6 +141,9 @@ proration, stock, activation codes, wallet locking and native application. The
 existing catalog `SquadActivationDialog.vue` collects a required squad code.
 Voluntary disable and automatic extra purchases require the existing confirmation
 dialog; the latter shows the accepted decimal-GB price and midnight expiry.
+Disable stops access without refunding unused prepaid time. An eligible member
+can immediately re-enable after confirming the current quote and minimum upfront
+charge. Both actions use durable receipts and respect server eligibility.
 Pending receipts remain visible and block concurrent mutations. No financial
 state is persisted in browser storage and no client-side estimate authorizes use.
 
@@ -162,7 +165,7 @@ editor is independent in `../admin/hourly` and uses no Telegram controls.
 
 Open `/fixtures/hourly-audit.html` with the dev server. Existing switches keep
 their meaning (`admin`, `light`, `zh`, `slow`, `error`, `empty`, `paused`,
-`active`, `suspended`, `cooldown`, `activation`, `incompatible`, `extra`,
+`active`, `suspended`, `activation`, `incompatible`, `extra`,
 `price-rise`, `no-extra`, `pending`, `conflict`, `queue`, `failed`, `first`,
 `catalog`, `legacy`). New switches:
 
@@ -217,7 +220,7 @@ changed-policy consent, unavailable purchases and legacy blocking. The browser
 preference scenarios live in `browser-hourly-preferences.mjs` and are included by
 `browser-hourly-recovery.mjs`; they cover Settings and inline controls at the
 selected desktop/mobile sizes without mutating a production account. Hosted
-recovery also contrasts recovery exhaustion with an equal ordinary open credit.
+recovery also contrasts recovery exhaustion with an equal ordinary open credit and verifies immediate re-enable requires fresh consent and a new upfront charge.
 The helper and graph select hourly, settings and member-design browser scopes.
 
 `HourlyAccountingStatus.test.ts` preserves the administrator accounting-status projection and tests unknown/stale reservation detail independently of the concise member summary.

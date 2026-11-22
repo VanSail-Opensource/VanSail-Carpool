@@ -6,6 +6,21 @@ const mutations = page => page.evaluate(() => globalThis.__hourlyAudit.calls.fil
 
 export async function hourlyRecoveryScenarios(scenario, size) {
   await hourlyPreferenceScenarios(scenario, size)
+  await scenario(size, 'hourly-admin-policy-write', 'hourly-audit.html?admin', async page => {
+    const save = page.getByRole('button', { name: 'Save policy', exact: true })
+    await save.waitFor()
+    assert.equal(await page.locator('input[name="cooldownSeconds"]').count(), 0)
+    await save.click()
+    await page.getByText('Configuration saved.', { exact: true }).waitFor()
+    const writes = await mutations(page)
+    assert.equal(writes.length, 1)
+    assert.equal(writes[0].path, '/api/v1/admin/hourly-policy')
+    assert.equal(writes[0].method, 'PUT')
+    assert.equal(writes[0].body.version, 'fixture-policy-1')
+    assert.equal(writes[0].body.policy.activationHours, 168)
+    assert.equal(Object.hasOwn(writes[0].body.policy, 'cooldownSeconds'), false)
+    assert.equal(await page.evaluate(() => globalThis.__hourlyAudit.fixture.policy.policy.cooldownSeconds), 0)
+  })
   await scenario(size, 'hourly-recovery-exhausted', 'hourly-audit.html?active&recovery-exhausted&extra', async (page, capture) => {
     const meter = page.locator('[data-hourly-throttle]')
     await meter.waitFor()
@@ -106,7 +121,7 @@ export async function hourlyRecoveryScenarios(scenario, size) {
     assert.equal(writes[0].body.offerRevision, '2')
     assert.equal(writes[0].body.activationCode, 'reviewed-code')
   })
-  await scenario(size, 'hourly-enrollment-consent', 'hourly-audit.html?active', async (page, capture) => {
+  await scenario(size, 'hourly-enrollment-consent', 'hourly-audit.html?active&offer-hours', async (page, capture) => {
     await page.getByRole('switch', { name: /^Hourly access for /, checked: true }).click()
     await page.getByRole('dialog').waitFor()
     await capture('reviewed')
@@ -122,6 +137,23 @@ export async function hourlyRecoveryScenarios(scenario, size) {
     const writes = await mutations(page)
     assert.equal(writes.length, 1)
     assert.equal(writes[0].path, '/api/v1/hourly/enrollments/replacement-enrollment/disable')
+
+    const toggle = page.getByRole('switch', { name: 'Hourly access for Tokyo Direct', exact: true })
+    await page.getByRole('switch', { name: 'Hourly access for Tokyo Direct', exact: true, checked: false }).waitFor()
+    assert.equal(await page.evaluate(() => globalThis.__hourlyAudit.fixture.view.balance.minor), '100000', 'unused prepaid time was refunded')
+    await toggle.click()
+    const freshTerms = await page.getByRole('dialog').innerText()
+    assert.match(freshTerms, /minimum of 24 hours/)
+    assert.match(freshTerms, /1\.20 TXB is debited upfront/)
+    assert.equal((await mutations(page)).length, 1)
+    await page.getByRole('button', { name: 'Confirm and enable', exact: true }).click()
+    await page.getByRole('switch', { name: 'Hourly access for Tokyo Direct', exact: true, checked: true }).waitFor()
+    const after = await mutations(page)
+    assert.equal(after.length, 2)
+    assert.equal(after[1].path, '/api/v1/hourly/activate')
+    assert.deepEqual(after[1].body, { groupId: 'group-0', policyVersion: 'fixture-policy-1', offerRevision: '1' })
+    assert.notEqual(after[1].key, after[0].key)
+    assert.equal(await page.evaluate(() => globalThis.__hourlyAudit.fixture.view.balance.minor), '99880')
   })
   await scenario(size, 'hourly-retained-credit', 'hourly-audit.html?active&out-of-allowance&extra-off', async (page, capture) => {
     await page.getByRole('progressbar', { name: 'Full-speed traffic usage', exact: true }).waitFor()

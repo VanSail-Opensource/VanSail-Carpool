@@ -38,7 +38,7 @@ const squads = [
   { id: 'squad-singapore', groupId: 'group-singapore', name: 'Singapore Transit', description: '', profile: null, price: money('500'), visible: true, activationRequired: false, accessibleNodes: [], upstreamPresent: true, stockHeldByCurrentUser: false, createdAt: iso(-86_400_000), updatedAt: iso(0) },
 ]
 const hourlyView = {
-  policy: { version: 'fixture-policy-1', policy: { salesEnabled: true, dailyAllowanceBytes: '10000000000', reducedRateBytesPerSecond: '1250000', extraGBPriceTXBMinor: '125', activationHours: 168, cooldownSeconds: 86400 } },
+  policy: { version: 'fixture-policy-1', policy: { salesEnabled: true, dailyAllowanceBytes: '10000000000', reducedRateBytesPerSecond: '1250000', extraGBPriceTXBMinor: '125', activationHours: 168, cooldownSeconds: 0 } },
   balance: money('2500'),
   extraPreference: { extraEnabled: true, acceptedExtraPriceTXBMinor: '125', updatedAt: iso(0) },
   usage: {

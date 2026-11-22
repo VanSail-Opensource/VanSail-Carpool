@@ -31,7 +31,6 @@ const enableDescription = computed(() => activationQuote.value ? t('hourly.enabl
   name: activating.value?.squad.name ?? '', hours: activationQuote.value.hours,
   price: txbInputFromMinor(activationQuote.value.minor), rate: txbInputFromMinor(activationQuote.value.rateMinor),
 }) : '')
-const cooldownHours = computed(() => String((data.value?.policy.policy.cooldownSeconds ?? 86400) / 3600))
 const hasHourlyHistory = computed(() => {
   const snapshot = data.value
   if (!snapshot) return false
@@ -136,7 +135,7 @@ async function disable(): Promise<void> {
     <OperationStatusNotice :receipt="hourly.operation.receipt.value" :error="hourly.operation.error.value" :checking="hourly.operation.checking.value" :message="operationMessage" @refresh="hourly.operation.refresh" />
     <ConfirmDialog v-model:open="enableOpen" :title="t('hourly.enableTitle')" :description="enableDescription" :confirm-label="t('hourly.enableConfirm')" :busy="hourly.submitting.value" :error="actionError" @confirm="confirmEnable" />
     <SquadActivationDialog v-model:open="codeOpen" :squad="activating?.squad ?? null" :busy="hourly.submitting.value" :error="actionError" @submit="submitCode" @cancel="activating = null" />
-    <ConfirmDialog v-model:open="disableOpen" :title="t('hourly.disableTitle')" :description="t('hourly.disableWarning', { hours: cooldownHours })" :confirm-label="t('hourly.disable')" :busy="hourly.submitting.value" :error="actionError" danger @confirm="disable" />
+    <ConfirmDialog v-model:open="disableOpen" :title="t('hourly.disableTitle')" :description="t('hourly.disableWarning')" :confirm-label="t('hourly.disable')" :busy="hourly.submitting.value" :error="actionError" danger @confirm="disable" />
     <ConfirmDialog v-model:open="extra.open.value" :title="t('hourly.extraTitle')" :description="t('hourly.extraWarning', { price: txbInputFromMinor(data?.policy.policy.extraGBPriceTXBMinor ?? '0') })" :confirm-label="t('hourly.extraConfirm')" :busy="hourly.submitting.value" :error="extra.error.value" @confirm="extra.confirm" />
   </section>
 </template>

@@ -98,6 +98,8 @@ export async function demonstrationScenarios(scenario, size) {
     assert.equal(await page.locator('.hourly-scene').getAttribute('data-demo-balance'), '6.80', 'opting out changed the existing purchase')
     await chapter(page, 8)
     assert.equal(await page.locator('.hourly-scene').getAttribute('data-demo-enabled'), 'false')
+    assert.equal(await page.locator('.hourly-scene').getAttribute('data-demo-balance'), '6.80')
+    assert.match(await page.locator('.demo-player__detail').innerText(), /Re-enable anytime by confirming current terms and prepaying the minimum again/)
     await chapter(page, 9)
     assert.equal(await page.locator('.hourly-scene').getAttribute('data-demo-enabled'), 'false')
     assert.deepEqual(await writes(page), [])

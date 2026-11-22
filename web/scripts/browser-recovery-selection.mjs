@@ -21,6 +21,7 @@ const rules = [
   [/^web\/src\/components\/admin\/(?:AdminBackups|useAdminBackups)/, ['backups']],
   [/^web\/src\/components\/admin\/(?:AdminCoupons|useAdminCoupons)/, ['admin-coupons']],
   [/^web\/src\/components\/admin\/users\/(?:AdminUserPM|useAdminUserPM)/, ['pm']],
+  [/^web\/src\/components\/admin\/hourly\//, [...adminBrowserScopes, 'hourly']],
   [/^web\/src\/components\/admin\//, adminBrowserScopes],
   [/^web\/src\/components\/(?:hourly|settings)\//, ['hourly', 'settings']],
   [/^web\/src\/components\/(?:catalog|squad-addition|squad-profile)\//, ['checkout', 'purchase', 'hourly', 'demonstrations']],

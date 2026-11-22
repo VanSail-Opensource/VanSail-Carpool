@@ -81,7 +81,7 @@ the rolling 72-hour window triggers the first binary 1 GiB block, additional
 usage buys whole blocks, a reconnect retains unexpired credit, and unused
 credit expires 72 hours after the latest purchase without an idle debit. Funding, per-node credit and Usage Breakdown are separate short chapters.
 The hourly demonstration covers minimum-duration prepayment, renewal after paid coverage ends, shared daily allowance, reduced speed, consented decimal-GB extras,
-voluntary disable/cooldown and the UTC-day reset. Eligibility, explicit consent and confirmed funding are separate steps; opting out preserves purchased credit. These visuals explain the
+voluntary disable without a prepaid-time refund, and the UTC-day reset. Eligible members can re-enable immediately with fresh consent and a new upfront charge. Eligibility, explicit consent and confirmed funding are separate steps; opting out preserves purchased credit. These visuals explain the
 server rules; they never calculate a member quote or authorize access.
 
 Hidden PAYG squads are omitted from Explore/subscription output while server

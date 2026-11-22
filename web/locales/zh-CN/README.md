@@ -10,7 +10,7 @@
   estimates, unallocated charges, chart controls and historical coverage copy.
 
 - `hourly.json` owns localized member/admin hourly terms, exact units, eligibility,
-  consent, paid boundaries, cooldowns, paused sales and policy-version conflicts.
+  consent, paid boundaries, paused sales and policy-version conflicts.
 
 - `browser.json` owns localized public entrance, browser preferences, access-link and session copy.
 

@@ -32,7 +32,6 @@
     "paidThrough": "已付费至 {at}",
     "requiredBalance": "预付 {price}，启用 {hours} 小时。",
     "capacityContinuity": "你当前的访问会继续支付下一小时费用；座位已满时，仅拒绝新的启用。",
-    "cooldownUntil": "可于 {at} 后再次启用。",
     "activate": "启用",
     "disable": "停用",
     "toggleFor": "{name} 的小时计费访问",
@@ -40,7 +39,7 @@
     "enableConfirm": "确认并启用",
     "enableWarning": "{name} 最低启用 {hours} 小时。访问准备就绪后，将按每小时 {rate} TXB 一次性预扣 {price} TXB，支付这段时长。付费时段从启用成功时开始；结束后，只要保持启用，即使空闲也会继续按小时续费。提前停用将立即停止访问，未使用的预付时长不予退款。",
     "disableTitle": "停用这个小队？",
-    "disableWarning": "访问权限将立即停止，包括最低启用时段在内的未使用预付时长不予退款。停用后须等待 {hours} 小时才能重新启用该小队。未用完的额外流量仅保留至 UTC 00:00。",
+    "disableWarning": "访问权限将立即停止，包括最低启用时段在内的未使用预付时长不予退款。若符合启用条件，你可立即重新启用，但须确认当前条款并重新预付最低启用时段的费用。未用完的额外流量仅保留至 UTC 00:00。",
     "notReady": "该小队暂不满足小时计费启用条件。",
     "loadFailed": "无法加载小时计费信息。",
     "actionFailed": "尚无法确认此次变更。请刷新状态后再尝试。",
@@ -52,7 +51,6 @@
     "result": {
       "HOURLY_LEGACY_ACTIVE": "固定期限套餐尚未结束，暂不能启用小时计费。现有套餐仍可续费。",
       "HOURLY_CAPACITY": "小时计费服务已达到账户容量上限，未收取启用费用。",
-      "HOURLY_COOLDOWN": "该小队仍处于停用冷却期。",
       "HOURLY_TERMS_CHANGED": "已确认的政策、价格或账户状态已变更。请刷新后再尝试。",
       "ACCOUNT_GENERATION_SUPERSEDED": "此请求属于较早的账户状态，现已结束。请刷新账户后再继续。",
       "HOURLY_ACTIVATION_CANCELLED": "未付费的启用请求已取消，未开通小时计费权限。"
@@ -60,7 +58,6 @@
     "status": { "active": "生效中", "preparing": "应用中", "funding_suspended": "余额不足", "disabled": "已停用", "closed": "已结束" },
     "reasons": {
       "insufficient_balance": "余额不足以支付最低启用时段的预付费用。",
-      "cooldown": "该小队仍处于停用冷却期。",
       "legacy_blocked": "固定期限套餐尚未结束，暂不能启用小时计费。",
       "sales_paused": "已暂停新的小时计费启用。",
       "unavailable": "该小队暂不可用。",
@@ -82,8 +79,6 @@
       "extraHint": "每份为 1,000,000,000 字节。设为零则停止新的额外流量购买。额度于 UTC 00:00 到期。",
       "activationHours": "默认最低启用时长 · 小时",
       "activationHint": "小队继承默认值时使用。启用时预付小时价格 × 最低小时数，提前停用不退还未使用时长费用；之后按小时续费。",
-      "cooldown": "主动停用冷却期 · 秒",
-      "cooldownHint": "默认为 86,400 秒（24 小时）。余额不足导致的停用不会触发冷却期。",
       "savePolicy": "保存政策",
       "saved": "配置已保存。",
       "offers": "小队小时价格",
@@ -111,7 +106,6 @@
         "squad": "小队",
         "price": "小时价格",
         "paidThrough": "已付费至",
-        "cooldown": "冷却至",
         "empty": "该成员没有小时计费启用记录。",
         "balance": "小时计费钱包",
         "extraPreference": "自动额外流量",
@@ -121,7 +115,7 @@
         "usageFacts": "已用 {used}，共 {total}",
         "offerClosed": "销售已关闭",
         "disableTitle": "停用此小时计费小队？",
-        "disableHint": "{name} 的访问将立即停止。未使用的预付时长不予退款，且不会对成员施加冷却期。",
+        "disableHint": "{name} 的访问将立即停止。未使用的预付时长不予退款。若符合启用条件，成员可立即重新启用，但须确认当前条款并重新预付最低启用时段的费用。",
         "disableConfirm": "停用小队",
         "disableQueued": "停用请求已排队，操作 ID：{id}。",
         "actionFailed": "无法提交小时计费停用请求。"

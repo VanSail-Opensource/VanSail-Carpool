@@ -9,7 +9,7 @@
   `generated.ts` registers both language domains.
 
 - `../../locales/*/hourly.json` owns Charge by hour member/admin terms, consent,
-  eligibility, cooldown and conflict copy; `generated.ts` registers both locales.
+  eligibility, enable/disable consent and conflict copy; `generated.ts` registers both locales.
 
 - `generated.ts` merges generated locale-domain modules.
 - `../../locales/*/recovery.json` owns the global render-recovery boundary copy.

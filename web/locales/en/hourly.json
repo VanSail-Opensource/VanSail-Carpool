@@ -32,7 +32,6 @@
     "paidThrough": "Paid through {at}",
     "requiredBalance": "Upfront: {price} for {hours} hours.",
     "capacityContinuity": "Your current access keeps paying the next hour. Only new activations are refused while seats are full.",
-    "cooldownUntil": "Can be enabled again after {at}.",
     "activate": "Enable",
     "disable": "Disable",
     "toggleFor": "Hourly access for {name}",
@@ -40,7 +39,7 @@
     "enableConfirm": "Confirm and enable",
     "enableWarning": "Enable {name} for a minimum of {hours} hours. When access is ready, {price} TXB is debited upfront for that duration at {rate} TXB/hour. The paid period starts when activation succeeds. After it ends, hourly renewal continues while enabled, including when idle. Disabling early stops access immediately; unused prepaid time is not refunded.",
     "disableTitle": "Disable this squad?",
-    "disableWarning": "Access stops immediately. Unused prepaid time, including the minimum enable period, is not refunded. You must wait {hours} hours before enabling this squad again. Unused extra traffic credit is retained only until 00:00 UTC.",
+    "disableWarning": "Access stops immediately. Unused prepaid time, including the minimum enable period, is not refunded. If eligible, you can re-enable right away by confirming the current terms and prepaying the new minimum period. Unused extra traffic credit is retained only until 00:00 UTC.",
     "notReady": "This squad is not ready for hourly activation.",
     "loadFailed": "Hourly access could not be loaded.",
     "actionFailed": "This change could not be confirmed. Refresh the status before trying again.",
@@ -52,7 +51,6 @@
     "result": {
       "HOURLY_LEGACY_ACTIVE": "A fixed-term purchase blocks hourly activation. Existing renewals remain available.",
       "HOURLY_CAPACITY": "The hourly service has reached its account capacity. No activation charge was made.",
-      "HOURLY_COOLDOWN": "This squad is still in its disable cooldown.",
       "HOURLY_TERMS_CHANGED": "The reviewed policy, price or account state changed. Refresh before trying again.",
       "ACCOUNT_GENERATION_SUPERSEDED": "This request belongs to an earlier account state and has ended. Refresh the account before continuing.",
       "HOURLY_ACTIVATION_CANCELLED": "The unpaid activation was cancelled. No hourly access was enabled."
@@ -60,7 +58,6 @@
     "status": { "active": "Active", "preparing": "Applying", "funding_suspended": "Insufficient funds", "disabled": "Disabled", "closed": "Ended" },
     "reasons": {
       "insufficient_balance": "Your balance cannot cover the upfront cost of the minimum enable period.",
-      "cooldown": "This squad is in its disable cooldown.",
       "legacy_blocked": "A fixed-term purchase blocks hourly activation.",
       "sales_paused": "New hourly activations are paused.",
       "unavailable": "This squad is temporarily unavailable.",
@@ -82,8 +79,6 @@
       "extraHint": "One block is 1,000,000,000 bytes. Zero disables new extra purchases. Credit expires at 00:00 UTC.",
       "activationHours": "Default minimum enable time · hours",
       "activationHint": "Used when a squad inherits the default. Enabling prepays hourly price × minimum hours. Early disable does not refund unused time; subsequent renewals are hourly.",
-      "cooldown": "Voluntary disable cooldown · seconds",
-      "cooldownHint": "Default 86,400 seconds (24 hours). Funding suspension does not start a cooldown.",
       "savePolicy": "Save policy",
       "saved": "Configuration saved.",
       "offers": "Hourly squad offers",
@@ -111,7 +106,6 @@
         "squad": "Squad",
         "price": "Hourly price",
         "paidThrough": "Paid through",
-        "cooldown": "Cooldown until",
         "empty": "This member has no hourly enrollments.",
         "balance": "Hourly wallet",
         "extraPreference": "Automatic extra traffic",
@@ -121,7 +115,7 @@
         "usageFacts": "{used} of {total}",
         "offerClosed": "Offer closed",
         "disableTitle": "Disable this hourly squad?",
-        "disableHint": "Access for {name} stops immediately. Unused prepaid time is not refunded and no member cooldown is applied.",
+        "disableHint": "Access for {name} stops immediately. Unused prepaid time is not refunded. If eligible, the member can re-enable right away by confirming the current terms and prepaying the new minimum period.",
         "disableConfirm": "Disable squad",
         "disableQueued": "Disable queued as operation {id}.",
         "actionFailed": "The hourly disable could not be queued."

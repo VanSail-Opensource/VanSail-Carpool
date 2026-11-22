@@ -8,7 +8,7 @@
 - `AdminManualEntitlementDialog.vue` creates a zero-charge, audited fixed-term grant with explicit combo, term, bytes, cadence, optional squads and reason; 409 overlaps keep the draft visible with localized conflict copy.
 - `AdminOperationResolutionDialog.vue` requests audited parent-receipt repair from retained completed item evidence. It requires an explicit outcome and never defaults to success. `operationResolution.ts` limits the entrance to entitlement edits, credited-refund synchronization, combo replacement, bulk extension and historical outage synchronization; the server validates actual evidence. Unsupported domain workflows show reconciliation guidance. `operationResolution.test.ts` checks both permitted kinds and denied payment/member/native/Emby/restriction kinds.
 - `AdminUserEntitlements.vue` presents the fixed-term plan workspace: a primary manual-grant action plus labelled per-row edit-terms and refund actions, readable status/validity/price facts, and Motion transitions that honor reduced motion.
-- `AdminUserHourly.vue` presents the administrator hourly projection (policy, wallet, daily usage, enrollments) with a confirmed disable action.
+- `AdminUserHourly.vue` presents the administrator hourly projection (policy, wallet, daily usage, enrollments) with a confirmed disable action. Eligible members can re-enable immediately with fresh consent and a new minimum prepayment.
   It reuses `../../hourly/HourlyAccountingStatus.vue` with `showHistorical=true`
   to inspect current-day and historical accounting. The member defaults to
   current-day amounts only. This shared read-only component has no member

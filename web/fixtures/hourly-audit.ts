@@ -9,6 +9,7 @@ import { installHapticClickFeedback } from '@/utils/telegram'
 import { initializeBrowserTheme, setBrowserTheme } from '@/browser/theme'
 import { setLocale, t } from '@/i18n'
 import type { HourlyPolicy, HourlyExtraPreference } from '@/api/hourly'
+import { hourlyRequiredHours } from '@/components/hourly/hourlyHours'
 import '@/styles/main.css'
 import '@/browser/styles.css'
 
@@ -49,7 +50,7 @@ window.fetch = async (input, init) => {
   if (params.has('conflict') && method !== 'GET') return response({ code: 'CONFLICT', message: 'fixture' }, 409)
   if (url.pathname === '/api/v1/hourly' && method === 'GET') return response(fixture.view)
   if (url.pathname === '/api/v1/admin/hourly-policy') {
-    if (method === 'PUT') { fixture.policy.policy = body.policy as HourlyPolicy; fixture.policy.version += '-next'; fixture.view.policy = fixture.policy }
+    if (method === 'PUT') { fixture.policy.policy = { ...(body.policy as HourlyPolicy), cooldownSeconds: 0 }; fixture.policy.version += '-next'; fixture.view.policy = fixture.policy }
     return response(fixture.policy)
   }
   if (url.pathname === '/api/v1/admin/hourly-offers') return response(fixture.offers)
@@ -74,9 +75,19 @@ window.fetch = async (input, init) => {
     if (params.has('failed')) return response(receipt('failed'))
     const item = fixture.view.squads.find(value => value.offer.groupId === action?.groupId)
     if (item && action) {
-      const now = new Date().toISOString()
-      item.enrollment = { id: `enrollment-${item.offer.groupId}`, groupId: item.offer.groupId, status: action.disable ? 'disabled' : 'active', activatedAt: now, paidThrough: new Date(Date.now() + 3600000).toISOString(), disabledAt: action.disable ? now : null, cooldownUntil: action.disable ? new Date(Date.now() + 86400000).toISOString() : null, createdAt: now, updatedAt: now }
-      item.cooldownUntil = item.enrollment.cooldownUntil; item.ready = !action.disable
+      const at = Date.now()
+      const now = new Date(at).toISOString()
+      if (action.disable && item.enrollment) {
+        item.enrollment = { ...item.enrollment, status: 'disabled', disabledAt: now, updatedAt: now, cooldownUntil: null }
+      } else if (!action.disable) {
+        const hours = hourlyRequiredHours(item.offer, fixture.policy.policy.activationHours)
+        const charge = BigInt(item.offer.hourlyPrice.minor) * BigInt(hours)
+        fixture.view.balance = hourlyMoney((BigInt(fixture.view.balance.minor) - charge).toString())
+        const paidThrough = new Date(at + hours * 3600000).toISOString()
+        item.enrollment = { id: `enrollment-${item.offer.groupId}`, groupId: item.offer.groupId, status: 'active', activatedAt: now, paidThrough, disabledAt: null, cooldownUntil: null, createdAt: now, updatedAt: now }
+      }
+      item.cooldownUntil = null
+      action = undefined
     }
     return response(receipt('succeeded'))
   }

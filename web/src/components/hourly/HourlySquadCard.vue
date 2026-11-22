@@ -15,7 +15,6 @@ const canActivate = computed(() => !enrolled.value && props.salesEnabled && prop
 // continues while only new activations are refused.
 const capacityContinues = computed(() => enrolled.value && props.item.reasonCode === 'capacity')
 const reason = computed(() => {
-  if (props.item.cooldownUntil && Date.parse(props.item.cooldownUntil) > Date.now()) return t('hourly.cooldownUntil', { at: formatDateTime(props.item.cooldownUntil) })
   const key = `hourly.reasons.${props.item.reasonCode}`
   return props.item.reasonCode && t(key) !== key ? t(key) : t('hourly.notReady')
 })

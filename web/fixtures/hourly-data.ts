@@ -15,7 +15,7 @@ export function hourlyFixture(params: URLSearchParams): { view: HourlyAccountVie
   // would be refused (shared stock, outcome 5).
   const capacity = params.has('capacity') || params.has('capacity-preparing')
   const offerHours = params.has('offer-hours') ? [24, 72, 0] : [0, 0, 0]
-  const policy = { version: 'fixture-policy-1', policy: { salesEnabled: !params.has('paused'), dailyAllowanceBytes: '10000000000', reducedRateBytesPerSecond: '1250000', extraGBPriceTXBMinor: params.has('no-extra') ? '0' : '125', activationHours: 168, cooldownSeconds: 86400 } }
+  const policy = { version: 'fixture-policy-1', policy: { salesEnabled: !params.has('paused'), dailyAllowanceBytes: '10000000000', reducedRateBytesPerSecond: '1250000', extraGBPriceTXBMinor: params.has('no-extra') ? '0' : '125', activationHours: 168, cooldownSeconds: 0 } }
   const effectiveHours = (index: number): number => offerHours[index] || policy.policy.activationHours
   const squads: SquadProduct[] = params.has('empty') ? [] : ['Tokyo Direct', 'Singapore Transit', 'Frankfurt'].map((name, index) => ({
     id: `squad-${index}`, groupId: `group-${index}`, name, description: '', features: [], billingMode: 'combo',
@@ -75,10 +75,6 @@ export function hourlyFixture(params: URLSearchParams): { view: HourlyAccountVie
     policy, balance: hourlyMoney('100000'), legacyBlocked: params.has('legacy'), extraPreference: { extraEnabled, acceptedExtraPriceTXBMinor: params.has('price-rise') ? '100' : '125', updatedAt: now },
     usage: { dayUTC: now.slice(0, 10), freeAllowanceBytes: first ? '10000000000' : freeAllowance, freeUsedBytes: freeUsed, freeReservedBytes: (BigInt(freeReserved) + BigInt(accounting.recoveryUnknownBytes)).toString(), extraFundedBytes: extraFunded, extraUsedBytes: extraUsed, extraReservedBytes: extraReserved, extraExpiresAt: midnight, reducedRateBytesPerSecond: '1250000', accountingPending: Object.values(accounting).some(value => BigInt(value) > 0n), accounting },
     squads: squads.map((squad, index) => ({ squad, offer: offers[index]!, enrollment: !first && index === 0 && (params.has('active') || params.has('suspended') || params.has('capacity-preparing')) ? enrollment(squad.groupId) : null, ready: !params.has('incompatible') && !capacity, reasonCode: params.has('incompatible') ? 'agent_incompatible' : capacity ? 'capacity' : '', cooldownUntil: null, requiredBalance: hourlyMoney(String((index + 1) * 5 * effectiveHours(index))) })),
-  }
-  if (params.has('cooldown') && view.squads[0]) {
-    view.squads[0].ready = false
-    view.squads[0].cooldownUntil = new Date(Date.now() + 86400000).toISOString()
   }
   return { view, policy, squads: adminSquads, offers }
 }

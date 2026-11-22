@@ -22,7 +22,6 @@ const columns = computed(() => [
   { id: 'status', header: t('adminWorkspace.status') },
   { id: 'price', header: t('hourly.admin.user.price') },
   { id: 'paidThrough', header: t('hourly.admin.user.paidThrough') },
-  { id: 'cooldown', header: t('hourly.admin.user.cooldown') },
   { id: 'actions', header: t('adminWorkspace.actions') },
 ])
 const tableKey = computed(() => squads.value.map(squad => `${squad.enrollmentId}:${squad.status}`).join(','))
@@ -80,7 +79,6 @@ async function confirmDisable(): Promise<void> {
             <template #status-cell="{ row }"><div class="admin-cell"><StatusBadge :tone="tone(row.original.status)" :label="t(`hourly.status.${row.original.status}`)" /><small v-if="!row.original.offerEnabled">{{ t('hourly.admin.user.offerClosed') }}</small></div></template>
             <template #price-cell="{ row }">{{ formatMoney(row.original.hourlyPrice) }}</template>
             <template #paidThrough-cell="{ row }">{{ row.original.paidThrough ? formatDateTime(row.original.paidThrough) : t('common.notScheduled') }}</template>
-            <template #cooldown-cell="{ row }">{{ row.original.cooldownUntil ? formatDateTime(row.original.cooldownUntil) : t('common.notAvailable') }}</template>
             <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton v-if="canDisable(row.original)" color="warning" variant="ghost" icon="i-ph-prohibit" :label="t('hourly.disable')" :loading="busyEnrollment === row.original.enrollmentId" :disabled="busyEnrollment !== null" @click="askDisable(row.original)" /></div></template>
             <template #empty>{{ t('hourly.admin.user.empty') }}</template>
           </UTable>
