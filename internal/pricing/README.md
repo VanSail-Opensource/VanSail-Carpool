@@ -33,6 +33,10 @@ notify admins.
   Freshness and sustained-sample timing use the panel's authenticated receipt clock,
   independent of the agent clock; disabled nodes are removed from the registry.
   Serious incident notices wait one minute and are suppressed if already resolved.
+- `health_observation.go`: Accept only fresh, advancing receipt samples as health
+  evidence. Missing, unusable or interrupted observations reset evidence series.
+- `health_freshness_test.go`: Covers duplicate polls, expiry, independent outages
+  and interrupted overload and recovery series.
 - `cache.go`: bounded analytical/exposure caches, shared concurrent work,
   generation invalidation and constant-time FIFO eviction. Cached results never
   authorize financial settlement. Policy edits invalidate affected projections.

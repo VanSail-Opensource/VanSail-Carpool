@@ -208,6 +208,21 @@ Rejected telemetry is logged with a bounded reason code, not payload contents.
 Pricing consumes a raw machine-only projection; repeated identical incident
 states are persisted at most once per minute without throttling live health.
 
+- `machine_metrics.go` defines the raw machine-only snapshot and its receipt and
+  freshness timestamps. `machine_metrics_test.go` covers snapshot isolation,
+  freshness and unavailable or ineligible nodes.
+- `master_sync_replay.go` gates exact-revision replay on the current peer's
+  applied state and keeps replay replies separate from activation proof.
+- `payg_continuity_test.go` verifies that observation failures do not block the
+  authorization pass.
+- `payg_lease_continuity.go` tracks the last published deadlines per socket and
+  strips stale projections before a revisioned send. `payg_lease_continuity_test.go`
+  covers unchanged leases, forced baselines, reconnect and exact expiry.
+- `payg_observe_test.go` covers stale, unready, disconnected and replaced peers
+  being excluded from connection-driven settlement.
+- `telemetry_diagnostics.go` defines the bounded rejection reasons;
+  `telemetry_diagnostics_test.go` covers sanitized rejection diagnostics.
+
 Explicit `Master.Sync` succeeds only when the current target has been published.
 Pending upgrade confirmation, country staging, DDNS protection and activation
 retry backoff return `ErrUnavailable` before callers can start native barriers.

@@ -196,6 +196,8 @@ PAYG jobs use the existing durable outbox and master executor. Startup and 30-se
 - `pricing_worker.go`: Single joined five-second worker with independent bounded
   stage budgets, rotating batches and pressure/storage gates.
 - `pricing_health.go`: Reuse authenticated X-Node CPU/memory and connection health without raw telemetry SQL.
+- `pricing_health_recorder.go`: Record in-memory health before attempting durable incident writes; rotate bounded write attempts and suppress only repeated identical incident writes.
+- `pricing_health_recorder_test.go`: Covers durable-write suppression, state transitions and independent progress when persistence fails.
 - `pricing_health_notice.go`: Queued administrator incident notifications containing sanitized facts.
 - `pricing_change_notice.go`: Notify administrators after direct audited pricing edits and material campaigns; no approval stage.
 
