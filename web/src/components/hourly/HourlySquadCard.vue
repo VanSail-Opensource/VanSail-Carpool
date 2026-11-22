@@ -26,7 +26,7 @@ const reason = computed(() => {
       <span class="hourly-squad__price"><strong>{{ formatMemberMoney(item.offer.hourlyPrice) }}</strong><small>{{ t('hourly.perHour') }}</small></span>
     </template>
     <div class="hourly-squad__facts">
-      <span v-if="item.enrollment?.paidThrough"><UIcon name="i-ph-calendar-check" aria-hidden="true" />{{ t('hourly.paidThrough', { at: formatDateTime(item.enrollment.paidThrough) }) }}</span>
+      <span v-if="enrolled && item.enrollment?.paidThrough"><UIcon name="i-ph-calendar-check" aria-hidden="true" />{{ t('hourly.paidThrough', { at: formatDateTime(item.enrollment.paidThrough) }) }}</span>
       <span v-if="!enrolled && item.requiredBalance"><UIcon name="i-ph-wallet" aria-hidden="true" />{{ t('hourly.requiredBalance', { price: formatMemberMoney(item.requiredBalance), hours }) }}</span>
       <span v-if="capacityContinues" class="hourly-squad__reason"><UIcon name="i-ph-info" aria-hidden="true" />{{ t('hourly.capacityContinuity') }}</span>
       <span v-else-if="!enrolled && !canActivate" class="hourly-squad__reason"><UIcon name="i-ph-info" aria-hidden="true" />{{ reason }}</span>
