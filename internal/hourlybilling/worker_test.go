@@ -21,8 +21,14 @@ func TestPaidActivationReplayIgnoresNewPolicyAndNeverChargesTwice(t *testing.T) 
 		t.Fatalf("first apply = %v", err)
 	}
 	paid := balanceFixture(t, s, user)
-	if paid >= 100000 {
-		t.Fatal("initial paid interval was not committed")
+	const minimumHours = 168
+	if paid != 100_000-minimumHours*100 {
+		t.Fatalf("activation wallet = %d, want the exact minimum enable debit", paid)
+	}
+	enrollment, err := s.store.HourlyEnrollmentForActivation(context.Background(), user.ID, user.AccountGeneration, op.Receipt.ID)
+	if err != nil || enrollment.ActivatedAt == nil || enrollment.PaidThrough == nil ||
+		!enrollment.PaidThrough.Equal(enrollment.ActivatedAt.Add(minimumHours*time.Hour)) {
+		t.Fatalf("activation paid boundary = %+v, %v", enrollment, err)
 	}
 	policy.err = errors.New("current policy is unavailable")
 	reads := policy.reads

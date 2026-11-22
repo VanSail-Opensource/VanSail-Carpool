@@ -5,12 +5,18 @@ import (
 	"errors"
 	"testing"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func TestHourlyActivationAndConcurrentWalletSpendingCannotOverdraw(t *testing.T) {
 	t.Parallel()
 	s, policy, input := hourlyBillingFixture(t)
 	prepared := prepareHourlyBillingFixture(t, s, input, policy)
+	minimum, err := model.HourlyActivationMinimum(policy.Policy, 0, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
 	ctx := context.Background()
 	start, committed, spent := make(chan struct{}), make(chan error, 1), make(chan error, 1)
 	go func() {
@@ -26,8 +32,8 @@ func TestHourlyActivationAndConcurrentWalletSpendingCannotOverdraw(t *testing.T)
 	close(start)
 	commitErr, spendErr := <-committed, <-spent
 	if commitErr == nil {
-		if !errors.Is(spendErr, ErrInsufficientBalance) || hourlyBillingBalance(t, s, input.OwnerID) < 99900 {
-			t.Fatalf("spending ignored already-paid hour: commit=%v spend=%v", commitErr, spendErr)
+		if !errors.Is(spendErr, ErrInsufficientBalance) || hourlyBillingBalance(t, s, input.OwnerID) != 100000-minimum {
+			t.Fatalf("spending ignored already-paid minimum: commit=%v spend=%v", commitErr, spendErr)
 		}
 	} else if spendErr == nil {
 		if !errors.Is(commitErr, ErrInsufficientBalance) || hourlyBillingBalance(t, s, input.OwnerID) != 0 {
