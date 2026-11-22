@@ -15,7 +15,8 @@ type HourlyDisableInput struct {
 	Voluntary             bool
 }
 
-// DisableHourlyEnrollment stops authorization without refunding the paid hour.
+// DisableHourlyEnrollment stops authorization without refunding any prepaid
+// interval, including the unused minimum enable duration.
 // An unpaid preparation can be cancelled without imposing a usage cooldown.
 func (s *Store) DisableHourlyEnrollment(ctx context.Context, input HourlyDisableInput,
 	snapshot model.HourlyPolicySnapshot, _ time.Time) (model.HourlyEnrollment, error) {
@@ -53,7 +54,7 @@ func (s *Store) DisableHourlyEnrollment(ctx context.Context, input HourlyDisable
 				status = model.HourlyFundingSuspended
 			}
 		}
-		e, err = scanHourlyEnrollment(tx.QueryRowContext(ctx, `UPDATE hourly_enrollments SET status=$1,disabled_at=$2,
+		e, err = scanHourlyEnrollment(tx.QueryRowContext(ctx, `UPDATE hourly_enrollments SET status=$1,disabled_at=COALESCE(disabled_at,$2),
 			cooldown_until=$3,updated_at=$2 WHERE id=$4 RETURNING `+hourlyEnrollmentColumns, status, now, cooldown, e.ID))
 		if err == nil {
 			err = enqueueHourlySyncTx(ctx, tx, e.OwnerID, now)
@@ -76,7 +77,7 @@ func (s *Store) DueHourlyOwners(ctx context.Context, at time.Time, limit int) ([
 // DueHourlyOwnersPage lets the existing scheduler rotate past offline owners;
 // an old unpaid boundary can never monopolize the first bounded page forever.
 // Owners inside the bounded prefetch window are admitted early only while their
-// wallet currently covers the next whole hour, so a squad the transaction would
+// wallet currently covers the next partial or whole hour, so a squad the transaction would
 // immediately skip is not re-admitted on every scheduler tick. An expired
 // boundary is always admitted so the definitive suspension still happens there.
 func (s *Store) DueHourlyOwnersPage(ctx context.Context, at time.Time, afterOwner string, limit int) ([]HourlyDueOwner, error) {
@@ -87,7 +88,7 @@ func (s *Store) DueHourlyOwnersPage(ctx context.Context, at time.Time, afterOwne
 		JOIN users u ON u.id=e.owner_id AND u.account_status='active' AND u.account_generation=e.account_generation
 		WHERE e.status='active' AND (e.paid_through<=$1 OR (e.paid_through<=$2 AND EXISTS(
 		SELECT 1 FROM balances b JOIN hourly_offers o ON o.group_id=e.group_id
-		WHERE b.user_id=e.owner_id AND o.hourly_price_minor>0 AND b.txb_minor>=o.hourly_price_minor)))
+		WHERE b.user_id=e.owner_id AND o.hourly_price_minor>0 AND b.txb_minor>=`+hourlyRenewalPriceSQL+`)))
 		AND e.owner_id>$3 GROUP BY e.owner_id,e.account_generation
 		ORDER BY e.owner_id LIMIT $4`, at.UTC(), at.UTC().Add(hourlyPrefetchLead), afterOwner, limit)
 	if err != nil {

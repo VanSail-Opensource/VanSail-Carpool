@@ -24,8 +24,9 @@ type HourlyPolicySnapshot struct {
 }
 
 // HourlyOffer does not change grandfathered fixed-term merchandising.
-// RequiredHours is the squad-specific funding threshold; zero inherits the
-// account-wide policy so pre-existing offers keep their behavior.
+// RequiredHours is the minimum enable duration prepaid on activation; zero
+// inherits ActivationHours. The existing setting and wire name retain their
+// values, including inherited values, without introducing a second threshold.
 type HourlyOffer struct {
 	GroupID             string    `json:"groupId"`
 	Enabled             bool      `json:"enabled"`

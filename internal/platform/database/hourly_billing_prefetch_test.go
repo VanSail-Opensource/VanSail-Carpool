@@ -47,7 +47,7 @@ func hourlySyncJobCount(t *testing.T, s *Store, owner string) int {
 	return count
 }
 
-func TestHourlyPrefetchStartRequiresAnAlignedBoundaryInsideTheWindow(t *testing.T) {
+func TestHourlyPrefetchStartAcceptsMinimumEndInsideTheWindow(t *testing.T) {
 	inside := time.Date(2026, 11, 10, 12, 59, 30, 0, time.UTC)
 	edge := time.Date(2026, 11, 10, 12, 59, 0, 0, time.UTC)
 	before := time.Date(2026, 11, 10, 12, 58, 59, 0, time.UTC)
@@ -63,7 +63,7 @@ func TestHourlyPrefetchStartRequiresAnAlignedBoundaryInsideTheWindow(t *testing.
 		{"exactly at window edge", noon.Add(time.Hour), edge, noon.Add(time.Hour), true},
 		{"outside window", noon.Add(time.Hour), before, time.Time{}, false},
 		{"already expired", noon, noon.Add(30 * time.Minute), time.Time{}, false},
-		{"not hour aligned", noon.Add(time.Hour + 30*time.Second), inside, time.Time{}, false},
+		{"minimum end not hour aligned", noon.Add(time.Hour + 30*time.Second), inside, noon.Add(time.Hour + 30*time.Second), true},
 		{"zero boundary", time.Time{}, inside, time.Time{}, false},
 	} {
 		t.Run(test.name, func(t *testing.T) {

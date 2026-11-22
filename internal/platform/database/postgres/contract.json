@@ -10391,6 +10391,12 @@
           "type": "timestamp with time zone",
           "notNull": true,
           "primaryKey": 0
+        },
+        {
+          "name": "minimum_hours",
+          "type": "bigint",
+          "notNull": false,
+          "primaryKey": 0
         }
       ]
     },

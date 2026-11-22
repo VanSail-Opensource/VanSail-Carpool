@@ -8,7 +8,7 @@ import (
 
 var ErrHourlyPolicyInvalid = errors.New("invalid hourly policy")
 
-// MaxHourlyRequiredHours bounds one offer's funding threshold to the same
+// MaxHourlyRequiredHours bounds one offer's minimum enable duration to the same
 // duration domain as policy.ActivationHours, which also keeps the product
 // with the hourly price inside int64 minor units.
 const MaxHourlyRequiredHours int64 = 2562047
@@ -22,9 +22,9 @@ func ValidateHourlyPolicy(policy HourlyPolicy) error {
 	return nil
 }
 
-// HourlyActivationMinimum is an eligibility check, never a debit/reservation.
-// A zero requiredHours inherits policy.ActivationHours for offers configured
-// before per-squad thresholds existed.
+// HourlyActivationMinimum is the exact nonrefundable activation prepayment.
+// The existing requiredHours setting now buys that many hours; zero retains
+// the policy.ActivationHours inheritance used by pre-existing offers.
 func HourlyActivationMinimum(policy HourlyPolicy, requiredHours, hourlyPriceMinor int64) (int64, error) {
 	hours := requiredHours
 	if hours == 0 {

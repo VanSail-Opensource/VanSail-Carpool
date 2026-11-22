@@ -33,7 +33,7 @@ func (s *Store) EnqueueHourlyFundingWarnings(ctx context.Context, now time.Time)
 		LEFT JOIN xnode_groups g ON g.id=e.group_id
 		LEFT JOIN balances b ON b.user_id=e.owner_id
 		WHERE e.status='active' AND e.paid_through>$1 AND e.paid_through<=$2
-		AND o.hourly_price_minor>COALESCE(b.txb_minor,0)
+		AND `+hourlyRenewalPriceSQL+`>COALESCE(b.txb_minor,0)
 		AND NOT EXISTS(SELECT 1 FROM user_notification_events event
 			WHERE event.event_key='hourly-funding-warning:'||e.id||':'||
 				floor(EXTRACT(EPOCH FROM e.paid_through))::bigint::text)

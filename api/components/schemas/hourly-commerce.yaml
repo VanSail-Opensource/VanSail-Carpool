@@ -41,7 +41,8 @@ HourlyEnrollment: {
           "string",
           "null"
         ],
-        "format": "date-time"
+        "format": "date-time",
+        "description": "End of the purchased access interval. Initially activatedAt plus the minimum enable hours; hourly settlement never charges this interval again. Disabling retains this financial boundary without granting access."
       },
       "disabledAt": {
         "type": [

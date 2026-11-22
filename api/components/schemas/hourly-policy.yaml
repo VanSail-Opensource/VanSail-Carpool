@@ -28,7 +28,8 @@ HourlyPolicy: {
       "activationHours": {
         "type": "integer",
         "minimum": 1,
-        "maximum": 2562047
+        "maximum": 2562047,
+        "description": "Default minimum enable hours, prepaid on activation. Inherited when offer.requiredHours is zero. Existing setting values are retained."
       },
       "cooldownSeconds": {
         "type": "integer",
@@ -82,7 +83,7 @@ HourlyOffer: {
         "type": "integer",
         "minimum": 0,
         "maximum": 2562047,
-        "description": "Per-squad funding threshold in hours; zero inherits policy.activationHours."
+        "description": "Minimum enable hours prepaid atomically on activation; zero inherits policy.activationHours. The existing required-balance-hours value is used directly. Disabling within the minimum stops access without refunding unused prepaid time."
       },
       "revision": {
         "type": "string",
@@ -125,7 +126,7 @@ HourlyOfferWrite: {
         "type": "integer",
         "minimum": 0,
         "maximum": 2562047,
-        "description": "Per-squad funding threshold in hours; zero inherits policy.activationHours."
+        "description": "Minimum enable hours prepaid atomically on activation; zero inherits policy.activationHours. The existing required-balance-hours value is used directly. Disabling within the minimum stops access without refunding unused prepaid time."
       }
     }
   }

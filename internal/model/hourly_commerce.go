@@ -29,7 +29,9 @@ type HourlyEnrollment struct {
 	UpdatedAt         time.Time  `json:"updatedAt"`
 }
 
-// HourlySettlement is an immutable receipt, unique per enrollment and UTC hour.
+// HourlySettlement records an immutable purchased interval. MinimumHours is
+// positive only for the initial minimum enable prepayment; zero retains the
+// ordinary UTC-hour settlement semantics and all historical receipts.
 type HourlySettlement struct {
 	ID                  string    `json:"id"`
 	EnrollmentID        string    `json:"enrollmentId"`
@@ -44,6 +46,7 @@ type HourlySettlement struct {
 	PolicyVersion       string    `json:"-"`
 	LedgerID            string    `json:"-"`
 	CreatedAt           time.Time `json:"createdAt"`
+	MinimumHours        int64     `json:"-"`
 }
 
 // HourlyExtraPreference authorizes future blocks with an explicitly accepted cap.

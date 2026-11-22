@@ -6,12 +6,10 @@ import (
 )
 
 // HourlyPrefetchWindow is the bounded lead time before a paid boundary in which
-// a settlement may prepay the next whole UTC hour. Extending paid authority
-// before the old boundary is what removes the hourly access interruption; the
-// window stays short so a member is never more than the current hour plus one
-// settled hour ahead, and the debit still uses the same short-lived readiness
-// proof. A boundary that already passed keeps the existing current-remainder
-// recovery instead.
+// a settlement may prepay the next deliverable UTC-hour interval. Extending
+// paid authority before the old boundary prevents an hourly access interruption,
+// and the debit still uses the same short-lived readiness proof. A boundary that
+// already passed keeps the existing current-remainder recovery instead.
 const HourlyPrefetchWindow = time.Minute
 
 // hourlyPrefetchLead is the effective admission window. Hosted tests widen it to
@@ -41,13 +39,20 @@ func hourlyCharge(price int64, from, until time.Time) (int64, error) {
 
 func hourlyBoundary(at time.Time) time.Time { return at.UTC().Truncate(time.Hour).Add(time.Hour) }
 
-// hourlyPrefetchStart returns the whole-hour interval start a near-boundary
-// settlement may prepay. Only an hour-aligned future paid boundary inside the
-// bounded lead window qualifies, so activation's prorated remainder is never
-// mistaken for an aligned hour and a duplicate worker cannot buy a second hour.
+// Mirror hourlyCharge for SQL admission scans: use exact numeric arithmetic
+// before multiplying large prices, and always truncate the boundary in UTC.
+// At an hour-aligned boundary this is the whole hourly price.
+const hourlyRenewalPriceSQL = `div(o.hourly_price_minor::numeric * EXTRACT(EPOCH FROM (
+ (date_trunc('hour', e.paid_through AT TIME ZONE 'UTC') + INTERVAL '1 hour') -
+ (e.paid_through AT TIME ZONE 'UTC'))) * 1000000 + 3599999999, 3600000000)`
+
+// hourlyPrefetchStart returns the paid boundary a near-boundary settlement may
+// extend. A minimum enable interval ends at activation's offset within the UTC
+// hour; its first renewal buys only the remaining fraction after that boundary.
+// Later renewals return to whole UTC hours. No prepaid time is charged again.
 func hourlyPrefetchStart(paidThrough, now time.Time) (time.Time, bool) {
 	start := paidThrough.UTC()
-	if !start.After(now) || start.After(now.Add(hourlyPrefetchLead)) || !start.Equal(start.Truncate(time.Hour)) {
+	if !start.After(now) || start.After(now.Add(hourlyPrefetchLead)) {
 		return time.Time{}, false
 	}
 	return start, true

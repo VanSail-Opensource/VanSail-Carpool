@@ -75,7 +75,7 @@ func (s *Store) CommitHourlyActivation(ctx context.Context, input HourlyCommitIn
 		if err = requireHourlyOwnerCapacityTx(ctx, tx, e.OwnerID, e.AccountGeneration, maxHourlyActiveOwners); err != nil {
 			return HourlyActivationResult{}, err
 		}
-		receipt, err := payHourlyIntervalTx(ctx, tx, e, offer, snapshot, now)
+		receipt, err := prepayHourlyMinimumTx(ctx, tx, e, offer, snapshot, now)
 		if err != nil {
 			return HourlyActivationResult{}, err
 		}

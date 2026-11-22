@@ -9,7 +9,9 @@ Migration 43 introduces empty hourly relations; no legacy purchase converts.
 service then attaches its immutable principal and `NO_RESET` period.
 `CommitHourlyActivation` rechecks the exact tuple, reviewed encrypted-policy
 fingerprint, offer revision, existing squad activation code, stock, legacy
-benefits, cooldown and activation balance threshold before the first debit.
+benefits, cooldown and wallet funding before atomically debiting the full minimum
+enable duration. One immutable receipt records rate, duration and paid-through;
+replaying the same activation cannot debit the wallet again.
 Activation codes are never stored by this module or included in fingerprints.
 Queued services must keep them encrypted until the operation finishes.
 
@@ -24,7 +26,8 @@ charges due squads in immutable activation-time, then group-ID order. Missing,
 expired or changed-revision evidence skips only that squad. PostgreSQL time after
 lock waits determines the charged interval, rounded upward in integer minor
 units; missed hours are never charged. Paid authorization ends at the receipt's
-whole UTC hour even when workers are delayed. A transaction crossing its entire
+paid-through instant even when workers are delayed. The first renewal after a
+minimum purchases only the remainder to the next UTC hour. A transaction crossing its entire
 paid window or readiness TTL rolls back. Receipt replay never grants a terminal
 activation again. The compile revision is checked once before own mutations,
 since those same mutations advance the global native input revision.

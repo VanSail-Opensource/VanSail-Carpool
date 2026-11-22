@@ -10,12 +10,14 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 )
 
-const hourlySettlementColumns = `id,enrollment_id,hour_start,charged_from,paid_until,hourly_price_minor,charged_minor,offer_revision,policy_version,ledger_id,created_at`
+const hourlySettlementColumns = `id,enrollment_id,hour_start,charged_from,paid_until,hourly_price_minor,charged_minor,offer_revision,policy_version,ledger_id,created_at,minimum_hours`
 
 func scanHourlySettlement(row rowScanner) (model.HourlySettlement, error) {
 	var r model.HourlySettlement
+	var minimumHours sql.NullInt64
 	err := row.Scan(&r.ID, &r.EnrollmentID, &r.HourStart, &r.ChargedFrom, &r.PaidUntil, &r.HourlyPriceTXBMinor,
-		&r.ChargedTXBMinor, &r.OfferRevision, &r.PolicyVersion, &r.LedgerID, &r.CreatedAt)
+		&r.ChargedTXBMinor, &r.OfferRevision, &r.PolicyVersion, &r.LedgerID, &r.CreatedAt, &minimumHours)
+	r.MinimumHours = minimumHours.Int64
 	if errors.Is(err, sql.ErrNoRows) {
 		return r, ErrNotFound
 	}
@@ -52,6 +54,25 @@ func payHourlyIntervalAtTx(ctx context.Context, tx *sql.Tx, e model.HourlyEnroll
 	if err != nil {
 		return model.HourlySettlement{}, err
 	}
+	return debitHourlyIntervalTx(ctx, tx, e, offer, snapshot, from, until, at, amount, 0)
+}
+
+// prepayHourlyMinimumTx snapshots the inherited or explicit minimum and rate.
+// One receipt covers the whole interval, so even the maximum duration has a
+// bounded transaction. Activation commits its paid-through boundary atomically.
+func prepayHourlyMinimumTx(ctx context.Context, tx *sql.Tx, e model.HourlyEnrollment, offer model.HourlyOffer,
+	snapshot model.HourlyPolicySnapshot, at time.Time) (model.HourlySettlement, error) {
+	amount, err := model.HourlyActivationMinimum(snapshot.Policy, offer.RequiredHours, offer.HourlyPriceTXBMinor)
+	if err != nil {
+		return model.HourlySettlement{}, err
+	}
+	hours := amount / offer.HourlyPriceTXBMinor
+	until := at.Add(time.Duration(hours) * time.Hour)
+	return debitHourlyIntervalTx(ctx, tx, e, offer, snapshot, at, until, at, amount, hours)
+}
+
+func debitHourlyIntervalTx(ctx context.Context, tx *sql.Tx, e model.HourlyEnrollment, offer model.HourlyOffer,
+	snapshot model.HourlyPolicySnapshot, from, until, at time.Time, amount, minimumHours int64) (model.HourlySettlement, error) {
 	id, err := ids.New()
 	if err != nil {
 		return model.HourlySettlement{}, err
@@ -66,10 +87,10 @@ func payHourlyIntervalAtTx(ctx context.Context, tx *sql.Tx, e model.HourlyEnroll
 	}
 	r := model.HourlySettlement{ID: id, EnrollmentID: e.ID, HourStart: from.UTC().Truncate(time.Hour), ChargedFrom: from,
 		PaidUntil: until, HourlyPriceTXBMinor: offer.HourlyPriceTXBMinor, ChargedTXBMinor: amount,
-		OfferRevision: offer.Revision, PolicyVersion: snapshot.Version, LedgerID: ledger, CreatedAt: at}
+		OfferRevision: offer.Revision, PolicyVersion: snapshot.Version, LedgerID: ledger, CreatedAt: at, MinimumHours: minimumHours}
 	_, err = tx.ExecContext(ctx, `INSERT INTO hourly_settlements(`+hourlySettlementColumns+`)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, r.ID, r.EnrollmentID, r.HourStart, r.ChargedFrom, r.PaidUntil,
-		r.HourlyPriceTXBMinor, r.ChargedTXBMinor, r.OfferRevision, r.PolicyVersion, r.LedgerID, r.CreatedAt)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`, r.ID, r.EnrollmentID, r.HourStart, r.ChargedFrom, r.PaidUntil,
+		r.HourlyPriceTXBMinor, r.ChargedTXBMinor, r.OfferRevision, r.PolicyVersion, r.LedgerID, r.CreatedAt, r.MinimumHours)
 	r.HourlyPrice, r.Charged = model.TXBMoney(r.HourlyPriceTXBMinor), model.TXBMoney(r.ChargedTXBMinor)
 	return r, err
 }

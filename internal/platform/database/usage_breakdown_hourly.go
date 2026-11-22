@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"math/big"
+	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
@@ -18,14 +19,9 @@ var usageBreakdownHourlySQL = `WITH traffic AS (
  WHERE u.owner_id=$1 AND u.account_generation=$2 AND u.billing_mode='hourly'
  AND u.minute>=$5 AND u.minute<=$7 AND u.observed_through>=$6
  GROUP BY e.group_id
+), paid_costs AS (` + usageBreakdownHourlyAccrualSQL + `
 ), costs AS (
- SELECT e.group_id,SUM(s.charged_minor::numeric) actual
- FROM hourly_settlements s JOIN hourly_enrollments e ON e.id=s.enrollment_id
- JOIN ledger_entries l ON l.id=s.ledger_id
- WHERE e.owner_id=$1 AND e.account_generation=$2
- AND l.user_id=$1 AND l.kind='hourly_charge'
- AND ` + purchaseTimestampOrderSQL("l.created_at") + `>=$3 AND ` + purchaseTimestampOrderSQL("l.created_at") + `<=$4
- GROUP BY e.group_id
+ SELECT group_id,SUM(actual) actual FROM paid_costs GROUP BY group_id HAVING SUM(actual)>0
 ), ids AS (SELECT group_id FROM traffic UNION SELECT group_id FROM costs)
  SELECT i.group_id,COALESCE(g.name,i.group_id),COALESCE(t.up,0)::text,
  COALESCE(t.down,0)::text,COALESCE(c.actual,0)::text
@@ -35,7 +31,10 @@ var usageBreakdownHourlySQL = `WITH traffic AS (
 
 func readUsageBreakdownHourlyTx(ctx context.Context, tx *sql.Tx, scope usageBreakdownScope, result *model.UsageBreakdown) error {
 	lifecycle, through := nativeUsageTimeBounds(scope.lifecycle, scope.to)
-	rows, err := tx.QueryContext(ctx, usageBreakdownHourlySQL, scope.owner, scope.generation, purchaseTimestampOrder(scope.from), purchaseTimestampOrder(scope.to), scope.rawFrom, lifecycle, through)
+	from := scope.from.Truncate(time.Microsecond)
+	rows, err := tx.QueryContext(ctx, usageBreakdownHourlySQL, scope.owner, scope.generation,
+		purchaseTimestampOrder(scope.from), purchaseTimestampOrder(scope.to), scope.rawFrom, lifecycle, through,
+		from, int32(scope.from.Sub(from)), int32(scope.to.Sub(through)))
 	if err != nil {
 		return err
 	}

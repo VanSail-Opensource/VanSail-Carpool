@@ -4,7 +4,8 @@
       "Hourly"
     ],
     "operationId": "activateHourlySquad",
-    "summary": "Prepare native access and charge the remaining fraction of the UTC hour",
+    "summary": "Prepare native access and atomically prepay the minimum enable duration",
+    "description": "Deduct hourlyPrice multiplied by effective requiredHours once, together with activation and paidThrough. Zero requiredHours inherits policy.activationHours. Preparation is unpaid and failed activation rolls back the debit. Early disabling does not refund unused minimum time. Replays never charge twice.",
     "responses": {
       "202": {
         "description": "Durable operation receipt. Completion requires the expected native deployment.",

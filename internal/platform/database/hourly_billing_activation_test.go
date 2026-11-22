@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func TestHourlyPreparationIsUnpaidAndConcurrentCommitReplays(t *testing.T) {
@@ -36,9 +38,12 @@ func TestHourlyPreparationIsUnpaidAndConcurrentCommitReplays(t *testing.T) {
 	if a.Settlement == nil || b.Settlement == nil || a.Settlement.ID != b.Settlement.ID || a.Enrollment.ID != b.Enrollment.ID {
 		t.Fatalf("concurrent commits did not replay one receipt: %+v %+v", a, b)
 	}
-	want, err := hourlyCharge(100, a.Settlement.ChargedFrom, a.Settlement.PaidUntil)
+	want, err := model.HourlyActivationMinimum(policy.Policy, 0, 100)
 	if err != nil || a.Settlement.ChargedTXBMinor != want || hourlyBillingBalance(t, s, input.OwnerID) != 100000-want {
-		t.Fatalf("prorated debit differs: %+v, %v", a.Settlement, err)
+		t.Fatalf("minimum prepayment differs: %+v, %v", a.Settlement, err)
+	}
+	if a.Settlement.MinimumHours != 168 || !a.Settlement.PaidUntil.Equal(a.Settlement.ChargedFrom.Add(168*time.Hour)) {
+		t.Fatalf("inherited duration changed: %+v", a.Settlement)
 	}
 	if !a.Enrollment.ActivatedAt.Equal(a.Settlement.ChargedFrom) || !a.Enrollment.PaidThrough.Equal(a.Settlement.PaidUntil) {
 		t.Fatal("native paid boundary differs from immutable receipt")
