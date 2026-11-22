@@ -2,6 +2,7 @@ package xnode
 
 import (
 	"context"
+	"net/netip"
 	"sync"
 	"time"
 )
@@ -56,7 +57,12 @@ func (s *Service) routingPeerRefreshAt() time.Time {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	var next time.Time
-	for _, peer := range r.peers {
+	for address, peer := range r.peers {
+		// Literal origins retain their cache/validation and DDNS protection
+		// semantics, but cannot change through DNS or expire compiled state.
+		if _, err := netip.ParseAddr(address); err == nil {
+			continue
+		}
 		if s.now().Before(peer.until) && (next.IsZero() || peer.until.Before(next)) {
 			next = peer.until
 		}
