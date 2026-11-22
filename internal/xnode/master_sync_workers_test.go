@@ -35,7 +35,12 @@ func (r *workersRepository) XNodeNode(ctx context.Context, id string) (Node, err
 func TestSyncWorkersBoundConcurrencyAndSkipOccupiedPeer(t *testing.T) {
 	r := &workersRepository{started: make(chan string, 4), release: make(chan struct{})}
 	m := NewMaster(NewService(r, nil, nil, nil, nil), nil)
-	peers := []*agentPeer{{nodeID: "held"}, {nodeID: "a"}, {nodeID: "b"}, {nodeID: "c"}}
+	// Use current sockets and sort the occupied peer first, so both free
+	// workers must pass it before the repository barrier can be reached.
+	peers := []*agentPeer{{nodeID: "0-held"}, {nodeID: "a"}, {nodeID: "b"}, {nodeID: "c"}}
+	for _, peer := range peers {
+		m.peers[peer.nodeID] = peer
+	}
 	peers[0].syncMu.Lock()
 	defer peers[0].syncMu.Unlock()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
