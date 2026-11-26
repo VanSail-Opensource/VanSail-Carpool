@@ -102,8 +102,8 @@ also use the actual pinned Xray parser.
 
 Primary references, reviewed 2026-11-09:
 
-- [Pinned Xray client transport parser](https://github.com/XTLS/Xray-core/blob/a4a3dff5b20c/infra/conf/transport_method.go)
-  and [TLS/Reality parser](https://github.com/XTLS/Xray-core/blob/a4a3dff5b20c/infra/conf/transport_security.go).
+- [Pinned Xray client transport parser](https://github.com/XTLS/Xray-core/blob/676eaf66f8f0/infra/conf/transport_method.go)
+  and [TLS/Reality parser](https://github.com/XTLS/Xray-core/blob/676eaf66f8f0/infra/conf/transport_security.go).
 - [XHTTP design and extra](https://github.com/XTLS/Xray-core/discussions/4113),
   [VLESS URI proposal](https://github.com/XTLS/Xray-core/discussions/716) and
   [VMess share-link schema](https://github.com/2dust/v2rayN/wiki/Description-of-VMess-share-link).
