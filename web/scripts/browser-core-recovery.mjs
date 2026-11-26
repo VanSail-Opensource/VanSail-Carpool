@@ -61,8 +61,12 @@ export async function checkoutRecoveryScenarios(scenario, size) {
       assert.equal(await page.evaluate(() => globalThis.__recoveryAudit.snapshot().cancels), 1)
       await capture('pending')
       await page.evaluate(() => globalThis.__recoveryAudit.pay())
-      await page.getByRole('dialog').waitFor({ state: 'hidden' })
+      const dialog = page.getByRole('dialog')
+      const confirmation = dialog.locator('[data-test="wallet-confirmation"]')
+      await confirmation.getByRole('heading', { name: 'Payment confirmed', exact: true }).waitFor()
       assert.ok(await page.evaluate(() => globalThis.__recoveryAudit.snapshot().orderReads >= 2), 'pending checkout did not resume authoritative polling')
+      await confirmation.getByRole('button', { name: 'Done', exact: true }).click()
+      await dialog.waitFor({ state: 'hidden' })
     })
   }
   await scenario(size, 'payment-empty', 'recovery-audit.html?empty', async (page, capture) => {

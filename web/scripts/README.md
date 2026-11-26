@@ -61,7 +61,9 @@ changes, moved/deleted paths, unknown files and invalid selections.
 
 `browser-core-recovery.mjs` preserves the currency, checkout and browser access
 scenarios formerly embedded in the runner. They are separate registry scopes,
-so a focused feature PR does not always rerun unrelated core flows.
+so a focused feature PR does not always rerun unrelated core flows. Checkout
+recovery verifies authoritative payment polling, the resulting wallet
+confirmation and dismissal with Done.
 
 `browser-xnode-availability.mjs` verifies optional telemetry failure, tab-scoped
 inventory loading, stale status, long node identities, loading/empty state and
@@ -77,6 +79,7 @@ disabled states of its descendant controls.
 `browser-member-recovery.mjs` adds desktop/mobile checks for intro retry,
 agreement revision consent, delayed owner changes, community loading/errors and
 retired invite links using the real onboarding and community components.
+The community error state has no Join or Refresh action.
 It also verifies that a different owner retires the prior payment sheet and that
 delayed combo/balance replies cannot restore the prior owner's navigation.
 The constructed captcha scenario exercises the actual App owner boundary and
