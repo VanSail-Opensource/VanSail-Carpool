@@ -84,6 +84,16 @@ func TestPAYGLeasesExpireIndependentlyAndPreserveNativeCandidate(t *testing.T) {
 	if err != nil || !limited.Users[1].ValidUntil.Equal(now.Add(10*time.Second)) || peer.paygOverlayKey == originalKey {
 		t.Fatal("prepaid expiry did not cap lease", limited, err)
 	}
+	limitedKey := peer.paygOverlayKey
+	stable, err := master.overlayPAYG(context.Background(), peer, config, caps)
+	if err != nil || !stable.Users[1].ValidUntil.Equal(*limited.Users[1].ValidUntil) || peer.paygOverlayKey != limitedKey {
+		t.Fatal("unchanged authorization invalidated prepared wire state", stable, err)
+	}
+	r.accounts[0].CreditStartedAt = r.accounts[0].CreditStartedAt.Add(time.Nanosecond)
+	moved, err := master.overlayPAYG(context.Background(), peer, config, caps)
+	if err != nil || !moved.Users[1].ValidUntil.Equal(limited.Users[1].ValidUntil.Add(time.Nanosecond)) || peer.paygOverlayKey == limitedKey {
+		t.Fatal("nanosecond expiry change did not invalidate prepared wire state", moved, err)
+	}
 	r.accounts[0].CreditStartedAt = now.Add(-PAYGWindow)
 	expired, err := master.overlayPAYG(context.Background(), peer, config, caps)
 	if err != nil || len(expired.Users) != 1 {

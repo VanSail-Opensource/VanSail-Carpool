@@ -32,7 +32,7 @@ func (m *Master) prepareAuthorizationWire(peer *agentPeer, config wire.Config, c
 	})
 	peer.paygHeld = false
 	peer.wireState = nil
-	peer.paygOverlayKey = ""
+	peer.paygOverlayKey = [32]byte{}
 	return preparePeerWire(peer, config, capabilities)
 }
 

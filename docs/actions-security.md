@@ -1,12 +1,12 @@
 # Actions supply chain
 
-External action references are pinned to complete upstream commit IDs. The table records the refs resolved on 2026-11-08. Annotated tags are peeled to their commit, not pinned to the tag object. Action manifests and commit metadata were checked in their canonical repositories; Docker login's credential entry point and the attestation wrapper's transitive action binding were reviewed.
+External action references are pinned to complete upstream commit IDs. The initial pins were reviewed on 2026-11-08. Annotated tags are peeled to their commit, not pinned to the tag object. Action manifests and commit metadata were checked in their canonical repositories; Docker login's credential entry point and the attestation wrapper's transitive action binding were reviewed.
 
 | Action | Resolved ref | Commit |
 | --- | --- | --- |
 | actions/checkout | v7 | [3d3c42e5aac5ba805825da76410c181273ba90b1](https://github.com/actions/checkout/commit/3d3c42e5aac5ba805825da76410c181273ba90b1) |
 | actions/setup-node | v7 | [949feb2413d6458794dcd2491c4babbbce0c15c1](https://github.com/actions/setup-node/commit/949feb2413d6458794dcd2491c4babbbce0c15c1) |
-| actions/setup-go | v7 | [b7ad1dad31e06c5925ef5d2fc7ad053ef454303e](https://github.com/actions/setup-go/commit/b7ad1dad31e06c5925ef5d2fc7ad053ef454303e) |
+| actions/setup-go | v7.1.0 | [d8cbb8045d7f43706b9177cceb36c1f91a6644d5](https://github.com/actions/setup-go/commit/d8cbb8045d7f43706b9177cceb36c1f91a6644d5) |
 | actions/upload-artifact | v7 | [cf430e030ddbb5b0abf93d22962f4752f3646cd9](https://github.com/actions/upload-artifact/commit/cf430e030ddbb5b0abf93d22962f4752f3646cd9) |
 | actions/download-artifact | v8 | [9000827ccba6bdab643e8b6fd33ac0654aef8333](https://github.com/actions/download-artifact/commit/9000827ccba6bdab643e8b6fd33ac0654aef8333) |
 | actions/attest-build-provenance | v4 | [4d101475d8b20a2381f78447822ac1eab6504dd8](https://github.com/actions/attest-build-provenance/commit/4d101475d8b20a2381f78447822ac1eab6504dd8) |
@@ -15,6 +15,8 @@ External action references are pinned to complete upstream commit IDs. The table
 | docker/metadata-action | v6 | [dc802804100637a589fabce1cb79ff13a1411302](https://github.com/docker/metadata-action/commit/dc802804100637a589fabce1cb79ff13a1411302) |
 | docker/build-push-action | v7 | [c3c9e263c25d99ce0380d002d59b67737d91b0dc](https://github.com/docker/build-push-action/commit/c3c9e263c25d99ce0380d002d59b67737d91b0dc) |
 | dorny/paths-filter | v4 | [ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d](https://github.com/dorny/paths-filter/commit/ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d) |
+
+The setup-go v7.1.0 pin was reviewed on 2026-11-26. Its manifest still uses Node 24 with bundled setup and cache-save entry points and no composite actions. It retains the `go-version-file` and `cache` inputs used by these workflows.
 
 The attestation wrapper pins `actions/attest` to `508db95dd578ae2727ebd6217d5ba78e4fbda05d` (v4.2.1); its manifest runs the bundled Node 24 entry point, with no further composite action references.
 
