@@ -29,8 +29,17 @@ func (s *Store) XNodePrincipalOwners(ctx context.Context) (map[int]string, error
 	return out, rows.Err()
 }
 
+// XNodeIdentitiesForNode resolves authoritative owners through unique joins.
+// Keep each hourly group singular even when a node exposes several inbounds.
 func (s *Store) XNodeIdentitiesForNode(ctx context.Context, node string) ([]xnode.Identity, error) {
-	rows, err := s.db.QueryContext(ctx, xnodeIdentitySelect+` WHERE p.service_name IS NULL OR (p.service_name NOT ILIKE 'member-payg-%' AND p.service_name NOT ILIKE 'member-hourly-%') OR EXISTS(SELECT 1 FROM xnode_payg_accounts a WHERE a.proxy_user_id=p.proxy_user_id AND a.node_id=$1) OR EXISTS(SELECT 1 FROM hourly_enrollments e JOIN xnode_group_bindings b ON b.group_id=e.group_id WHERE e.proxy_user_id=p.proxy_user_id AND b.node_id=$1) ORDER BY p.proxy_user_id`, node)
+	rows, err := s.db.QueryContext(ctx, xnodeIdentityHead+`COALESCE(alias.old_proxy_id,0),COALESCE(payg.user_id,''),COALESCE(hourly.owner_id,''),p.first_synced_at
+ FROM xnode_identities p LEFT JOIN users u ON u.id=p.user_id
+ LEFT JOIN member_identity_aliases alias ON alias.proxy_id=p.proxy_user_id AND alias.old_proxy_id<>alias.proxy_id
+ LEFT JOIN xnode_payg_accounts payg ON payg.proxy_user_id=p.proxy_user_id
+ LEFT JOIN hourly_enrollments hourly ON hourly.proxy_user_id=p.proxy_user_id
+ LEFT JOIN (SELECT DISTINCT group_id FROM xnode_group_bindings WHERE node_id=$1) hourly_group ON hourly_group.group_id=hourly.group_id
+ WHERE p.service_name IS NULL OR (p.service_name NOT ILIKE 'member-payg-%' AND p.service_name NOT ILIKE 'member-hourly-%')
+ OR payg.node_id=$1 OR hourly_group.group_id IS NOT NULL ORDER BY p.proxy_user_id`, node)
 	if err != nil {
 		return nil, err
 	}

@@ -1811,3 +1811,13 @@ barrier evidence while clearing live participants for the next closure.
 Stale repairs cannot reopen a purged generation or replace a newer closure.
 Paid-window selection and compile deadlines preserve nanoseconds from stored
 terms, including fractional and whole-second boundaries.
+
+### PAYG lease projection
+
+The master reads funding on every reconciliation and applies the existing
+health, policy and recovery checks. The temporary lookup stores indexes into
+the fresh result rather than copying account records. The prepared wire
+cache key uses a fixed-width principal and nanosecond expiry fingerprint.
+A shared expiry is immutable within a projection. Stale continuity and exact
+prepaid cutoffs keep their per-user timestamps and remain subject to the
+same delivery fence.

@@ -17,7 +17,9 @@ const paygFundingPredicate = ` WHERE a.node_id=$1 AND b.txb_minor>=0
 // XNodePAYGFunding reads current authorization inputs without scanning periods.
 // The account's validated period FK preserves existence; no counters are exposed.
 func (s *Store) XNodePAYGFunding(ctx context.Context, node string) ([]xnode.PAYGFunding, error) {
-	rows, err := s.db.QueryContext(ctx, paygFundingSelect+paygFundingPredicate+` ORDER BY a.user_id,a.proxy_user_id`, node)
+	// The master indexes funding by principal and walks compiled users, not these
+	// rows. Avoid forcing a sort or a merge join solely for unused row order.
+	rows, err := s.db.QueryContext(ctx, paygFundingSelect+paygFundingPredicate, node)
 	if err != nil {
 		return nil, err
 	}

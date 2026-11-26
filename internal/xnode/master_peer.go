@@ -25,7 +25,7 @@ type agentPeer struct {
 	paygPublishedUntil    time.Time                  // mu; earliest sent PAYG deadline, scheduling only
 	paygPriorityAt        time.Time                  // mu; last urgent scheduling attempt
 	paygRecoveryQueued    bool                       // mu; durable recovery is coalesced per boot
-	paygOverlayKey        string                     // syncMu; disposable authorization projection
+	paygOverlayKey        [32]byte                   // syncMu; disposable authorization projection
 	paygPublished         map[int]publishedPAYGLease // syncMu; last sent full baseline on this socket
 	paygHeld              bool                       // syncMu; unchanged-only projection during a report gap
 	publicIP              string

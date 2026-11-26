@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"slices"
 	"testing"
 	"time"
 
@@ -95,5 +96,86 @@ func TestPAYGTrafficIgnoresNodeMultiplierAndRateChanges(t *testing.T) {
 	var rate int64
 	if err := s.DB().QueryRowContext(ctx, `SELECT multiplier_fp FROM xnode_node_rates WHERE agent_id='agent' ORDER BY from_sequence DESC LIMIT 1`).Scan(&rate); err != nil || rate != xnode.MultiplierScale {
 		t.Fatal("retired multiplier was not coerced to raw bytes", rate, err)
+	}
+}
+
+func TestPAYGWindowKeepsNewestExactThresholdAndPendingEvidence(t *testing.T) {
+	s, _, _, account := paygBillingFixture(t)
+	ctx := context.Background()
+	now := time.Now().UTC().Truncate(time.Second)
+	from := paygWindowStamp(now.Add(-xnode.PAYGWindow))
+	const mib int64 = 1 << 20
+	samples := []struct {
+		at                time.Time
+		traffic, unbilled int64
+	}{
+		{now.Add(-xnode.PAYGWindow), 5 * mib, 5 * mib}, // expired even if pending
+		{now.Add(-5 * time.Minute), 2 * mib, 2 * mib},  // pending, still in-window
+		{now.Add(-4 * time.Minute), 8 * mib, 0},        // unnecessary
+		{now.Add(-3 * time.Minute), 0, 0},              // zero after the exact excess
+		{now.Add(-2 * time.Minute), 40 * mib, 0},       // oldest needed sample
+		{now, 60 * mib, 0},                             // inclusive upper boundary
+		{now.Add(time.Nanosecond), 90 * mib, 0},        // outside the current window
+	}
+	tx, err := s.DB().BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	for _, sample := range samples {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO xnode_payg_windows(proxy_user_id,through,traffic_bytes,unbilled_bytes) VALUES($1,$2,$3,$4)`, account.ProxyUserID, paygWindowStamp(sample.at), sample.traffic, sample.unbilled); err != nil {
+			t.Fatal(err)
+		}
+	}
+	traffic, pending, cutoff, err := loadPAYGWindow(ctx, tx, account.ProxyUserID, from, paygWindowStamp(now.Add(-time.Nanosecond)))
+	if err != nil || traffic != 50*mib || pending != 2*mib || cutoff.Valid {
+		t.Fatalf("sub-threshold window: traffic=%d pending=%d cutoff=%v err=%v", traffic, pending, cutoff, err)
+	}
+	traffic, pending, cutoff, err = loadPAYGWindow(ctx, tx, account.ProxyUserID, from, paygWindowStamp(now))
+	if err != nil || traffic != 110*mib || pending != 2*mib || !cutoff.Valid || cutoff.String != paygWindowStamp(samples[4].at) {
+		t.Fatalf("funded window: traffic=%d pending=%d cutoff=%v err=%v", traffic, pending, cutoff, err)
+	}
+	if err := prunePAYGWindow(ctx, tx, account.ProxyUserID, from, cutoff); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := tx.QueryContext(ctx, `SELECT through FROM xnode_payg_windows WHERE proxy_user_id=$1 ORDER BY through`, account.ProxyUserID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	var kept []string
+	for rows.Next() {
+		var through string
+		if err := rows.Scan(&through); err != nil {
+			t.Fatal(err)
+		}
+		kept = append(kept, through)
+	}
+	want := []string{paygWindowStamp(samples[1].at), paygWindowStamp(samples[4].at), paygWindowStamp(samples[5].at), paygWindowStamp(samples[6].at)}
+	if err := rows.Err(); err != nil || !slices.Equal(kept, want) {
+		t.Fatalf("kept %v, want %v: %v", kept, want, err)
+	}
+}
+
+func TestPAYGWindowPruneFallsBackBeyondBoundedPrefix(t *testing.T) {
+	s, _, _, account := paygBillingFixture(t)
+	ctx := context.Background()
+	start := time.Now().UTC().Add(-time.Hour).Truncate(time.Second)
+	const mib int64 = 1 << 20
+	tx, err := s.DB().BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_payg_windows(proxy_user_id,through,traffic_bytes)
+ SELECT $1,to_char($2::timestamp + pos*interval '1 second','YYYY-MM-DD"T"HH24:MI:SS.US"000Z"'),$3
+ FROM generate_series(0,229) AS pos`, account.ProxyUserID, start, mib)
+	if err != nil {
+		t.Fatal(err)
+	}
+	traffic, pending, cutoff, err := loadPAYGWindow(ctx, tx, account.ProxyUserID, paygWindowStamp(start.Add(-time.Nanosecond)), paygWindowStamp(start.Add(229*time.Second)))
+	want := paygWindowStamp(start.Add(130 * time.Second))
+	if err != nil || traffic != 230*mib || pending != 0 || !cutoff.Valid || cutoff.String != want {
+		t.Fatalf("fallback: traffic=%d pending=%d cutoff=%v (want %s) err=%v", traffic, pending, cutoff, want, err)
 	}
 }
