@@ -27,7 +27,6 @@ require (
 	github.com/andybalholm/brotli v1.3.0 // indirect
 	github.com/apernet/quic-go v0.61.1-0.20260806010916-184d081eef3e // indirect
 	github.com/bits-and-blooms/bitset v1.30.0 // indirect
-	github.com/google/gopacket v1.1.19 // indirect
 	github.com/huin/goupnp v1.3.1 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
@@ -48,10 +47,10 @@ require (
 	github.com/pion/logging v0.2.4 // indirect
 	github.com/pion/stun/v3 v3.1.7 // indirect
 	github.com/pion/transport/v4 v4.1.3 // indirect
+	github.com/pion/transport/v5 v5.0.0 // indirect
 	github.com/pires/go-proxyproto v0.16.0 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/refraction-networking/utls v1.8.3-0.20260301010127-aa6edf4b11af // indirect
-	github.com/sethvargo/go-retry v0.5.0 // indirect
 	github.com/vishvananda/netlink v1.3.1 // indirect
 	github.com/vishvananda/netns v0.0.5 // indirect
 	github.com/wlynxg/anet v0.0.5 // indirect
