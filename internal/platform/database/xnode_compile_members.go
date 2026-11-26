@@ -79,7 +79,9 @@ func (s *Store) XNodeCompileMembers(ctx context.Context, ids []string) (xnode.Co
 		}
 		input.Purchases[id] = purchases
 	}
-	rows, err = s.db.QueryContext(ctx, `SELECT `+xnodePeriodColumns+` FROM xnode_periods WHERE proxy_user_id IN (SELECT proxy_user_id FROM xnode_identities WHERE user_id IN (SELECT value FROM jsonb_array_elements_text(($1)::jsonb)))`, key)
+	// A compiler can reference other periods through its ordinary point reader.
+	// Bulk loading the retained history for every member wastes work at each node.
+	rows, err = s.db.QueryContext(ctx, `SELECT `+xnodePeriodColumns+` FROM xnode_periods WHERE id IN (SELECT current_period_id FROM xnode_identities WHERE user_id IN (SELECT value FROM jsonb_array_elements_text(($1)::jsonb)))`, key)
 	if err != nil {
 		return input, err
 	}

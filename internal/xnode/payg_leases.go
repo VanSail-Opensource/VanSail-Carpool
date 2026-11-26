@@ -3,12 +3,11 @@ package xnode
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/hex"
+	"encoding/binary"
 	"encoding/json"
 	"time"
 
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
@@ -68,9 +67,15 @@ func (m *Master) overlayPAYG(ctx context.Context, peer *agentPeer, config wire.C
 	usable := current && paygCapabilities(caps) && live.report.Ready && live.report.Synchronized && live.firewallPending == ""
 	healthy := usable && freshSnapshot(live, now, config.Telemetry.ReportSeconds)
 	hold := usable && !healthy && !live.receivedAt.IsZero()
-	byID := map[int]PAYGFunding{}
+	type fundingIndex struct {
+		index   int
+		blocked bool
+	}
+	byID := make(map[int]fundingIndex, len(accounts))
 	admissions := map[string]bool{}
-	for _, a := range accounts {
+	for i := range accounts {
+		a := &accounts[i]
+		entry := fundingIndex{index: i, blocked: a.Disabled}
 		if healthy && ready && !a.HasCredit(now) {
 			if admission, ok := r.(interface {
 				PricingPAYGAdmission(context.Context, string, string, time.Time) (bool, error)
@@ -84,12 +89,10 @@ func (m *Master) overlayPAYG(ctx context.Context, peer *agentPeer, config wire.C
 					}
 					admissions[a.GroupID] = safe
 				}
-				if !safe {
-					a.Disabled = true
-				}
+				entry.blocked = entry.blocked || !safe
 			}
 		}
-		byID[int(a.ProxyUserID)] = a
+		byID[int(a.ProxyUserID)] = entry
 	}
 	if healthy && !ready && !queued {
 		raw, _ := json.Marshal(map[string]string{"nodeId": peer.nodeID, "bootId": peer.bootID})
@@ -101,37 +104,51 @@ func (m *Master) overlayPAYG(ctx context.Context, peer *agentPeer, config wire.C
 		peer.paygRecoveryAt = now
 		peer.mu.Unlock()
 	}
+	agentNow := paygAgentTime(now, live)
 	until := paygLeaseUntil(now, live)
 	users := make([]wire.User, 0, len(config.Users))
 	hash := sha256.New()
+	var keyMaterial [20]byte
 	for _, u := range config.Users {
-		a, payg := byID[u.ID]
+		entry, payg := byID[u.ID]
 		if !payg && !isPAYGPeriod(u.AccountingPeriod) {
 			users = append(users, u)
 			continue
 		}
-		if !payg || a.Disabled || !ready || !a.Funded(now) {
+		if !payg || !ready || entry.blocked {
 			continue
 		}
-		validUntil := until
+		a := &accounts[entry.index]
+		if !a.Funded(now) {
+			continue
+		}
+		validUntil := &until
 		if !healthy {
 			lease, exists := peer.paygPublished[u.ID]
-			if !hold || !exists || lease.period != u.AccountingPeriod || !lease.until.After(paygAgentTime(now, live)) {
+			if !hold || !exists || lease.period != u.AccountingPeriod || !lease.until.After(agentNow) {
 				continue
 			}
-			validUntil = lease.until
+			validUntil = &lease.until
 		}
-		creditUntil := paygAgentTime(a.CreditStartedAt.Add(PAYGWindow), live)
-		if a.BalanceMinor < a.UnitPriceMinor && a.HasCredit(now) && creditUntil.Before(validUntil) {
-			validUntil = creditUntil
+		if a.BalanceMinor < a.UnitPriceMinor && a.HasCredit(now) {
+			creditUntil := paygAgentTime(a.CreditStartedAt.Add(PAYGWindow), live)
+			if creditUntil.Before(*validUntil) {
+				validUntil = &creditUntil
+			}
 		}
 		peer.paygHeld = peer.paygHeld || !healthy
-		u.ValidUntil = &validUntil
-		_, _ = hash.Write([]byte("/" + strconv.Itoa(u.ID) + "@" + validUntil.Format(time.RFC3339Nano)))
+		u.ValidUntil = validUntil
+		// This fingerprint is local to the prepared wire cache. Fixed-width
+		// encoding retains exact expiry without formatting it for every user.
+		binary.LittleEndian.PutUint64(keyMaterial[:8], uint64(u.ID))
+		binary.LittleEndian.PutUint64(keyMaterial[8:16], uint64(validUntil.Unix()))
+		binary.LittleEndian.PutUint32(keyMaterial[16:], uint32(validUntil.Nanosecond()))
+		_, _ = hash.Write(keyMaterial[:])
 		users = append(users, u)
 	}
 	config.Users = users
-	key := hex.EncodeToString(hash.Sum(nil))
+	var key [sha256.Size]byte
+	hash.Sum(key[:0])
 	if key != peer.paygOverlayKey {
 		peer.wireState = nil
 		peer.paygOverlayKey = key

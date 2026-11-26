@@ -55,8 +55,8 @@ func recordPAYGWindowTx(ctx context.Context, tx *sql.Tx, a *xnode.PAYGAccount, t
 // second time; aging-out unbilled probes do not become lifetime billing debt.
 func settlePAYGWindowTx(ctx context.Context, tx *sql.Tx, a *xnode.PAYGAccount, through time.Time, debt bool, now time.Time) error {
 	from, to := paygWindowStamp(through.Add(-xnode.PAYGWindow)), paygWindowStamp(through)
-	var traffic, pending int64
-	if err := tx.QueryRowContext(ctx, `SELECT COALESCE(SUM(traffic_bytes),0),COALESCE(SUM(unbilled_bytes),0) FROM xnode_payg_windows WHERE proxy_user_id=$1 AND through>$2 AND through<=$3`, a.ProxyUserID, from, to).Scan(&traffic, &pending); err != nil {
+	traffic, pending, cutoff, err := loadPAYGWindow(ctx, tx, a.ProxyUserID, from, to)
+	if err != nil {
 		return err
 	}
 	if traffic >= xnode.PAYGStartBytes && pending > 0 {
@@ -78,16 +78,39 @@ func settlePAYGWindowTx(ctx context.Context, tx *sql.Tx, a *xnode.PAYGAccount, t
 			return err
 		}
 	}
-	// Once the newest samples already prove the threshold, older settled
-	// samples can never affect a future rolling decision: they expire first.
-	// Keep pending evidence, and avoid scanning 72 hours of high-volume reports.
-	if traffic >= xnode.PAYGStartBytes {
-		if _, err := tx.ExecContext(ctx, `DELETE FROM xnode_payg_windows WHERE proxy_user_id=$1 AND unbilled_bytes=0 AND through<(
- SELECT MAX(through) FROM (SELECT through,SUM(traffic_bytes) OVER (ORDER BY through DESC) AS total
- FROM xnode_payg_windows WHERE proxy_user_id=$2 AND through>$3 AND through<=$4) recent WHERE total>=$5)`, a.ProxyUserID, a.ProxyUserID, from, to, xnode.PAYGStartBytes); err != nil {
-			return err
-		}
+	return prunePAYGWindow(ctx, tx, a.ProxyUserID, from, cutoff)
+}
+
+func loadPAYGWindow(ctx context.Context, tx *sql.Tx, id int64, from, to string) (traffic, pending int64, cutoff sql.NullString, err error) {
+	// The first cumulative prefix strictly above the excess is the oldest
+	// sample needed to prove the threshold. The inner LIMIT favors a PK scan
+	// over sorting the whole window for recurring small prunes. If the prefix
+	// is not enough, read the exact suffix as a fallback. All reads share one
+	// snapshot because retention does not take the account's settlement lock.
+	err = tx.QueryRowContext(ctx, `SELECT sums.traffic,sums.pending,CASE WHEN sums.traffic >= $4::bigint THEN COALESCE((
+ SELECT through FROM (
+  SELECT through,SUM(traffic_bytes) OVER (ORDER BY through ROWS UNBOUNDED PRECEDING) AS prefix
+  FROM (SELECT through,traffic_bytes FROM xnode_payg_windows WHERE proxy_user_id=$1 AND through>$2 AND through<=$3 ORDER BY through LIMIT 128) oldest
+ ) prefixes WHERE prefix>sums.traffic-$4 ORDER BY through LIMIT 1
+ ),(
+ SELECT through FROM (
+  SELECT through,SUM(traffic_bytes) OVER (ORDER BY through DESC ROWS UNBOUNDED PRECEDING) AS suffix
+  FROM xnode_payg_windows WHERE proxy_user_id=$1 AND through>$2 AND through<=$3
+ ) suffixes WHERE suffix>=$4 ORDER BY through DESC LIMIT 1
+ )) END FROM (
+ SELECT COALESCE(SUM(traffic_bytes),0) AS traffic,COALESCE(SUM(unbilled_bytes),0) AS pending
+ FROM xnode_payg_windows WHERE proxy_user_id=$1 AND through>$2 AND through<=$3
+ ) sums`, id, from, to, xnode.PAYGStartBytes).Scan(&traffic, &pending, &cutoff)
+	return traffic, pending, cutoff, err
+}
+
+func prunePAYGWindow(ctx context.Context, tx *sql.Tx, id int64, from string, cutoff sql.NullString) error {
+	if cutoff.Valid {
+		// Expired rows and older settled rows share one index range. Pending
+		// evidence is kept until it is settled or actually ages out.
+		_, err := tx.ExecContext(ctx, `DELETE FROM xnode_payg_windows WHERE proxy_user_id=$1 AND through<$2 AND (through<=$3 OR unbilled_bytes=0)`, id, cutoff.String, from)
+		return err
 	}
-	_, err := tx.ExecContext(ctx, `DELETE FROM xnode_payg_windows WHERE proxy_user_id=$1 AND through<=$2`, a.ProxyUserID, from)
+	_, err := tx.ExecContext(ctx, `DELETE FROM xnode_payg_windows WHERE proxy_user_id=$1 AND through<=$2`, id, from)
 	return err
 }

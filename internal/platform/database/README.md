@@ -1008,6 +1008,8 @@ duplicate wakes, live leases, terminal receipts and retained DIY result evidence
 
 `xnode_payg_accounts.go` stores immutable member/squad/node attribution, its native period and atomic accounting participant reference. `xnode_payg_billing.go` appends exact GB block charges to the existing wallet ledger with immutable rate evidence. `xnode_payg_traffic.go` integrates raw usage and debits with contiguous traffic-journal commits; balances precede periods in its lock order. Connection purchases require funds, while delayed traffic may create wallet debt. PAYG never consumes combo quota or node multipliers. A GB is purchased for pending usage only when the rolling 72-hour raw window reaches 104,857,600 bytes (100 MiB) on that member/squad/node; idle connections and wallet funding cannot charge a first block. Unbilled bytes in that window count toward the purchased GB. Remaining credit expires 72 hours after its charge.
 
+`xnode_payg_credit_window.go` reads exact traffic, pending bytes and the settled-history prune boundary from one statement snapshot. At or above the threshold it tries an oldest-first, index-ordered prefix so common small prunes do not scan the entire window a second time. A full suffix check handles larger prunes. A separate range delete keeps pending rows unless they have aged out.
+
 `xnode_payg_jobs.go` coalesces balance-change provisioning through the existing outbox, scans missing tuples in bounded batches and prunes disposable 72-hour minute aggregates. Credentials, cumulative counters and financial evidence remain durable. Source IPs, connection observations, generated subscriptions and lease timestamps are never stored. `xnode_payg_owners.go` provides indexed service lookups, node-scoped compiler identities and credential-free activity ownership reads.
 
 `onboarding.go` queues `xnode_access_repair` for every agreement completion and
@@ -2369,3 +2371,13 @@ pricing, nonnegative balances, prepaid bytes and all disablement fields. This
 does not retain balances or authorization decisions across reads.
 `payg_funding_boundaries_test.go` covers small fixed prices, dynamic account
 prices, insufficient funds, zero-balance prepaid access and debt exclusion.
+
+### Node compilation and funding reads
+
+`XNodeIdentitiesForNode` resolves unique native principal owners and aliases
+with set joins. The hourly binding projection stays distinct by group so
+multiple inbounds cannot duplicate a principal. Compile member preloading
+fetches only the current period for each owner. Other period lookups can
+still use the ordinary authoritative reader, and retained accounting stays
+unchanged. `XNodePAYGFunding` returns fresh, unordered authorization inputs;
+the controller selects candidates in compiled user order.
