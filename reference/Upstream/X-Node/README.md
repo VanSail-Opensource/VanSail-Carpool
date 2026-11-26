@@ -46,12 +46,13 @@ tests. Regression suites and benchmarks run only in hosted CI.
 
 ## Go dependency refresh
 
-The native core is pinned to Xray v26.10.31, full commit
-`a4a3dff5b20c2faae567b742c172c7b95e75c083`, using module version
-`v1.260327.1-0.20261031132019-a4a3dff5b20c`. Its default MPTCP mitigation
+The native core is pinned to Xray v26.11.9, full commit
+`676eaf66f8f05d4d558ee7a74b4736623d3feeb9`, using module version
+`v1.260327.1-0.20261109052709-676eaf66f8f0`. Its default MPTCP mitigation
 does not replace host-kernel updates. Shared native validation also rejects
 malformed XHTTP HTTP/2 field types before certificate preparation or listener
 activation, following upstream alias, `extra` and download-setting precedence.
+Freedom outbound finalRules accept delay and logLevel only for block rules. Remove blockDelay from allow rules before upgrading agents.
 Unknown fields retain upstream handling; referenced node-local files still need
 their existing preparation/validation environment.
 

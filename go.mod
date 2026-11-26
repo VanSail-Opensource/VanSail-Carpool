@@ -15,7 +15,7 @@ require (
 	github.com/pressly/goose/v3 v3.30.2
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/xssnick/tonutils-go v1.19.1
-	github.com/xtls/xray-core v1.260327.1-0.20261031132019-a4a3dff5b20c
+	github.com/xtls/xray-core v1.260327.1-0.20261109052709-676eaf66f8f0
 	go4.org/netipx v0.0.0-20260823151212-3075585bcbeb
 	golang.org/x/crypto v0.59.0
 	golang.org/x/net v0.63.0
@@ -24,7 +24,6 @@ require (
 
 require (
 	aead.dev/minisign v0.3.0 // indirect
-	github.com/andybalholm/brotli v1.3.0 // indirect
 	github.com/apernet/quic-go v0.61.1-0.20260806010916-184d081eef3e // indirect
 	github.com/bits-and-blooms/bitset v1.30.0 // indirect
 	github.com/huin/goupnp v1.3.1 // indirect
@@ -40,6 +39,7 @@ require (
 	github.com/libp2p/go-netroute v0.4.0 // indirect
 	github.com/mfridman/interpolate v0.2.0 // indirect
 	github.com/miekg/dns v1.1.73 // indirect
+	github.com/molecule-man/go-brrr v1.2.0 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pierrec/lz4/v4 v4.1.34 // indirect
@@ -50,11 +50,11 @@ require (
 	github.com/pion/transport/v5 v5.0.0 // indirect
 	github.com/pires/go-proxyproto v0.16.0 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
-	github.com/refraction-networking/utls v1.8.3-0.20260301010127-aa6edf4b11af // indirect
+	github.com/refraction-networking/utls v1.8.3-0.20261108164504-a13c59ffe98b // indirect
 	github.com/vishvananda/netlink v1.3.1 // indirect
 	github.com/vishvananda/netns v0.0.5 // indirect
 	github.com/wlynxg/anet v0.0.5 // indirect
-	github.com/xtls/reality v0.0.0-20261014101318-83f621788ca8 // indirect
+	github.com/xtls/reality v0.0.0-20261108101329-4bb46b2afd8b // indirect
 	github.com/yuin/gopher-lua v1.1.2 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto/x509roots/fallback v0.0.0-20261123192653-4dc4fb521066 // indirect
