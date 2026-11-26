@@ -21,6 +21,8 @@ epoch/owner fences and routing admission checks remain the publication boundary.
 Hosted regressions in `inventory_projection_test.go` exercise member metrics and
 mixed PAYG/hourly inventories with shared endpoints, bounded topology reads,
 credential isolation, revocation, node changes, ACL changes and read failures.
+`inventory_projection_fixture_test.go` supplies counted repository reads and
+constructed inventory for these projection regressions.
 `inventory_projection_combo_test.go` covers Combo/PAYG precedence, quota
 exhaustion, disabled groups and unprepared paid successors. No fleet identity
 scan or persistent projection cache is introduced.
@@ -229,6 +231,8 @@ failure with `paygReady=true`. Hosted regressions in `payg_sync_priority_test.go
 `master_sync_priority_test.go` cover deadline ordering, fairness after failed
 attempts, clock offsets, partial-pass recovery, forced-sync ordering, cached
 routing wakes and stale recovery completion.
+`master_sync_priority_fixture_test.go` provides the repository and WebSocket peer
+fixtures that observe PAYG renewal before routing work.
 During a quiet reporting gap the panel leaves unchanged, already published PAYG
 leases alone on the same socket, bounded by their original `valid_until` and
 current funding. It never republishes or renews a lease using stale reports. If
@@ -862,10 +866,13 @@ source generation invalidates its other selections and advances the compile
 epoch; different selections of unchanged data do neither. Initial failures use
 bounded 1/5/15-minute retries without borrowing another key's verified data, and
 caller cancellation is never retained. Existing same-key stale fallback and
-completion-based refresh schedules remain intact. `routing_assets_*_test.go`
-covers alternating combinations, shared memory bounds, source invalidation,
-concurrent refresh, retry isolation and deadlines. No member authorization or
-complete downloaded asset is cached. `routing_peers.go` bounds public endpoint
+completion-based refresh schedules remain intact. `routing_assets_bounds_test.go`
+covers shared memory bounds and oversized projections, and
+`routing_assets_cache_test.go` covers alternating selections and concurrent
+refresh. `routing_assets_retry_test.go` covers retry, cancellation and same-key
+fallback. `routing_assets_sources_test.go` checks per-source generation tracking.
+No member authorization or complete downloaded asset is cached.
+`routing_peers.go` bounds public endpoint
 DNS caching and gates maintenance by the existing compile epoch.
 Public literal IPv4/IPv6 destinations retain the same address validation and
 canonicalization without creating five-minute compile deadlines. Their bounded
@@ -1105,7 +1112,10 @@ mixed-family answers, mapped addresses, CDN answers and removal of origin proof.
 Each refresh reads configured DDNS trust only for nodes with enabled hostname
 endpoints. Literal-only and disabled endpoints need no settings projection;
 hostname trust remains fresh, and removing the last hostname still clears its
-cached protection. The host-origin read and refresh regressions cover these paths.
+cached protection. `firewall_hosts_fixture_test.go` supplies counted repository
+reads and prior cached origins. `firewall_hosts_reads_test.go` covers unused
+settings, removals and read failures. `firewall_hosts_refresh_test.go` checks
+fresh configured trust, hostname normalization and node scoping.
 
 `diy_document.go` reads versioned encrypted desired state and legacy bare client
 overrides. `whitelist_policy.go` validates exact public IPs, preserves insertion
@@ -1577,6 +1587,9 @@ Credit delivery responsibilities:
 - `hourly_credit_clock_test.go` checks injected-clock scheduling and retry edges.
 - `hourly_credit_demand_test.go` checks cold zero/unknown-hint suppression after
   completed scans while preserving positive-demand and financial recovery wakes.
+- `hourly_credit_polling_fixture_test.go` supplies a controlled clock and counted
+  ledger reads. `hourly_credit_polling_test.go` checks quiet polling, activity
+  wakeups, paging, and fresh low-water and retry paths.
 - `hourly_traffic_recovery_test.go` keeps complete mixed journals admissible after
   hourly storage/admission failure without enabling live grants or commands.
 
