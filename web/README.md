@@ -4,8 +4,8 @@ VanSail Carpool is a bilingual, mobile-first Telegram Mini App built with Vue 3.
 
 `vite.config.ts` prebundles the Nuxt editor's TipTap and ProseMirror imports together so development mode uses a single selection/plugin registry.
 
-Nuxt UI uses stable 4.12.0. Vitest and its V8 coverage adapter are pinned together
-at 5.1.0, and both Unovis packages are pinned at 1.8.0 to match their exact peer
+Nuxt UI uses stable 4.13.1. Vitest and its V8 coverage adapter are pinned together
+at 5.1.2, and both Unovis packages are pinned at 1.8.1 to match their exact peer
 requirements. Tailwind 4.3.5 and its Vite, PostCSS and native engine packages
 are updated together. `clearMocks: false` preserves the existing mock lifecycle.
 TypeScript stays at 5.9.3 because `openapi-typescript` requires TypeScript 5;
@@ -17,9 +17,9 @@ Vue distribution imports directories that native Node ESM cannot resolve. This
 uses the real chart modules rather than replacing them with test stubs; see
 [Vitest's dependency configuration](https://vitest.dev/config/server.html#server-deps-inline).
 
-Security overrides scope Minimatch 11.0.5 to ESLint, `@eslint/config-array`,
+Security overrides scope Minimatch 11.0.9 to ESLint, `@eslint/config-array`,
 `@typescript-eslint/typescript-estree` and EditorConfig, whose matching APIs
-remain available. JS Beautify uses Glob 14.0.4 through its retained `globSync`
+remain available. JS Beautify uses Glob 14.0.6 through its retained `globSync`
 and `hasMagic` APIs. These resolve the
 [glob amplification](https://github.com/advisories/GHSA-g3hv-75wg-m249) and
 [cancellation](https://github.com/advisories/GHSA-3g3m-2fjr-6pw4) advisories

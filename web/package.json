@@ -23,10 +23,10 @@
   },
   "dependencies": {
     "@iconify-json/circle-flags": "^1.2.14",
-    "@iconify-json/lucide": "^1.2.155",
+    "@iconify-json/lucide": "^1.2.160",
     "@iconify-json/ph": "^1.2.2",
     "@noble/hashes": "2.4.0",
-    "@nuxt/ui": "4.13.0",
+    "@nuxt/ui": "4.13.1",
     "@unovis/ts": "1.8.1",
     "@unovis/vue": "1.8.1",
     "gsap": "^3.15.1",
@@ -39,10 +39,10 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^26.6.6",
+    "@types/node": "^26.6.11",
     "@types/qrcode": "^1.5.6",
     "@vitejs/plugin-vue": "^6.0.11",
-    "@vitest/coverage-v8": "5.1.1",
+    "@vitest/coverage-v8": "5.1.2",
     "@vue/test-utils": "^2.6.0",
     "esbuild": "^0.28.2",
     "eslint": "^10.15.0",
@@ -52,31 +52,31 @@
     "playwright": "1.65.1",
     "tailwindcss": "^4.3.5",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.72.2",
+    "typescript-eslint": "^8.74.0",
     "vite": "^8.3.8",
-    "vitest": "5.1.1",
+    "vitest": "5.1.2",
     "vue-eslint-parser": "^10.4.2",
     "vue-tsc": "^3.3.14",
     "yaml": "^2.9.1"
   },
   "overrides": {
     "@eslint/config-array": {
-      "minimatch": "11.0.5"
+      "minimatch": "11.0.9"
     },
     "@redocly/openapi-core": {
       "js-yaml": "4.3.2"
     },
     "@typescript-eslint/typescript-estree": {
-      "minimatch": "11.0.5"
+      "minimatch": "11.0.9"
     },
     "editorconfig": {
-      "minimatch": "11.0.5"
+      "minimatch": "11.0.9"
     },
     "eslint": {
-      "minimatch": "11.0.5"
+      "minimatch": "11.0.9"
     },
     "js-beautify": {
-      "glob": "14.0.4"
+      "glob": "14.0.6"
     },
     "esbuild": "$esbuild"
   }
