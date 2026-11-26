@@ -1309,6 +1309,7 @@ Provider cost metadata uses PostgreSQL forward migration 25. Cycle-based records
 `xnode_compile_members.go` batches users, purchase ownership, periods and access preferences into one disposable compilation scope. Existing scan functions and purchase ownership CTEs define its contract. `xnode_observed_owners.go` resolves observed owners plus idle sibling principals using existing indexes. `xnode_command_defer.go` conditionally releases a definitely rejected command attempt; `xnode_command_defer_test.go` protects replay and attempt fencing.
 
 `xnode_compile_benchmark_test.go` compares individual and batched reads over the same synthetic member set in hosted CI, including query count and allocations.
+`xnode_compile_projection_test.go` checks node-scoped principal uniqueness across multiple bindings and confirms compilation selects only the current period without discarding retained history.
 
 Payment settlement checks compact callback tombstones inside the settlement
 transaction before claiming a webhook. Replays retain order/trade/charge binding;
